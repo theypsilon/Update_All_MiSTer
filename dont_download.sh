@@ -1,0 +1,267 @@
+#!/bin/bash
+# Copyright (c) 2020 José Manuel Barroso Galindo <theypsilon@gmail.com>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# You can download the latest version of this script from:
+# https://github.com/theypsilon/Updater_All_MiSTer
+
+# Version 1.0 - 2020-06-07 - First commit
+
+set -euo pipefail
+
+# ========= OPTIONS ==================
+ENCC_FORKS="dialog" # Possible values: "true", "false" or "dialog"
+
+MAIN_UPDATER="true"
+MAIN_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
+
+JOTEGO_UPDATER="true"
+JOTEGO_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
+
+MAME_GETTER="true"
+MAME_GETTER_INI="/media/fat/Scripts/update_mame-getter.ini"
+
+HBMAME_GETTER="true"
+HBMAME_GETTER_INI="/media/fat/Scripts/update_hbmame-getter.ini"
+
+ARCADE_ORGANIZER="true"
+ARCADE_ORGANIZER_INI="/media/fat/Scripts/update_arcade-organizer.ini"
+
+ALWAYS_ASSUME_NEW_STANDARD_MRA="false"
+ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="false"
+
+WAIT_TIME_FOR_READING=4
+
+# ========= CODE STARTS HERE =========
+ORIGINAL_SCRIPT_PATH="${0}"
+INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
+INI_BACKUP_PATH="${INI_PATH}.backup"
+
+echo "Executing 'Update All' script for MiSTer"
+echo "Version 1.0"
+
+echo
+echo "Reading INI file '${EXPORTED_INI_PATH}':"
+if [ -f ${EXPORTED_INI_PATH} ] ; then
+    cp ${EXPORTED_INI_PATH} ${INI_PATH}
+    cp ${EXPORTED_INI_PATH} ${INI_BACKUP_PATH}
+
+	TMP=$(mktemp)
+	dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP}
+	source ${TMP}
+	rm -f ${TMP}
+
+    echo "OK."
+else
+    echo "Not found."
+fi
+
+draw_separator() {
+    echo
+    echo
+    echo "################################################################################"
+    echo "#==============================================================================#"
+    echo "################################################################################"
+    echo
+    sleep 1
+}
+
+run_updater_script() {
+    local SCRIPT_URL="${1}"
+    local SCRIPT_INI="${2}"
+
+    draw_separator
+
+    echo "Downloading and executing"
+    echo "${SCRIPT_URL}"
+    echo ""
+
+    curl \
+        ${CURL_RETRY} \
+        ${SSL_SECURITY_OPTION} \
+        --fail \
+        --location \
+        "${SCRIPT_URL}/blob/master/mister_updater.sh?raw=true" | \
+		sed "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" | \
+		sed 's/AUTOREBOOT="true"/AUTOREBOOT="false"/g' | \
+        bash -
+
+    sleep ${WAIT_TIME_FOR_READING}
+}
+
+run_mame_getter_script() {
+    local SCRIPT_TITLE="${1}"
+    local SCRIPT_URL="${2}"
+    local SCRIPT_INI="${3}"
+
+    local SCRIPT_FILENAME="${SCRIPT_URL/*\//}"
+    SCRIPT_FILENAME="${SCRIPT_FILENAME%.*}"
+
+    draw_separator
+
+    echo "STARTING: ${SCRIPT_TITLE}"
+    echo ""
+    echo "Downloading the most recent ${SCRIPT_FILENAME} script."
+    echo " "
+
+    wget -q -t 3 --output-file=/tmp/wget-log --show-progress -O /tmp/${SCRIPT_FILENAME}.sh ${SCRIPT_URL}
+    chmod +x /tmp/${SCRIPT_FILENAME}.sh
+    sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" /tmp/${SCRIPT_FILENAME}.sh
+    /tmp/${SCRIPT_FILENAME}.sh
+    rm /tmp/${SCRIPT_FILENAME}.sh
+    echo "FINISHED: ${SCRIPT_TITLE}"
+
+    sleep ${WAIT_TIME_FOR_READING}
+}
+
+contains_str() {
+    local FILE="${1}"
+    local STR="${2}"
+    if grep -o "${STR}" ${FILE} > /dev/null 2>&1 ; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+echo
+echo "Sequence:"
+if [[ "${MAIN_UPDATER}" == "true" ]] ; then
+    echo "- Main Updater (ENCC_FORKS: ${ENCC_FORKS})"
+fi
+if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
+    echo "- Jotego Updater"
+fi
+if [[ "${MAME_GETTER}" == "true" ]] ; then
+    echo "- MAME Getter (forced: ${ALWAYS_ASSUME_NEW_STANDARD_MRA})"
+fi
+if [[ "${HBMAME_GETTER}" == "true" ]] ; then
+    echo "- HBMAME Getter (forced: ${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA})"
+fi
+if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
+    if [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-no}" == "yes" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-no}" == "yes" ]] ; then
+        FORCED_ORGANIZER="true"
+    else
+        FORCED_ORGANIZER="false"
+    fi
+    echo "- Arcade Organizer (forced: ${FORCED_ORGANIZER})"
+fi
+
+sleep ${WAIT_TIME_FOR_READING}
+
+if [[ "${MAIN_UPDATER}" == "true" ]] ; then
+    case "${ENCC_FORKS}" in
+        true)
+            MAIN_UPDATER_URL="https://github.com/theypsilon/Updater_script_MiSTer_DB9"
+            ;;
+        false)
+            MAIN_UPDATER_URL="https://github.com/MiSTer-devel/Updater_script_MiSTer"
+            ;;
+        *)
+            sleep ${WAIT_TIME_FOR_READING}
+            sleep ${WAIT_TIME_FOR_READING}
+            set +e
+            dialog --title "Extended Native Controller Compatibility"  --yesno "Would you like to install unofficial forks from MiSTer-devel cores that are patched to be compatible with native Genesis (DB9), and NeoGeo/Supergun (DB15) controllers?\n\nIn order to use them, you require an unofficial SNAC8 adapter.\n\nMore info at: https://github.com/theypsilon/Update_All_MiSTer/wiki" 11 75
+            case $? in
+                0)
+                    SELECTION="ENCC_FORKS=\"true\""
+                    MAIN_UPDATER_URL="https://github.com/theypsilon/Updater_script_MiSTer_DB9"
+                    ;;
+                1)
+                    SELECTION="ENCC_FORKS=\"false\""
+                    MAIN_UPDATER_URL="https://github.com/MiSTer-devel/Updater_script_MiSTer"
+                    ;;
+                *)
+                    echo
+                    echo "Execution aborted by user input."
+                    exit 1
+                    ;;
+            esac
+            dialog --title "Save ENCC selection?"  --yesno "Would you like to save your previous selection in ${EXPORTED_INI_PATH/*\//}?\n\n${SELECTION}\n\nSaving this will stop this dialog from appearing the next time you run this script." 10 75
+            case $? in
+                0)
+                    if grep "ENCC_FORKS" ${EXPORTED_INI_PATH} 2> /dev/null ; then
+                        sed -i '/ENCC_FORKS/d' ${EXPORTED_INI_PATH} 2> /dev/null
+                    fi
+                    echo >> ${EXPORTED_INI_PATH}
+                    echo "${SELECTION}" >> ${EXPORTED_INI_PATH}
+                    ;;
+                1)
+                    ;;
+                *)
+                    echo
+                    echo "Execution aborted by user input."
+                    exit 1
+                    ;;
+            esac
+            set -e
+            ;;
+    esac
+    run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
+fi
+
+if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
+    run_updater_script https://github.com/jotego/Updater_script_MiSTer ${JOTEGO_UPDATER_INI}
+fi
+
+draw_separator
+
+if [[ "${MAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
+    if contains_str /media/fat/Scripts/.mister_updater/update_all.log ".mra" || contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log ".mra" ; then
+        echo "Detected new MRA files."
+        NEW_STANDARD_MRA="yes"
+    fi
+fi
+
+if [[ "${HBMAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
+    if contains_str /media/fat/Scripts/.mister_updater/update_all.log "MRA-Alternatives_[0-9]*.zip" || contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log "MRA-Alternatives" ; then
+        echo "Detected new MRA-Alternatives."
+        NEW_ALTERNATIVE_MRA="yes"
+    fi
+fi
+
+if [[ "${NEW_STANDARD_MRA:-no}" != "yes" ]] && [[ "${NEW_ALTERNATIVE_MRA:-no}" != "yes" ]] ; then
+    echo "No new MRA detected."
+fi
+
+sleep ${WAIT_TIME_FOR_READING}
+echo
+
+if [[ "${NEW_STANDARD_MRA:-no}" == "yes" ]] || [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] ; then
+    if [[ "${MAME_GETTER}" == "true" ]] ; then
+        run_mame_getter_script "MAME-GETTER" https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh ${MAME_GETTER_INI}
+    fi
+fi
+
+if [[ "${NEW_ALTERNATIVE_MRA:-no}" == "yes" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
+    if [[ "${HBMAME_GETTER}" == "true" ]] ; then
+        run_mame_getter_script "HBMAME-GETTER" https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh ${HBMAME_GETTER_INI}
+    fi
+fi
+
+if [[ "${NEW_STANDARD_MRA:-no}" == "yes" ]] || [[ "${NEW_ALTERNATIVE_MRA:-no}" == "yes" ]] ; then
+    if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
+        run_mame_getter_script " _ARCADE-ORGANIZER" https://github.com/MAME-GETTER/_arcade-organizer/raw/master/_arcade-organizer.sh ${ARCADE_ORGANIZER_INI}
+    fi
+fi
+
+rm ${INI_BACKUP_PATH} 2> /dev/null || true
+
+echo "Your MiSTer has been updated successfully!"
+echo
+echo "Update All script finished."
+echo
+
+exit 0
