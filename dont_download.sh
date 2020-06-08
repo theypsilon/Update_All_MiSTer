@@ -243,8 +243,8 @@ fi
 
 if [[ "${HBMAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
     if contains_str /media/fat/Scripts/.mister_updater/update_all.log "MRA-Alternatives_[0-9]*.zip" || \
-    contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log "MRA-Alternatives" || \
-    contains_str /media/fat/Scripts/.mister_updater_unofficials/update_all.log "MRA-Alternatives" ; then
+    contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log "MRA-Alternatives_[0-9]*.zip" || \
+    contains_str /media/fat/Scripts/.mister_updater_unofficials/update_all.log "MRA-Alternatives_[0-9]*.zip" ; then
         echo "Detected new MRA-Alternatives."
         NEW_ALTERNATIVE_MRA="yes"
     fi
