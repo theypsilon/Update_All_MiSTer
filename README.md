@@ -93,7 +93,7 @@ ALLOW_INSECURE_SSL="true"
 ```
 ## Funding
 
-Consider funding [Alexey Melnikov "Sorgelig"](https://www.patreon.com/FPGAMiSTer) for his unvaluable work on the [MiSTer project](https://github.com/MiSTer-devel/Main_MiSTer/wiki).
+Consider funding [Alexey Melnikov "Sorgelig"](https://www.patreon.com/FPGAMiSTer) for his invaluable work on the [MiSTer project](https://github.com/MiSTer-devel/Main_MiSTer/wiki).
 
 ## License
 
