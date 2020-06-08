@@ -98,4 +98,4 @@ Consider funding [Alexey Melnikov "Sorgelig"](https://www.patreon.com/FPGAMiSTer
 ## License
 
 Copyright © 2020, [José Manuel Barroso Galindo](https://github.com/theypsilon).
-Released under the [GPL v2 License](LICENSE).
+Released under the [GPL v3 License](LICENSE).
