@@ -30,6 +30,9 @@ MAIN_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all
 JOTEGO_UPDATER="true"
 JOTEGO_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
 
+UNOFFICIAL_UPDATER="false"
+UNOFFICIAL_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
+
 MAME_GETTER="true"
 MAME_GETTER_INI="/media/fat/Scripts/update_mame-getter.ini"
 
@@ -144,6 +147,9 @@ fi
 if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
     echo "- Jotego Updater"
 fi
+if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
+    echo "- Unofficial Updater"
+fi
 if [[ "${MAME_GETTER}" == "true" ]] ; then
     echo "- MAME Getter (forced: ${ALWAYS_ASSUME_NEW_STANDARD_MRA})"
 fi
@@ -174,7 +180,9 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
             sleep ${WAIT_TIME_FOR_READING}
             set +e
             dialog --title "Extended Native Controller Compatibility"  --yesno "Would you like to install unofficial forks from MiSTer-devel cores that are patched to be compatible with native Genesis (DB9), and NeoGeo/Supergun (DB15) controllers?\n\nIn order to use them, you require an unofficial SNAC8 adapter.\n\nMore info at: https://github.com/theypsilon/Update_All_MiSTer/wiki" 11 75
-            case $? in
+            DIALOG_RET=$?
+            set -e
+            case $DIALOG_RET in
                 0)
                     SELECTION="ENCC_FORKS=\"true\""
                     MAIN_UPDATER_URL="https://github.com/theypsilon/Updater_script_MiSTer_DB9"
@@ -189,8 +197,11 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
                     exit 1
                     ;;
             esac
+            set +e
             dialog --title "Save ENCC selection?"  --yesno "Would you like to save your previous selection in ${EXPORTED_INI_PATH/*\//}?\n\n${SELECTION}\n\nSaving this will stop this dialog from appearing the next time you run this script." 10 75
-            case $? in
+            DIALOG_RET=$?
+            set -e
+            case $DIALOG_RET in
                 0)
                     if grep "ENCC_FORKS" ${EXPORTED_INI_PATH} 2> /dev/null ; then
                         sed -i '/ENCC_FORKS/d' ${EXPORTED_INI_PATH} 2> /dev/null
@@ -206,7 +217,6 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
                     exit 1
                     ;;
             esac
-            set -e
             ;;
     esac
     run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
@@ -216,17 +226,25 @@ if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
     run_updater_script https://github.com/jotego/Updater_script_MiSTer ${JOTEGO_UPDATER_INI}
 fi
 
+if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
+    run_updater_script https://github.com/theypsilon/Updater_script_MiSTer_Unofficial ${UNOFFICIAL_UPDATER_INI}
+fi
+
 draw_separator
 
 if [[ "${MAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if contains_str /media/fat/Scripts/.mister_updater/update_all.log ".mra" || contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log ".mra" ; then
+    if contains_str /media/fat/Scripts/.mister_updater/update_all.log ".mra" || \
+    contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log ".mra" || \
+    contains_str /media/fat/Scripts/.mister_updater_unofficials/update_all.log ".mra" ; then
         echo "Detected new MRA files."
         NEW_STANDARD_MRA="yes"
     fi
 fi
 
 if [[ "${HBMAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if contains_str /media/fat/Scripts/.mister_updater/update_all.log "MRA-Alternatives_[0-9]*.zip" || contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log "MRA-Alternatives" ; then
+    if contains_str /media/fat/Scripts/.mister_updater/update_all.log "MRA-Alternatives_[0-9]*.zip" || \
+    contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log "MRA-Alternatives" || \
+    contains_str /media/fat/Scripts/.mister_updater_unofficials/update_all.log "MRA-Alternatives" ; then
         echo "Detected new MRA-Alternatives."
         NEW_ALTERNATIVE_MRA="yes"
     fi

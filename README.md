@@ -6,8 +6,9 @@ This script chains the following scripts:
     * [Official Main MiSTer Updater](https://github.com/MiSTer-devel/Updater_script_MiSTer) maintained by [Locutus73](https://github.com/Locutus73) in the [MiSTer-devel](https://github.com/MiSTer-devel) organization.
     * [DB9 Fork Main MiSTer Updater](https://github.com/theypsilon/Updater_script_MiSTer_DB9) with [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers. Requires [SNAC8](https://github.com/theypsilon/Update_All_MiSTer/wiki#snac8) compatible adapter.
 2. [Jotego Cores Updater](https://github.com/jotego/Updater_script_MiSTer). Downloads many advanced cores made by [Jotego](https://github.com/jotego).
-3. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS). Downloads required public domain roms from https://archive.org/
-4. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the .MRA files.
+3. [Unofficial Cores Updater](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial). Downloads [some cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) that are not yet released but they are fairly stable. Disabled by default.
+4. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS). Downloads required public domain roms from https://archive.org/
+5. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the .MRA files.
 
 This script also contains some snippets from the __Updater script__ maintained by [Locutus73](https://github.com/Locutus73).
 
@@ -50,8 +51,13 @@ MAIN_UPDATER_INI="/media/fat/Scripts/update_all.ini"
 # Specific INI settings for this script if you need it.
 
 JOTEGO_UPDATER="true"
-# "false" to skip the Jotego Updater entirely
+# "false" to skip Jotego Updater entirely
 JOTEGO_UPDATER_INI="/media/fat/Scripts/update_all.ini"
+# Specific INI settings for this script if you need it.
+
+UNOFFICIAL_UPDATER="false"
+# "true" to activate the unofficial cores Updater
+UNOFFICIAL_UPDATER_INI="/media/fat/Scripts/update_all.ini"
 # Specific INI settings for this script if you need it.
 
 MAME_GETTER="true"
