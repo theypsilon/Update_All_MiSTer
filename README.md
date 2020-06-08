@@ -12,6 +12,8 @@ This script chains the following scripts:
 
 This script also contains some snippets from the __Updater script__ maintained by [Locutus73](https://github.com/Locutus73).
 
+__MAME__ and __HBMAME Getters__ and __Arcade Organizer__ scripts are maintained by [Amoore2600](https://www.youtube.com/channel/UC_IynEJIMqkYaCVjEk_EIlg).
+
 ## Setup
 
 Download the file [update_all.sh](https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh) and place it in the `/Scripts` folder of your primary SD card.
