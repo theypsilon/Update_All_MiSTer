@@ -81,6 +81,7 @@ draw_separator() {
     sleep 1
 }
 
+UPDATER_RET=0
 run_updater_script() {
     local SCRIPT_URL="${1}"
     local SCRIPT_INI="${2}"
@@ -91,6 +92,7 @@ run_updater_script() {
     echo "${SCRIPT_URL}"
     echo ""
 
+    set +e
     curl \
         ${CURL_RETRY} \
         ${SSL_SECURITY_OPTION} \
@@ -100,6 +102,9 @@ run_updater_script() {
 		sed "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" | \
 		sed 's/AUTOREBOOT="true"/AUTOREBOOT="false"/g' | \
         bash -
+
+    UPDATER_RET=$?
+    set -e
 
     sleep ${WAIT_TIME_FOR_READING}
 }
@@ -167,6 +172,8 @@ fi
 
 sleep ${WAIT_TIME_FOR_READING}
 
+FAILING_UPDATERS=()
+
 if [[ "${MAIN_UPDATER}" == "true" ]] ; then
     case "${ENCC_FORKS}" in
         true)
@@ -220,14 +227,23 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
             ;;
     esac
     run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
+    if [ $UPDATER_RET -ne 0 ]; then
+        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/$(basename ${EXPORTED_INI_PATH%.*}.log)")
+    fi
 fi
 
 if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
     run_updater_script https://github.com/jotego/Updater_script_MiSTer ${JOTEGO_UPDATER_INI}
+    if [ $UPDATER_RET -ne 0 ]; then
+        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_jt/$(basename ${EXPORTED_INI_PATH%.*}.log)")
+    fi
 fi
 
 if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
     run_updater_script https://github.com/theypsilon/Updater_script_MiSTer_Unofficial ${UNOFFICIAL_UPDATER_INI}
+    if [ $UPDATER_RET -ne 0 ]; then
+        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_unofficials/$(basename ${EXPORTED_INI_PATH%.*}.log)")
+    fi
 fi
 
 draw_separator
@@ -276,6 +292,20 @@ if [[ "${NEW_STANDARD_MRA:-no}" == "yes" ]] || [[ "${NEW_ALTERNATIVE_MRA:-no}" =
 fi
 
 rm ${INI_BACKUP_PATH} 2> /dev/null || true
+
+if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
+    echo "There were some errors in the Updaters."
+    echo "Therefore, MiSTer hasn't been fully updated."
+    echo
+    echo "Check the following logs for more information:"
+    for log_file in ${FAILING_UPDATERS[@]} ; do
+        echo " - $log_file"
+    done
+    echo
+    echo "Maybe a network problem?"
+    echo "Check your connection and then run this script again."
+    exit 1
+fi
 
 echo "Your MiSTer has been updated successfully!"
 echo
