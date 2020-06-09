@@ -233,9 +233,9 @@ fi
 draw_separator
 
 if [[ "${MAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if contains_str /media/fat/Scripts/.mister_updater/update_all.log ".mra" || \
-    contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log ".mra" || \
-    contains_str /media/fat/Scripts/.mister_updater_unofficials/update_all.log ".mra" ; then
+    if grep -oq ".mra" /media/fat/Scripts/.mister_updater/update_all.log || \
+    grep -oq ".mra" /media/fat/Scripts/.mister_updater_jt/update_all.log || \
+    grep -oq ".mra" /media/fat/Scripts/.mister_updater_unofficials/update_all.log ; then
         echo "Detected new MRA files."
         NEW_STANDARD_MRA="yes"
     fi
