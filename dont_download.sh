@@ -50,7 +50,6 @@ WAIT_TIME_FOR_READING=4
 # ========= CODE STARTS HERE =========
 ORIGINAL_SCRIPT_PATH="${0}"
 INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
-INI_BACKUP_PATH="${INI_PATH}.backup"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
 
 echo "Executing 'Update All' script for MiSTer"
@@ -60,7 +59,6 @@ echo
 echo "Reading INI file '${EXPORTED_INI_PATH}':"
 if [ -f ${EXPORTED_INI_PATH} ] ; then
     cp ${EXPORTED_INI_PATH} ${INI_PATH}
-    cp ${EXPORTED_INI_PATH} ${INI_BACKUP_PATH}
 
 	TMP=$(mktemp)
 	dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP}
@@ -292,7 +290,6 @@ if [[ "${NEW_STANDARD_MRA:-no}" == "yes" ]] || [[ "${NEW_ALTERNATIVE_MRA:-no}" =
     fi
 fi
 
-rm ${INI_BACKUP_PATH} 2> /dev/null || true
 
 if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
     echo "There were some errors in the Updaters."
