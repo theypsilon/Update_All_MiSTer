@@ -51,6 +51,7 @@ WAIT_TIME_FOR_READING=4
 ORIGINAL_SCRIPT_PATH="${0}"
 INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 INI_BACKUP_PATH="${INI_PATH}.backup"
+LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
 
 echo "Executing 'Update All' script for MiSTer"
 echo "Version 1.0"
@@ -228,39 +229,39 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
     esac
     run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
     if [ $UPDATER_RET -ne 0 ]; then
-        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/$(basename ${EXPORTED_INI_PATH%.*}.log)")
+        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/${LOG_FILENAME}")
     fi
 fi
 
 if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
     run_updater_script https://github.com/jotego/Updater_script_MiSTer ${JOTEGO_UPDATER_INI}
     if [ $UPDATER_RET -ne 0 ]; then
-        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_jt/$(basename ${EXPORTED_INI_PATH%.*}.log)")
+        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}")
     fi
 fi
 
 if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
     run_updater_script https://github.com/theypsilon/Updater_script_MiSTer_Unofficial ${UNOFFICIAL_UPDATER_INI}
     if [ $UPDATER_RET -ne 0 ]; then
-        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_unofficials/$(basename ${EXPORTED_INI_PATH%.*}.log)")
+        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}")
     fi
 fi
 
 draw_separator
 
 if [[ "${MAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if contains_str /media/fat/Scripts/.mister_updater/update_all.log ".mra" || \
-    contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log ".mra" || \
-    contains_str /media/fat/Scripts/.mister_updater_unofficials/update_all.log ".mra" ; then
+    if contains_str "/media/fat/Scripts/.mister_updater/${LOG_FILENAME}" ".mra" || \
+    contains_str "/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}" ".mra" || \
+    contains_str "/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}" ".mra" ; then
         echo "Detected new MRA files."
         NEW_STANDARD_MRA="yes"
     fi
 fi
 
 if [[ "${HBMAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if contains_str /media/fat/Scripts/.mister_updater/update_all.log "MRA-Alternatives_[0-9]*.zip" || \
-    contains_str /media/fat/Scripts/.mister_updater_jt/update_all.log "MRA-Alternatives_[0-9]*.zip" || \
-    contains_str /media/fat/Scripts/.mister_updater_unofficials/update_all.log "MRA-Alternatives_[0-9]*.zip" ; then
+    if contains_str "/media/fat/Scripts/.mister_updater/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*.zip" || \
+    contains_str "/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*.zip" || \
+    contains_str "/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*.zip" ; then
         echo "Detected new MRA-Alternatives."
         NEW_ALTERNATIVE_MRA="yes"
     fi
