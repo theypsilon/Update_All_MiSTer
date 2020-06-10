@@ -133,16 +133,6 @@ run_mame_getter_script() {
     sleep ${WAIT_TIME_FOR_READING}
 }
 
-contains_str() {
-    local FILE="${1}"
-    local STR="${2}"
-    if grep -o "${STR}" ${FILE} > /dev/null 2>&1 ; then
-        return 0
-    else
-        return 1
-    fi
-}
-
 echo
 echo "Sequence:"
 if [[ "${MAIN_UPDATER}" == "true" ]] ; then
@@ -248,18 +238,14 @@ fi
 draw_separator
 
 if [[ "${MAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if contains_str "/media/fat/Scripts/.mister_updater/${LOG_FILENAME}" ".mra" || \
-    contains_str "/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}" ".mra" || \
-    contains_str "/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}" ".mra" ; then
+    if grep -q "\.mra" /media/fat/Scripts/.mister_updater{,_jt,_unofficials}/update_all.log ; then
         echo "Detected new MRA files."
         NEW_STANDARD_MRA="yes"
     fi
 fi
 
 if [[ "${HBMAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if contains_str "/media/fat/Scripts/.mister_updater/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*.zip" || \
-    contains_str "/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*.zip" || \
-    contains_str "/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*.zip" ; then
+    if grep -q "MRA-Alternatives_[0-9]*\.zip" /media/fat/Scripts/.mister_updater{,_jt,_unofficials}/"${LOG_FILENAME}" ; then
         echo "Detected new MRA-Alternatives."
         NEW_ALTERNATIVE_MRA="yes"
     fi
