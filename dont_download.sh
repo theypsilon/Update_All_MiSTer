@@ -51,7 +51,7 @@ WAIT_TIME_FOR_READING=4
 ORIGINAL_SCRIPT_PATH="${0}"
 INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
-WORK_PATH="/media/fat/Scripts/.update_all_workpath"
+WORK_PATH="/media/fat/Scripts/.update_all"
 
 echo "Executing 'Update All' script for MiSTer"
 echo "Version 1.0"
