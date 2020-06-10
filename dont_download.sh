@@ -51,6 +51,7 @@ WAIT_TIME_FOR_READING=4
 ORIGINAL_SCRIPT_PATH="${0}"
 INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
+WORK_PATH="/media/fat/Scripts/.update_all_workpath"
 
 echo "Executing 'Update All' script for MiSTer"
 echo "Version 1.0"
@@ -132,6 +133,12 @@ run_mame_getter_script() {
 
     sleep ${WAIT_TIME_FOR_READING}
 }
+
+if [ ! -d ${WORK_PATH} ] ; then
+    mkdir -p ${WORK_PATH}
+    ALWAYS_ASSUME_NEW_STANDARD_MRA="true"
+    ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="true"
+fi
 
 echo
 echo "Sequence:"
