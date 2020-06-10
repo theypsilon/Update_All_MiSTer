@@ -151,7 +151,7 @@ if [[ "${HBMAME_GETTER}" == "true" ]] ; then
     echo "- HBMAME Getter (forced: ${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA})"
 fi
 if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-no}" == "yes" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-no}" == "yes" ]] ; then
+    if [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
         FORCED_ORGANIZER="true"
     else
         FORCED_ORGANIZER="false"
@@ -240,37 +240,37 @@ draw_separator
 if [[ "${MAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
     if grep -q "\.mra" /media/fat/Scripts/.mister_updater{,_jt,_unofficials}/"${LOG_FILENAME}" ; then
         echo "Detected new MRA files."
-        NEW_STANDARD_MRA="yes"
+        NEW_STANDARD_MRA="true"
     fi
 fi
 
 if [[ "${HBMAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
     if grep -q "MRA-Alternatives_[0-9]*\.zip" /media/fat/Scripts/.mister_updater{,_jt,_unofficials}/"${LOG_FILENAME}" ; then
         echo "Detected new MRA-Alternatives."
-        NEW_ALTERNATIVE_MRA="yes"
+        NEW_ALTERNATIVE_MRA="true"
     fi
 fi
 
-if [[ "${NEW_STANDARD_MRA:-no}" != "yes" ]] && [[ "${NEW_ALTERNATIVE_MRA:-no}" != "yes" ]] ; then
+if [[ "${NEW_STANDARD_MRA:-false}" != "true" ]] && [[ "${NEW_ALTERNATIVE_MRA:-false}" != "true" ]] ; then
     echo "No new MRA detected."
 fi
 
 sleep ${WAIT_TIME_FOR_READING}
 echo
 
-if [[ "${NEW_STANDARD_MRA:-no}" == "yes" ]] || [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] ; then
+if [[ "${NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] ; then
     if [[ "${MAME_GETTER}" == "true" ]] ; then
         run_mame_getter_script "MAME-GETTER" https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh ${MAME_GETTER_INI}
     fi
 fi
 
-if [[ "${NEW_ALTERNATIVE_MRA:-no}" == "yes" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
+if [[ "${NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
     if [[ "${HBMAME_GETTER}" == "true" ]] ; then
         run_mame_getter_script "HBMAME-GETTER" https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh ${HBMAME_GETTER_INI}
     fi
 fi
 
-if [[ "${NEW_STANDARD_MRA:-no}" == "yes" ]] || [[ "${NEW_ALTERNATIVE_MRA:-no}" == "yes" ]] ; then
+if [[ "${NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
         run_mame_getter_script " _ARCADE-ORGANIZER" https://github.com/MAME-GETTER/_arcade-organizer/raw/master/_arcade-organizer.sh ${ARCADE_ORGANIZER_INI}
     fi
