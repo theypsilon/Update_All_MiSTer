@@ -62,10 +62,10 @@ echo "Reading INI file '${EXPORTED_INI_PATH}':"
 if [ -f ${EXPORTED_INI_PATH} ] ; then
     cp ${EXPORTED_INI_PATH} ${INI_PATH}
 
-	TMP=$(mktemp)
-	dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP}
-	source ${TMP}
-	rm -f ${TMP}
+    TMP=$(mktemp)
+    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP}
+    source ${TMP}
+    rm -f ${TMP}
 
     echo "OK."
 else
@@ -100,8 +100,8 @@ run_updater_script() {
         --fail \
         --location \
         "${SCRIPT_URL}/blob/master/mister_updater.sh?raw=true" | \
-		sed "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" | \
-		sed 's/AUTOREBOOT="true"/AUTOREBOOT="false"/g' | \
+        sed "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" | \
+        sed 's/AUTOREBOOT="true"/AUTOREBOOT="false"/g' | \
         bash -
 
     UPDATER_RET=$?
