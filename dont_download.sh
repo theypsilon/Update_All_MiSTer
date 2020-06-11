@@ -231,6 +231,37 @@ should_run_arcade_organizer() {
     [ ! -d ${ARCADE_ORGANIZER_ORGDIR} ] || [ -z "$(ls -A ${ARCADE_ORGANIZER_ORGDIR})" ]
 }
 
+contains_str() {
+    local FILE="${1}"
+    local STR="${2}"
+    if [ ! -f ${FILE} ] ; then
+        return 1
+    fi
+    if grep -q "${STR}" ${FILE} ; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+delete_if_empty() {
+    local DELETED_EMPTY_DIRS=()
+    for dir in "${@}" ; do
+        if [ -d ${dir} ] && [ -z "$(ls -A ${dir})" ] ; then
+            rm -rf "${dir}"
+            DELETED_EMPTY_DIRS+=(${dir})
+        fi
+    done
+
+    if [ ${#DELETED_EMPTY_DIRS[@]} -ge 1 ] ; then
+        echo
+        echo "Following directories have been deleted because they were empty:"
+        for dir in "${DELETED_EMPTY_DIRS[@]}" ; do
+            echo " - $dir"
+        done
+    fi
+}
+
 if [ ! -d ${WORK_PATH} ] ; then
     mkdir -p ${WORK_PATH}
     ALWAYS_ASSUME_NEW_STANDARD_MRA="true"
@@ -346,14 +377,20 @@ fi
 draw_separator
 
 if [[ "${MAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if grep -q "\.mra" /media/fat/Scripts/.mister_updater{,_jt,_unofficials}/"${LOG_FILENAME}" ; then
+    if contains_str "/media/fat/Scripts/.mister_updater/${LOG_FILENAME}" "\.mra" || \
+        contains_str "/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}" "\.mra" || \
+        contains_str "/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}" "\.mra"
+    then
         echo "Detected new MRA files."
         NEW_STANDARD_MRA="true"
     fi
 fi
 
 if [[ "${HBMAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if grep -q "MRA-Alternatives_[0-9]*\.zip" /media/fat/Scripts/.mister_updater{,_jt,_unofficials}/"${LOG_FILENAME}" ; then
+    if contains_str "/media/fat/Scripts/.mister_updater/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*\.zip" || \
+        contains_str "/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*\.zip" || \
+        contains_str "/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*\.zip"
+    then
         echo "Detected new MRA-Alternatives."
         NEW_ALTERNATIVE_MRA="true"
     fi
@@ -381,7 +418,10 @@ if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
     https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh
 fi
 
+delete_if_empty /media/fat/games/mame /media/fat/games/hbmame /media/fat/_Arcade/mame /media/fat/_Arcade/hbmame /media/fat/_Arcade/mra_backup
+
 if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
+    echo
     echo "There were some errors in the Updaters."
     echo "Therefore, MiSTer hasn't been fully updated."
     echo
