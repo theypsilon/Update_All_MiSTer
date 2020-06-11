@@ -159,17 +159,17 @@ read_ini_mame_getter() {
     local SCRIPT_PATH="${1}"
     local SCRIPT_INI="${2}"
 
-    MAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
-    MAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
+    MAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    MAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
 
     if [ `grep -c "ROMDIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
-        MAME_GETTER_ROMDIR=`grep "ROMDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//'`
+        MAME_GETTER_ROMDIR=`grep "ROMDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
     fi 2>/dev/null 
 
     if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
-        MAME_GETTER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//'`
+        MAME_GETTER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
     fi 2>/dev/null
 }
 
@@ -185,17 +185,17 @@ read_ini_hbmame_getter() {
     local SCRIPT_PATH="${1}"
     local SCRIPT_INI="${2}"
 
-    HBMAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
-    HBMAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
+    HBMAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    HBMAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
 
     if [ `grep -c "ROMDIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
-        HBMAME_GETTER_ROMDIR=`grep "ROMDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//'`
+        HBMAME_GETTER_ROMDIR=`grep "ROMDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
     fi 2>/dev/null 
 
     if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
-        HBMAME_GETTER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//'`
+        HBMAME_GETTER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
     fi 2>/dev/null
 }
 
@@ -211,17 +211,17 @@ read_ini_arcade_organizer() {
     local SCRIPT_PATH="${1}"
     local SCRIPT_INI="${2}"
 
-    ARCADE_ORGANIZER_ORGDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ORGDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
-    ARCADE_ORGANIZER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
+    ARCADE_ORGANIZER_ORGDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ORGDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    ARCADE_ORGANIZER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
 
     if [ `grep -c "ORGDIR=" "${INIFILE_FIXED}"` -gt 0 ]
     then
-        ARCADE_ORGANIZER_ORGDIR=`grep "ORGDIR" "${INIFILE_FIXED}" | awk -F "=" '{print$2} | sed -e 's/^"//' -e 's/"$//''`
+        ARCADE_ORGANIZER_ORGDIR=`grep "ORGDIR" "${INIFILE_FIXED}" | awk -F "=" '{print$2} | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//''`
     fi 2>/dev/null 
 
     if [ `grep -c "MRADIR=" "${INIFILE_FIXED}"` -gt 0 ]
     then
-        ARCADE_ORGANIZER_MRADIR=`grep "MRADIR=" "${INIFILE_FIXED}" | awk -F "=" '{print$2} | sed -e 's/^"//' -e 's/"$//''`
+        ARCADE_ORGANIZER_MRADIR=`grep "MRADIR=" "${INIFILE_FIXED}" | awk -F "=" '{print$2} | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//''`
     fi 2>/dev/null
 }
 
