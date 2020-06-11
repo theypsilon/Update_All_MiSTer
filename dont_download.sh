@@ -45,13 +45,14 @@ ARCADE_ORGANIZER_INI="/media/fat/Scripts/update_arcade-organizer.ini"
 ALWAYS_ASSUME_NEW_STANDARD_MRA="false"
 ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="false"
 
-WAIT_TIME_FOR_READING=4
+WAIT_TIME_FOR_READING=5
 
 # ========= CODE STARTS HERE =========
 ORIGINAL_SCRIPT_PATH="${0}"
 INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
 WORK_PATH="/media/fat/Scripts/.update_all"
+
 
 echo "Executing 'Update All' script for MiSTer"
 echo "Version 1.0"
@@ -111,33 +112,133 @@ run_updater_script() {
 
 run_mame_getter_script() {
     local SCRIPT_TITLE="${1}"
-    local SCRIPT_URL="${2}"
-    local SCRIPT_INI="${3}"
+    local SCRIPT_READ_INI="${2}"
+    local SCRIPT_CONDITION="${3}"
+    local SCRIPT_INI="${4}"
+    local SCRIPT_URL="${5}"
 
     local SCRIPT_FILENAME="${SCRIPT_URL/*\//}"
-    SCRIPT_FILENAME="${SCRIPT_FILENAME%.*}"
+    local SCRIPT_PATH="/tmp/${SCRIPT_FILENAME%.*}.sh"
 
     draw_separator
 
-    echo "STARTING: ${SCRIPT_TITLE}"
-    echo ""
-    echo "Downloading the most recent ${SCRIPT_FILENAME} script."
+    echo "Downloading the most recent $(basename ${SCRIPT_FILENAME}) script."
     echo " "
 
-    wget -q -t 3 --output-file=/tmp/wget-log --show-progress -O /tmp/${SCRIPT_FILENAME}.sh ${SCRIPT_URL}
-    chmod +x /tmp/${SCRIPT_FILENAME}.sh
-    sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" /tmp/${SCRIPT_FILENAME}.sh
-    /tmp/${SCRIPT_FILENAME}.sh
-    rm /tmp/${SCRIPT_FILENAME}.sh
-    echo "FINISHED: ${SCRIPT_TITLE}"
+    wget -q -t 3 --output-file=/tmp/wget-log --show-progress -O ${SCRIPT_PATH} ${SCRIPT_URL}
+    echo
 
-    sleep ${WAIT_TIME_FOR_READING}
+    local INIFILE_FIXED=$(mktemp)
+    if [ -f "${SCRIPT_INI}" ] ; then
+        dos2unix < "${SCRIPT_INI}" 2> /dev/null | grep -v "^exit" > ${INIFILE_FIXED}
+    fi
+
+    ${SCRIPT_READ_INI} ${SCRIPT_PATH} ${INIFILE_FIXED}
+
+    rm ${INIFILE_FIXED}
+
+    if ${SCRIPT_CONDITION} ; then
+        echo
+        echo "STARTING: ${SCRIPT_TITLE}"
+        chmod +x ${SCRIPT_PATH}
+        sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
+        ${SCRIPT_PATH}
+        rm ${SCRIPT_PATH}
+        echo "FINISHED: ${SCRIPT_TITLE}"
+        echo
+
+        sleep ${WAIT_TIME_FOR_READING}
+    else
+        echo "Skipping ${SCRIPT_TITLE}..."
+    fi
+}
+
+MAME_GETTER_ROMDIR=
+MAME_GETTER_MRADIR=
+read_ini_mame_getter() {
+    local SCRIPT_PATH="${1}"
+    local SCRIPT_INI="${2}"
+
+    MAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
+    MAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
+
+    if [ `grep -c "ROMDIR=" "${SCRIPT_INI}"` -gt 0 ]
+    then
+        MAME_GETTER_ROMDIR=`grep "ROMDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//'`
+    fi 2>/dev/null 
+
+    if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
+    then
+        MAME_GETTER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//'`
+    fi 2>/dev/null
+}
+
+should_run_mame_getter() {
+    [[ "${NEW_STANDARD_MRA:-false}" == "true" ]] || \
+    [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] || \
+    [ ! -d ${MAME_GETTER_ROMDIR} ] || [ -z "$(ls -A ${MAME_GETTER_ROMDIR})" ]
+}
+
+HBMAME_GETTER_ROMDIR=
+HBMAME_GETTER_MRADIR=
+read_ini_hbmame_getter() {
+    local SCRIPT_PATH="${1}"
+    local SCRIPT_INI="${2}"
+
+    HBMAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
+    HBMAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
+
+    if [ `grep -c "ROMDIR=" "${SCRIPT_INI}"` -gt 0 ]
+    then
+        HBMAME_GETTER_ROMDIR=`grep "ROMDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//'`
+    fi 2>/dev/null 
+
+    if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
+    then
+        HBMAME_GETTER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//'`
+    fi 2>/dev/null
+}
+
+should_run_hbmame_getter() {
+    [[ "${NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || \
+    [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || \
+    [ ! -d ${HBMAME_GETTER_ROMDIR} ] || [ -z "$(ls -A ${HBMAME_GETTER_ROMDIR})" ]
+}
+
+ARCADE_ORGANIZER_ORGDIR=
+ARCADE_ORGANIZER_MRADIR=
+read_ini_arcade_organizer() {
+    local SCRIPT_PATH="${1}"
+    local SCRIPT_INI="${2}"
+
+    ARCADE_ORGANIZER_ORGDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ORGDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
+    ARCADE_ORGANIZER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^"//' -e 's/"$//')
+
+    if [ `grep -c "ORGDIR=" "${INIFILE_FIXED}"` -gt 0 ]
+    then
+        ARCADE_ORGANIZER_ORGDIR=`grep "ORGDIR" "${INIFILE_FIXED}" | awk -F "=" '{print$2} | sed -e 's/^"//' -e 's/"$//''`
+    fi 2>/dev/null 
+
+    if [ `grep -c "MRADIR=" "${INIFILE_FIXED}"` -gt 0 ]
+    then
+        ARCADE_ORGANIZER_MRADIR=`grep "MRADIR=" "${INIFILE_FIXED}" | awk -F "=" '{print$2} | sed -e 's/^"//' -e 's/"$//''`
+    fi 2>/dev/null
+}
+
+should_run_arcade_organizer() {
+    [[ "${NEW_STANDARD_MRA:-false}" == "true" ]] || \
+    [[ "${NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || \
+    [ ! -d ${ARCADE_ORGANIZER_ORGDIR} ] || [ -z "$(ls -A ${ARCADE_ORGANIZER_ORGDIR})" ]
 }
 
 if [ ! -d ${WORK_PATH} ] ; then
     mkdir -p ${WORK_PATH}
     ALWAYS_ASSUME_NEW_STANDARD_MRA="true"
     ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="true"
+
+    echo
+    echo "Creating '${WORK_PATH}' for the first time."
+    echo "Performing a full forced update."
 fi
 
 echo
@@ -265,24 +366,20 @@ fi
 sleep ${WAIT_TIME_FOR_READING}
 echo
 
-if [[ "${NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] ; then
-    if [[ "${MAME_GETTER}" == "true" ]] ; then
-        run_mame_getter_script "MAME-GETTER" https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh ${MAME_GETTER_INI}
-    fi
+if [[ "${MAME_GETTER}" == "true" ]] ; then
+    run_mame_getter_script "MAME-GETTER" read_ini_mame_getter should_run_mame_getter ${MAME_GETTER_INI} \
+    https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh
 fi
 
-if [[ "${NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
-    if [[ "${HBMAME_GETTER}" == "true" ]] ; then
-        run_mame_getter_script "HBMAME-GETTER" https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh ${HBMAME_GETTER_INI}
-    fi
+if [[ "${HBMAME_GETTER}" == "true" ]] ; then
+    run_mame_getter_script "HBMAME-GETTER" read_ini_hbmame_getter should_run_hbmame_getter ${HBMAME_GETTER_INI} \
+    https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh
 fi
 
-if [[ "${NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
-    if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-        run_mame_getter_script " _ARCADE-ORGANIZER" https://github.com/MAME-GETTER/_arcade-organizer/raw/master/_arcade-organizer.sh ${ARCADE_ORGANIZER_INI}
-    fi
+if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
+    run_mame_getter_script "_ARCADE-ORGANIZER" read_ini_arcade_organizer should_run_arcade_organizer ${ARCADE_ORGANIZER_INI} \
+    https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh
 fi
-
 
 if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
     echo "There were some errors in the Updaters."
@@ -298,9 +395,8 @@ if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
     exit 1
 fi
 
-echo "Your MiSTer has been updated successfully!"
 echo
-echo "Update All script finished."
+echo "Update All finished: Your MiSTer has been updated successfully!"
 echo
 
 exit 0
