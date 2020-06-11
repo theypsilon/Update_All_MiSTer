@@ -72,6 +72,16 @@ else
     echo "Not found."
 fi
 
+if [ ! -d ${WORK_PATH} ] ; then
+    mkdir -p ${WORK_PATH}
+    ALWAYS_ASSUME_NEW_STANDARD_MRA="true"
+    ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="true"
+
+    echo
+    echo "Creating '${WORK_PATH}' for the first time."
+    echo "Performing a full forced update."
+fi
+
 draw_separator() {
     echo
     echo
@@ -261,16 +271,6 @@ delete_if_empty() {
         done
     fi
 }
-
-if [ ! -d ${WORK_PATH} ] ; then
-    mkdir -p ${WORK_PATH}
-    ALWAYS_ASSUME_NEW_STANDARD_MRA="true"
-    ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="true"
-
-    echo
-    echo "Creating '${WORK_PATH}' for the first time."
-    echo "Performing a full forced update."
-fi
 
 echo
 echo "Sequence:"
