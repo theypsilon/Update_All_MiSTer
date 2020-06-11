@@ -169,13 +169,18 @@ read_ini_mame_getter() {
     local SCRIPT_PATH="${1}"
     local SCRIPT_INI="${2}"
 
-    MAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    MAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMMAME=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
     MAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
 
     if [ `grep -c "ROMDIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
         MAME_GETTER_ROMDIR=`grep "ROMDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
-    fi 2>/dev/null 
+    fi 2>/dev/null
+
+    if [ `grep -c "ROMMAME=" "${SCRIPT_INI}"` -gt 0 ]
+    then
+        MAME_GETTER_ROMDIR=`grep "ROMMAME" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
+    fi 2>/dev/null
 
     if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
@@ -195,13 +200,18 @@ read_ini_hbmame_getter() {
     local SCRIPT_PATH="${1}"
     local SCRIPT_INI="${2}"
 
-    HBMAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    HBMAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMHBMAME=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
     HBMAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
 
     if [ `grep -c "ROMDIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
         HBMAME_GETTER_ROMDIR=`grep "ROMDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
-    fi 2>/dev/null 
+    fi 2>/dev/null
+
+    if [ `grep -c "ROMHBMAME=" "${SCRIPT_INI}"` -gt 0 ]
+    then
+        HBMAME_GETTER_ROMDIR=`grep "ROMHBMAME" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
+    fi 2>/dev/null
 
     if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
