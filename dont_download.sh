@@ -234,14 +234,14 @@ read_ini_arcade_organizer() {
     ARCADE_ORGANIZER_ORGDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ORGDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
     ARCADE_ORGANIZER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
 
-    if [ `grep -c "ORGDIR=" "${INIFILE_FIXED}"` -gt 0 ]
+    if [ `grep -c "ORGDIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
-        ARCADE_ORGANIZER_ORGDIR=`grep "ORGDIR" "${INIFILE_FIXED}" | awk -F "=" '{print$2} | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//''`
+        ARCADE_ORGANIZER_ORGDIR=`grep "ORGDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2} | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//''`
     fi 2>/dev/null 
 
-    if [ `grep -c "MRADIR=" "${INIFILE_FIXED}"` -gt 0 ]
+    if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
-        ARCADE_ORGANIZER_MRADIR=`grep "MRADIR=" "${INIFILE_FIXED}" | awk -F "=" '{print$2} | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//''`
+        ARCADE_ORGANIZER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2} | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//''`
     fi 2>/dev/null
 }
 
