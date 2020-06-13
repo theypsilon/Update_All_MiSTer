@@ -20,7 +20,7 @@ Download the file [update_all.sh](https://raw.githubusercontent.com/theypsilon/U
 
 Then turn on your __MiSTer__, go to the _Scripts_ section and run this script from there.
 
-It will take around 30 minutes the first time you run it, but later runs should take much less time.
+It will take around 40 minutes the first time you run it, but later runs should take much less time.
 
 ## Optimization
 
@@ -76,6 +76,10 @@ ARCADE_ORGANIZER="true"
 # "false" to skip running the arcade organizer.
 ARCADE_ORGANIZER_INI="/media/fat/Scripts/update_arcade-organizer.ini"
 # Specific INI settings for this script if you need it.
+
+AUTOREBOOT="true"
+# "false" to not reboot automatically after a system component has been updated.
+# System component here means menu.rbf, MiSTer binary, Linux, and such.
 
 ALWAYS_ASSUME_NEW_STANDARD_MRA="false"
 # When "true" it disables optimizations that might skip the script MAME_GETTER

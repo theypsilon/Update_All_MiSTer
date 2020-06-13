@@ -45,7 +45,8 @@ ARCADE_ORGANIZER_INI="/media/fat/Scripts/update_arcade-organizer.ini"
 ALWAYS_ASSUME_NEW_STANDARD_MRA="false"
 ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="false"
 
-WAIT_TIME_FOR_READING=5
+WAIT_TIME_FOR_READING=4
+AUTOREBOOT="true"
 
 # ========= CODE STARTS HERE =========
 ORIGINAL_SCRIPT_PATH="${0}"
@@ -338,6 +339,7 @@ sleep ${WAIT_TIME_FOR_READING}
 echo
 echo "Start time: $(date)"
 
+REBOOT_NEEDED="false"
 FAILING_UPDATERS=()
 
 if [[ "${MAIN_UPDATER}" == "true" ]] ; then
@@ -399,6 +401,9 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
     run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
     if [ $UPDATER_RET -ne 0 ]; then
         FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/${LOG_FILENAME}")
+    fi
+    if tail -n 30 ${GLOG_TEMP} | grep -q "You should reboot" ; then
+        REBOOT_NEEDED="true"
     fi
 fi
 
@@ -486,5 +491,17 @@ echo "End time: $(date)"
 echo
 echo "Full log for more details: ${GLOG_PATH}"
 echo
+
+if [[ "${REBOOT_NEEDED}" == "true" ]] ; then
+    REBOOT_PAUSE=$((WAIT_TIME_FOR_READING * 2))
+	if [[ "${AUTOREBOOT}" == "true" && "${REBOOT_PAUSE}" -ge 0 ]] ; then
+		echo "Rebooting in ${REBOOT_PAUSE} seconds"
+		sleep "${REBOOT_PAUSE}"
+		reboot now
+	else
+		echo "You should reboot"
+        echo
+    fi
+fi
 
 exit ${EXIT_CODE:-1}
