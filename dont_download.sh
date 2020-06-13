@@ -52,7 +52,20 @@ ORIGINAL_SCRIPT_PATH="${0}"
 INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
 WORK_PATH="/media/fat/Scripts/.update_all"
+GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
+GLOG_PATH="${WORK_PATH}/${LOG_FILENAME}"
 
+rm ${GLOG_TEMP} 2> /dev/null || true
+enable_global_log() {
+    exec >  >(tee -ia ${GLOG_TEMP})
+    exec 2> >(tee -ia ${GLOG_TEMP} >&2)
+}
+disable_global_log() {
+    exec 1>&6 ; exec 2>&7
+}
+exec 6>&1 ; exec 7>&2 # Saving stdout and stderr
+enable_global_log
+trap "mv ${GLOG_TEMP} ${GLOG_PATH}" EXIT
 
 echo "Executing 'Update All' script for MiSTer"
 echo "Version 1.0"
@@ -63,7 +76,7 @@ if [ -f ${EXPORTED_INI_PATH} ] ; then
     cp ${EXPORTED_INI_PATH} ${INI_PATH}
 
     TMP=$(mktemp)
-    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP}
+    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
     source ${TMP}
     rm -f ${TMP}
 
@@ -286,11 +299,11 @@ delete_if_empty() {
     done
 
     if [ ${#DELETED_EMPTY_DIRS[@]} -ge 1 ] ; then
-        echo
         echo "Following directories have been deleted because they were empty:"
         for dir in "${DELETED_EMPTY_DIRS[@]}" ; do
             echo " - $dir"
         done
+        echo
     fi
 }
 
@@ -322,6 +335,9 @@ fi
 
 sleep ${WAIT_TIME_FOR_READING}
 
+echo
+echo "Start time: $(date)"
+
 FAILING_UPDATERS=()
 
 if [[ "${MAIN_UPDATER}" == "true" ]] ; then
@@ -335,10 +351,12 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
         *)
             sleep ${WAIT_TIME_FOR_READING}
             sleep ${WAIT_TIME_FOR_READING}
+            disable_global_log
             set +e
             dialog --title "Extended Native Controller Compatibility"  --yesno "Would you like to install unofficial forks from MiSTer-devel cores that are patched to be compatible with native Genesis (DB9), and NeoGeo/Supergun (DB15) controllers?\n\nIn order to use them, you require an unofficial SNAC8 adapter.\n\nMore info at: https://github.com/theypsilon/Update_All_MiSTer/wiki" 11 75
             DIALOG_RET=$?
             set -e
+            enable_global_log
             case $DIALOG_RET in
                 0)
                     SELECTION="ENCC_FORKS=\"true\""
@@ -354,10 +372,12 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
                     exit 1
                     ;;
             esac
+            disable_global_log
             set +e
             dialog --title "Save ENCC selection?"  --yesno "Would you like to save your previous selection in ${EXPORTED_INI_PATH/*\//}?\n\n${SELECTION}\n\nSaving this will stop this dialog from appearing the next time you run this script." 10 75
             DIALOG_RET=$?
             set -e
+            enable_global_log
             case $DIALOG_RET in
                 0)
                     if grep "ENCC_FORKS" ${EXPORTED_INI_PATH} 2> /dev/null ; then
@@ -440,25 +460,31 @@ if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
     https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh
 fi
 
+draw_separator
+
 delete_if_empty /media/fat/games/mame /media/fat/games/hbmame /media/fat/_Arcade/mame /media/fat/_Arcade/hbmame /media/fat/_Arcade/mra_backup
 
 if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
-    echo
     echo "There were some errors in the Updaters."
     echo "Therefore, MiSTer hasn't been fully updated."
     echo
-    echo "Check the following logs for more information:"
+    echo "Check these logs from the Updaters that failed:"
     for log_file in ${FAILING_UPDATERS[@]} ; do
         echo " - $log_file"
     done
     echo
     echo "Maybe a network problem?"
     echo "Check your connection and then run this script again."
-    exit 1
+    EXIT_CODE=1
+else
+    echo "Update All 1.0 finished. Your MiSTer has been updated successfully!"
+    EXIT_CODE=0
 fi
 
 echo
-echo "Update All finished: Your MiSTer has been updated successfully!"
+echo "End time: $(date)"
+echo
+echo "Full log for more details: ${GLOG_PATH}"
 echo
 
-exit 0
+exit ${EXIT_CODE:-1}

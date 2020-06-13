@@ -36,7 +36,7 @@ fi
 INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 if [[ -f "${INI_PATH}" ]] ; then
     TMP=$(mktemp)
-    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP}
+    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
     source ${TMP}
     rm -f ${TMP}
 fi
@@ -97,7 +97,6 @@ export SSL_SECURITY_OPTION
 export EXPORTED_INI_PATH="${INI_PATH}"
 
 if ! ${SCRIPT_PATH} ; then
-    echo
     echo "Script ${ORIGINAL_SCRIPT_PATH} failed!"
     echo
 fi

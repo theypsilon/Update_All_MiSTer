@@ -20,7 +20,7 @@ Download the file [update_all.sh](https://raw.githubusercontent.com/theypsilon/U
 
 Then turn on your __MiSTer__, go to the _Scripts_ section and run this script from there.
 
-It will take around 45 minutes the first time you run it, but later runs should take much less time.
+It will take around 30 minutes the first time you run it, but later runs should take much less time.
 
 ## Optimization
 
