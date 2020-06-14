@@ -7,12 +7,12 @@ This script chains the following scripts:
     * [DB9 Fork Main MiSTer Updater](https://github.com/theypsilon/Updater_script_MiSTer_DB9) with [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers. Requires [SNAC8](https://github.com/theypsilon/Update_All_MiSTer/wiki#snac8) compatible adapter.
 2. [Jotego Cores Updater](https://github.com/jotego/Updater_script_MiSTer). Downloads many advanced cores made by [Jotego](https://github.com/jotego).
 3. [Unofficial Cores Updater](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial). Downloads [some cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) that are not yet released but are fairly stable. Disabled by default.
-4. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS). Downloads required public roms from https://archive.org/
+4. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
 5. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
 This script also contains some snippets from the __Updater script__ maintained by [Locutus73](https://github.com/Locutus73).
 
-__MAME__ and __HBMAME Getters__ and __Arcade Organizer__ scripts are maintained by [Amoore2600](https://www.youtube.com/channel/UC_IynEJIMqkYaCVjEk_EIlg).
+__MAME__ and __HBMAME Getters__ and __Arcade Organizer__ scripts are maintained by [amoore2600](https://www.youtube.com/channel/UC_IynEJIMqkYaCVjEk_EIlg).
 
 ## Setup
 

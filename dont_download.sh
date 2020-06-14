@@ -166,7 +166,9 @@ run_mame_getter_script() {
         echo "STARTING: ${SCRIPT_TITLE}"
         chmod +x ${SCRIPT_PATH}
         sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
+
         ${SCRIPT_PATH}
+
         rm ${SCRIPT_PATH}
         echo "FINISHED: ${SCRIPT_TITLE}"
         echo
@@ -209,6 +211,8 @@ read_ini_mame_getter() {
 should_run_mame_getter() {
     [[ "${NEW_STANDARD_MRA:-false}" == "true" ]] || \
     [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] || \
+    [[ "${NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || \
+    [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || \
     [ ! -d ${MAME_GETTER_ROMDIR} ] || [ -z "$(ls -A ${MAME_GETTER_ROMDIR})" ]
 }
 
