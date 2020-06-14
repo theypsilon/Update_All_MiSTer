@@ -127,7 +127,7 @@ run_updater_script() {
         --location \
         "${SCRIPT_URL}/blob/master/mister_updater.sh?raw=true" | \
         sed "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" | \
-        sed 's/AUTOREBOOT="true"/AUTOREBOOT="false"/g' | \
+        sed 's/${AUTOREBOOT}/false/g' | \
         bash -
 
     UPDATER_RET=$?
