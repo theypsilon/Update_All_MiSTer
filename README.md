@@ -41,60 +41,63 @@ You may create a `update_all.ini` file sitting next to where you have downloaded
 You may change the following parameters:
 
 ```bash
-ENCC_FORKS="dialog"
+# Base directory for all script’s tasks, "/media/fat" for SD root, "/media/usb0" for USB drive root.
+BASE_PATH="/media/fat"
+
 # Selects Main MiSTer Updater to be used.
 ## "false" to use the Official Main MiSTer Updater.
 ## "true" to use the DB9 Fork Main MiSTer Updater
 ## "dialog" to choose between both when you run this script first time.
+ENCC_FORKS="dialog"
 
-MAIN_UPDATER="true"
 # "false" to skip the Main Updater entirely
+MAIN_UPDATER="true"
+# Specific INI settings for this script if you need it.
 MAIN_UPDATER_INI="/media/fat/Scripts/update_all.ini"
-# Specific INI settings for this script if you need it.
 
-JOTEGO_UPDATER="true"
 # "false" to skip Jotego Updater entirely
+JOTEGO_UPDATER="true"
+# Specific INI settings for this script if you need it.
 JOTEGO_UPDATER_INI="/media/fat/Scripts/update_all.ini"
-# Specific INI settings for this script if you need it.
 
-UNOFFICIAL_UPDATER="false"
 # "true" to activate the unofficial cores Updater
+UNOFFICIAL_UPDATER="false"
+# Specific INI settings for this script if you need it.
 UNOFFICIAL_UPDATER_INI="/media/fat/Scripts/update_all.ini"
-# Specific INI settings for this script if you need it.
 
-MAME_GETTER="true"
 # "false" to skip downloading MAME roms.
+MAME_GETTER="true"
+# Specific INI settings for this script if you need it.
 MAME_GETTER_INI="/media/fat/Scripts/update_mame-getter.ini"
-# Specific INI settings for this script if you need it.
 
-HBMAME_GETTER="true"
 # "false" to skip downloading HBMAME roms.
+HBMAME_GETTER="true"
+# Specific INI settings for this script if you need it.
 HBMAME_GETTER_INI="/media/fat/Scripts/update_hbmame-getter.ini"
-# Specific INI settings for this script if you need it.
 
-ARCADE_ORGANIZER="true"
 # "false" to skip running the arcade organizer.
-ARCADE_ORGANIZER_INI="/media/fat/Scripts/update_arcade-organizer.ini"
+ARCADE_ORGANIZER="true"
 # Specific INI settings for this script if you need it.
+ARCADE_ORGANIZER_INI="/media/fat/Scripts/update_arcade-organizer.ini"
 
-AUTOREBOOT="true"
 # "false" to not reboot automatically after a system component has been updated.
 # System component here means menu.rbf, MiSTer binary, Linux, and such.
+AUTOREBOOT="true"
 
-ALWAYS_ASSUME_NEW_STANDARD_MRA="false"
+# Waiting time between scripts.
+WAIT_TIME_FOR_READING=4
+
 # When "true" it disables optimizations that might skip the script MAME_GETTER
 # and/or ARCADE_ORGANIZER if now new MRAs are detected.
+ALWAYS_ASSUME_NEW_STANDARD_MRA="false"
 
-ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="false"
 # When "true" it disables optimizations that might skip the script HBMAME_GETTER
 # and/or ARCADE_ORGANIZER if now new MRAs are detected.
+ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="false"
 
-WAIT_TIME_FOR_READING=4
-# Waiting time between scripts.
-
+# Network resilience parameters
 CURL_RETRY="--connect-timeout 15 --max-time 120 --retry 3 --retry-delay 5 --silent --show-error"
 ALLOW_INSECURE_SSL="true"
-# Network resilience parameters
 
 ```
 ## Funding

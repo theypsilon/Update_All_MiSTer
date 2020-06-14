@@ -22,6 +22,8 @@
 set -euo pipefail
 
 # ========= OPTIONS ==================
+BASE_PATH="/media/fat"
+
 ENCC_FORKS="dialog" # Possible values: "true", "false" or "dialog"
 
 MAIN_UPDATER="true"
@@ -154,7 +156,7 @@ run_mame_getter_script() {
 
     local INIFILE_FIXED=$(mktemp)
     if [ -f "${SCRIPT_INI}" ] ; then
-        dos2unix < "${SCRIPT_INI}" 2> /dev/null | grep -v "^exit" > ${INIFILE_FIXED}
+        dos2unix < "${SCRIPT_INI}" 2> /dev/null > ${INIFILE_FIXED}
     fi
 
     ${SCRIPT_READ_INI} ${SCRIPT_PATH} ${INIFILE_FIXED}
@@ -167,7 +169,9 @@ run_mame_getter_script() {
         chmod +x ${SCRIPT_PATH}
         sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
 
+        disable_global_log
         ${SCRIPT_PATH}
+        enable_global_log
 
         rm ${SCRIPT_PATH}
         echo "FINISHED: ${SCRIPT_TITLE}"
@@ -266,12 +270,12 @@ read_ini_arcade_organizer() {
 
     if [ `grep -c "ORGDIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
-        ARCADE_ORGANIZER_ORGDIR=`grep "ORGDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2} | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//''`
+        ARCADE_ORGANIZER_ORGDIR=`grep "ORGDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
     fi 2>/dev/null 
 
     if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
-        ARCADE_ORGANIZER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2} | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//''`
+        ARCADE_ORGANIZER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
     fi 2>/dev/null
 }
 
@@ -375,7 +379,8 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
                 *)
                     echo
                     echo "Execution aborted by user input."
-                    exit 1
+                    echo "You pressed ESC/Back button."
+                    exit 0
                     ;;
             esac
             disable_global_log
@@ -397,7 +402,8 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
                 *)
                     echo
                     echo "Execution aborted by user input."
-                    exit 1
+                    echo "You pressed ESC/Back button."
+                    exit 0
                     ;;
             esac
             ;;
@@ -471,7 +477,12 @@ fi
 
 draw_separator
 
-delete_if_empty /media/fat/games/mame /media/fat/games/hbmame /media/fat/_Arcade/mame /media/fat/_Arcade/hbmame /media/fat/_Arcade/mra_backup
+delete_if_empty \
+    "${BASE_PATH}/games/mame" \
+    "${BASE_PATH}/games/hbmame" \
+    "${BASE_PATH}/_Arcade/mame" \
+    "${BASE_PATH}/_Arcade/hbmame" \
+    "${BASE_PATH}/_Arcade/mra_backup"
 
 if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
     echo "There were some errors in the Updaters."
