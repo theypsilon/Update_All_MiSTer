@@ -174,8 +174,15 @@ run_mame_getter_script() {
         sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
 
         disable_global_log
+        set +e
         ${SCRIPT_PATH}
+        local SCRIPT_RET=$?
+        set -e
         enable_global_log
+
+        if [ $SCRIPT_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("${SCRIPT_TITLE}")
+        fi
 
         rm ${SCRIPT_PATH}
         echo "FINISHED: ${SCRIPT_TITLE}"
