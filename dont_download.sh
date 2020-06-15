@@ -35,6 +35,9 @@ JOTEGO_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_a
 UNOFFICIAL_UPDATER="false"
 UNOFFICIAL_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
 
+LLAPI_UPDATER="false"
+LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
+
 MAME_GETTER="true"
 MAME_GETTER_INI="/media/fat/Scripts/update_mame-getter.ini"
 
@@ -116,7 +119,8 @@ run_updater_script() {
     draw_separator
 
     echo "Downloading and executing"
-    echo "${SCRIPT_URL}"
+    [[ ${SCRIPT_URL} =~ ^([a-zA-Z]+://)?raw.githubusercontent.com(:[0-9]+)?/([a-zA-Z0-9_-]*)/([a-zA-Z0-9_-]*)/.*$ ]] || true
+    echo "https://github.com/${BASH_REMATCH[3]}/${BASH_REMATCH[4]}"
     echo ""
 
     set +e
@@ -125,7 +129,7 @@ run_updater_script() {
         ${SSL_SECURITY_OPTION} \
         --fail \
         --location \
-        "${SCRIPT_URL}/blob/master/mister_updater.sh?raw=true" | \
+        ${SCRIPT_URL} | \
         sed "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" | \
         sed 's/${AUTOREBOOT}/false/g' | \
         bash -
@@ -327,6 +331,9 @@ fi
 if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
     echo "- Unofficial Updater"
 fi
+if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
+    echo "- LLAPI Updater"
+fi
 if [[ "${MAME_GETTER}" == "true" ]] ; then
     echo "- MAME Getter (forced: ${ALWAYS_ASSUME_NEW_STANDARD_MRA})"
 fi
@@ -353,10 +360,10 @@ FAILING_UPDATERS=()
 if [[ "${MAIN_UPDATER}" == "true" ]] ; then
     case "${ENCC_FORKS}" in
         true)
-            MAIN_UPDATER_URL="https://github.com/theypsilon/Updater_script_MiSTer_DB9"
+            MAIN_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_DB9/master/mister_updater.sh"
             ;;
         false)
-            MAIN_UPDATER_URL="https://github.com/MiSTer-devel/Updater_script_MiSTer"
+            MAIN_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
             ;;
         *)
             sleep ${WAIT_TIME_FOR_READING}
@@ -370,11 +377,11 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
             case $DIALOG_RET in
                 0)
                     SELECTION="ENCC_FORKS=\"true\""
-                    MAIN_UPDATER_URL="https://github.com/theypsilon/Updater_script_MiSTer_DB9"
+                    MAIN_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_DB9/master/mister_updater.sh"
                     ;;
                 1)
                     SELECTION="ENCC_FORKS=\"false\""
-                    MAIN_UPDATER_URL="https://github.com/MiSTer-devel/Updater_script_MiSTer"
+                    MAIN_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
                     ;;
                 *)
                     echo
@@ -418,16 +425,23 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
 fi
 
 if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-    run_updater_script https://github.com/jotego/Updater_script_MiSTer ${JOTEGO_UPDATER_INI}
+    run_updater_script https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh ${JOTEGO_UPDATER_INI}
     if [ $UPDATER_RET -ne 0 ]; then
         FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}")
     fi
 fi
 
 if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-    run_updater_script https://github.com/theypsilon/Updater_script_MiSTer_Unofficial ${UNOFFICIAL_UPDATER_INI}
+    run_updater_script https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh ${UNOFFICIAL_UPDATER_INI}
     if [ $UPDATER_RET -ne 0 ]; then
         FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}")
+    fi
+fi
+
+if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
+    run_updater_script https://raw.githubusercontent.com/MiSTer-LLAPI/Updater_script_MiSTer/master/llapi_updater.sh ${LLAPI_UPDATER_INI}
+    if [ $UPDATER_RET -ne 0 ]; then
+        FAILING_UPDATERS+=("LLAPI")
     fi
 fi
 

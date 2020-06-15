@@ -7,8 +7,9 @@ This script chains the following scripts:
     * [DB9 Fork Main MiSTer Updater](https://github.com/theypsilon/Updater_script_MiSTer_DB9) with [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers. Requires [SNAC8](https://github.com/theypsilon/Update_All_MiSTer/wiki#snac8) compatible adapter.
 2. [Jotego Cores Updater](https://github.com/jotego/Updater_script_MiSTer). Downloads many advanced cores made by [Jotego](https://github.com/jotego).
 3. [Unofficial Cores Updater](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial). Downloads [some cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) that are not yet released but are fairly stable. Disabled by default.
-4. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
-5. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
+4. [LLAPI Cores Updater](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). Disabled by default.
+5. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
+6. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
 This script also contains some snippets from the __Updater script__ maintained by [Locutus73](https://github.com/Locutus73).
 
@@ -64,6 +65,11 @@ JOTEGO_UPDATER_INI="/media/fat/Scripts/update_all.ini"
 UNOFFICIAL_UPDATER="false"
 # Specific INI settings for this script if you need it.
 UNOFFICIAL_UPDATER_INI="/media/fat/Scripts/update_all.ini"
+
+# "true" to activate the LLAPI Updater
+LLAPI_UPDATER="false"
+# Specific INI settings for this script if you need it.
+LLAPI_UPDATER_INI="/media/fat/Scripts/update_all.ini"
 
 # "false" to skip downloading MAME roms.
 MAME_GETTER="true"
