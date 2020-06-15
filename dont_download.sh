@@ -426,6 +426,7 @@ if [[ "${MAIN_UPDATER}" == "true" ]] ; then
     if [ $UPDATER_RET -ne 0 ]; then
         FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/${LOG_FILENAME}")
     fi
+    sleep 1
     if tail -n 30 ${GLOG_TEMP} | grep -q "You should reboot" ; then
         REBOOT_NEEDED="true"
     fi
