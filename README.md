@@ -17,27 +17,21 @@ __MAME__ and __HBMAME Getters__ and __Arcade Organizer__ scripts are maintained 
 
 ## Setup
 
-Download the file [update_all.sh](https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh) and place it in the `/Scripts` folder of your primary SD card.
+Download this [ZIP file](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all.zip) and extract `update_all.sh` to your `/Scripts` folder on your primary SD card.
 
-Then turn on your __MiSTer__, go to the _Scripts_ section and run this script from there.
+Then turn on your __MiSTer__, go to the _Scripts_ menu and run this script from there.
 
 It will take around 30 minutes the first time you run it, but later runs should take much less time.
 
-## Optimization
+Other setups that might be useful for you (you should extract also `update_all.ini` in those):
+- [Unofficial Cores ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_unofficials.zip): With this one you'll download also [these cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) without having to touch anything else.
+- [No MRA-Alternatives ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_no_mra_alternatives.zip): This setup is in case you wanna skip the `_alternatives` folder, which contains arcade variants, such as hacks, bootlegs, and different regions.
+- [LLAPI ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_llapi.zip): In case you would like to download [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) too.
+- [usb0 ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_usb0.zip): For people using USB as primary storage. You will be able to run this script from there and install all cores, roms, and MRAs on `/media/fat/usb0`.
 
-The __MAME__ and __HBMAME Getters__ are skipped if the __Updaters__ haven't downloaded any *MRA* in the current run.
+## Further Configuration
 
-If the __Updaters__ have downloaded standard *MRAs*, __MAME Getter__ will be executed if enabled.
-
-If the __Updaters__ have downloaded any `MRA-Alternatives.zip` file, __HBMAME Getter__ will be executed if enabled.
-
-__Arcade Organizer__ is also skipped if the __Updaters__ haven't downloaded any *MRA*.
-
-Logs are checked to determine if the __Updaters__ downloaded *MRA* files or not.
-
-## Configuration
-
-You may create a `update_all.ini` file sitting next to where you have downloaded `update_all.sh`. In case you renamed `update_all.sh` you need to rename its .INI file too, so they both share the same basename.
+In case you would like to modify options by hand, you can create a `update_all.ini` file sitting next to where you have downloaded `update_all.sh`. In case you renamed `update_all.sh` you need to rename its INI file too, so they both share the same basename.
 
 You may change the following parameters:
 
@@ -114,6 +108,17 @@ HBMAME_GETTER_FORCE_FULL_RESYNC="false"
 # Will become obsolete once Arcade Organizer has its own optimization logic.
 ARCADE_ORGANIZER_FORCE_FULL_RESYNC="false"
 ```
+
+## Optimizations
+
+The __MAME__ and __HBMAME Getters__ are skipped if no new MRA are detected in the device.
+
+If there are new MRAs that contains MAME roms, __MAME Getter__ will be executed if enabled.
+
+If there are new MRAs that contains HBMAME roms, __HBMAME Getter__ will be executed if enabled.
+
+__Arcade Organizer__ is also skipped if there isn't any new MRA.
+
 ## Funding
 
 Consider funding [Alexey Melnikov "Sorgelig"](https://www.patreon.com/FPGAMiSTer) for his invaluable work on the [MiSTer project](https://github.com/MiSTer-devel/Main_MiSTer/wiki).
