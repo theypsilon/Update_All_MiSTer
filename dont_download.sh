@@ -62,50 +62,131 @@ WORK_PATH="/media/fat/Scripts/.update_all"
 GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH="${WORK_PATH}/${LOG_FILENAME}"
 
-rm ${GLOG_TEMP} 2> /dev/null || true
 enable_global_log() {
     exec >  >(tee -ia ${GLOG_TEMP})
     exec 2> >(tee -ia ${GLOG_TEMP} >&2)
 }
+
 disable_global_log() {
     exec 1>&6 ; exec 2>&7
 }
-exec 6>&1 ; exec 7>&2 # Saving stdout and stderr
-enable_global_log
-trap "mv ${GLOG_TEMP} ${GLOG_PATH}" EXIT
 
-echo "Executing 'Update All' script"
-echo "The All-in-One Updater for MiSTer"
-echo "Version ${UPDATE_ALL_VERSION}"
+initialize() {
+    # Initialize Global LOG
+    rm ${GLOG_TEMP} 2> /dev/null || true
+    exec 6>&1 ; exec 7>&2 # Saving stdout and stderr
+    enable_global_log
+    trap "mv ${GLOG_TEMP} ${GLOG_PATH}" EXIT
 
-echo
-echo "Reading INI file '${EXPORTED_INI_PATH}':"
-if [ -f ${EXPORTED_INI_PATH} ] ; then
-    cp ${EXPORTED_INI_PATH} ${INI_PATH}
-
-    TMP=$(mktemp)
-    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
-    source ${TMP}
-    rm -f ${TMP}
-
-    echo "OK."
-else
-    echo "Not found."
-fi
-
-LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
-WORK_PATH="/media/fat/Scripts/.update_all"
-
-if [ ! -d ${WORK_PATH} ] ; then
-    mkdir -p ${WORK_PATH}
-    MAME_GETTER_FORCE_FULL_RESYNC="true"
-    HBMAME_GETTER_FORCE_FULL_RESYNC="true"
-    ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
+    echo "Executing 'Update All' script"
+    echo "The All-in-One Updater for MiSTer"
+    echo "Version ${UPDATE_ALL_VERSION}"
 
     echo
-    echo "Creating '${WORK_PATH}' for the first time."
-    echo "Performing a full forced update."
-fi
+    echo "Reading INI file '${EXPORTED_INI_PATH}':"
+    if [ -f ${EXPORTED_INI_PATH} ] ; then
+        cp ${EXPORTED_INI_PATH} ${INI_PATH}
+
+        TMP=$(mktemp)
+        dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
+        source ${TMP}
+        rm -f ${TMP}
+
+        echo "OK."
+    else
+        echo "Not found."
+    fi
+
+    LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
+    WORK_PATH="/media/fat/Scripts/.update_all"
+
+    if [ ! -d ${WORK_PATH} ] ; then
+        mkdir -p ${WORK_PATH}
+        MAME_GETTER_FORCE_FULL_RESYNC="true"
+        HBMAME_GETTER_FORCE_FULL_RESYNC="true"
+        ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
+
+        echo
+        echo "Creating '${WORK_PATH}' for the first time."
+        echo "Performing a full forced update."
+    fi
+
+    if [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
+        MAME_GETTER_FORCE_FULL_RESYNC="true"
+        HBMAME_GETTER_FORCE_FULL_RESYNC="true"
+        ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
+
+        echo
+        echo "'ALWAYS_ASSUME_NEW_STANDARD_MRA' and 'ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA' options"
+        echo "are deprecated and will be removed in a later version of Update All."
+        echo
+        echo "Please, change your INI file and use these options accordingly:"
+        echo "    MAME_GETTER_FORCE_FULL_RESYNC=\"true\""
+        echo "    HBMAME_GETTER_FORCE_FULL_RESYNC=\"true\""
+        echo "    ARCADE_ORGANIZER_FORCE_FULL_RESYNC=\"true\""
+        sleep ${WAIT_TIME_FOR_READING}
+    fi
+}
+
+MAIN_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
+DB9_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_DB9/master/mister_updater.sh"
+dialog_main_updater() {
+    case "${ENCC_FORKS}" in
+        true)
+            MAIN_UPDATER_URL="${DB9_UPDATER_URL}"
+            ;;
+        false)
+            ;;
+        *)
+            sleep ${WAIT_TIME_FOR_READING}
+            sleep ${WAIT_TIME_FOR_READING}
+            disable_global_log
+            set +e
+            dialog --title "Extended Native Controller Compatibility"  --yesno "Would you like to install unofficial forks from MiSTer-devel cores that are patched to be compatible with native Genesis (DB9), and NeoGeo/Supergun (DB15) controllers?\n\nIn order to use them, you require an unofficial SNAC8 adapter.\n\nMore info at: https://github.com/theypsilon/Update_All_MiSTer/wiki" 11 75
+            DIALOG_RET=$?
+            set -e
+            enable_global_log
+            case $DIALOG_RET in
+                0)
+                    SELECTION="ENCC_FORKS=\"true\""
+                    MAIN_UPDATER_URL="${DB9_UPDATER_URL}"
+                    ;;
+                1)
+                    SELECTION="ENCC_FORKS=\"false\""
+                    ;;
+                *)
+                    echo
+                    echo "Execution aborted by user input."
+                    echo "You pressed ESC/Back button."
+                    exit 0
+                    ;;
+            esac
+            disable_global_log
+            set +e
+            dialog --title "Save ENCC selection?"  --yesno "Would you like to save your previous selection in ${EXPORTED_INI_PATH/*\//}?\n\n${SELECTION}\n\nSaving this will stop this dialog from appearing the next time you run this script." 10 75
+            DIALOG_RET=$?
+            set -e
+            enable_global_log
+            case $DIALOG_RET in
+                0)
+                    if grep "ENCC_FORKS" ${EXPORTED_INI_PATH} 2> /dev/null ; then
+                        sed -i '/ENCC_FORKS/d' ${EXPORTED_INI_PATH} 2> /dev/null
+                    fi
+                    echo >> ${EXPORTED_INI_PATH}
+                    echo "${SELECTION}" >> ${EXPORTED_INI_PATH}
+                    ;;
+                1)
+                    ;;
+                *)
+                    echo
+                    echo "Execution aborted by user input."
+                    echo "You pressed ESC/Back button."
+                    exit 0
+                    ;;
+            esac
+            ;;
+    esac
+}
 
 draw_separator() {
     echo
@@ -351,254 +432,190 @@ delete_if_empty() {
     fi
 }
 
-if [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
-    MAME_GETTER_FORCE_FULL_RESYNC="true"
-    HBMAME_GETTER_FORCE_FULL_RESYNC="true"
-    ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
+run_update_all() {
+    initialize
 
     echo
-    echo "'ALWAYS_ASSUME_NEW_STANDARD_MRA' and 'ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA' options"
-    echo "are deprecated and will be removed in a later version of Update All."
-    echo
-    echo "Please, change your INI file and use these options accordingly:"
-    echo "    MAME_GETTER_FORCE_FULL_RESYNC=\"true\""
-    echo "    HBMAME_GETTER_FORCE_FULL_RESYNC=\"true\""
-    echo "    ARCADE_ORGANIZER_FORCE_FULL_RESYNC=\"true\""
+    echo "Sequence:"
+    if [[ "${MAIN_UPDATER}" == "true" ]] ; then
+        echo "- Main Updater (ENCC_FORKS: ${ENCC_FORKS})"
+    fi
+    if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
+        echo "- Jotego Updater"
+    fi
+    if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
+        echo "- Unofficial Updater"
+    fi
+    if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
+        echo "- LLAPI Updater"
+    fi
+    if [[ "${MAME_GETTER}" == "true" ]] ; then
+        echo "- MAME Getter (forced: ${MAME_GETTER_FORCE_FULL_RESYNC})"
+    fi
+    if [[ "${HBMAME_GETTER}" == "true" ]] ; then
+        echo "- HBMAME Getter (forced: ${HBMAME_GETTER_FORCE_FULL_RESYNC})"
+    fi
+    if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
+        echo "- Arcade Organizer (forced: ${ARCADE_ORGANIZER_FORCE_FULL_RESYNC})"
+    fi
+
     sleep ${WAIT_TIME_FOR_READING}
-fi
 
-echo
-echo "Sequence:"
-if [[ "${MAIN_UPDATER}" == "true" ]] ; then
-    echo "- Main Updater (ENCC_FORKS: ${ENCC_FORKS})"
-fi
-if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-    echo "- Jotego Updater"
-fi
-if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-    echo "- Unofficial Updater"
-fi
-if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
-    echo "- LLAPI Updater"
-fi
-if [[ "${MAME_GETTER}" == "true" ]] ; then
-    echo "- MAME Getter (forced: ${MAME_GETTER_FORCE_FULL_RESYNC})"
-fi
-if [[ "${HBMAME_GETTER}" == "true" ]] ; then
-    echo "- HBMAME Getter (forced: ${HBMAME_GETTER_FORCE_FULL_RESYNC})"
-fi
-if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    echo "- Arcade Organizer (forced: ${ARCADE_ORGANIZER_FORCE_FULL_RESYNC})"
-fi
-
-sleep ${WAIT_TIME_FOR_READING}
-
-echo
-echo "Start time: $(date)"
-
-REBOOT_NEEDED="false"
-FAILING_UPDATERS=()
-
-if [[ "${MAIN_UPDATER}" == "true" ]] ; then
-    case "${ENCC_FORKS}" in
-        true)
-            MAIN_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_DB9/master/mister_updater.sh"
-            ;;
-        false)
-            MAIN_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
-            ;;
-        *)
-            sleep ${WAIT_TIME_FOR_READING}
-            sleep ${WAIT_TIME_FOR_READING}
-            disable_global_log
-            set +e
-            dialog --title "Extended Native Controller Compatibility"  --yesno "Would you like to install unofficial forks from MiSTer-devel cores that are patched to be compatible with native Genesis (DB9), and NeoGeo/Supergun (DB15) controllers?\n\nIn order to use them, you require an unofficial SNAC8 adapter.\n\nMore info at: https://github.com/theypsilon/Update_All_MiSTer/wiki" 11 75
-            DIALOG_RET=$?
-            set -e
-            enable_global_log
-            case $DIALOG_RET in
-                0)
-                    SELECTION="ENCC_FORKS=\"true\""
-                    MAIN_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_DB9/master/mister_updater.sh"
-                    ;;
-                1)
-                    SELECTION="ENCC_FORKS=\"false\""
-                    MAIN_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
-                    ;;
-                *)
-                    echo
-                    echo "Execution aborted by user input."
-                    echo "You pressed ESC/Back button."
-                    exit 0
-                    ;;
-            esac
-            disable_global_log
-            set +e
-            dialog --title "Save ENCC selection?"  --yesno "Would you like to save your previous selection in ${EXPORTED_INI_PATH/*\//}?\n\n${SELECTION}\n\nSaving this will stop this dialog from appearing the next time you run this script." 10 75
-            DIALOG_RET=$?
-            set -e
-            enable_global_log
-            case $DIALOG_RET in
-                0)
-                    if grep "ENCC_FORKS" ${EXPORTED_INI_PATH} 2> /dev/null ; then
-                        sed -i '/ENCC_FORKS/d' ${EXPORTED_INI_PATH} 2> /dev/null
-                    fi
-                    echo >> ${EXPORTED_INI_PATH}
-                    echo "${SELECTION}" >> ${EXPORTED_INI_PATH}
-                    ;;
-                1)
-                    ;;
-                *)
-                    echo
-                    echo "Execution aborted by user input."
-                    echo "You pressed ESC/Back button."
-                    exit 0
-                    ;;
-            esac
-            ;;
-    esac
-    run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
-    if [ $UPDATER_RET -ne 0 ]; then
-        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/${LOG_FILENAME}")
-    fi
-    sleep 1
-    if tail -n 30 ${GLOG_TEMP} | grep -q "You should reboot" ; then
-        REBOOT_NEEDED="true"
-    fi
-fi
-
-if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-    run_updater_script https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh ${JOTEGO_UPDATER_INI}
-    if [ $UPDATER_RET -ne 0 ]; then
-        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}")
-    fi
-fi
-
-if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-    run_updater_script https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh ${UNOFFICIAL_UPDATER_INI}
-    if [ $UPDATER_RET -ne 0 ]; then
-        FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}")
-    fi
-fi
-
-if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
-    run_updater_script https://raw.githubusercontent.com/MiSTer-LLAPI/Updater_script_MiSTer/master/llapi_updater.sh ${LLAPI_UPDATER_INI}
-    if [ $UPDATER_RET -ne 0 ]; then
-        FAILING_UPDATERS+=("LLAPI")
-    fi
-fi
-
-NEW_MRA_TIME=$(date)
-draw_separator
-
-UPDATED_MRAS=$(mktemp)
-UPDATED_MAME_MRAS=$(mktemp)
-UPDATED_HBMAME_MRAS=$(mktemp)
-
-LAST_MRA_PROCESSING_PATH="${WORK_PATH}/$(basename ${EXPORTED_INI_PATH%.*}.last_mra_processing)"
-if [ -f ${LAST_MRA_PROCESSING_PATH} ] ; then
-    LAST_MRA_PROCESSING_TIME=$(cat "${LAST_MRA_PROCESSING_PATH}" | sed '2q;d')
-else
-    LAST_MRA_PROCESSING_TIME=$(date --date='@-86400')
-fi
-
-for path in $(arcade_paths ${MAIN_UPDATER_INI} ${JOTEGO_UPDATER_INI} ${UNOFFICIAL_UPDATER_INI}) ; do
-    find ${path}/ -maxdepth 1 -type f -name "*.mra" -newerct "${LAST_MRA_PROCESSING_TIME}" >> ${UPDATED_MRAS}
-    if [ -d ${path}/_alternatives ] ; then
-        find ${path}/_alternatives/  -type f -name "*.mra" -newerct "${LAST_MRA_PROCESSING_TIME}" >> ${UPDATED_MRAS}
-    fi
-done
-
-if [ -s ${UPDATED_MRAS} ] ; then
-    cat ${UPDATED_MRAS} | grep -ve 'HBMame\.mra$' > ${UPDATED_MAME_MRAS} || true
-    cat ${UPDATED_MRAS} | grep -e 'HBMame\.mra$' > ${UPDATED_HBMAME_MRAS} || true
-fi
-
-UPDATED_MRAS_WCL=$(wc -l ${UPDATED_MRAS} | awk '{print $1}')
-echo "Found ${UPDATED_MRAS_WCL} new MRAs."
-if [ ${UPDATED_MRAS_WCL} -ge 1 ] ; then
-    echo "$(wc -l ${UPDATED_MAME_MRAS} | awk '{print $1}') use mame."
-    echo "$(wc -l ${UPDATED_HBMAME_MRAS} | awk '{print $1}') use hbmame."
-fi
-sleep ${WAIT_TIME_FOR_READING}
-echo
-
-if [[ "${MAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] ; then
-    rm ${UPDATED_MAME_MRAS}
-fi
-if [[ "${HBMAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] ; then
-    rm ${UPDATED_HBMAME_MRAS}
-fi
-if [[ "${ARCADE_ORGANIZER_FORCE_FULL_RESYNC}" == "true" ]] ; then
-    rm ${UPDATED_MRAS}
-fi
-
-if [[ "${MAME_GETTER}" == "true" ]] ; then
-    run_mame_getter_script "MAME-GETTER" read_ini_mame_getter should_run_mame_getter ${MAME_GETTER_INI} \
-    https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh ${UPDATED_MAME_MRAS}
-fi
-
-if [[ "${HBMAME_GETTER}" == "true" ]] ; then
-    run_mame_getter_script "HBMAME-GETTER" read_ini_hbmame_getter should_run_hbmame_getter ${HBMAME_GETTER_INI} \
-    https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh ${UPDATED_HBMAME_MRAS}
-fi
-
-if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    run_mame_getter_script "_ARCADE-ORGANIZER" read_ini_arcade_organizer should_run_arcade_organizer ${ARCADE_ORGANIZER_INI} \
-    https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh ${UPDATED_MRAS}
-fi
-
-draw_separator
-
-rm ${UPDATED_MRAS} 2> /dev/null || true
-rm ${UPDATED_MAME_MRAS} 2> /dev/null || true
-rm ${UPDATED_HBMAME_MRAS} 2> /dev/null || true
-
-delete_if_empty \
-    "${BASE_PATH}/games/mame" \
-    "${BASE_PATH}/games/hbmame" \
-    "${BASE_PATH}/_Arcade/mame" \
-    "${BASE_PATH}/_Arcade/hbmame" \
-    "${BASE_PATH}/_Arcade/mra_backup"
-
-if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
-    echo "There were some errors in the Updaters."
-    echo "Therefore, MiSTer hasn't been fully updated."
     echo
-    echo "Check these logs from the Updaters that failed:"
-    for log_file in ${FAILING_UPDATERS[@]} ; do
-        echo " - $log_file"
-    done
-    echo
-    echo "Maybe a network problem?"
-    echo "Check your connection and then run this script again."
-    EXIT_CODE=1
-else
-    echo "Update All ${UPDATE_ALL_VERSION} finished. Your MiSTer has been updated successfully!"
-    EXIT_CODE=0
-fi
+    echo "Start time: $(date)"
 
-echo
-echo "End time: $(date)"
-echo
-echo "Full log for more details: ${GLOG_PATH}"
-echo
+    REBOOT_NEEDED="false"
+    FAILING_UPDATERS=()
 
-if [[ "${EXIT_CODE}" == "0" ]] ; then
-    echo "${UPDATE_ALL_VERSION}" > "${LAST_MRA_PROCESSING_PATH}"
-    echo "${NEW_MRA_TIME}" >> "${LAST_MRA_PROCESSING_PATH}"
-fi
+    if [[ "${MAIN_UPDATER}" == "true" ]] ; then
+        dialog_main_updater
+        run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
+        if [ $UPDATER_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/${LOG_FILENAME}")
+        fi
+        sleep 1
+        if tail -n 30 ${GLOG_TEMP} | grep -q "You should reboot" ; then
+            REBOOT_NEEDED="true"
+        fi
+    fi
 
-if [[ "${REBOOT_NEEDED}" == "true" ]] ; then
-    REBOOT_PAUSE=$((WAIT_TIME_FOR_READING * 2))
-    if [[ "${AUTOREBOOT}" == "true" && "${REBOOT_PAUSE}" -ge 0 ]] ; then
-        echo "Rebooting in ${REBOOT_PAUSE} seconds"
-        sleep "${REBOOT_PAUSE}"
-        reboot now
+    if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
+        run_updater_script https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh ${JOTEGO_UPDATER_INI}
+        if [ $UPDATER_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}")
+        fi
+    fi
+
+    if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
+        run_updater_script https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh ${UNOFFICIAL_UPDATER_INI}
+        if [ $UPDATER_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}")
+        fi
+    fi
+
+    if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
+        run_updater_script https://raw.githubusercontent.com/MiSTer-LLAPI/Updater_script_MiSTer/master/llapi_updater.sh ${LLAPI_UPDATER_INI}
+        if [ $UPDATER_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("LLAPI")
+        fi
+    fi
+
+    NEW_MRA_TIME=$(date)
+    draw_separator
+
+    UPDATED_MRAS=$(mktemp)
+    UPDATED_MAME_MRAS=$(mktemp)
+    UPDATED_HBMAME_MRAS=$(mktemp)
+
+    LAST_MRA_PROCESSING_PATH="${WORK_PATH}/$(basename ${EXPORTED_INI_PATH%.*}.last_mra_processing)"
+    if [ -f ${LAST_MRA_PROCESSING_PATH} ] ; then
+        LAST_MRA_PROCESSING_TIME=$(cat "${LAST_MRA_PROCESSING_PATH}" | sed '2q;d')
     else
-        echo "You should reboot"
-        echo
+        LAST_MRA_PROCESSING_TIME=$(date --date='@-86400')
     fi
-fi
 
-exit ${EXIT_CODE:-1}
+    for path in $(arcade_paths ${MAIN_UPDATER_INI} ${JOTEGO_UPDATER_INI} ${UNOFFICIAL_UPDATER_INI}) ; do
+        find ${path}/ -maxdepth 1 -type f -name "*.mra" -newerct "${LAST_MRA_PROCESSING_TIME}" >> ${UPDATED_MRAS}
+        if [ -d ${path}/_alternatives ] ; then
+            find ${path}/_alternatives/  -type f -name "*.mra" -newerct "${LAST_MRA_PROCESSING_TIME}" >> ${UPDATED_MRAS}
+        fi
+    done
+
+    if [ -s ${UPDATED_MRAS} ] ; then
+        cat ${UPDATED_MRAS} | grep -ve 'HBMame\.mra$' > ${UPDATED_MAME_MRAS} || true
+        cat ${UPDATED_MRAS} | grep -e 'HBMame\.mra$' > ${UPDATED_HBMAME_MRAS} || true
+    fi
+
+    UPDATED_MRAS_WCL=$(wc -l ${UPDATED_MRAS} | awk '{print $1}')
+    echo "Found ${UPDATED_MRAS_WCL} new MRAs."
+    if [ ${UPDATED_MRAS_WCL} -ge 1 ] ; then
+        echo "$(wc -l ${UPDATED_MAME_MRAS} | awk '{print $1}') use mame."
+        echo "$(wc -l ${UPDATED_HBMAME_MRAS} | awk '{print $1}') use hbmame."
+    fi
+    sleep ${WAIT_TIME_FOR_READING}
+    echo
+
+    if [[ "${MAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] ; then
+        rm ${UPDATED_MAME_MRAS}
+    fi
+    if [[ "${HBMAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] ; then
+        rm ${UPDATED_HBMAME_MRAS}
+    fi
+    if [[ "${ARCADE_ORGANIZER_FORCE_FULL_RESYNC}" == "true" ]] ; then
+        rm ${UPDATED_MRAS}
+    fi
+
+    if [[ "${MAME_GETTER}" == "true" ]] ; then
+        run_mame_getter_script "MAME-GETTER" read_ini_mame_getter should_run_mame_getter ${MAME_GETTER_INI} \
+        https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh ${UPDATED_MAME_MRAS}
+    fi
+
+    if [[ "${HBMAME_GETTER}" == "true" ]] ; then
+        run_mame_getter_script "HBMAME-GETTER" read_ini_hbmame_getter should_run_hbmame_getter ${HBMAME_GETTER_INI} \
+        https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh ${UPDATED_HBMAME_MRAS}
+    fi
+
+    if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
+        run_mame_getter_script "_ARCADE-ORGANIZER" read_ini_arcade_organizer should_run_arcade_organizer ${ARCADE_ORGANIZER_INI} \
+        https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh ${UPDATED_MRAS}
+    fi
+
+    draw_separator
+
+    rm ${UPDATED_MRAS} 2> /dev/null || true
+    rm ${UPDATED_MAME_MRAS} 2> /dev/null || true
+    rm ${UPDATED_HBMAME_MRAS} 2> /dev/null || true
+
+    delete_if_empty \
+        "${BASE_PATH}/games/mame" \
+        "${BASE_PATH}/games/hbmame" \
+        "${BASE_PATH}/_Arcade/mame" \
+        "${BASE_PATH}/_Arcade/hbmame" \
+        "${BASE_PATH}/_Arcade/mra_backup"
+
+    if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
+        echo "There were some errors in the Updaters."
+        echo "Therefore, MiSTer hasn't been fully updated."
+        echo
+        echo "Check these logs from the Updaters that failed:"
+        for log_file in ${FAILING_UPDATERS[@]} ; do
+            echo " - $log_file"
+        done
+        echo
+        echo "Maybe a network problem?"
+        echo "Check your connection and then run this script again."
+        EXIT_CODE=1
+    else
+        echo "Update All ${UPDATE_ALL_VERSION} finished. Your MiSTer has been updated successfully!"
+        EXIT_CODE=0
+    fi
+
+    echo
+    echo "End time: $(date)"
+    echo
+    echo "Full log for more details: ${GLOG_PATH}"
+    echo
+
+    if [[ "${EXIT_CODE}" == "0" ]] ; then
+        echo "${UPDATE_ALL_VERSION}" > "${LAST_MRA_PROCESSING_PATH}"
+        echo "${NEW_MRA_TIME}" >> "${LAST_MRA_PROCESSING_PATH}"
+    fi
+
+    if [[ "${REBOOT_NEEDED}" == "true" ]] ; then
+        REBOOT_PAUSE=$((WAIT_TIME_FOR_READING * 2))
+        if [[ "${AUTOREBOOT}" == "true" && "${REBOOT_PAUSE}" -ge 0 ]] ; then
+            echo "Rebooting in ${REBOOT_PAUSE} seconds"
+            sleep "${REBOOT_PAUSE}"
+            reboot now
+        else
+            echo "You should reboot"
+            echo
+        fi
+    fi
+
+    exit ${EXIT_CODE:-1}
+}
+
+if [[ "${UPDATE_ALL_SOURCE:-false}" != "true" ]] ; then
+    run_update_all
+fi
