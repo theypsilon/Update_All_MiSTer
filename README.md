@@ -29,7 +29,7 @@ Other setups that might be useful for you:
 - [Unofficial Cores ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_unofficials.zip): With this one you'll download also [these cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) without having to touch anything else.
 - [No MRA-Alternatives ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_no_mra_alternatives.zip): This setup is in case you wanna skip the `_alternatives` folder, which contains arcade variants, such as hacks, bootlegs, and different regions.
 - [LLAPI ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_llapi.zip): In case you would like to download [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) too.
-- [usb0 ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_usb0.zip): For people using USB as primary storage. You will be able to run this script from there and install all cores, roms, and MRAs on `/media/fat/usb0`.
+- [usb0 ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_usb0.zip): For people using USB as primary storage. You will be able to run this script from there and install all cores, roms, and MRAs on `/media/usb0`.
 
 NOTE: You should extract also `update_all.ini` in these.
 
