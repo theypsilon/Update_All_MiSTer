@@ -359,12 +359,14 @@ should_run_hbmame_getter() {
 
 ARCADE_ORGANIZER_ORGDIR=
 ARCADE_ORGANIZER_MRADIR=
+ARCADE_ORGANIZER_SKIPALTS=
 read_ini_arcade_organizer() {
     local SCRIPT_PATH="${1}"
     local SCRIPT_INI="${2}"
 
-    ARCADE_ORGANIZER_ORGDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ORGDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
-    ARCADE_ORGANIZER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    ARCADE_ORGANIZER_ORGDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ORGDIR" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
+    ARCADE_ORGANIZER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
+    ARCADE_ORGANIZER_SKIPALTS=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "SKIPALTS=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
 
     if [ ! -s ${SCRIPT_INI} ] ; then
         return
@@ -372,13 +374,22 @@ read_ini_arcade_organizer() {
 
     if [ `grep -c "ORGDIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
-        ARCADE_ORGANIZER_ORGDIR=`grep "ORGDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
+        ARCADE_ORGANIZER_ORGDIR=`grep "ORGDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//'`
     fi 2>/dev/null 
 
     if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
     then
-        ARCADE_ORGANIZER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
+        ARCADE_ORGANIZER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//'`
     fi 2>/dev/null
+
+    if [ `grep -c "SKIPALTS=" "${SCRIPT_INI}"` -gt 0 ]
+    then
+        ARCADE_ORGANIZER_SKIPALTS=`grep "SKIPALTS=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//'`
+    fi 2>/dev/null
+
+    if [[ "${ARCADE_ORGANIZER_SKIPALTS}" == "true" ]] && [ -s ${UPDATED_MRAS} ]; then
+        sed -i "/\/_alternatives\//d ; /^ *$/d" ${UPDATED_MRAS}
+    fi
 }
 
 should_run_arcade_organizer() {
