@@ -387,8 +387,12 @@ read_ini_arcade_organizer() {
         ARCADE_ORGANIZER_SKIPALTS=`grep "SKIPALTS=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//'`
     fi 2>/dev/null
 
-    if [[ "${ARCADE_ORGANIZER_SKIPALTS}" == "true" ]] && [ -s ${UPDATED_MRAS} ]; then
+    if [[ "${ARCADE_ORGANIZER_SKIPALTS}" == "true" ]] && [ -s ${UPDATED_MRAS} ] ; then
         sed -i "/\/_alternatives\//d ; /^ *$/d" ${UPDATED_MRAS}
+    fi
+
+    if [ -d "${ARCADE_ORGANIZER_ORGDIR}" ] ; then
+        find "${ARCADE_ORGANIZER_ORGDIR}/" -xtype l -exec rm {} || true \;
     fi
 }
 
