@@ -40,20 +40,21 @@ LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_al
 
 MAME_GETTER="true"
 MAME_GETTER_INI="/media/fat/Scripts/update_mame-getter.ini"
+MAME_GETTER_FORCE_FULL_RESYNC="false"
 
 HBMAME_GETTER="true"
 HBMAME_GETTER_INI="/media/fat/Scripts/update_hbmame-getter.ini"
+HBMAME_GETTER_FORCE_FULL_RESYNC="false"
 
 ARCADE_ORGANIZER="true"
 ARCADE_ORGANIZER_INI="/media/fat/Scripts/update_arcade-organizer.ini"
-
-ALWAYS_ASSUME_NEW_STANDARD_MRA="false"
-ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="false"
+ARCADE_ORGANIZER_FORCE_FULL_RESYNC="false"
 
 WAIT_TIME_FOR_READING=4
 AUTOREBOOT="true"
 
 # ========= CODE STARTS HERE =========
+UPDATE_ALL_VERSION="1.0"
 ORIGINAL_SCRIPT_PATH="${0}"
 INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
@@ -73,8 +74,9 @@ exec 6>&1 ; exec 7>&2 # Saving stdout and stderr
 enable_global_log
 trap "mv ${GLOG_TEMP} ${GLOG_PATH}" EXIT
 
-echo "Executing 'Update All' script for MiSTer"
-echo "Version 1.0"
+echo "Executing 'Update All' script"
+echo "The All-in-One Updater for MiSTer"
+echo "Version ${UPDATE_ALL_VERSION}"
 
 echo
 echo "Reading INI file '${EXPORTED_INI_PATH}':"
@@ -91,10 +93,14 @@ else
     echo "Not found."
 fi
 
+LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
+WORK_PATH="/media/fat/Scripts/.update_all"
+
 if [ ! -d ${WORK_PATH} ] ; then
     mkdir -p ${WORK_PATH}
-    ALWAYS_ASSUME_NEW_STANDARD_MRA="true"
-    ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="true"
+    MAME_GETTER_FORCE_FULL_RESYNC="true"
+    HBMAME_GETTER_FORCE_FULL_RESYNC="true"
+    ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
 
     echo
     echo "Creating '${WORK_PATH}' for the first time."
@@ -146,6 +152,7 @@ run_mame_getter_script() {
     local SCRIPT_CONDITION="${3}"
     local SCRIPT_INI="${4}"
     local SCRIPT_URL="${5}"
+    local MRA_INPUT="${6}"
 
     local SCRIPT_FILENAME="${SCRIPT_URL/*\//}"
     local SCRIPT_PATH="/tmp/${SCRIPT_FILENAME%.*}.sh"
@@ -175,7 +182,11 @@ run_mame_getter_script() {
 
         disable_global_log
         set +e
-        ${SCRIPT_PATH}
+        if [ -s ${MRA_INPUT} ] ; then
+            ${SCRIPT_PATH} --input-file ${MRA_INPUT}
+        else
+            ${SCRIPT_PATH}
+        fi
         local SCRIPT_RET=$?
         set -e
         enable_global_log
@@ -187,7 +198,6 @@ run_mame_getter_script() {
         rm ${SCRIPT_PATH}
         echo "FINISHED: ${SCRIPT_TITLE}"
         echo
-
         sleep ${WAIT_TIME_FOR_READING}
     else
         echo "Skipping ${SCRIPT_TITLE}..."
@@ -224,11 +234,10 @@ read_ini_mame_getter() {
 }
 
 should_run_mame_getter() {
-    [[ "${NEW_STANDARD_MRA:-false}" == "true" ]] || \
-    [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] || \
-    [[ "${NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || \
-    [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || \
-    [ ! -d ${MAME_GETTER_ROMDIR} ] || [ -z "$(ls -A ${MAME_GETTER_ROMDIR})" ]
+    [[ "${MAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] || \
+    [ -s ${UPDATED_MAME_MRAS} ] || \
+    [ ! -d ${MAME_GETTER_ROMDIR} ] || \
+    [ -z "$(ls -A ${MAME_GETTER_ROMDIR})" ]
 }
 
 HBMAME_GETTER_ROMDIR=
@@ -261,9 +270,10 @@ read_ini_hbmame_getter() {
 }
 
 should_run_hbmame_getter() {
-    [[ "${NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || \
-    [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || \
-    [ ! -d ${HBMAME_GETTER_ROMDIR} ] || [ -z "$(ls -A ${HBMAME_GETTER_ROMDIR})" ]
+    [[ "${HBMAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] || \
+    [ -s ${UPDATED_HBMAME_MRAS} ] || \
+    [ ! -d ${HBMAME_GETTER_ROMDIR} ] || \
+    [ -z "$(ls -A ${HBMAME_GETTER_ROMDIR})" ]
 }
 
 ARCADE_ORGANIZER_ORGDIR=
@@ -291,22 +301,36 @@ read_ini_arcade_organizer() {
 }
 
 should_run_arcade_organizer() {
-    [[ "${NEW_STANDARD_MRA:-false}" == "true" ]] || \
-    [[ "${NEW_ALTERNATIVE_MRA:-false}" == "true" ]] || \
-    [ ! -d ${ARCADE_ORGANIZER_ORGDIR} ] || [ -z "$(ls -A ${ARCADE_ORGANIZER_ORGDIR})" ]
+    [[ "${ARCADE_ORGANIZER_FORCE_FULL_RESYNC}" == "true" ]] || \
+    [ -s ${UPDATED_MRAS} ] || \
+    [ ! -d ${ARCADE_ORGANIZER_ORGDIR} ] || \
+    [ -z "$(ls -A ${ARCADE_ORGANIZER_ORGDIR})" ]
 }
 
-contains_str() {
-    local FILE="${1}"
-    local STR="${2}"
-    if [ ! -f ${FILE} ] ; then
-        return 1
-    fi
-    if grep -q "${STR}" ${FILE} ; then
-        return 0
-    else
-        return 1
-    fi
+category_path() {
+    local CATEGORY="${1}"
+    local CURRENT_UPDATER_INI="${2}"
+    (
+        declare -A CORE_CATEGORY_PATHS
+        if [ -f ${CURRENT_UPDATER_INI} ] ; then
+            local TMP=$(mktemp)
+            dos2unix < "${CURRENT_UPDATER_INI}" 2> /dev/null | grep -v "^exit" > ${TMP}
+            source ${TMP}
+            rm -f ${TMP}
+        fi
+        echo ${CORE_CATEGORY_PATHS[${CATEGORY}]:-${BASE_PATH}/_Arcade}
+    )
+}
+
+arcade_paths() {
+    declare -A PATHS
+
+    for INI in "${@}" ; do
+        PATHS[$(category_path "arcade-cores" ${INI})]=1
+    done
+    for p in "${!PATHS[@]}" ; do
+        echo ${p}
+    done
 }
 
 delete_if_empty() {
@@ -327,6 +351,22 @@ delete_if_empty() {
     fi
 }
 
+if [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
+    MAME_GETTER_FORCE_FULL_RESYNC="true"
+    HBMAME_GETTER_FORCE_FULL_RESYNC="true"
+    ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
+
+    echo
+    echo "'ALWAYS_ASSUME_NEW_STANDARD_MRA' and 'ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA' options"
+    echo "are deprecated and will be removed in a later version of Update All."
+    echo
+    echo "Please, change your INI file and use these options accordingly:"
+    echo "    MAME_GETTER_FORCE_FULL_RESYNC=\"true\""
+    echo "    HBMAME_GETTER_FORCE_FULL_RESYNC=\"true\""
+    echo "    ARCADE_ORGANIZER_FORCE_FULL_RESYNC=\"true\""
+    sleep ${WAIT_TIME_FOR_READING}
+fi
+
 echo
 echo "Sequence:"
 if [[ "${MAIN_UPDATER}" == "true" ]] ; then
@@ -342,18 +382,13 @@ if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
     echo "- LLAPI Updater"
 fi
 if [[ "${MAME_GETTER}" == "true" ]] ; then
-    echo "- MAME Getter (forced: ${ALWAYS_ASSUME_NEW_STANDARD_MRA})"
+    echo "- MAME Getter (forced: ${MAME_GETTER_FORCE_FULL_RESYNC})"
 fi
 if [[ "${HBMAME_GETTER}" == "true" ]] ; then
-    echo "- HBMAME Getter (forced: ${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA})"
+    echo "- HBMAME Getter (forced: ${HBMAME_GETTER_FORCE_FULL_RESYNC})"
 fi
 if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
-        FORCED_ORGANIZER="true"
-    else
-        FORCED_ORGANIZER="false"
-    fi
-    echo "- Arcade Organizer (forced: ${FORCED_ORGANIZER})"
+    echo "- Arcade Organizer (forced: ${ARCADE_ORGANIZER_FORCE_FULL_RESYNC})"
 fi
 
 sleep ${WAIT_TIME_FOR_READING}
@@ -453,51 +488,71 @@ if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
     fi
 fi
 
+NEW_MRA_TIME=$(date)
 draw_separator
 
-if [[ "${MAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if contains_str "/media/fat/Scripts/.mister_updater/${LOG_FILENAME}" "\.mra" || \
-        contains_str "/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}" "\.mra" || \
-        contains_str "/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}" "\.mra"
-    then
-        echo "Detected new MRA files."
-        NEW_STANDARD_MRA="true"
+UPDATED_MRAS=$(mktemp)
+UPDATED_MAME_MRAS=$(mktemp)
+UPDATED_HBMAME_MRAS=$(mktemp)
+
+LAST_MRA_PROCESSING_PATH="${WORK_PATH}/$(basename ${EXPORTED_INI_PATH%.*}.last_mra_processing)"
+if [ -f ${LAST_MRA_PROCESSING_PATH} ] ; then
+    LAST_MRA_PROCESSING_TIME=$(cat "${LAST_MRA_PROCESSING_PATH}" | sed '2q;d')
+else
+    LAST_MRA_PROCESSING_TIME=$(date --date='@-86400')
+fi
+
+for path in $(arcade_paths ${MAIN_UPDATER_INI} ${JOTEGO_UPDATER_INI} ${UNOFFICIAL_UPDATER_INI}) ; do
+    find ${path}/ -maxdepth 1 -type f -name "*.mra" -newerct "${LAST_MRA_PROCESSING_TIME}" >> ${UPDATED_MRAS}
+    if [ -d ${path}/_alternatives ] ; then
+        find ${path}/_alternatives/  -type f -name "*.mra" -newerct "${LAST_MRA_PROCESSING_TIME}" >> ${UPDATED_MRAS}
     fi
+done
+
+if [ -s ${UPDATED_MRAS} ] ; then
+    cat ${UPDATED_MRAS} | grep -ve 'HBMame\.mra$' > ${UPDATED_MAME_MRAS} || true
+    cat ${UPDATED_MRAS} | grep -e 'HBMame\.mra$' > ${UPDATED_HBMAME_MRAS} || true
 fi
 
-if [[ "${HBMAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-    if contains_str "/media/fat/Scripts/.mister_updater/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*\.zip" || \
-        contains_str "/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*\.zip" || \
-        contains_str "/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}" "MRA-Alternatives_[0-9]*\.zip"
-    then
-        echo "Detected new MRA-Alternatives."
-        NEW_ALTERNATIVE_MRA="true"
-    fi
+UPDATED_MRAS_WCL=$(wc -l ${UPDATED_MRAS} | awk '{print $1}')
+echo "Found ${UPDATED_MRAS_WCL} new MRAs."
+if [ ${UPDATED_MRAS_WCL} -ge 1 ] ; then
+    echo "$(wc -l ${UPDATED_MAME_MRAS} | awk '{print $1}') use mame."
+    echo "$(wc -l ${UPDATED_HBMAME_MRAS} | awk '{print $1}') use hbmame."
 fi
-
-if [[ "${NEW_STANDARD_MRA:-false}" != "true" ]] && [[ "${NEW_ALTERNATIVE_MRA:-false}" != "true" ]] ; then
-    echo "No new MRA detected."
-fi
-
 sleep ${WAIT_TIME_FOR_READING}
 echo
 
+if [[ "${MAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] ; then
+    rm ${UPDATED_MAME_MRAS}
+fi
+if [[ "${HBMAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] ; then
+    rm ${UPDATED_HBMAME_MRAS}
+fi
+if [[ "${ARCADE_ORGANIZER_FORCE_FULL_RESYNC}" == "true" ]] ; then
+    rm ${UPDATED_MRAS}
+fi
+
 if [[ "${MAME_GETTER}" == "true" ]] ; then
     run_mame_getter_script "MAME-GETTER" read_ini_mame_getter should_run_mame_getter ${MAME_GETTER_INI} \
-    https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh
+    https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh ${UPDATED_MAME_MRAS}
 fi
 
 if [[ "${HBMAME_GETTER}" == "true" ]] ; then
     run_mame_getter_script "HBMAME-GETTER" read_ini_hbmame_getter should_run_hbmame_getter ${HBMAME_GETTER_INI} \
-    https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh
+    https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh ${UPDATED_HBMAME_MRAS}
 fi
 
 if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
     run_mame_getter_script "_ARCADE-ORGANIZER" read_ini_arcade_organizer should_run_arcade_organizer ${ARCADE_ORGANIZER_INI} \
-    https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh
+    https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh ${UPDATED_MRAS}
 fi
 
 draw_separator
+
+rm ${UPDATED_MRAS} 2> /dev/null || true
+rm ${UPDATED_MAME_MRAS} 2> /dev/null || true
+rm ${UPDATED_HBMAME_MRAS} 2> /dev/null || true
 
 delete_if_empty \
     "${BASE_PATH}/games/mame" \
@@ -519,7 +574,7 @@ if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
     echo "Check your connection and then run this script again."
     EXIT_CODE=1
 else
-    echo "Update All 1.0 finished. Your MiSTer has been updated successfully!"
+    echo "Update All ${UPDATE_ALL_VERSION} finished. Your MiSTer has been updated successfully!"
     EXIT_CODE=0
 fi
 
@@ -529,14 +584,19 @@ echo
 echo "Full log for more details: ${GLOG_PATH}"
 echo
 
+if [[ "${EXIT_CODE}" == "0" ]] ; then
+    echo "${UPDATE_ALL_VERSION}" > "${LAST_MRA_PROCESSING_PATH}"
+    echo "${NEW_MRA_TIME}" >> "${LAST_MRA_PROCESSING_PATH}"
+fi
+
 if [[ "${REBOOT_NEEDED}" == "true" ]] ; then
     REBOOT_PAUSE=$((WAIT_TIME_FOR_READING * 2))
-	if [[ "${AUTOREBOOT}" == "true" && "${REBOOT_PAUSE}" -ge 0 ]] ; then
-		echo "Rebooting in ${REBOOT_PAUSE} seconds"
-		sleep "${REBOOT_PAUSE}"
-		reboot now
-	else
-		echo "You should reboot"
+    if [[ "${AUTOREBOOT}" == "true" && "${REBOOT_PAUSE}" -ge 0 ]] ; then
+        echo "Rebooting in ${REBOOT_PAUSE} seconds"
+        sleep "${REBOOT_PAUSE}"
+        reboot now
+    else
+        echo "You should reboot"
         echo
     fi
 fi

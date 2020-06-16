@@ -93,18 +93,26 @@ AUTOREBOOT="true"
 # Waiting time between scripts.
 WAIT_TIME_FOR_READING=4
 
-# When "true" it disables optimizations that might skip the script MAME_GETTER
-# and/or ARCADE_ORGANIZER if now new MRAs are detected.
-ALWAYS_ASSUME_NEW_STANDARD_MRA="false"
-
-# When "true" it disables optimizations that might skip the script HBMAME_GETTER
-# and/or ARCADE_ORGANIZER if now new MRAs are detected.
-ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA="false"
+###########################
+# Troubleshooting Options #
+###########################
 
 # Network resilience parameters
 CURL_RETRY="--connect-timeout 15 --max-time 120 --retry 3 --retry-delay 5 --silent --show-error"
 ALLOW_INSECURE_SSL="true"
 
+# This will ignore optimizations and will always try to download ALL needed mame roms.
+# Use it if some roms are not being downloaded, and you don't know why.
+# Will become obsolete once MAME-GETTER has its own optimization logic.
+MAME_GETTER_FORCE_FULL_RESYNC="false"
+# This will ignore optimizations and will always try to download ALL needed hbmame roms.
+# Use it if some roms are not being downloaded, and you don't know why.
+# Will become obsolete once HBMAME-GETTER has its own optimization logic.
+HBMAME_GETTER_FORCE_FULL_RESYNC="false"
+# This will ignore optimizations and will always try to organize ALL installed MRAs.
+# Use it if some MRAs are not being organized, and you don't know why.
+# Will become obsolete once Arcade Organizer has its own optimization logic.
+ARCADE_ORGANIZER_FORCE_FULL_RESYNC="false"
 ```
 ## Funding
 
