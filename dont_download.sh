@@ -392,7 +392,7 @@ read_ini_arcade_organizer() {
     fi
 
     if [ -d "${ARCADE_ORGANIZER_ORGDIR}" ] ; then
-        find "${ARCADE_ORGANIZER_ORGDIR}/" -xtype l -exec rm {} || true \;
+        find "${ARCADE_ORGANIZER_ORGDIR}/" -xtype l -exec rm {} \; || true
     fi
 }
 
