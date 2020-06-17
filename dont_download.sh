@@ -296,7 +296,6 @@ run_mame_getter_script() {
             sed -i 's/#!\/bin\/bash/#!bash/g ' ${SCRIPT_PATH}
         fi
 
-        disable_global_log
         set +e
         if [ -s ${MRA_INPUT} ] ; then
             ${SCRIPT_PATH} --input-file ${MRA_INPUT}
@@ -305,7 +304,6 @@ run_mame_getter_script() {
         fi
         local SCRIPT_RET=$?
         set -e
-        enable_global_log
 
         if [ $SCRIPT_RET -ne 0 ]; then
             FAILING_UPDATERS+=("${SCRIPT_TITLE}")
