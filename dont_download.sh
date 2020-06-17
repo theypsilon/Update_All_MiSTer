@@ -479,12 +479,15 @@ delete_if_empty() {
     fi
 }
 
-UPDATED_MRAS=
-UPDATED_MAME_MRAS=
-UPDATED_HBMAME_MRAS=
+UPDATED_MRAS=".none"
+UPDATED_MAME_MRAS=".none"
+UPDATED_HBMAME_MRAS=".none"
 LAST_MRA_PROCESSING_PATH=
 find_mras() {
-    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
+        touch .none
+        return
+    fi
 
     draw_separator
 
