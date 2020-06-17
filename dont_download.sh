@@ -486,6 +486,8 @@ LAST_MRA_PROCESSING_PATH=
 find_mras() {
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
 
+    draw_separator
+
     UPDATED_MRAS=$(mktemp)
     UPDATED_MAME_MRAS=$(mktemp)
     UPDATED_HBMAME_MRAS=$(mktemp)
@@ -599,37 +601,36 @@ run_update_all() {
     fi
 
     NEW_MRA_TIME=$(date)
-    draw_separator
 
     find_mras
 
     if [[ "${MAME_GETTER}" == "true" ]] ; then
         run_mame_getter_script "MAME-GETTER" read_ini_mame_getter should_run_mame_getter ${MAME_GETTER_INI} \
-        https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh ${UPDATED_MAME_MRAS}
+        https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh "${UPDATED_MAME_MRAS}"
     fi
 
     if [[ "${HBMAME_GETTER}" == "true" ]] ; then
         run_mame_getter_script "HBMAME-GETTER" read_ini_hbmame_getter should_run_hbmame_getter ${HBMAME_GETTER_INI} \
-        https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh ${UPDATED_HBMAME_MRAS}
+        https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh "${UPDATED_HBMAME_MRAS}"
     fi
 
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
         run_mame_getter_script "_ARCADE-ORGANIZER" read_ini_arcade_organizer should_run_arcade_organizer ${ARCADE_ORGANIZER_INI} \
-        https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh ${UPDATED_MRAS}
+        https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh "${UPDATED_MRAS}"
     fi
-
-    draw_separator
 
     rm ${UPDATED_MRAS} 2> /dev/null || true
     rm ${UPDATED_MAME_MRAS} 2> /dev/null || true
     rm ${UPDATED_HBMAME_MRAS} 2> /dev/null || true
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] && [ ! -f ../Scripts/update_all.sh ] ; then
+        draw_separator
         echo "Installing update_all.sh in /Scripts"
         mkdir -p ../Scripts
         curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ../Scripts/update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
-        draw_separator
     fi
+
+    draw_separator
 
     delete_if_empty \
         "${BASE_PATH}/games/mame" \
