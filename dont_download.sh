@@ -144,6 +144,9 @@ initialize() {
         HBMAME_GETTER_INI="${EXPORTED_INI_PATH}"
         ARCADE_ORGANIZER_INI="${EXPORTED_INI_PATH}"
         ARCADE_ORGANIZER="false"
+        if [[ "${UPDATE_ALL_PC_UPDATER_ENCC_FORKS:-}" == "true" ]] ; then
+            ENCC_FORKS="true"
+        fi
     fi
 }
 
@@ -496,10 +499,10 @@ find_mras() {
     UPDATED_HBMAME_MRAS=$(mktemp)
 
     LAST_MRA_PROCESSING_PATH="${WORK_PATH}/$(basename ${EXPORTED_INI_PATH%.*}.last_mra_processing)"
+
+    local LAST_MRA_PROCESSING_TIME=$(date --date='@-86400')
     if [ -f ${LAST_MRA_PROCESSING_PATH} ] ; then
         LAST_MRA_PROCESSING_TIME=$(cat "${LAST_MRA_PROCESSING_PATH}" | sed '2q;d')
-    else
-        LAST_MRA_PROCESSING_TIME=$(date --date='@-86400')
     fi
 
     for path in $(arcade_paths ${MAIN_UPDATER_INI} ${JOTEGO_UPDATER_INI} ${UNOFFICIAL_UPDATER_INI}) ; do
@@ -514,7 +517,7 @@ find_mras() {
         cat ${UPDATED_MRAS} | grep -e 'HBMame\.mra$' > ${UPDATED_HBMAME_MRAS} || true
     fi
 
-    UPDATED_MRAS_WCL=$(wc -l ${UPDATED_MRAS} | awk '{print $1}')
+    local UPDATED_MRAS_WCL=$(wc -l ${UPDATED_MRAS} | awk '{print $1}')
     echo "Found ${UPDATED_MRAS_WCL} new MRAs."
     if [ ${UPDATED_MRAS_WCL} -ge 1 ] ; then
         echo "$(wc -l ${UPDATED_MAME_MRAS} | awk '{print $1}') use mame."
@@ -567,7 +570,7 @@ run_update_all() {
     echo
     echo "Start time: $(date)"
 
-    REBOOT_NEEDED="false"
+    local REBOOT_NEEDED="false"
     FAILING_UPDATERS=()
 
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
@@ -603,7 +606,7 @@ run_update_all() {
         fi
     fi
 
-    NEW_MRA_TIME=$(date)
+    local NEW_MRA_TIME=$(date)
 
     find_mras
 
@@ -642,6 +645,7 @@ run_update_all() {
         "${BASE_PATH}/_Arcade/hbmame" \
         "${BASE_PATH}/_Arcade/mra_backup"
 
+    local EXIT_CODE=0
     if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
         echo "There were some errors in the Updaters."
         echo "Therefore, MiSTer hasn't been fully updated."
@@ -656,7 +660,6 @@ run_update_all() {
         EXIT_CODE=1
     else
         echo "Update All ${UPDATE_ALL_VERSION} finished. Your MiSTer has been updated successfully!"
-        EXIT_CODE=0
     fi
 
     echo
