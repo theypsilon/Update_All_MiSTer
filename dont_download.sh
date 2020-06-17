@@ -55,6 +55,8 @@ AUTOREBOOT="true"
 
 # ========= CODE STARTS HERE =========
 UPDATE_ALL_VERSION="1.0"
+UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
+UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
 ORIGINAL_SCRIPT_PATH="${0}"
 INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
@@ -63,20 +65,26 @@ GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH="${WORK_PATH}/${LOG_FILENAME}"
 
 enable_global_log() {
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
     exec >  >(tee -ia ${GLOG_TEMP})
     exec 2> >(tee -ia ${GLOG_TEMP} >&2)
 }
 
 disable_global_log() {
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
     exec 1>&6 ; exec 2>&7
 }
 
-initialize() {
-    # Initialize Global LOG
+initialize_global_log() {
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
     rm ${GLOG_TEMP} 2> /dev/null || true
     exec 6>&1 ; exec 7>&2 # Saving stdout and stderr
     enable_global_log
     trap "mv ${GLOG_TEMP} ${GLOG_PATH}" EXIT
+}
+
+initialize() {
+    initialize_global_log
 
     echo "Executing 'Update All' script"
     echo "The All-in-One Updater for MiSTer"
@@ -85,13 +93,13 @@ initialize() {
     echo
     echo "Reading INI file '${EXPORTED_INI_PATH}':"
     if [ -f ${EXPORTED_INI_PATH} ] ; then
-        cp ${EXPORTED_INI_PATH} ${INI_PATH}
+        cp ${EXPORTED_INI_PATH} ${INI_PATH} 2> /dev/null || true
 
         TMP=$(mktemp)
         dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
+
         source ${TMP}
         rm -f ${TMP}
-
         echo "OK."
     else
         echo "Not found."
@@ -126,11 +134,23 @@ initialize() {
         echo "    ARCADE_ORGANIZER_FORCE_FULL_RESYNC=\"true\""
         sleep ${WAIT_TIME_FOR_READING}
     fi
+
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
+        MAIN_UPDATER_INI="${EXPORTED_INI_PATH}"
+        JOTEGO_UPDATER_INI="${EXPORTED_INI_PATH}"
+        UNOFFICIAL_UPDATER_INI="${EXPORTED_INI_PATH}"
+        LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}"
+        MAME_GETTER_INI="${EXPORTED_INI_PATH}"
+        HBMAME_GETTER_INI="${EXPORTED_INI_PATH}"
+        ARCADE_ORGANIZER_INI="${EXPORTED_INI_PATH}"
+        ARCADE_ORGANIZER="false"
+    fi
 }
 
 MAIN_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
 DB9_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_DB9/master/mister_updater.sh"
 dialog_main_updater() {
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
     case "${ENCC_FORKS}" in
         true)
             MAIN_UPDATER_URL="${DB9_UPDATER_URL}"
@@ -210,17 +230,23 @@ run_updater_script() {
     echo "https://github.com/${BASH_REMATCH[3]}/${BASH_REMATCH[4]}"
     echo ""
 
-    set +e
-    curl \
-        ${CURL_RETRY} \
-        ${SSL_SECURITY_OPTION} \
-        --fail \
-        --location \
-        ${SCRIPT_URL} | \
-        sed "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" | \
-        sed 's/${AUTOREBOOT}/false/g' | \
-        bash -
+    local SCRIPT_PATH="/tmp/ua_current_updater.sh"
+    rm ${SCRIPT_PATH} 2> /dev/null || true
 
+    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
+
+    sed -i "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
+    sed -i 's/${AUTOREBOOT}/false/g' ${SCRIPT_PATH}
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
+        sed -i 's/\/media\/fat/\.\./g ' ${SCRIPT_PATH}
+        sed -i 's/UPDATE_LINUX="true"/UPDATE_LINUX="false"/g' ${SCRIPT_PATH}
+    fi
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
+        sed -i "s/ *60)/77)/g" ${SCRIPT_PATH}
+    fi
+
+    set +e
+    cat ${SCRIPT_PATH} | bash -
     UPDATER_RET=$?
     set -e
 
@@ -243,7 +269,7 @@ run_mame_getter_script() {
     echo "Downloading the most recent $(basename ${SCRIPT_FILENAME}) script."
     echo " "
 
-    wget -q -t 3 --output-file=/tmp/wget-log --show-progress -O ${SCRIPT_PATH} ${SCRIPT_URL}
+    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
     echo
 
     local INIFILE_FIXED=$(mktemp)
@@ -260,6 +286,12 @@ run_mame_getter_script() {
         echo "STARTING: ${SCRIPT_TITLE}"
         chmod +x ${SCRIPT_PATH}
         sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
+        if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
+            sed -i 's/\/media\/fat/\.\./g ' ${SCRIPT_PATH}
+        fi
+        if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
+            sed -i 's/#!\/bin\/bash/#!bash/g ' ${SCRIPT_PATH}
+        fi
 
         disable_global_log
         set +e
@@ -447,76 +479,12 @@ delete_if_empty() {
     fi
 }
 
-run_update_all() {
-    initialize
-
-    echo
-    echo "Sequence:"
-    if [[ "${MAIN_UPDATER}" == "true" ]] ; then
-        echo "- Main Updater (ENCC_FORKS: ${ENCC_FORKS})"
-    fi
-    if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        echo "- Jotego Updater"
-    fi
-    if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-        echo "- Unofficial Updater"
-    fi
-    if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
-        echo "- LLAPI Updater"
-    fi
-    if [[ "${MAME_GETTER}" == "true" ]] ; then
-        echo "- MAME Getter (forced: ${MAME_GETTER_FORCE_FULL_RESYNC})"
-    fi
-    if [[ "${HBMAME_GETTER}" == "true" ]] ; then
-        echo "- HBMAME Getter (forced: ${HBMAME_GETTER_FORCE_FULL_RESYNC})"
-    fi
-    if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-        echo "- Arcade Organizer (forced: ${ARCADE_ORGANIZER_FORCE_FULL_RESYNC})"
-    fi
-
-    sleep ${WAIT_TIME_FOR_READING}
-
-    echo
-    echo "Start time: $(date)"
-
-    REBOOT_NEEDED="false"
-    FAILING_UPDATERS=()
-
-    if [[ "${MAIN_UPDATER}" == "true" ]] ; then
-        dialog_main_updater
-        run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
-        if [ $UPDATER_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/${LOG_FILENAME}")
-        fi
-        sleep 1
-        if tail -n 30 ${GLOG_TEMP} | grep -q "You should reboot" ; then
-            REBOOT_NEEDED="true"
-        fi
-    fi
-
-    if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        run_updater_script https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh ${JOTEGO_UPDATER_INI}
-        if [ $UPDATER_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}")
-        fi
-    fi
-
-    if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-        run_updater_script https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh ${UNOFFICIAL_UPDATER_INI}
-        if [ $UPDATER_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}")
-        fi
-    fi
-
-    if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
-        run_updater_script https://raw.githubusercontent.com/MiSTer-LLAPI/Updater_script_MiSTer/master/llapi_updater.sh ${LLAPI_UPDATER_INI}
-        if [ $UPDATER_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("LLAPI")
-        fi
-    fi
-
-    NEW_MRA_TIME=$(date)
-    draw_separator
+UPDATED_MRAS=
+UPDATED_MAME_MRAS=
+UPDATED_HBMAME_MRAS=
+LAST_MRA_PROCESSING_PATH=
+find_mras() {
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
 
     UPDATED_MRAS=$(mktemp)
     UPDATED_MAME_MRAS=$(mktemp)
@@ -559,6 +527,81 @@ run_update_all() {
     if [[ "${ARCADE_ORGANIZER_FORCE_FULL_RESYNC}" == "true" ]] ; then
         rm ${UPDATED_MRAS}
     fi
+}
+
+run_update_all() {
+
+    initialize
+
+    echo
+    echo "Sequence:"
+    if [[ "${MAIN_UPDATER}" == "true" ]] ; then
+        echo "- Main Updater (ENCC_FORKS: ${ENCC_FORKS})"
+    fi
+    if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
+        echo "- Jotego Updater"
+    fi
+    if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
+        echo "- Unofficial Updater"
+    fi
+    if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
+        echo "- LLAPI Updater"
+    fi
+    if [[ "${MAME_GETTER}" == "true" ]] ; then
+        echo "- MAME Getter (forced: ${MAME_GETTER_FORCE_FULL_RESYNC})"
+    fi
+    if [[ "${HBMAME_GETTER}" == "true" ]] ; then
+        echo "- HBMAME Getter (forced: ${HBMAME_GETTER_FORCE_FULL_RESYNC})"
+    fi
+    if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
+        echo "- Arcade Organizer (forced: ${ARCADE_ORGANIZER_FORCE_FULL_RESYNC})"
+    fi
+
+    sleep ${WAIT_TIME_FOR_READING}
+
+    echo
+    echo "Start time: $(date)"
+
+    REBOOT_NEEDED="false"
+    FAILING_UPDATERS=()
+
+    if [[ "${MAIN_UPDATER}" == "true" ]] ; then
+        dialog_main_updater
+        run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
+        if [ $UPDATER_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/${LOG_FILENAME}")
+        fi
+        sleep 1
+        if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && tail -n 30 ${GLOG_TEMP} | grep -q "You should reboot" ; then
+            REBOOT_NEEDED="true"
+        fi
+    fi
+
+    if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
+        run_updater_script https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh ${JOTEGO_UPDATER_INI}
+        if [ $UPDATER_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}")
+        fi
+    fi
+
+    if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
+        run_updater_script https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh ${UNOFFICIAL_UPDATER_INI}
+        if [ $UPDATER_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}")
+        fi
+    fi
+
+    if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
+        run_updater_script https://raw.githubusercontent.com/MiSTer-LLAPI/Updater_script_MiSTer/master/llapi_updater.sh ${LLAPI_UPDATER_INI}
+        if [ $UPDATER_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("LLAPI")
+        fi
+    fi
+
+    NEW_MRA_TIME=$(date)
+    draw_separator
+
+    find_mras
 
     if [[ "${MAME_GETTER}" == "true" ]] ; then
         run_mame_getter_script "MAME-GETTER" read_ini_mame_getter should_run_mame_getter ${MAME_GETTER_INI} \
@@ -580,6 +623,13 @@ run_update_all() {
     rm ${UPDATED_MRAS} 2> /dev/null || true
     rm ${UPDATED_MAME_MRAS} 2> /dev/null || true
     rm ${UPDATED_HBMAME_MRAS} 2> /dev/null || true
+
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] && [ ! -f ../Scripts/update_all.sh ] ; then
+        echo "Installing update_all.sh in /Scripts"
+        mkdir -p ../Scripts
+        curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ../Scripts/update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
+        draw_separator
+    fi
 
     delete_if_empty \
         "${BASE_PATH}/games/mame" \
@@ -608,10 +658,13 @@ run_update_all() {
     echo
     echo "End time: $(date)"
     echo
-    echo "Full log for more details: ${GLOG_PATH}"
-    echo
 
-    if [[ "${EXIT_CODE}" == "0" ]] ; then
+    if [[ "${UPDATE_ALL_OS}" != "WINDOWS" ]] ; then
+        echo "Full log for more details: ${GLOG_PATH}"
+        echo
+    fi
+
+    if [[ "${EXIT_CODE}" == "0" ]] && [[ "${LAST_MRA_PROCESSING_PATH}" != "" ]]; then
         echo "${UPDATE_ALL_VERSION}" > "${LAST_MRA_PROCESSING_PATH}"
         echo "${NEW_MRA_TIME}" >> "${LAST_MRA_PROCESSING_PATH}"
     fi
