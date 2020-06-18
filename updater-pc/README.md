@@ -5,7 +5,7 @@ Any configuration file should be placed at *updater-pc/update_all.ini* before yo
 
 After the updater is done, copy all the contents of that folder to your MiSTer SD card.
 
-Next time you can execute the same script from the MiSTer SD card directly*. 
+Next time you can execute the same script from the MiSTer SD card directly*.
 
 Windows binaries licenses are under *licenses* directory in the zip file.
 - curl https://curl.haxx.se/ ([LICENSE](https://github.com/curl/curl/blob/master/COPYING))

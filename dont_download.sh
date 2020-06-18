@@ -513,6 +513,9 @@ run_update_all() {
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
         echo "- Arcade Organizer (forced: ${ARCADE_ORGANIZER_FORCE_FULL_RESYNC})"
     fi
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] && [ ! -f ../Scripts/update_all.sh ] ; then
+        echo "- update_all.sh Script"
+    fi
 
     sleep ${WAIT_TIME_FOR_READING}
 
@@ -580,9 +583,14 @@ run_update_all() {
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] && [ ! -f ../Scripts/update_all.sh ] ; then
         draw_separator
-        echo "Installing update_all.sh in /Scripts"
+        echo "Installing update_all.sh in MiSTer /Scripts directory."
         mkdir -p ../Scripts
         curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ../Scripts/update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
+
+        if [ -f update_all.ini ] ; then
+            echo "Installing update_all.ini too."
+            cp update_all.ini ../Scripts/update_all.ini
+        fi
     fi
 
     draw_separator
