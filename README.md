@@ -1,4 +1,4 @@
-# Update All MiSTer
+# Update All
 All-in-one script for keeping up-to-date with the [MiSTer](https://github.com/MiSTer-devel/Main_MiSTer/wiki) ecosystem.
 
 This script chains the following scripts:
