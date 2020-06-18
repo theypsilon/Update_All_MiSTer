@@ -26,10 +26,12 @@ It will take around 30 minutes the first time you run it, but later runs should 
 ## Alternative Setups
 
 Other setups that might be useful for you:
+- [DB9/SNAC8 ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_db9_snac8.zip): These cores support [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers.
 - [Unofficial Cores ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_unofficials.zip): With this one you'll download also [these cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) without having to touch anything else.
 - [No MRA-Alternatives ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_no_mra_alternatives.zip): This setup is in case you wanna skip the `_alternatives` folder, which contains arcade variants, such as hacks, bootlegs, and different regions.
 - [LLAPI ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_llapi.zip): In case you would like to download [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) too.
 - [usb0 ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_usb0.zip): For people using USB as primary storage. You will be able to run this script from there and install all cores, roms, and MRAs on `/media/usb0`.
+
 
 NOTE: You should extract also `update_all.ini` in these.
 
@@ -46,8 +48,7 @@ BASE_PATH="/media/fat"
 # Selects Main MiSTer Updater to be used.
 ## "false" to use the Official Main MiSTer Updater.
 ## "true" to use the DB9 Fork Main MiSTer Updater
-## "dialog" to choose between both when you run this script first time.
-ENCC_FORKS="dialog"
+ENCC_FORKS="false"
 
 # "false" to skip the Main Updater entirely
 MAIN_UPDATER="true"

@@ -24,7 +24,7 @@ set -euo pipefail
 # ========= OPTIONS ==================
 BASE_PATH="/media/fat"
 
-ENCC_FORKS="dialog" # Possible values: "true", "false" or "dialog"
+ENCC_FORKS="false" # Possible values: "true", "false"
 
 MAIN_UPDATER="true"
 MAIN_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
@@ -152,61 +152,12 @@ initialize() {
 
 MAIN_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
 DB9_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_DB9/master/mister_updater.sh"
-dialog_main_updater() {
-    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
+select_main_updater() {
     case "${ENCC_FORKS}" in
         true)
             MAIN_UPDATER_URL="${DB9_UPDATER_URL}"
             ;;
-        false)
-            ;;
         *)
-            sleep ${WAIT_TIME_FOR_READING}
-            sleep ${WAIT_TIME_FOR_READING}
-            disable_global_log
-            set +e
-            dialog --title "Extended Native Controller Compatibility"  --yesno "Would you like to install unofficial forks from MiSTer-devel cores that are patched to be compatible with native Genesis (DB9), and NeoGeo/Supergun (DB15) controllers?\n\nIn order to use them, you require an unofficial SNAC8 adapter.\n\nMore info at: https://github.com/theypsilon/Update_All_MiSTer/wiki" 11 75
-            DIALOG_RET=$?
-            set -e
-            enable_global_log
-            case $DIALOG_RET in
-                0)
-                    SELECTION="ENCC_FORKS=\"true\""
-                    MAIN_UPDATER_URL="${DB9_UPDATER_URL}"
-                    ;;
-                1)
-                    SELECTION="ENCC_FORKS=\"false\""
-                    ;;
-                *)
-                    echo
-                    echo "Execution aborted by user input."
-                    echo "You pressed ESC/Back button."
-                    exit 0
-                    ;;
-            esac
-            disable_global_log
-            set +e
-            dialog --title "Save ENCC selection?"  --yesno "Would you like to save your previous selection in ${EXPORTED_INI_PATH/*\//}?\n\n${SELECTION}\n\nSaving this will stop this dialog from appearing the next time you run this script." 10 75
-            DIALOG_RET=$?
-            set -e
-            enable_global_log
-            case $DIALOG_RET in
-                0)
-                    if grep "ENCC_FORKS" ${EXPORTED_INI_PATH} 2> /dev/null ; then
-                        sed -i '/ENCC_FORKS/d' ${EXPORTED_INI_PATH} 2> /dev/null
-                    fi
-                    echo >> ${EXPORTED_INI_PATH}
-                    echo "${SELECTION}" >> ${EXPORTED_INI_PATH}
-                    ;;
-                1)
-                    ;;
-                *)
-                    echo
-                    echo "Execution aborted by user input."
-                    echo "You pressed ESC/Back button."
-                    exit 0
-                    ;;
-            esac
             ;;
     esac
 }
@@ -572,7 +523,7 @@ run_update_all() {
     FAILING_UPDATERS=()
 
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
-        dialog_main_updater
+        select_main_updater
         run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
         if [ $UPDATER_RET -ne 0 ]; then
             FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/${LOG_FILENAME}")
