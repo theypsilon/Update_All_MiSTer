@@ -35,6 +35,10 @@ Other setups that might be useful for you:
 
 NOTE: You should extract also `update_all.ini` in these.
 
+## Offline Setup
+
+Check [updater-pc](./updater-pc) to download all the MiSTer files from your PC. Useful if you can't connect your MiSTer to internet.
+
 ## Further Configuration
 
 In case you would like to modify options by hand, you can create a `update_all.ini` file sitting next to where you have downloaded `update_all.sh`. In case you renamed `update_all.sh` you need to rename its INI file too, so they both share the same basename.
