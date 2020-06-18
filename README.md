@@ -7,13 +7,15 @@ This script chains the following scripts:
     * [DB9 Fork Main MiSTer Updater](https://github.com/theypsilon/Updater_script_MiSTer_DB9) with [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers. Requires [SNAC8](https://github.com/theypsilon/Update_All_MiSTer/wiki#snac8) compatible adapter.
 2. [Jotego Cores Updater](https://github.com/jotego/Updater_script_MiSTer). Downloads many advanced cores made by [Jotego](https://github.com/jotego).
 3. [Unofficial Cores Updater](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial). Downloads [some cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) that are not yet released but are fairly stable. Disabled by default.
-4. [LLAPI Cores Updater](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). Disabled by default.
+4. [LLAPI Cores Updater](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). Disabled by default.
 5. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
 6. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
 This script also contains some snippets from the __Updater script__ maintained by [Locutus73](https://github.com/Locutus73).
 
 __MAME__ and __HBMAME Getters__ and __Arcade Organizer__ scripts are maintained by [amoore2600](https://www.youtube.com/channel/UC_IynEJIMqkYaCVjEk_EIlg).
+
+
 
 ## Setup
 
@@ -23,6 +25,8 @@ Then turn on your __MiSTer__, go to the _Scripts_ menu and run this script from 
 
 It will take around 30 minutes the first time you run it, but later runs should take much less time.
 
+
+
 ## Alternative Setups
 
 Other setups that might be useful for you:
@@ -30,14 +34,21 @@ Other setups that might be useful for you:
 - [Unofficial Cores ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_unofficials.zip): With this one you'll download also [these cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) without having to touch anything else.
 - [No MRA-Alternatives ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_no_mra_alternatives.zip): This setup is in case you wanna skip the `_alternatives` folder, which contains arcade variants, such as hacks, bootlegs, and different regions.
 - [LLAPI ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_llapi.zip): In case you would like to download [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) too.
+- [No ROMS ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_no_roms.zip): In case you would like to skip those scripts that deal with roms.
 - [usb0 ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_usb0.zip): For people using USB as primary storage. You will be able to run this script from there and install all cores, roms, and MRAs on `/media/usb0`.
 
 
 NOTE: You should extract also `update_all.ini` in these.
 
+
+
 ## Offline Setup
 
-Check [updater-pc](./updater-pc) to download all the MiSTer files from your PC. Useful if you can't connect your MiSTer to internet.
+Check [updater-pc](./updater-pc) to download all the MiSTer files from your PC.
+
+Useful if you can't connect your MiSTer to internet.
+
+
 
 ## Further Configuration
 
@@ -118,6 +129,8 @@ HBMAME_GETTER_FORCE_FULL_RESYNC="false"
 ARCADE_ORGANIZER_FORCE_FULL_RESYNC="false"
 ```
 
+
+
 ## Optimizations
 
 The __MAME__ and __HBMAME Getters__ are skipped if no new MRA are detected in the device.
@@ -132,7 +145,25 @@ __Arcade Organizer__ is also skipped if there isn't any new MRA.
 
 Consider funding [Alexey Melnikov "Sorgelig"](https://www.patreon.com/FPGAMiSTer) for his invaluable work on the [MiSTer project](https://github.com/MiSTer-devel/Main_MiSTer/wiki).
 
+
+
 ## License
 
 Copyright © 2020, [José Manuel Barroso Galindo](https://github.com/theypsilon).
 Released under the [GPL v3 License](LICENSE).
+
+
+
+## Warning
+
+I take no responsibility for any data loss or any damage you may incur because of the usage of this script.
+
+Please check the README.md of the scripts being called by Update All:
+
+https://github.com/MiSTer-devel/Updater_script_MiSTer
+https://github.com/theypsilon/Updater_script_MiSTer_DB9
+https://github.com/jotego/Updater_script_MiSTer
+https://github.com/theypsilon/Updater_script_MiSTer_Unofficial
+https://github.com/MiSTer-LLAPI/Updater_script_MiSTer
+https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS
+https://github.com/MAME-GETTER/_arcade-organizer
