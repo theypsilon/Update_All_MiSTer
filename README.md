@@ -30,7 +30,7 @@ It will take around 30 minutes the first time you run it, but later runs should 
 ## Alternative Setups
 
 Other setups that might be useful for you:
-- [DB9/SNAC8 ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_db9_snac8.zip): These cores support [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers.
+- [DB9/SNAC8 ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_db9_snac8.zip): Enables [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers.
 - [Unofficial Cores ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_unofficials.zip): With this one you'll download also [these cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) without having to touch anything else.
 - [No MRA-Alternatives ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_no_mra_alternatives.zip): This setup is in case you wanna skip the `_alternatives` folder, which contains arcade variants, such as hacks, bootlegs, and different regions.
 - [LLAPI ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_llapi.zip): In case you would like to download [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) too.
@@ -160,10 +160,10 @@ I take no responsibility for any data loss or any damage you may incur because o
 
 Please check the README.md of the scripts being called by Update All:
 
-https://github.com/MiSTer-devel/Updater_script_MiSTer
-https://github.com/theypsilon/Updater_script_MiSTer_DB9
-https://github.com/jotego/Updater_script_MiSTer
-https://github.com/theypsilon/Updater_script_MiSTer_Unofficial
-https://github.com/MiSTer-LLAPI/Updater_script_MiSTer
-https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS
-https://github.com/MAME-GETTER/_arcade-organizer
+https://github.com/MiSTer-devel/Updater_script_MiSTer<br>
+https://github.com/theypsilon/Updater_script_MiSTer_DB9<br>
+https://github.com/jotego/Updater_script_MiSTer<br>
+https://github.com/theypsilon/Updater_script_MiSTer_Unofficial<br>
+https://github.com/MiSTer-LLAPI/Updater_script_MiSTer<br>
+https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS<br>
+https://github.com/MAME-GETTER/_arcade-organizer<br>
