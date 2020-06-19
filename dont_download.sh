@@ -493,7 +493,11 @@ run_update_all() {
     echo
     echo "Sequence:"
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
-        echo "- Main Updater (ENCC_FORKS: ${ENCC_FORKS})"
+        if [[ "${ENCC_FORKS}" == "true" ]] ; then
+            echo "- Main Updater: DB9 / SNAC8"
+        else
+            echo "- Main Updater: MiSTer-devel"
+        fi
     fi
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
         echo "- Jotego Updater"
