@@ -191,6 +191,7 @@ run_updater_script() {
 
     sed -i "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
     sed -i 's/${AUTOREBOOT}/false/g' ${SCRIPT_PATH}
+    sed -i 's/--max-time 120/--max-time 240/g' ${SCRIPT_PATH}
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
         sed -i 's/\/media\/fat/\.\./g ' ${SCRIPT_PATH}
         sed -i 's/UPDATE_LINUX="true"/UPDATE_LINUX="false"/g' ${SCRIPT_PATH}
