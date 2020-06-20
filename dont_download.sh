@@ -53,6 +53,7 @@ ARCADE_ORGANIZER_FORCE_FULL_RESYNC="false"
 WAIT_TIME_FOR_READING=4
 AUTOREBOOT="true"
 
+NAMES_TXT="false"
 # ========= CODE STARTS HERE =========
 UPDATE_ALL_VERSION="1.1"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
@@ -172,6 +173,19 @@ draw_separator() {
     sleep 1
 }
 
+fetch_or_exit() {
+    if curl ${@} ; then return ; fi
+
+    echo "There was some network problem."
+    echo
+    echo "Following file couldn't be downloaded:"
+    echo ${@: -1}
+    echo
+    echo "Please try again later."
+    echo
+    exit 1
+}
+
 UPDATER_RET=0
 run_updater_script() {
     local SCRIPT_URL="${1}"
@@ -187,7 +201,7 @@ run_updater_script() {
     local SCRIPT_PATH="/tmp/ua_current_updater.sh"
     rm ${SCRIPT_PATH} 2> /dev/null || true
 
-    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
+    fetch_or_exit ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
 
     sed -i "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
     sed -i 's/${AUTOREBOOT}/false/g' ${SCRIPT_PATH}
@@ -224,7 +238,7 @@ run_mame_getter_script() {
     echo "Downloading the most recent $(basename ${SCRIPT_FILENAME}) script."
     echo " "
 
-    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
+    fetch_or_exit ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
     echo
 
     local INIFILE_FIXED=$(mktemp)
@@ -509,6 +523,9 @@ run_update_all() {
     if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
         echo "- LLAPI Updater"
     fi
+    if [[ "${NAMES_TXT}" == "true" ]] ; then
+        echo "- names.txt (EARLY ALPHA, DON'T USE!)"
+    fi
     if [[ "${MAME_GETTER}" == "true" ]] ; then
         echo "- MAME Getter (forced: ${MAME_GETTER_FORCE_FULL_RESYNC})"
     fi
@@ -563,6 +580,23 @@ run_update_all() {
         fi
     fi
 
+    if [[ "${NAMES_TXT}" == "true" ]] ; then
+        draw_separator
+
+        echo "Checking names.txt"
+        echo "WARNING! This is a WIP feature that can be removed at any time."
+        echo "         DON'T USE IT!"
+        echo
+        rm /tmp/ua_names.txt 2> /dev/null || true
+        fetch_or_exit ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_names.txt https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/master/names.txt
+        if ! diff /tmp/ua_names.txt "${BASE_PATH}/names.txt" > /dev/null 2>&1 ; then
+            cp /tmp/ua_names.txt "${BASE_PATH}/names.txt"
+            echo "New names.txt installed."
+        else
+            echo "Skipping names.txt..."
+        fi
+    fi
+
     local NEW_MRA_TIME=$(date)
 
     find_mras
@@ -590,7 +624,7 @@ run_update_all() {
         draw_separator
         echo "Installing update_all.sh in MiSTer /Scripts directory."
         mkdir -p ../Scripts
-        curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ../Scripts/update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
+        fetch_or_exit ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ../Scripts/update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
 
         if [ -f update_all.ini ] ; then
             echo "Installing update_all.ini too."
