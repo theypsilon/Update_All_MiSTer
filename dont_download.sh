@@ -91,6 +91,10 @@ initialize() {
     echo "The All-in-One Updater for MiSTer"
     echo "Version ${UPDATE_ALL_VERSION}"
 
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] && [[ "${EXPORTED_INI_PATH}" == "/tmp/update_all.ini" ]] ; then
+        EXPORTED_INI_PATH="update_all.ini"
+    fi
+
     echo
     echo "Reading INI file '${EXPORTED_INI_PATH}':"
     if [ -f ${EXPORTED_INI_PATH} ] ; then
