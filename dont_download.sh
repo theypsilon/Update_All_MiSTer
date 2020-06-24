@@ -38,6 +38,10 @@ UNOFFICIAL_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/upda
 LLAPI_UPDATER="false"
 LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
 
+BIOS_GETTER="true"
+BIOS_GETTER_INI="/media/fat/Scripts/update_bios-getter.ini"
+BIOS_GETTER_FORCE_FULL_RESYNC="false"
+
 MAME_GETTER="true"
 MAME_GETTER_INI="/media/fat/Scripts/update_mame-getter.ini"
 MAME_GETTER_FORCE_FULL_RESYNC="false"
@@ -53,7 +57,10 @@ ARCADE_ORGANIZER_FORCE_FULL_RESYNC="false"
 WAIT_TIME_FOR_READING=4
 AUTOREBOOT="true"
 
+# ============ UNRELEASED ============
+COUNTDOWN_TIME=0
 NAMES_TXT="false"
+
 # ========= CODE STARTS HERE =========
 UPDATE_ALL_VERSION="1.1"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
@@ -84,6 +91,52 @@ initialize_global_log() {
     trap "mv ${GLOG_TEMP} ${GLOG_PATH}" EXIT
 }
 
+load_ini_file() {
+    local INI_PATH="${1}"
+
+    if [ ! -f ${INI_PATH} ] ; then
+        return
+    fi
+
+    local TMP=$(mktemp)
+    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
+
+    source ${TMP}
+    rm -f ${TMP}
+}
+
+load_vars_from_ini() {
+    local INI_PATH="${1}"
+
+    if [ ! -f ${INI_PATH} ] ; then
+        return
+    fi
+
+    local TMP=$(mktemp)
+    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
+
+    for var in "${@:2}" ; do
+        source <(grep ${var} ${TMP})
+    done
+    rm -f ${TMP}
+}
+
+load_single_var_from_ini() {
+    local VAR="${1}"
+    local INI_PATH="${2}"
+
+    local TMP=$(mktemp)
+    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
+
+    declare -n VALUE="${VAR}"
+    VALUE=
+    source <(grep ${VAR} ${TMP})
+
+    rm -f ${TMP}
+
+    echo "${VALUE}"
+}
+
 initialize() {
     initialize_global_log
 
@@ -99,12 +152,7 @@ initialize() {
     echo "Reading INI file '${EXPORTED_INI_PATH}':"
     if [ -f ${EXPORTED_INI_PATH} ] ; then
         cp ${EXPORTED_INI_PATH} ${INI_PATH} 2> /dev/null || true
-
-        TMP=$(mktemp)
-        dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
-
-        source ${TMP}
-        rm -f ${TMP}
+        load_ini_file "${INI_PATH}"
         echo "OK."
     else
         echo "Not found."
@@ -294,8 +342,10 @@ read_ini_mame_getter() {
     local SCRIPT_PATH="${1}"
     local SCRIPT_INI="${2}"
 
-    MAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMMAME=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
-    MAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    if [ -s ${SCRIPT_PATH} ] ; then
+        MAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMMAME=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+        MAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    fi
 
     if [ ! -s ${SCRIPT_INI} ] ; then
         return
@@ -330,8 +380,10 @@ read_ini_hbmame_getter() {
     local SCRIPT_PATH="${1}"
     local SCRIPT_INI="${2}"
 
-    HBMAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMHBMAME=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
-    HBMAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    if [ -s ${SCRIPT_PATH} ] ; then
+        HBMAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMHBMAME=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+        HBMAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    fi
 
     if [ ! -s ${SCRIPT_INI} ] ; then
         return
@@ -367,9 +419,11 @@ read_ini_arcade_organizer() {
     local SCRIPT_PATH="${1}"
     local SCRIPT_INI="${2}"
 
-    ARCADE_ORGANIZER_ORGDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ORGDIR" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
-    ARCADE_ORGANIZER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
-    ARCADE_ORGANIZER_SKIPALTS=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "SKIPALTS=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
+    if [ -s ${SCRIPT_PATH} ] ; then
+        ARCADE_ORGANIZER_ORGDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ORGDIR" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
+        ARCADE_ORGANIZER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
+        ARCADE_ORGANIZER_SKIPALTS=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "SKIPALTS=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
+    fi
 
     if [ ! -s ${SCRIPT_INI} ] ; then
         return
@@ -505,11 +559,7 @@ find_mras() {
     fi
 }
 
-run_update_all() {
-
-    initialize
-
-    echo
+sequence() {
     echo "Sequence:"
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
         if [[ "${ENCC_FORKS}" == "true" ]] ; then
@@ -542,10 +592,63 @@ run_update_all() {
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] && [ ! -f ../Scripts/update_all.sh ] ; then
         echo "- update_all.sh Script"
     fi
+}
 
-    sleep ${WAIT_TIME_FOR_READING}
-
+countdown() {
     echo
+    echo " *Press $(tput bold)UP$(tput sgr0): To enter the INI settings screen."
+    echo -n " *Press $(tput bold)DOWN$(tput sgr0): To continue now."
+    local COUNTDOWN_SELECTION="continue"
+    set +e
+    echo -e '\e[3A\e[K'
+    for (( i=0; i <= (( COUNTDOWN_TIME )); i++)); do
+        local SECONDS=$(( COUNTDOWN_TIME - i ))
+        if (( SECONDS < 10 )) ; then
+            SECONDS=" ${SECONDS}"
+        fi
+        printf "\rStarting in ${SECONDS} seconds."
+        for (( j=0; j < i; j++)); do
+            printf "."
+        done
+        read -r -s -N 1 -t 1 key
+        if [ "$key" = "A" ]; then
+                COUNTDOWN_SELECTION="menu"
+                break
+        fi
+        if [ "$key" = "B" ]; then
+                COUNTDOWN_SELECTION="continue"
+                break
+        fi
+    done
+    set -e
+    echo -e '\e[2B\e[K'
+    if [[ "${COUNTDOWN_SELECTION}" == "menu" ]] ; then
+        settings_menu_update_all
+        sequence
+        sleep ${WAIT_TIME_FOR_READING}
+    fi
+}
+
+run_update_all() {
+
+    initialize
+    echo
+
+    sequence
+    echo
+
+    if [ ${COUNTDOWN_TIME} -gt 0 ] ; then
+        if [[ -t 0 || -t 1 || -t 2 ]] ; then
+            disable_global_log
+            countdown
+            enable_global_log
+        else
+            echo "Not displaying countdown because fb_terminal=0 (on MiSTer.ini)"
+            sleep ${WAIT_TIME_FOR_READING}
+        fi
+        echo
+    fi
+
     echo "Start time: $(date)"
 
     local REBOOT_NEEDED="false"
@@ -592,7 +695,7 @@ run_update_all() {
         echo "         DON'T USE IT!"
         echo
         rm /tmp/ua_names.txt 2> /dev/null || true
-        fetch_or_exit ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_names.txt https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/master/names.txt
+        fetch_or_exit ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_names.txt https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/master/names_CHAR28_Manufacturer_US.txt
         if ! diff /tmp/ua_names.txt "${BASE_PATH}/names.txt" > /dev/null 2>&1 ; then
             cp /tmp/ua_names.txt "${BASE_PATH}/names.txt"
             echo "New names.txt installed."
@@ -689,6 +792,705 @@ run_update_all() {
     fi
 
     exit ${EXIT_CODE:-1}
+}
+
+TMP_UPDATE_ALL_INI="/tmp/ua.$(basename ${EXPORTED_INI_PATH})"
+TMP_MAIN_UPDATER_INI="/tmp/ua.update.ini"
+TMP_JOTEGO_UPDATER_INI="/tmp/ua.update_jtcores.ini"
+TMP_UNOFFICIAL_UPDATER_INI="/tmp/ua.update_unofficials.ini"
+TMP_LLAPI_UPDATER_INI="/tmp/ua.update_llapi.ini"
+TMP_MAME_GETTER_INI="/tmp/ua.mame_getter.ini"
+TMP_HBMAME_GETTER_INI="/tmp/ua.hbmame_getter.ini"
+TMP_ARCADE_ORGANIZER_INI="/tmp/ua.arcade_organizer.ini"
+
+declare -A SELECTED_INI_FILES
+settings_menu_update_all() {
+    SELECTED_INI_FILES["$(basename ${EXPORTED_INI_PATH})"]="${TMP_UPDATE_ALL_INI}"
+    SELECTED_INI_FILES["update.ini"]="${TMP_MAIN_UPDATER_INI}"
+    SELECTED_INI_FILES["update_jtcores.ini"]="${TMP_JOTEGO_UPDATER_INI}"
+    SELECTED_INI_FILES["update_unofficials.ini"]="${TMP_UNOFFICIAL_UPDATER_INI}"
+    SELECTED_INI_FILES["update_llapi.ini"]="${TMP_LLAPI_UPDATER_INI}"
+    SELECTED_INI_FILES["update_mame-getter.ini"]="${TMP_MAME_GETTER_INI}"
+    SELECTED_INI_FILES["update_hbmame-getter.ini"]="${TMP_HBMAME_GETTER_INI}"
+    SELECTED_INI_FILES["update_arcade-organizer.ini"]="${TMP_ARCADE_ORGANIZER_INI}"
+
+    settings_make_ini_from "${EXPORTED_INI_PATH}" "${TMP_UPDATE_ALL_INI}"
+    settings_make_ini_from "update.ini" "${TMP_MAIN_UPDATER_INI}"
+    settings_make_ini_from "update_jtcores.ini" "${TMP_JOTEGO_UPDATER_INI}"
+    settings_make_ini_from "update_unofficials.ini" "${TMP_UNOFFICIAL_UPDATER_INI}"
+    settings_make_ini_from "update_llapi.ini" "${TMP_LLAPI_UPDATER_INI}"
+    settings_make_ini_from "update_mame-getter.ini" "${TMP_MAME_GETTER_INI}"
+    settings_make_ini_from "update_hbmame-getter.ini" "${TMP_HBMAME_GETTER_INI}"
+    settings_make_ini_from "update_arcade-organizer.ini" "${TMP_ARCADE_ORGANIZER_INI}"
+
+    local TMP=$(mktemp)
+    while true ; do
+        (
+            load_ini_file "${TMP_UPDATE_ALL_INI}"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 Main Updater"
+            fi
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Abort" --ok-label "Select" --title "Update All INI Settings" \
+                --menu "Settings loaded from '$(basename ${EXPORTED_INI_PATH})'\n\n" 16 75 25 \
+                "1 Main Updater"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores and resources" \
+                "2 Jotego Updater" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego" \
+                "3 Unofficial Updater"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
+                "4 LLAPI Updater" "$(settings_active_tag ${LLAPI_UPDATER}) Forks adapted to LLAPI" \
+                "5 MAME Getter" "$(settings_active_tag ${MAME_GETTER}) MAME ROMs for arcades" \
+                "6 HBMAME Getter" "$(settings_active_tag ${HBMAME_GETTER}) HBMAME ROMs for arcades" \
+                "7 Arcade Organizer" "$(settings_active_tag ${ARCADE_ORGANIZER}) Creates folder for easy navigation" \
+                "SAVE" "Writes all changes to the INI file/s" \
+                "EXIT and RUN UPDATE ALL" "" 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+            case "${DEFAULT_SELECTION}" in
+                "1 Main Updater") settings_menu_main_updater ;;
+                "2 Jotego Updater") settings_menu_jotego_updater ;;
+                "3 Unofficial Updater") settings_menu_unofficial_updater ;;
+                "4 LLAPI Updater") settings_menu_llapi_updater ;;
+                "5 MAME Getter") settings_menu_mame_getter ;;
+                "6 HBMAME Getter") settings_menu_hbmame_getter ;;
+                "7 Arcade Organizer") settings_menu_arcade_organizer ;;
+                "SAVE") settings_menu_save ;;
+                "EXIT and RUN UPDATE ALL") settings_menu_exit_and_run ;;
+                *) settings_menu_cancel ;;
+            esac
+        )
+        if [ -f /tmp/ua_continue ] ; then
+            rm /tmp/ua_continue 2> /dev/null
+            break
+        fi
+        if [ -f /tmp/ua_break ] ; then
+            rm /tmp/ua_break 2> /dev/null
+            rm ${TMP}
+            exit 0
+        fi
+    done
+    rm ${TMP}
+
+    clear
+
+    if [ -f ${INI_PATH} ] ; then
+        load_ini_file "${INI_PATH}"
+    fi
+}
+
+### SETTINGS OPTIONS: MAIN UPDATER ##
+SETTINGS_OPTIONS_MAIN_UPDATER=("true" "false")
+SETTINGS_OPTIONS_MAIN_UPDATER_INI=("$(basename ${EXPORTED_INI_PATH})" "update.ini")
+SETTINGS_OPTIONS_ENCC_FORKS=("false" "true")
+SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES=("true" "false")
+SETTINGS_OPTIONS_UPDATE_LINUX=("true" "false")
+SETTINGS_OPTIONS_UPDATE_CHEATS=("once" "true" "false")
+SETTINGS_OPTIONS_MAME_ALT_ROMS=("true" "false")
+SETTINGS_OPTIONS_AUTOREBOOT=("true" "false")
+
+settings_menu_main_updater() {
+    local TMP=$(mktemp)
+    while true ; do
+        (
+            local MAIN_UPDATER="${SETTINGS_OPTIONS_MAIN_UPDATER[0]}"
+            local MAIN_UPDATER_INI="${SETTINGS_OPTIONS_MAIN_UPDATER_INI[0]}"
+            local ENCC_FORKS="${SETTINGS_OPTIONS_ENCC_FORKS[0]}"
+            local DOWNLOAD_NEW_CORES="${SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES[0]}"
+            local UPDATE_CHEATS="${SETTINGS_OPTIONS_UPDATE_CHEATS[0]}"
+            local UPDATE_LINUX="${SETTINGS_OPTIONS_UPDATE_LINUX[0]}"
+            local MAME_ALT_ROMS="${SETTINGS_OPTIONS_MAME_ALT_ROMS[0]}"
+            local AUTOREBOOT="${SETTINGS_OPTIONS_AUTOREBOOT[0]}"
+
+            load_vars_from_ini "${TMP_UPDATE_ALL_INI}" "MAIN_UPDATER" "MAIN_UPDATER_INI" "ENCC_FORKS"
+            load_ini_file "${SELECTED_INI_FILES[${MAIN_UPDATER_INI}]}"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 $(settings_active_action ${MAIN_UPDATER})"
+            fi
+
+            local ACTIVATE="1 $(settings_active_action ${MAIN_UPDATER})"
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Main Updater Settings" \
+                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) ${MAIN_UPDATER_INI})" 16 75 25 \
+                "${ACTIVATE}" "Activated: ${MAIN_UPDATER}" \
+                "2 Cores versions" "$([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8 forks with ENCC' || echo 'Official Cores from MiSTer-devel')" \
+                "3 INI file"  "$(basename ${MAIN_UPDATER_INI})" \
+                "4 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
+                "5 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
+                "6 Install Cheats" "${UPDATE_CHEATS}" \
+                "7 Install new Linux versions" "${UPDATE_LINUX}" \
+                "8 Autoreboot (if needed)" "${AUTOREBOOT}" \
+                "BACK"  "" 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "${ACTIVATE}") settings_change_var "MAIN_UPDATER" "${TMP_UPDATE_ALL_INI}" ;;
+                "2 Cores versions") settings_change_var "ENCC_FORKS" "${TMP_UPDATE_ALL_INI}" ;;
+                "3 INI file") settings_change_var "MAIN_UPDATER_INI" "${TMP_UPDATE_ALL_INI}" ;;
+                "4 Install new Cores") settings_change_var "DOWNLOAD_NEW_CORES" "${SELECTED_INI_FILES[${MAIN_UPDATER_INI}]}" ;;
+                "5 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "${SELECTED_INI_FILES[${MAIN_UPDATER_INI}]}" ;;
+                "6 Install Cheats") settings_change_var "UPDATE_CHEATS" "${SELECTED_INI_FILES[${MAIN_UPDATER_INI}]}" ;;
+                "7 Install new Linux versions") settings_change_var "UPDATE_LINUX" "${SELECTED_INI_FILES[${MAIN_UPDATER_INI}]}" ;;
+                "8 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "${SELECTED_INI_FILES[${MAIN_UPDATER_INI}]}" ;;
+                *) echo > /tmp/ua_break ;;
+            esac
+        )
+        if [ -f /tmp/ua_break ] ; then
+            rm /tmp/ua_break 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+### SETTINGS OPTIONS: JOTEGO UPDATER ##
+SETTINGS_OPTIONS_JOTEGO_UPDATER=("true" "false")
+SETTINGS_OPTIONS_JOTEGO_UPDATER_INI=("$(basename ${EXPORTED_INI_PATH})" "update_jtcores.ini")
+SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES=("true" "false")
+SETTINGS_OPTIONS_MAME_ALT_ROMS=("true" "false")
+
+settings_menu_jotego_updater() {
+    local TMP=$(mktemp)
+    while true ; do
+        (
+            local JOTEGO_UPDATER="${SETTINGS_OPTIONS_JOTEGO_UPDATER[0]}"
+            local JOTEGO_UPDATER_INI="${SETTINGS_OPTIONS_JOTEGO_UPDATER_INI[0]}"
+            local DOWNLOAD_NEW_CORES="${SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES[0]}"
+            local MAME_ALT_ROMS="${SETTINGS_OPTIONS_MAME_ALT_ROMS[0]}"
+
+            load_vars_from_ini "${TMP_UPDATE_ALL_INI}" "JOTEGO_UPDATER" "JOTEGO_UPDATER_INI"
+            load_ini_file "${SELECTED_INI_FILES[${JOTEGO_UPDATER_INI}]}"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 $(settings_active_action ${JOTEGO_UPDATER})"
+            fi
+
+            local ACTIVATE="1 $(settings_active_action ${JOTEGO_UPDATER})"
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Jotego Updater Settings" \
+                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) ${JOTEGO_UPDATER_INI})" 12 75 25 \
+                "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
+                "2 INI file"  "$(basename ${JOTEGO_UPDATER_INI})" \
+                "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
+                "4 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
+                "BACK"  "" 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "${ACTIVATE}") settings_change_var "JOTEGO_UPDATER" "${TMP_UPDATE_ALL_INI}" ;;
+                "2 INI file") settings_change_var "JOTEGO_UPDATER_INI" "${TMP_UPDATE_ALL_INI}" ;;
+                "3 Install new Cores") settings_change_var "DOWNLOAD_NEW_CORES" "${SELECTED_INI_FILES[${JOTEGO_UPDATER_INI}]}" ;;
+                "4 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "${SELECTED_INI_FILES[${JOTEGO_UPDATER_INI}]}" ;;
+                *) echo > /tmp/ua_break ;;
+            esac
+        )
+        if [ -f /tmp/ua_break ] ; then
+            rm /tmp/ua_break 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+### SETTINGS OPTIONS: UNOFFICIAL UPDATER ##
+SETTINGS_OPTIONS_UNOFFICIAL_UPDATER=("false" "true")
+SETTINGS_OPTIONS_UNOFFICIAL_UPDATER_INI=("$(basename ${EXPORTED_INI_PATH})" "update_unofficials.ini")
+SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES=("true" "false")
+SETTINGS_OPTIONS_MAME_ALT_ROMS=("true" "false")
+
+settings_menu_unofficial_updater() {
+    local TMP=$(mktemp)
+    while true ; do
+        (
+            local UNOFFICIAL_UPDATER="${SETTINGS_OPTIONS_UNOFFICIAL_UPDATER[0]}"
+            local UNOFFICIAL_UPDATER_INI="${SETTINGS_OPTIONS_UNOFFICIAL_UPDATER_INI[0]}"
+            local DOWNLOAD_NEW_CORES="${SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES[0]}"
+            local MAME_ALT_ROMS="${SETTINGS_OPTIONS_MAME_ALT_ROMS[0]}"
+
+            load_vars_from_ini "${TMP_UPDATE_ALL_INI}" "UNOFFICIAL_UPDATER" "UNOFFICIAL_UPDATER_INI"
+            load_ini_file "${SELECTED_INI_FILES[${UNOFFICIAL_UPDATER_INI}]}"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 $(settings_active_action ${UNOFFICIAL_UPDATER})"
+            fi
+
+            local ACTIVATE="1 $(settings_active_action ${UNOFFICIAL_UPDATER})"
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Unofficial Updater Settings" \
+                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) ${UNOFFICIAL_UPDATER_INI})" 12 75 25 \
+                "${ACTIVATE}" "Activated: ${UNOFFICIAL_UPDATER}" \
+                "2 INI file"  "$(basename ${UNOFFICIAL_UPDATER_INI})" \
+                "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
+                "4 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
+                "BACK"  "" 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "${ACTIVATE}") settings_change_var "UNOFFICIAL_UPDATER" "${TMP_UPDATE_ALL_INI}" ;;
+                "2 INI file") settings_change_var "UNOFFICIAL_UPDATER_INI" "${TMP_UPDATE_ALL_INI}" ;;
+                "3 Install new Cores") settings_change_var "DOWNLOAD_NEW_CORES" "${SELECTED_INI_FILES[${UNOFFICIAL_UPDATER_INI}]}" ;;
+                "4 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "${SELECTED_INI_FILES[${UNOFFICIAL_UPDATER_INI}]}" ;;
+                *) echo > /tmp/ua_break ;;
+            esac
+        )
+        if [ -f /tmp/ua_break ] ; then
+            rm /tmp/ua_break 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+### SETTINGS OPTIONS: LLAPI UPDATER ##
+SETTINGS_OPTIONS_LLAPI_UPDATER=("false" "true")
+SETTINGS_OPTIONS_LLAPI_UPDATER_INI=("$(basename ${EXPORTED_INI_PATH})" "update_llapi.ini")
+SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES=("true" "false")
+
+settings_menu_llapi_updater() {
+    local TMP=$(mktemp)
+    while true ; do
+        (
+            local LLAPI_UPDATER="${SETTINGS_OPTIONS_LLAPI_UPDATER[0]}"
+            local LLAPI_UPDATER_INI="${SETTINGS_OPTIONS_LLAPI_UPDATER_INI[0]}"
+            local DOWNLOAD_NEW_CORES="${SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES[0]}"
+
+            load_vars_from_ini "${TMP_UPDATE_ALL_INI}" "LLAPI_UPDATER" "LLAPI_UPDATER_INI"
+            load_ini_file "${SELECTED_INI_FILES[${LLAPI_UPDATER_INI}]}"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 $(settings_active_action ${LLAPI_UPDATER})"
+            fi
+
+            local ACTIVATE="1 $(settings_active_action ${LLAPI_UPDATER})"
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "LLAPI Updater Settings" \
+                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) ${LLAPI_UPDATER_INI})" 11 75 25 \
+                "${ACTIVATE}" "Activated: ${LLAPI_UPDATER}" \
+                "2 INI file"  "$(basename ${LLAPI_UPDATER_INI})" \
+                "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
+                "BACK"  "" 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+            DEFAULT_SELECTION="$(cat ${TMP})"
+            case "${DEFAULT_SELECTION}" in
+                "${ACTIVATE}") settings_change_var "LLAPI_UPDATER" "${TMP_UPDATE_ALL_INI}" ;;
+                "2 INI file") settings_change_var "LLAPI_UPDATER_INI" "${TMP_UPDATE_ALL_INI}" ;;
+                "3 Install new Cores") settings_change_var "DOWNLOAD_NEW_CORES" "${SELECTED_INI_FILES[${LLAPI_UPDATER_INI}]}" ;;
+                *) echo > /tmp/ua_break ;;
+            esac
+        )
+        if [ -f /tmp/ua_break ] ; then
+            rm /tmp/ua_break 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+### SETTINGS OPTIONS: MAME-GETTER ##
+SETTINGS_OPTIONS_MAME_GETTER=("true" "false")
+SETTINGS_OPTIONS_MAME_GETTER_INI=("update_mame-getter.ini" "$(basename ${EXPORTED_INI_PATH})")
+SETTINGS_OPTIONS_ROMMAME=("games/mame" "_Arcade/mame")
+
+settings_menu_mame_getter() {
+    local TMP=$(mktemp)
+    while true ; do
+        (
+            local MAME_GETTER="${SETTINGS_OPTIONS_MAME_GETTER[0]}"
+            local MAME_GETTER_INI="${SETTINGS_OPTIONS_MAME_GETTER_INI[0]}"
+            local ROMMAME="${SETTINGS_OPTIONS_ROMMAME[0]}"
+
+            load_vars_from_ini "${TMP_UPDATE_ALL_INI}" "MAME_GETTER" "MAME_GETTER_INI"
+            load_ini_file "${SELECTED_INI_FILES[${MAME_GETTER_INI}]}"
+
+            if [[ "${MAME_GETTER_ROMDIR}" != "" ]] ; then
+                ROMMAME="${MAME_GETTER_ROMDIR}"
+            fi
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 $(settings_active_action ${MAME_GETTER})"
+            fi
+
+            local ACTIVATE="1 $(settings_active_action ${MAME_GETTER})"
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "MAME-Getter Settings" \
+                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) ${MAME_GETTER_INI})" 11 75 25 \
+                "${ACTIVATE}" "Activated: ${MAME_GETTER}" \
+                "2 INI file"  "$(basename ${MAME_GETTER_INI})" \
+                "3 MAME ROM directory" "${ROMMAME}" \
+                "BACK"  "" 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "${ACTIVATE}") settings_change_var "MAME_GETTER" "${TMP_UPDATE_ALL_INI}" ;;
+                "2 INI file") settings_change_var "MAME_GETTER_INI" "${TMP_UPDATE_ALL_INI}" ;;
+                "3 MAME ROM directory") settings_change_var "ROMMAME" "${SELECTED_INI_FILES[${MAME_GETTER_INI}]}" ;;
+                *) echo > /tmp/ua_break ;;
+            esac
+        )
+        if [ -f /tmp/ua_break ] ; then
+            rm /tmp/ua_break 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+### SETTINGS OPTIONS: Arcade Organizer ##
+SETTINGS_OPTIONS_HBMAME_GETTER=("true" "false")
+SETTINGS_OPTIONS_HBMAME_GETTER_INI=("update_mame-getter.ini" "$(basename ${EXPORTED_INI_PATH})")
+SETTINGS_OPTIONS_ROMHBMAME=("games/hbmame" "_Arcade/hbmame")
+
+settings_menu_hbmame_getter() {
+    local TMP=$(mktemp)
+    while true ; do
+        (
+            local HBMAME_GETTER="${SETTINGS_OPTIONS_HBMAME_GETTER[0]}"
+            local HBMAME_GETTER_INI="${SETTINGS_OPTIONS_HBMAME_GETTER_INI[0]}"
+            local ROMHBMAME="${SETTINGS_OPTIONS_ROMHBMAME[0]}"
+
+            load_vars_from_ini "${TMP_UPDATE_ALL_INI}" "HBMAME_GETTER" "HBMAME_GETTER_INI"
+            load_ini_file "${SELECTED_INI_FILES[${HBMAME_GETTER_INI}]}"
+
+            if [[ "${HBMAME_GETTER_ROMDIR}" != "" ]] ; then
+                ROMHBMAME="${HBMAME_GETTER_ROMDIR}"
+            fi
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 $(settings_active_action ${HBMAME_GETTER})"
+            fi
+
+            local ACTIVATE="1 $(settings_active_action ${HBMAME_GETTER})"
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "HBMAME-Getter Settings" \
+                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) ${HBMAME_GETTER_INI})" 11 75 25 \
+                "${ACTIVATE}" "Activated: ${HBMAME_GETTER}" \
+                "2 INI file"  "$(basename ${HBMAME_GETTER_INI})" \
+                "3 HBMAME ROM directory" "${ROMHBMAME}" \
+                "BACK"  "" 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "${ACTIVATE}") settings_change_var "HBMAME_GETTER" "${TMP_UPDATE_ALL_INI}" ;;
+                "2 INI file") settings_change_var "HBMAME_GETTER_INI" "${TMP_UPDATE_ALL_INI}" ;;
+                "3 HBMAME ROM directory") settings_change_var "ROMHBMAME" "${SELECTED_INI_FILES[${HBMAME_GETTER_INI}]}" ;;
+                *) echo > /tmp/ua_break ;;
+            esac
+        )
+        if [ -f /tmp/ua_break ] ; then
+            rm /tmp/ua_break 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+### SETTINGS OPTIONS: ARCADE ORGANIZER ##
+SETTINGS_OPTIONS_ARCADE_ORGANIZER=("true" "false")
+SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI=("update_arcade-organizer.ini" "$(basename ${EXPORTED_INI_PATH})")
+SETTINGS_OPTIONS_SKIPALTS=("true" "false")
+
+settings_menu_arcade_organizer() {
+    local TMP=$(mktemp)
+    while true ; do
+        (
+            local ARCADE_ORGANIZER="${SETTINGS_OPTIONS_ARCADE_ORGANIZER[0]}"
+            local ARCADE_ORGANIZER_INI="${SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI[0]}"
+            local SKIPALTS="${SETTINGS_OPTIONS_SKIPALTS[0]}"
+
+            load_vars_from_ini "${TMP_UPDATE_ALL_INI}" "ARCADE_ORGANIZER" "ARCADE_ORGANIZER_INI"
+            load_ini_file "${SELECTED_INI_FILES[${ARCADE_ORGANIZER_INI}]}"
+
+            if [[ "${ARCADE_ORGANIZER_SKIPALTS}" != "" ]] ; then
+                SKIPALTS="${ARCADE_ORGANIZER_SKIPALTS}"
+            fi
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 $(settings_active_action ${ARCADE_ORGANIZER})"
+            fi
+
+            local ACTIVATE="1 $(settings_active_action ${ARCADE_ORGANIZER})"
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Arcade Organizer Settings" \
+                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) ${ARCADE_ORGANIZER_INI})" 11 75 25 \
+                "${ACTIVATE}" "Activated: ${ARCADE_ORGANIZER}" \
+                "2 INI file"  "$(basename ${ARCADE_ORGANIZER_INI})" \
+                "3 Skip MRA-Alternatives" "${SKIPALTS}" \
+                "BACK"  "" 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "${ACTIVATE}") settings_change_var "ARCADE_ORGANIZER" "${TMP_UPDATE_ALL_INI}" ;;
+                "2 INI file") settings_change_var "ARCADE_ORGANIZER_INI" "${TMP_UPDATE_ALL_INI}" ;;
+                "3 Skip MRA-Alternatives") settings_change_var "SKIPALTS" "${SELECTED_INI_FILES[${ARCADE_ORGANIZER_INI}]}" ;;
+                *) echo > /tmp/ua_break ;;
+            esac
+        )
+        if [ -f /tmp/ua_break ] ; then
+            rm /tmp/ua_break 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_exit_and_run() {
+
+    settings_files_to_save
+
+    if [ ${#SETTINGS_FILES_TO_SAVE_RET_ARRAY[@]} -ge 1 ] ; then
+        set +e
+        dialog --keep-window --title "INI file/s were not saved" \
+            --yesno "Do you really want to run Update All without saving your changes?"$'\n'"(current changes will apply only for this run)" \
+            7 70
+        local SURE_RET=$?
+        set -e
+        case $SURE_RET in
+            0)
+                cp ${TMP_UPDATE_ALL_INI} ${INI_PATH}
+                sed -i "s%MAIN_UPDATER_INI=.*%MAIN_UPDATER_INI=\"${TMP_MAIN_UPDATER_INI}\"%g" "${INI_PATH}"
+                sed -i "s%JOTEGO_UPDATER_INI=.*%JOTEGO_UPDATER_INI=\"${TMP_JOTEGO_UPDATER_INI}\"%g" "${INI_PATH}"
+                sed -i "s%UNOFFICIAL_UPDATER_INI=.*%UNOFFICIAL_UPDATER_INI=\"${TMP_UNOFFICIAL_UPDATER_INI}\"%g" "${INI_PATH}"
+                sed -i "s%LLAPI_UPDATER_INI=.*%LLAPI_UPDATER_INI=\"${TMP_LLAPI_UPDATER_INI}\"%g" "${INI_PATH}"
+                sed -i "s%MAME_GETTER_INI=.*%MAME_GETTER_INI=\"${TMP_MAME_GETTER_INI}\"%g" "${INI_PATH}"
+                sed -i "s%HBMAME_GETTER_INI=.*%HBMAME_GETTER_INI=\"${TMP_HBMAME_GETTER_INI}\"%g" "${INI_PATH}"
+                sed -i "s%ARCADE_ORGANIZER_INI=.*%ARCADE_ORGANIZER_INI=\"${TMP_ARCADE_ORGANIZER_INI}\"%g" "${INI_PATH}"
+                ;;
+            *) return ;;
+        esac
+    fi
+
+    echo > /tmp/ua_continue
+}
+
+settings_menu_cancel() {
+
+    settings_files_to_save
+
+    if [ ${#SETTINGS_FILES_TO_SAVE_RET_ARRAY[@]} -ge 1 ] ; then
+        set +e
+        dialog --keep-window --title "INI file/s were not saved" \
+            --yesno "Do you really want to abort Update All without saving your changes?" \
+            6 50
+        local SURE_RET=$?
+        set -e
+        case $SURE_RET in
+            0) ;;
+            *) return ;;
+        esac
+    else
+        set +e
+        dialog --keep-window --msgbox "Pressed ESC/Abort"$'\n'"Closing Update All..." 6 30
+        set -e
+    fi
+
+    echo > /tmp/ua_break
+}
+
+SETTINGS_FILES_TO_SAVE_RET_ARRAY=()
+SETTINGS_FILES_TO_SAVE_RET_TEXT=
+settings_files_to_save() {
+    SETTINGS_FILES_TO_SAVE_RET_TEXT=""
+    SETTINGS_FILES_TO_SAVE_RET_ARRAY=()
+    for file in ${!SELECTED_INI_FILES[@]} ; do
+        if ! diff -q "${file}" "${SELECTED_INI_FILES[${file}]}" > /dev/null 2>&1 && \
+            { \
+                grep -q '[^[:space:]]' "${file}" > /dev/null 2>&1 \
+                || grep -q '[^[:space:]]' "${SELECTED_INI_FILES[${file}]}" > /dev/null 2>&1 \
+            ; }
+        then
+            SETTINGS_FILES_TO_SAVE_RET_TEXT="${SETTINGS_FILES_TO_SAVE_RET_TEXT}"$'\n'"${file}"
+            SETTINGS_FILES_TO_SAVE_RET_ARRAY+=("${file}")
+        fi
+    done
+}
+
+settings_menu_save() {
+
+    settings_files_to_save
+
+    if [ ${#SETTINGS_FILES_TO_SAVE_RET_ARRAY[@]} -eq 0 ] ; then
+        set +e
+        dialog --keep-window --msgbox "No changes to save" 5 22
+        set -e
+        return
+    fi
+
+    set +e
+    dialog --keep-window --title "Are you sure?" \
+        --yes-label "Save" \
+        --no-label "Cancel" \
+        --yesno "Following files would be overwritten with your changes:"$'\n'"${SETTINGS_FILES_TO_SAVE_RET_TEXT}" \
+        "$((6+${#SETTINGS_FILES_TO_SAVE_RET_ARRAY[@]}))" 75
+    local SURE_RET=$?
+    set -e
+    case $SURE_RET in
+        0)
+            for file in ${SETTINGS_FILES_TO_SAVE_RET_ARRAY[@]} ; do
+                cp ${SELECTED_INI_FILES[${file}]} ${file}
+            done
+            if [ -f ${EXPORTED_INI_PATH} ] ; then
+                cp ${EXPORTED_INI_PATH} ${INI_PATH} 2> /dev/null || true
+            fi
+            set +e
+            dialog --keep-window --msgbox "   Saved" 0 0
+            set -e
+            ;;
+        *) ;;
+    esac
+}
+
+settings_menu_descr_text() {
+    local INI_A="${1}"
+    local INI_B="${2}"
+    if [[ "${INI_A}" == "${INI_B}" ]] ; then
+        echo "Settings loaded from '${INI_A}'"
+    else
+        echo "Settings loaded from '${INI_A}' and '${INI_B}'"
+    fi
+}
+
+settings_change_var() {
+    local VAR="${1}"
+    local INI_PATH="${2}"
+    declare -n OPTIONS="SETTINGS_OPTIONS_${VAR}"
+    local DEFAULT="${OPTIONS[0]}"
+
+    local VALUE="$(load_single_var_from_ini ${VAR} ${INI_PATH})"
+    if [[ "${VALUE}" == "" ]] ; then
+        VALUE="${DEFAULT}"
+    fi
+
+    local NEXT_INDEX=-1
+    for i in "${!OPTIONS[@]}" ; do
+        local CURRENT="${OPTIONS[${i}]}"
+        if [[ "${CURRENT}" == "${VALUE}" ]] ; then
+            NEXT_INDEX=$((i + 1))
+            if [ ${NEXT_INDEX} -ge ${#OPTIONS[@]} ] ; then
+                NEXT_INDEX=0
+            fi
+            break
+        fi
+    done
+
+    if [ ${NEXT_INDEX} -eq -1 ] ; then
+        echo "Bug on NEXT_INDEX"
+        echo "VAR: ${VAR}"
+        echo "INI_PATH: ${INI_PATH}"
+        echo "VALUE: ${VALUE}"
+        echo "DEFAULT: ${DEFAULT}"
+        exit 1
+    fi
+
+    VALUE="${OPTIONS[${NEXT_INDEX}]}"
+
+    sed -i "/^${VAR}=/d" ${INI_PATH} 2> /dev/null
+
+    if [[ "${VALUE}" != "${DEFAULT}" ]] ; then
+        if [ ! -z "$(tail -c 1 "${INI_PATH}")" ] ; then
+            echo >> ${INI_PATH}
+        fi
+        echo -n "${VAR}=\"${VALUE}\"" >> ${INI_PATH}
+    fi
+}
+
+settings_make_ini_from() {
+    local INI_SOURCE="${1}"
+    local INI_TARGET="${2}"
+    rm ${INI_TARGET} 2> /dev/null || true
+    echo $INI_SOURCE > tests.log
+    if [ -f ${INI_SOURCE} ] ; then
+        cp ${INI_SOURCE} ${INI_TARGET}
+    else
+        touch ${INI_TARGET}
+    fi
+}
+
+
+settings_active_tag() {
+    local ACTIVE="${1}"
+    if [[ "${ACTIVE}" == "true" ]] ; then
+        echo "Enabled. "
+    else
+        echo "Disabled."
+    fi
+}
+
+settings_active_action() {
+    local ACTIVE="${1}"
+    if [[ "${ACTIVE}" != "true" ]] ; then
+        echo "Enable"
+    else
+        echo "Disable"
+    fi
 }
 
 if [[ "${UPDATE_ALL_SOURCE:-false}" != "true" ]] ; then
