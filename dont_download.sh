@@ -1392,7 +1392,7 @@ settings_menu_names_txt() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Names Settings BETA" \
-                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) $(basename ${EXPORTED_INI_PATH}))"$'\n'$'\n'"This feature is in BETA stage."$'\n'"Options can change for the release version."$'\n'$'\n'"You can also contribute to the naming of the cores at:"$'\n'"https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
+                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) $(basename ${EXPORTED_INI_PATH}))"$'\n'$'\n'"This feature is in BETA stage."$'\n'"Options can change for the release version."$'\n'$'\n'"You can also contribute to the naming of the cores at:"$'\n'"https://github.com/ThreepwoodLeBrush/Names_MiSTer"$'\n'$'\n'"CHAR28 will fit perfectly when 'rbf_hide_datecode=1' in MiSTer.ini" 20 75 25 \
                 "${ACTIVATE}" "Activated: ${NAMES_TXT}" \
                 "2 Region" "${NAMES_REGION}" \
                 "3 Char Code" "${NAMES_CHAR_CODE}" \
