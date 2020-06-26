@@ -591,6 +591,7 @@ install_names_txt() {
     if ! diff "${TMP_NAMES}" "${BASE_PATH}/names.txt" > /dev/null 2>&1 ; then
         cp "${TMP_NAMES}" "${BASE_PATH}/names.txt"
         echo "New names.txt installed."
+        REBOOT_NEEDED="true"
     else
         echo "Skipping names.txt..."
     fi
