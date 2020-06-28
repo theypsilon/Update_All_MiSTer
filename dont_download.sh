@@ -106,7 +106,10 @@ load_ini_file() {
     local TMP=$(mktemp)
     dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
 
+    set +u
     source ${TMP}
+    set -u
+
     rm -f ${TMP}
 }
 

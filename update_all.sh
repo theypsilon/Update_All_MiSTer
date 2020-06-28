@@ -37,7 +37,9 @@ INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 if [[ -f "${INI_PATH}" ]] ; then
     TMP=$(mktemp)
     dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
+    set +u
     source ${TMP}
+    set -u
     rm -f ${TMP}
 fi
 
