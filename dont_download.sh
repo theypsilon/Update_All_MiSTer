@@ -70,6 +70,7 @@ set_default_options
 UPDATE_ALL_VERSION="1.1"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
 UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
+AUTO_UPDATE_LAUNCHER="${AUTO_UPDATE_LAUNCHER:-true}"
 ORIGINAL_SCRIPT_PATH="${0}"
 ORIGINAL_INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
@@ -146,6 +147,22 @@ load_single_var_from_ini() {
 }
 
 initialize() {
+    if [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] ; then
+        local MAYBE_NEW_LAUNCHER="/tmp/ua_maybe_new_launcher.sh"
+        rm "${MAYBE_NEW_LAUNCHER}" 2> /dev/null || true
+        curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o "${MAYBE_NEW_LAUNCHER}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh" > /dev/null 2>&1 || true
+        if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [ -d "/media/fat/Scripts/" ]; then
+            local OLD_SCRIPT_PATH="/media/fat/Scripts/$(basename ${ORIGINAL_SCRIPT_PATH})"
+            if ! diff "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" > /dev/null 2>&1 && \
+                grep -q "theypsilon" "${MAYBE_NEW_LAUNCHER}" && \
+                grep -q "export SSL_SECURITY_OPTION" "${MAYBE_NEW_LAUNCHER}" && \
+                [[ "$(wc -l ${MAYBE_NEW_LAUNCHER} | awk '{print $1}')" == "110" ]]
+            then
+                cp "${MAYBE_NEW_LAUNCHER}"  "${OLD_SCRIPT_PATH}" || true
+            fi
+        fi
+    fi
+
     initialize_global_log
 
     echo "Executing 'Update All' script"
@@ -707,7 +724,13 @@ run_update_all() {
             countdown
             enable_global_log
         else
-            echo "Not displaying countdown because fb_terminal=0 (on MiSTer.ini)"
+            echo "SORRY!"
+            echo "Can't display the SETTINGS screen because fb terminal is off."
+            echo "Maybe you have fb_terminal=0 on MiSTer.ini?"
+            echo "NOTE: It could still work if you also add the following lines in MiSTer.ini:"
+            echo "    [Menu]"
+            echo "    vga_scaler=1"
+            sleep ${WAIT_TIME_FOR_READING}
             sleep ${WAIT_TIME_FOR_READING}
         fi
         echo
