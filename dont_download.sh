@@ -474,7 +474,14 @@ read_ini_arcade_organizer() {
     fi
 
     if [ -d "${ARCADE_ORGANIZER_ORGDIR}" ] ; then
-        find "${ARCADE_ORGANIZER_ORGDIR}/" -xtype l -exec rm {} \; || true
+        local N_MRA_LINKED=$(find "${ARCADE_ORGANIZER_ORGDIR}/" -type f -print0 | xargs -r0 readlink -f | sort | uniq | wc -l)
+        local N_MRA_DEPTH1=$(find "${ARCADE_ORGANIZER_MRADIR}/" -maxdepth 1 -type f -iname "*.mra" | wc -l)
+
+        if [[ "${N_MRA_DEPTH1}" > "${N_MRA_LINKED}" ]] ; then
+            rm -rf "${ARCADE_ORGANIZER_ORGDIR}"
+        else
+            find "${ARCADE_ORGANIZER_ORGDIR}/" -xtype l -exec rm {} \; || true
+        fi
     fi
 }
 
