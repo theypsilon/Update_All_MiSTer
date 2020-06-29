@@ -89,7 +89,7 @@ if [[ "${DEBUG_UPDATER:-false}" != "true" ]] || [ ! -f dont_download.sh ] ; then
         "${REPOSITORY_URL}/blob/master/dont_download.sh?raw=true"
 else
     cp dont_download.sh ${SCRIPT_PATH}
-    export AUTO_UPDATE_LAUNCHER="true"
+    export AUTO_UPDATE_LAUNCHER="false"
     export DEBUG_UPDATER
 fi
 
