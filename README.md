@@ -8,12 +8,13 @@ This script chains the following scripts:
 2. [Jotego Cores Updater](https://github.com/jotego/Updater_script_MiSTer). Downloads many advanced cores made by [Jotego](https://github.com/jotego).
 3. [Unofficial Cores Updater](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial). Downloads [some cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) that are not yet released but are fairly stable. Disabled by default.
 4. [LLAPI Cores Updater](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). Disabled by default.
-5. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
-6. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
+5. [BIOS Getter](https://github.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS) download bios for your installed systems from https://archive.org/
+6. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
+7. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
 This script also contains some snippets from the __Updater script__ maintained by [Locutus73](https://github.com/Locutus73).
 
-__MAME__ and __HBMAME Getters__ and __Arcade Organizer__ scripts are maintained by [amoore2600](https://www.youtube.com/channel/UC_IynEJIMqkYaCVjEk_EIlg).
+__BIOS__, __MAME__ and __HBMAME Getters__ and __Arcade Organizer__ scripts are maintained by [amoore2600](https://www.youtube.com/channel/UC_IynEJIMqkYaCVjEk_EIlg).
 
 
 
@@ -85,6 +86,11 @@ LLAPI_UPDATER="false"
 # Specific INI settings for this script if you need it.
 LLAPI_UPDATER_INI="/media/fat/Scripts/update_all.ini"
 
+# "false" to skip downloading BIOS for some systems.
+BIOS_GETTER="true"
+# Specific INI settings for this script if you need it.
+BIOS_GETTER_INI="/media/fat/Scripts/update_bios-getter.ini"
+
 # "false" to skip downloading MAME roms.
 MAME_GETTER="true"
 # Specific INI settings for this script if you need it.
@@ -114,19 +120,6 @@ WAIT_TIME_FOR_READING=4
 # Network resilience parameters
 CURL_RETRY="--connect-timeout 15 --max-time 120 --retry 3 --retry-delay 5 --silent --show-error"
 ALLOW_INSECURE_SSL="true"
-
-# This will ignore optimizations and will always try to download ALL needed mame roms.
-# Use it if some roms are not being downloaded, and you don't know why.
-# Will become obsolete once MAME-GETTER has its own optimization logic.
-MAME_GETTER_FORCE_FULL_RESYNC="false"
-# This will ignore optimizations and will always try to download ALL needed hbmame roms.
-# Use it if some roms are not being downloaded, and you don't know why.
-# Will become obsolete once HBMAME-GETTER has its own optimization logic.
-HBMAME_GETTER_FORCE_FULL_RESYNC="false"
-# This will ignore optimizations and will always try to organize ALL installed MRAs.
-# Use it if some MRAs are not being organized, and you don't know why.
-# Will become obsolete once Arcade Organizer has its own optimization logic.
-ARCADE_ORGANIZER_FORCE_FULL_RESYNC="false"
 ```
 
 
