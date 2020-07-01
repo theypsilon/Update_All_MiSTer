@@ -118,7 +118,7 @@ WAIT_TIME_FOR_READING=4
 ###########################
 
 # Network resilience parameters
-CURL_RETRY="--connect-timeout 15 --max-time 120 --retry 3 --retry-delay 5 --silent --show-error"
+CURL_RETRY="--connect-timeout 15 --max-time 240 --retry 3 --retry-delay 5 --silent --show-error"
 ALLOW_INSECURE_SSL="true"
 ```
 
