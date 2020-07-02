@@ -776,7 +776,7 @@ countdown() {
     local COUNTDOWN_SELECTION="continue"
     set +e
     echo -e '\e[3A\e[K'
-    for (( i=0; i <= (( COUNTDOWN_TIME )); i++)); do
+    for (( i=0; i <= COUNTDOWN_TIME ; i++)); do
         local SECONDS=$(( COUNTDOWN_TIME - i ))
         if (( SECONDS < 10 )) ; then
             SECONDS=" ${SECONDS}"
@@ -989,7 +989,7 @@ SETTINGS_OPTIONS_MAIN_UPDATER=("true" "false")
 SETTINGS_OPTIONS_JOTEGO_UPDATER=("true" "false")
 SETTINGS_OPTIONS_UNOFFICIAL_UPDATER=("false" "true")
 SETTINGS_OPTIONS_LLAPI_UPDATER=("false" "true")
-SETTINGS_OPTIONS_BIOS_GETTER=("false" "true")
+SETTINGS_OPTIONS_BIOS_GETTER=("true" "false")
 SETTINGS_OPTIONS_MAME_GETTER=("true" "false")
 SETTINGS_OPTIONS_HBMAME_GETTER=("true" "false")
 SETTINGS_OPTIONS_ARCADE_ORGANIZER=("true" "false")
