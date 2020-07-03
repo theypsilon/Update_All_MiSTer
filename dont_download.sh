@@ -792,11 +792,10 @@ countdown() {
             printf "."
         done
         read -r -s -N 1 -t 1 key
-        if [ "$key" = "A" ]; then
+        if [[ "${key}" == "A" ]]; then
                 COUNTDOWN_SELECTION="menu"
                 break
-        fi
-        if [ "$key" = "B" ]; then
+        elif [[ "${key}" == "B" ]]; then
                 COUNTDOWN_SELECTION="continue"
                 break
         fi

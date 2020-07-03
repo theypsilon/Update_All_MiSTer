@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 1.2 - 2020-07-03
+
+### Added
+- Settings screen with many options.
+- Bios getter.
+- "names.txt" updater.
+- Clean folder options in settings menu.
+- Minor fixes and improvements.
+- Added INI options for Settings screen, BIOS Getter and "names.txt" Updater.
+
+### Changed
+- Updater for Windows and Linux (updater-pc) includes now dialog and other programs and files, so the Settings screen work there too.
+- Deprecated INI options: *MAME_GETTER_FORCE_FULL_RESYNC*, *HBMAME_GETTER_FORCE_FULL_RESYNC*, *ARCADE_ORGANIZER_FORCE_FULL_RESYNC* (will still work for a few months).
+
 ## Version 1.1 - 2020-06-19
 
 ### Added
