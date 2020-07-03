@@ -562,6 +562,8 @@ prepare_arcade_organizer() {
     if [[ "${N_MRA_DEPTH1}" > "${N_MRA_LINKED}" ]] || \
         [[ "${LAST_NAMES_TXT_TIME}" > "${LAST_ARCADE_ORGANIZER_TIME}" ]]
     then
+        rm "${UPDATED_MRAS}" 2> /dev/null || true
+        touch "${UPDATED_MRAS}"
         rm -rf "${ARCADE_ORGANIZER_ORGDIR}"
     else
         find "${ARCADE_ORGANIZER_ORGDIR}/" -xtype l -exec rm {} \; || true
