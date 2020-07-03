@@ -10,7 +10,8 @@ This script chains the following scripts:
 4. [LLAPI Cores Updater](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). Disabled by default.
 5. [BIOS Getter](https://github.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS) download bios for your installed systems from https://archive.org/
 6. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
-7. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
+7. [names.txt Updater](https://github.com/ThreepwoodLeBrush/Names_MiSTer). Downloads a community curated names.txt file that enables better core names in the menus.
+8. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
 This script also contains some snippets from the __Updater script__ maintained by [Locutus73](https://github.com/Locutus73).
 
@@ -32,10 +33,6 @@ It will take around 30 minutes the first time you run it, but later runs should 
 
 Other setups that might be useful for you:
 - [DB9/SNAC8 ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_db9_snac8.zip): Enables [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers.
-- [Unofficial Cores ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_unofficials.zip): With this one you'll download also [these cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) without having to touch anything else.
-- [No MRA-Alternatives ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_no_mra_alternatives.zip): This setup is in case you wanna skip the `_alternatives` folder, which contains arcade variants, such as hacks, bootlegs, and different regions.
-- [LLAPI ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_llapi.zip): In case you would like to download [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) too.
-- [No ROMS ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_no_roms.zip): In case you would like to skip those scripts that deal with roms.
 - [usb0 ZIP](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/update_all_usb0.zip): For people using USB as primary storage. You will be able to run this script from there and install all cores, roms, and MRAs on `/media/usb0`.
 
 
@@ -100,6 +97,17 @@ MAME_GETTER_INI="/media/fat/Scripts/update_mame-getter.ini"
 HBMAME_GETTER="true"
 # Specific INI settings for this script if you need it.
 HBMAME_GETTER_INI="/media/fat/Scripts/update_hbmame-getter.ini"
+
+# "true" to enable the names.txt Updater
+NAMES_TXT_UPDATER="false"
+# Specific INI settings for this script if you need it.
+NAMES_TXT_UPDATER_INI="/media/fat/Scripts/update_names-txt.ini"
+# Sets the downloaded names.txt Region Code to "US", "EU" or "JP"
+NAMES_REGION="US"
+# Sets the downloaded names.txt Char Code to "CHAR18" or "CHAR28"
+NAMES_CHAR_CODE="CHAR18"
+# Sets the downloaded names.txt Sort Code to "Manufacturer" or "Common"
+NAMES_SORT_CODE="Common"
 
 # "false" to skip running the arcade organizer.
 ARCADE_ORGANIZER="true"

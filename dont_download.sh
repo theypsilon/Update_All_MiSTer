@@ -50,23 +50,27 @@ set_default_options() {
     HBMAME_GETTER_INI="/media/fat/Scripts/update_hbmame-getter.ini"
     HBMAME_GETTER_FORCE_FULL_RESYNC="false"
 
+    NAMES_TXT_UPDATER="false"
+    NAMES_TXT_UPDATER_INI="/media/fat/Scripts/update_names-txt.ini"
+    NAMES_REGION="US"
+    NAMES_CHAR_CODE="CHAR18"
+    NAMES_SORT_CODE="Common"
+
     ARCADE_ORGANIZER="true"
     ARCADE_ORGANIZER_INI="/media/fat/Scripts/update_arcade-organizer.ini"
     ARCADE_ORGANIZER_FORCE_FULL_RESYNC="false"
 
+    COUNTDOWN_TIME=15
     WAIT_TIME_FOR_READING=4
     AUTOREBOOT="true"
 
-    # ============ UNRELEASED ============
-    COUNTDOWN_TIME=0
-    NAMES_TXT="false"
-    NAMES_REGION="US"
-    NAMES_CHAR_CODE="CHAR18"
-    NAMES_SORT_CODE="Common"
+    if [[ "${UPDATE_ALL_PC_UPDATER_ENCC_FORKS:-}" == "true" ]] ; then
+        ENCC_FORKS="true"
+    fi
 }
 set_default_options
 # ========= CODE STARTS HERE =========
-UPDATE_ALL_VERSION="1.1"
+UPDATE_ALL_VERSION="1.2"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
 UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
 AUTO_UPDATE_LAUNCHER="${AUTO_UPDATE_LAUNCHER:-true}"
@@ -76,7 +80,7 @@ LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
 WORK_PATH="/media/fat/Scripts/.update_all"
 GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH="${WORK_PATH}/${LOG_FILENAME}"
-LAST_NAMES_TXT_RUN="${WORK_PATH}/$(basename ${EXPORTED_INI_PATH%.*}.last_names_txt_run)"
+LAST_NAMES_UPDATER_RUN="${WORK_PATH}/$(basename ${EXPORTED_INI_PATH%.*}.last_names_txt_run)"
 LAST_ARCADE_ORGANIZER_RUN="${WORK_PATH}/$(basename ${EXPORTED_INI_PATH%.*}.last_arcade_organizer_run)"
 LAST_MRA_PROCESSING_PATH=
 BIOS_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS/master/bios-getter.sh"
@@ -229,17 +233,7 @@ initialize() {
     fi
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
-        MAIN_UPDATER_INI="${EXPORTED_INI_PATH}"
-        JOTEGO_UPDATER_INI="${EXPORTED_INI_PATH}"
-        UNOFFICIAL_UPDATER_INI="${EXPORTED_INI_PATH}"
-        LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}"
-        MAME_GETTER_INI="${EXPORTED_INI_PATH}"
-        HBMAME_GETTER_INI="${EXPORTED_INI_PATH}"
-        ARCADE_ORGANIZER_INI="${EXPORTED_INI_PATH}"
         ARCADE_ORGANIZER="false"
-        if [[ "${UPDATE_ALL_PC_UPDATER_ENCC_FORKS:-}" == "true" ]] ; then
-            ENCC_FORKS="true"
-        fi
     fi
 }
 
@@ -555,21 +549,21 @@ prepare_arcade_organizer() {
     fi
 
     local LAST_ARCADE_ORGANIZER_TIME=$(date --date='@-86400' +"%Y%m%d:%H%M%S")
-    local LAST_NAMES_TXT_TIME=$(date --date='@-86400' +"%Y%m%d:%H%M%S")
+    local LAST_NAMES_UPDATER_TIME=$(date --date='@-86400' +"%Y%m%d:%H%M%S")
     if [ -f ${LAST_ARCADE_ORGANIZER_RUN} ] ; then
         local LAST_ARCADE_ORGANIZER_TIME=$(cat "${LAST_ARCADE_ORGANIZER_RUN}" | sed '2q;d')
         LAST_ARCADE_ORGANIZER_TIME=$(date -d "${LAST_ARCADE_ORGANIZER_TIME}" +"%Y%m%d:%H%M%S")
     fi
-    if [ -f ${LAST_NAMES_TXT_RUN} ] ; then
-        local LAST_NAMES_TXT_TIME=$(cat "${LAST_NAMES_TXT_RUN}" | sed '2q;d')
-        LAST_NAMES_TXT_TIME=$(date -d "${LAST_NAMES_TXT_TIME}" +"%Y%m%d:%H%M%S")
+    if [ -f ${LAST_NAMES_UPDATER_RUN} ] ; then
+        local LAST_NAMES_UPDATER_TIME=$(cat "${LAST_NAMES_UPDATER_RUN}" | sed '2q;d')
+        LAST_NAMES_UPDATER_TIME=$(date -d "${LAST_NAMES_UPDATER_TIME}" +"%Y%m%d:%H%M%S")
     fi
 
     local N_MRA_LINKED=$(find "${ARCADE_ORGANIZER_ORGDIR}/" -type f -print0 | xargs -r0 readlink -f | sort | uniq | wc -l)
     local N_MRA_DEPTH1=$(find "${ARCADE_ORGANIZER_MRADIR}/" -maxdepth 1 -type f -iname "*.mra" | wc -l)
 
     if [[ "${N_MRA_DEPTH1}" > "${N_MRA_LINKED}" ]] || \
-        [[ "${LAST_NAMES_TXT_TIME}" > "${LAST_ARCADE_ORGANIZER_TIME}" ]]
+        [[ "${LAST_NAMES_UPDATER_TIME}" > "${LAST_ARCADE_ORGANIZER_TIME}" ]]
     then
         rm "${UPDATED_MRAS}" 2> /dev/null || true
         touch "${UPDATED_MRAS}"
@@ -710,9 +704,11 @@ update_names_txt() {
     if ! diff "${TMP_NAMES}" "/media/fat/names.txt" > /dev/null 2>&1 ; then
         cp "${TMP_NAMES}" "/media/fat/names.txt"
         echo "Downloaded new names.txt"
-        REBOOT_NEEDED="true"
-        echo "${UPDATE_ALL_VERSION}" > "${LAST_NAMES_TXT_RUN}"
-        echo "$(date)" >> "${LAST_NAMES_TXT_RUN}"
+        if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+            REBOOT_NEEDED="true"
+        fi
+        echo "${UPDATE_ALL_VERSION}" > "${LAST_NAMES_UPDATER_RUN}"
+        echo "$(date)" >> "${LAST_NAMES_UPDATER_RUN}"
     else
         echo "Skipping names.txt..."
     fi
@@ -766,7 +762,7 @@ sequence() {
     if [[ "${HBMAME_GETTER}" == "true" ]] ; then
         echo "- HBMAME Getter"
     fi
-    if [[ "${NAMES_TXT}" == "true" ]] ; then
+    if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
         echo "- \"names.txt\" Updater"
     fi
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
@@ -901,7 +897,7 @@ run_update_all() {
             "${HBMAME_GETTER_URL}" "${UPDATED_HBMAME_MRAS}"
     fi
 
-    if [[ "${NAMES_TXT}" == "true" ]] ; then
+    if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
         update_names_txt
     fi
 
@@ -989,6 +985,7 @@ SETTINGS_TMP_LLAPI_UPDATER_INI="/tmp/ua.update_llapi.ini"
 SETTINGS_TMP_BIOS_GETTER_INI="/tmp/ua.bios_getter.ini"
 SETTINGS_TMP_MAME_GETTER_INI="/tmp/ua.mame_getter.ini"
 SETTINGS_TMP_HBMAME_GETTER_INI="/tmp/ua.hbmame_getter.ini"
+SETTINGS_TMP_NAMES_TXT_UPDATER_INI="/tmp/ua.names_updater.ini"
 SETTINGS_TMP_ARCADE_ORGANIZER_INI="/tmp/ua.arcade_organizer.ini"
 
 SETTINGS_TMP_BREAK="/tmp/ua_break"
@@ -1005,7 +1002,7 @@ SETTINGS_OPTIONS_BIOS_GETTER=("true" "false")
 SETTINGS_OPTIONS_MAME_GETTER=("true" "false")
 SETTINGS_OPTIONS_HBMAME_GETTER=("true" "false")
 SETTINGS_OPTIONS_ARCADE_ORGANIZER=("true" "false")
-SETTINGS_OPTIONS_NAMES_TXT=("false" "true")
+SETTINGS_OPTIONS_NAMES_TXT_UPDATER=("false" "true")
 
 declare -A SETTINGS_INI_FILES
 settings_menu_update_all() {
@@ -1021,6 +1018,7 @@ settings_menu_update_all() {
     SETTINGS_INI_FILES["update_bios-getter.ini"]="${SETTINGS_TMP_BIOS_GETTER_INI}"
     SETTINGS_INI_FILES["update_mame-getter.ini"]="${SETTINGS_TMP_MAME_GETTER_INI}"
     SETTINGS_INI_FILES["update_hbmame-getter.ini"]="${SETTINGS_TMP_HBMAME_GETTER_INI}"
+    SETTINGS_INI_FILES["update_names-txt.ini"]="${SETTINGS_TMP_NAMES_TXT_UPDATER_INI}"
     SETTINGS_INI_FILES["update_arcade-organizer.ini"]="${SETTINGS_TMP_ARCADE_ORGANIZER_INI}"
 
     for key in ${!SETTINGS_INI_FILES[@]} ; do
@@ -1045,9 +1043,13 @@ settings_menu_update_all() {
             local MAME_GETTER="${SETTINGS_OPTIONS_MAME_GETTER[0]}"
             local HBMAME_GETTER="${SETTINGS_OPTIONS_HBMAME_GETTER[0]}"
             local ARCADE_ORGANIZER="${SETTINGS_OPTIONS_ARCADE_ORGANIZER[0]}"
-            local NAMES_TXT="${SETTINGS_OPTIONS_NAMES_TXT[0]}"
+            local NAMES_TXT_UPDATER="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER[0]}"
 
             load_ini_file "${SETTINGS_TMP_UPDATE_ALL_INI}"
+
+            if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
+                ARCADE_ORGANIZER="false"
+            fi
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -1057,7 +1059,7 @@ settings_menu_update_all() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Abort" --ok-label "Select" --title "Update All Settings" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Abort" --ok-label "Select" --title "Update All ${UPDATE_ALL_VERSION} Settings" \
                 --menu "Settings loaded from '$(basename ${EXPORTED_INI_PATH})'" 18 75 25 \
                 "1 Main Updater"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores and resources" \
                 "2 Jotego Updater" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego" \
@@ -1066,7 +1068,7 @@ settings_menu_update_all() {
                 "5 BIOS Getter" "$(settings_active_tag ${BIOS_GETTER}) BIOS files for your systems" \
                 "6 MAME Getter" "$(settings_active_tag ${MAME_GETTER}) MAME ROMs for arcades" \
                 "7 HBMAME Getter" "$(settings_active_tag ${HBMAME_GETTER}) HBMAME ROMs for arcades" \
-                "8 \"names.txt\" Updater" "$(settings_active_tag ${NAMES_TXT}) Better core names in the menus" \
+                "8 \"names.txt\" Updater" "$(settings_active_tag ${NAMES_TXT_UPDATER}) Better core names in the menus" \
                 "9 Arcade Organizer" "$(settings_active_tag ${ARCADE_ORGANIZER}) Creates folder for easy navigation" \
                 "SAVE" "Writes all changes to the INI file/s" \
                 "EXIT and RUN UPDATE ALL" "" 2> ${TMP}
@@ -1084,7 +1086,15 @@ settings_menu_update_all() {
                 "6 MAME Getter") settings_menu_mame_getter ;;
                 "7 HBMAME Getter") settings_menu_hbmame_getter ;;
                 "8 \"names.txt\" Updater") settings_menu_names_txt ;;
-                "9 Arcade Organizer") settings_menu_arcade_organizer ;;
+                "9 Arcade Organizer")
+                    if [[ "${UPDATE_ALL_PC_UPDATER}" == "false" ]] ; then
+                        settings_menu_arcade_organizer
+                    else
+                        set +e
+                        dialog --keep-window --msgbox "Arcade Organizer should be run from MiSTer\n\nThe generated files need to be created with MiSTer OS to work fine" 7 75
+                        set -e
+                    fi
+                    ;;
                 "SAVE") settings_menu_save ;;
                 "EXIT and RUN UPDATE ALL") settings_menu_exit_and_run ;;
                 *) settings_menu_cancel ;;
@@ -1107,6 +1117,9 @@ settings_menu_update_all() {
     if [ -f "${ORIGINAL_INI_PATH}" ] ; then
         set_default_options
         load_ini_file "${ORIGINAL_INI_PATH}"
+        if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
+            ARCADE_ORGANIZER="false"
+        fi
     fi
 }
 
@@ -1747,36 +1760,40 @@ settings_menu_hbmame_getter() {
 settings_menu_names_txt() {
     local TMP=$(mktemp)
 
+    SETTINGS_OPTIONS_NAMES_TXT_UPDATER_INI=("update_names-txt.ini" "$(basename ${EXPORTED_INI_PATH})")
     SETTINGS_OPTIONS_NAMES_REGION=("US" "EU" "JP")
     SETTINGS_OPTIONS_NAMES_CHAR_CODE=("CHAR18" "CHAR28")
     SETTINGS_OPTIONS_NAMES_SORT_CODE=("Common" "Manufacturer")
 
     while true ; do
         (
-            local NAMES_TXT="${SETTINGS_OPTIONS_NAMES_TXT[0]}"
+            local NAMES_TXT_UPDATER="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER[0]}"
+            local NAMES_TXT_UPDATER_INI="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER_INI[0]}"
             local NAMES_REGION="${SETTINGS_OPTIONS_NAMES_REGION[0]}"
             local NAMES_CHAR_CODE="${SETTINGS_OPTIONS_NAMES_CHAR_CODE[0]}"
             local NAMES_SORT_CODE="${SETTINGS_OPTIONS_NAMES_SORT_CODE[0]}"
 
-            load_vars_from_ini "${SETTINGS_TMP_UPDATE_ALL_INI}" "NAMES_TXT" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
+            load_vars_from_ini "${SETTINGS_TMP_UPDATE_ALL_INI}" "NAMES_TXT_UPDATER" "NAMES_TXT_UPDATER_INI" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
+            load_ini_file "${SETTINGS_INI_FILES[${NAMES_TXT_UPDATER_INI}]}"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
             else
-                DEFAULT_SELECTION="1 $(settings_active_action ${NAMES_TXT})"
+                DEFAULT_SELECTION="1 $(settings_active_action ${NAMES_TXT_UPDATER})"
             fi
 
-            local ACTIVATE="1 $(settings_active_action ${NAMES_TXT})"
+            local ACTIVATE="1 $(settings_active_action ${NAMES_TXT_UPDATER})"
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "\"names.txt\" Updater Settings" \
-                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) $(basename ${EXPORTED_INI_PATH}))"$'\n'$'\n'"Installs name.txt file containing curated names for your cores."$'\n'"You can also contribute to the naming of the cores at:"$'\n'"https://github.com/ThreepwoodLeBrush/Names_MiSTer" 17 75 25 \
-                "${ACTIVATE}" "Activated: ${NAMES_TXT}" \
-                "2 Region" "${NAMES_REGION}" \
-                "3 Char Code" "${NAMES_CHAR_CODE}" \
-                "4 Sort Code" "${NAMES_SORT_CODE}" \
-                "5 Remove \"names.txt\"" "Back to standard core names based on RBF files" \
+                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) $(basename ${NAMES_TXT_UPDATER_INI}))"$'\n'$'\n'"Installs name.txt file containing curated names for your cores."$'\n'"You can also contribute to the naming of the cores at:"$'\n'"https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
+                "${ACTIVATE}" "Activated: ${NAMES_TXT_UPDATER}" \
+                "2 INI file"  "$(basename ${NAMES_TXT_UPDATER_INI})" \
+                "3 Region" "${NAMES_REGION}" \
+                "4 Char Code" "${NAMES_CHAR_CODE}" \
+                "5 Sort Code" "${NAMES_SORT_CODE}" \
+                "6 Remove \"names.txt\"" "Back to standard core names based on RBF files" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -1787,25 +1804,26 @@ settings_menu_names_txt() {
 
             case "${DEFAULT_SELECTION}" in
                 "${ACTIVATE}")
-                    settings_change_var "NAMES_TXT" "${SETTINGS_TMP_UPDATE_ALL_INI}"
-                    local NEW_NAMES_TXT=$(load_single_var_from_ini "NAMES_TXT" "${SETTINGS_TMP_UPDATE_ALL_INI}")
-                    if [[ "${NEW_NAMES_TXT}" == "true" ]] && [ ! -f "${LAST_NAMES_TXT_RUN}" ] && [ -f "/media/fat/names.txt" ] ; then
+                    settings_change_var "NAMES_TXT_UPDATER" "${SETTINGS_TMP_UPDATE_ALL_INI}"
+                    local NEW_NAMES_TXT_UPDATER=$(load_single_var_from_ini "NAMES_TXT_UPDATER" "${SETTINGS_TMP_UPDATE_ALL_INI}")
+                    if [[ "${NEW_NAMES_TXT_UPDATER}" == "true" ]] && [ ! -f "${LAST_NAMES_UPDATER_RUN}" ] && [ -f "/media/fat/names.txt" ] ; then
                         set +e
                         DIALOGRC="${SETTINGS_TMP_DIALOGRC}" dialog --keep-window --msgbox "WARNING! Your current names.txt file will be overwritten after updating" 5 76
                         set -e
                     fi
                     ;;
-                "2 Region") settings_change_var "NAMES_REGION" "${SETTINGS_TMP_UPDATE_ALL_INI}" ;;
-                "3 Char Code") settings_change_var "NAMES_CHAR_CODE" "${SETTINGS_TMP_UPDATE_ALL_INI}"
-                    local NEW_NAMES_CHAR_CODE=$(load_single_var_from_ini "NAMES_CHAR_CODE" "${SETTINGS_TMP_UPDATE_ALL_INI}")
+                "2 INI file") settings_change_var "NAMES_TXT_UPDATER_INI" "${SETTINGS_TMP_UPDATE_ALL_INI}" ;;
+                "3 Region") settings_change_var "NAMES_REGION" "${SETTINGS_INI_FILES[${NAMES_TXT_UPDATER_INI}]}" ;;
+                "4 Char Code") settings_change_var "NAMES_CHAR_CODE" "${SETTINGS_INI_FILES[${NAMES_TXT_UPDATER_INI}]}"
+                    local NEW_NAMES_CHAR_CODE=$(load_single_var_from_ini "NAMES_CHAR_CODE" "${SETTINGS_INI_FILES[${NAMES_TXT_UPDATER_INI}]}")
                     if [[ "${NEW_NAMES_CHAR_CODE}" == "CHAR28" ]] && ! grep -q "rbf_hide_datecode=1" /media/fat/MiSTer.ini 2> /dev/null ; then
                         set +e
                         dialog --keep-window --msgbox "It's recommended to set rbf_hide_datecode=1 on MiSTer.ini when using CHAR28" 5 80
                         set -e
                     fi
                     ;;
-                "4 Sort Code") settings_change_var "NAMES_SORT_CODE" "${SETTINGS_TMP_UPDATE_ALL_INI}" ;;
-                "5 Remove \"names.txt\"")
+                "5 Sort Code") settings_change_var "NAMES_SORT_CODE" "${SETTINGS_INI_FILES[${NAMES_TXT_UPDATER_INI}]}" ;;
+                "6 Remove \"names.txt\"")
                     if [ -f /media/fat/names.txt ] ; then
                         set +e
                         dialog --keep-window --title "Are you sure?" --defaultno \
@@ -1996,6 +2014,7 @@ settings_menu_exit_and_run() {
                 sed -i "s%LLAPI_UPDATER_INI=.*%LLAPI_UPDATER_INI=\"${SETTINGS_TMP_LLAPI_UPDATER_INI}\"%g" "${ORIGINAL_INI_PATH}"
                 sed -i "s%MAME_GETTER_INI=.*%MAME_GETTER_INI=\"${SETTINGS_TMP_MAME_GETTER_INI}\"%g" "${ORIGINAL_INI_PATH}"
                 sed -i "s%HBMAME_GETTER_INI=.*%HBMAME_GETTER_INI=\"${SETTINGS_TMP_HBMAME_GETTER_INI}\"%g" "${ORIGINAL_INI_PATH}"
+                sed -i "s%NAMES_TXT_UPDATER_INI=.*%NAMES_TXT_UPDATER_INI=\"${SETTINGS_TMP_NAMES_TXT_UPDATER_INI}\"%g" "${ORIGINAL_INI_PATH}"
                 sed -i "s%ARCADE_ORGANIZER_INI=.*%ARCADE_ORGANIZER_INI=\"${SETTINGS_TMP_ARCADE_ORGANIZER_INI}\"%g" "${ORIGINAL_INI_PATH}"
                 ;;
             *) return ;;
