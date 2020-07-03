@@ -127,27 +127,32 @@ load_vars_from_ini() {
         return
     fi
 
-    local TMP=$(mktemp)
-    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
-
+    local TMP_1=$(mktemp)
+    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP_1} || true
     for var in "${@:2}" ; do
-        source <(grep ${var} ${TMP})
+        local TMP_2=$(mktemp)
+        grep ${var} ${TMP_1} >> ${TMP_2} || true
+        source ${TMP_2}
+        rm -f ${TMP_2}
     done
-    rm -f ${TMP}
+    rm -f ${TMP_1}
 }
 
 load_single_var_from_ini() {
     local VAR="${1}"
     local INI_PATH="${2}"
 
-    local TMP=$(mktemp)
-    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
+    local TMP_1=$(mktemp)
+    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP_1} || true
+
+    local TMP_2=$(mktemp)
+    grep ${VAR} ${TMP_1} >> ${TMP_2} || true
 
     declare -n VALUE="${VAR}"
     VALUE=
-    source <(grep ${VAR} ${TMP})
+    source ${TMP_2}
 
-    rm -f ${TMP}
+    rm -f ${TMP_1} ${TMP_2}
 
     echo "${VALUE}"
 }
@@ -177,6 +182,10 @@ initialize() {
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] && [[ "${EXPORTED_INI_PATH}" == "/tmp/update_all.ini" ]] ; then
         EXPORTED_INI_PATH="update_all.ini"
+    fi
+
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
+        export TERMINFO="terminfo"
     fi
 
     echo
