@@ -677,7 +677,6 @@ update_names_txt() {
     draw_separator
 
     echo "Checking names.txt"
-    echo "WARNING! This is a BETA feature that can be changed at any time."
     echo
 
     local TMP_NAMES="/tmp/ua_names.txt"
@@ -750,14 +749,14 @@ sequence() {
     if [[ "${BIOS_GETTER}" == "true" ]] ; then
         echo "- BIOS Getter"
     fi
-    if [[ "${NAMES_TXT}" == "true" ]] ; then
-        echo "- \"names.txt\" Updater (BETA)"
-    fi
     if [[ "${MAME_GETTER}" == "true" ]] ; then
         echo "- MAME Getter"
     fi
     if [[ "${HBMAME_GETTER}" == "true" ]] ; then
         echo "- HBMAME Getter"
+    fi
+    if [[ "${NAMES_TXT}" == "true" ]] ; then
+        echo "- \"names.txt\" Updater"
     fi
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
         echo "- Arcade Organizer"
@@ -875,10 +874,6 @@ run_update_all() {
         sleep ${WAIT_TIME_FOR_READING}
     fi
 
-    if [[ "${NAMES_TXT}" == "true" ]] ; then
-        update_names_txt
-    fi
-
     local NEW_MRA_TIME=$(date)
 
     if [[ "${MAME_GETTER}" == "true" ]] || [[ "${HBMAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
@@ -893,6 +888,10 @@ run_update_all() {
     if [[ "${HBMAME_GETTER}" == "true" ]] ; then
         run_mame_getter_script "HBMAME-GETTER" read_ini_hbmame_getter should_run_hbmame_getter ${HBMAME_GETTER_INI} \
             "${HBMAME_GETTER_URL}" "${UPDATED_HBMAME_MRAS}"
+    fi
+
+    if [[ "${NAMES_TXT}" == "true" ]] ; then
+        update_names_txt
     fi
 
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
@@ -1039,8 +1038,8 @@ settings_menu_update_all() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Abort" --ok-label "Select" --title "Update All Settings BETA" \
-                --menu "Settings loaded from '$(basename ${EXPORTED_INI_PATH})'"$'\n'$'\n'"This is a BETA version." 20 75 25 \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Abort" --ok-label "Select" --title "Update All Settings" \
+                --menu "Settings loaded from '$(basename ${EXPORTED_INI_PATH})'" 18 75 25 \
                 "1 Main Updater"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores and resources" \
                 "2 Jotego Updater" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego" \
                 "3 Unofficial Updater"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
@@ -1520,7 +1519,7 @@ settings_menu_bios_getter() {
             local ACTIVATE="1 $(settings_active_action ${BIOS_GETTER})"
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "BIOS-Getter Settings BETA" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "BIOS-Getter Settings" \
                 --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) ${BIOS_GETTER_INI})" 10 75 25 \
                 "${ACTIVATE}" "Activated: ${BIOS_GETTER}" \
                 "2 INI file"  "$(basename ${BIOS_GETTER_INI})" \
@@ -1752,8 +1751,8 @@ settings_menu_names_txt() {
             local ACTIVATE="1 $(settings_active_action ${NAMES_TXT})"
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "\"names.txt\" Updater Settings BETA" \
-                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) $(basename ${EXPORTED_INI_PATH}))"$'\n'$'\n'"Installs name.txt file containing curated names for your cores."$'\n'"You can also contribute to the naming of the cores at:"$'\n'"https://github.com/ThreepwoodLeBrush/Names_MiSTer"$'\n'$'\n'"This feature is in BETA stage."$'\n'"Options can change for the release version." 20 75 25 \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "\"names.txt\" Updater Settings" \
+                --menu "$(settings_menu_descr_text $(basename ${EXPORTED_INI_PATH}) $(basename ${EXPORTED_INI_PATH}))"$'\n'$'\n'"Installs name.txt file containing curated names for your cores."$'\n'"You can also contribute to the naming of the cores at:"$'\n'"https://github.com/ThreepwoodLeBrush/Names_MiSTer" 17 75 25 \
                 "${ACTIVATE}" "Activated: ${NAMES_TXT}" \
                 "2 Region" "${NAMES_REGION}" \
                 "3 Char Code" "${NAMES_CHAR_CODE}" \
