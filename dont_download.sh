@@ -548,6 +548,10 @@ prepare_arcade_organizer() {
         return
     fi
 
+    if [ -s "${UPDATED_MRAS}" ] && [[ "${ARCADE_ORGANIZER_SKIPALTS}" == "true" ]]; then
+        cat ${UPDATED_MRAS} | grep -vi "/_alternatives/" > ${UPDATED_MRAS} || true
+    fi
+
     local LAST_ARCADE_ORGANIZER_TIME=$(date --date='@-86400' +"%Y%m%d:%H%M%S")
     local LAST_NAMES_UPDATER_TIME=$(date --date='@-86400' +"%Y%m%d:%H%M%S")
     if [ -f ${LAST_ARCADE_ORGANIZER_RUN} ] ; then
