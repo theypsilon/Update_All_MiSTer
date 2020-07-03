@@ -983,6 +983,8 @@ SETTINGS_TMP_ARCADE_ORGANIZER_INI="/tmp/ua.arcade_organizer.ini"
 SETTINGS_TMP_BREAK="/tmp/ua_break"
 SETTINGS_TMP_CONTINUE="/tmp/ua_continue"
 
+SETTINGS_TMP_DIALOGRC="/tmp/ua_dialog"
+
 ### SETTINGS GLOBAL OPTIONS ##
 SETTINGS_OPTIONS_MAIN_UPDATER=("true" "false")
 SETTINGS_OPTIONS_JOTEGO_UPDATER=("true" "false")
@@ -1014,6 +1016,12 @@ settings_menu_update_all() {
         local value="${SETTINGS_INI_FILES[${key}]}"
         settings_make_ini_from "${key}" "${value}"
     done
+
+    rm "${SETTINGS_TMP_DIALOGRC}" 2> /dev/null || true
+    dialog --create-rc "${SETTINGS_TMP_DIALOGRC}"
+    sed -i "s/use_colors = OFF/use_colors = ON/g;
+            s/use_shadow = OFF/use_shadow = ON/g;
+            s/BLUE/BLACK/g" "${SETTINGS_TMP_DIALOGRC}"
 
     local TMP=$(mktemp)
     while true ; do
@@ -1603,7 +1611,7 @@ settings_menu_mame_getter() {
 
                     if [ -d "${MAME_GETTER_ROMDIR}" ] ; then
                         set +e
-                        dialog --keep-window --title "ARE YOU SURE?" --defaultno \
+                        DIALOGRC="${SETTINGS_TMP_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
                             --yesno "WARNING! You will lose ALL the data contained in the folder:\n${MAME_GETTER_ROMDIR}" \
                             6 66
                         local SURE_RET=$?
@@ -1693,7 +1701,7 @@ settings_menu_hbmame_getter() {
 
                     if [ -d "${HBMAME_GETTER_ROMDIR}" ] ; then
                         set +e
-                        dialog --keep-window --title "ARE YOU SURE?" --defaultno \
+                        DIALOGRC="${SETTINGS_TMP_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
                             --yesno "WARNING! You will lose ALL the data contained in the folder:\n${HBMAME_GETTER_ROMDIR}" \
                             6 66
                         local SURE_RET=$?
@@ -1772,7 +1780,7 @@ settings_menu_names_txt() {
                     local NEW_NAMES_TXT=$(load_single_var_from_ini "NAMES_TXT" "${SETTINGS_TMP_UPDATE_ALL_INI}")
                     if [[ "${NEW_NAMES_TXT}" == "true" ]] && [ ! -f "${LAST_NAMES_TXT_RUN}" ] && [ -f "/media/fat/names.txt" ] ; then
                         set +e
-                        dialog --keep-window --msgbox "WARNING! Your current names.txt file will be overwritten after updating" 5 76
+                        DIALOGRC="${SETTINGS_TMP_DIALOGRC}" dialog --keep-window --msgbox "WARNING! Your current names.txt file will be overwritten after updating" 5 76
                         set -e
                     fi
                     ;;
@@ -1879,7 +1887,7 @@ settings_menu_arcade_organizer() {
 
                     if [ -d "${ARCADE_ORGANIZER_ORGDIR}" ] ; then
                         set +e
-                        dialog --keep-window --title "ARE YOU SURE?" --defaultno \
+                        DIALOGRC="${SETTINGS_TMP_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
                             --yesno "WARNING! You will lose ALL the data contained in the folder:\n${ARCADE_ORGANIZER_ORGDIR}" \
                             6 66
                         local SURE_RET=$?
