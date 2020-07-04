@@ -2128,7 +2128,7 @@ settings_change_var() {
     local NEXT_INDEX=-1
     for i in "${!OPTIONS[@]}" ; do
         local CURRENT="${OPTIONS[${i}]}"
-        if [[ "${CURRENT}" == "${VALUE}" ]] ; then
+        if [[ "${CURRENT}" == "${VALUE}" ]] || [[ "${CURRENT}" == "$(basename ${VALUE})" ]] ; then
             NEXT_INDEX=$((i + 1))
             if [ ${NEXT_INDEX} -ge ${#OPTIONS[@]} ] ; then
                 NEXT_INDEX=0
