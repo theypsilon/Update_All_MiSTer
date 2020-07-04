@@ -18,4 +18,4 @@ Windows binaries licenses are under *licenses* directory in the zip file.
 
 # Known problems
 
-Norton antivirus has detected thread in DLLs in a case, which are a false positives. Those DLLs and all the other files come from the standard installation of [Cygin 64](https://cygwin.com/), and are tested in many other antivirus without any notice of malware of any kind. If you use Norton, and you face this problem, you would have to disable Norton before executing the .bat files included in the zip.
+Norton antivirus has detected threats in DLLs in a case. It is a false positive. Those DLLs and all the other files come from the standard installation of [Cygin 64](https://cygwin.com/), and are tested in many other antivirus without any notice of malware of any kind. If you use Norton, and you face this problem, you would have to disable Norton before executing the .bat files included in the zip.
