@@ -14,3 +14,8 @@ Windows binaries licenses are under *licenses* directory in the zip file.
 
 
 *Some cards might have issues with downloading many files to it at once, so it is better to run from the SD card for incremental updates only.
+
+
+# Known problems
+
+Norton antivirus has detected thread in DLLs in a case, which are a false positives. Those DLLs and all the other files come from the standard installation of [Cygin 64](https://cygwin.com/) and are tested in many other antivirus without any notice of malware of any kind. If you use Norton, and you face this problem you would have to disable Norton before executing the .bat files included in the zip.
