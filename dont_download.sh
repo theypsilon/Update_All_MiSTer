@@ -2128,7 +2128,10 @@ settings_change_var() {
     local NEXT_INDEX=-1
     for i in "${!OPTIONS[@]}" ; do
         local CURRENT="${OPTIONS[${i}]}"
-        if [[ "${CURRENT}" == "${VALUE}" ]] || [[ "${CURRENT}" == "$(basename ${VALUE})" ]] ; then
+        if [[ "${CURRENT}" == "${VALUE}" ]] || { \
+            [ -f "${VALUE}" ] && \
+            [[ "${CURRENT}" == "$(basename ${VALUE})" ]]; \
+        } ; then
             NEXT_INDEX=$((i + 1))
             if [ ${NEXT_INDEX} -ge ${#OPTIONS[@]} ] ; then
                 NEXT_INDEX=0
@@ -2138,12 +2141,7 @@ settings_change_var() {
     done
 
     if [ ${NEXT_INDEX} -eq -1 ] ; then
-        echo "Bug on NEXT_INDEX"
-        echo "VAR: ${VAR}"
-        echo "INI_PATH: ${INI_PATH}"
-        echo "VALUE: ${VALUE}"
-        echo "DEFAULT: ${DEFAULT}"
-        exit 1
+        NEXT_INDEX=0
     fi
 
     VALUE="${OPTIONS[${NEXT_INDEX}]}"
