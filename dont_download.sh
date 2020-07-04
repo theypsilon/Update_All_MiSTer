@@ -821,7 +821,7 @@ run_update_all() {
     sequence
     echo
 
-    if [ ${COUNTDOWN_TIME} -gt 0 ] ; then
+    if which dialog > /dev/null && [ ${COUNTDOWN_TIME} -gt 0 ] ; then
         if [[ -t 0 || -t 1 || -t 2 ]] ; then
             disable_global_log
             countdown
