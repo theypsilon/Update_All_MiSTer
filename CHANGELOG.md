@@ -7,10 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## Version 1.2 - 2020-07-03
 
 ### Added
-- Settings screen with many options.
+- Settings screen with many options. [#14](https://github.com/theypsilon/Update_All_MiSTer/issues/14)
 - Bios getter.
-- "names.txt" updater.
-- Clean folder options in settings menu.
+- "names.txt" updater. [#19](https://github.com/theypsilon/Update_All_MiSTer/issues/19)
+- Clean folder options in settings menu. [#9](https://github.com/theypsilon/Update_All_MiSTer/issues/9)
 - Minor fixes and improvements.
 - Added INI options for Settings screen, BIOS Getter and "names.txt" Updater.
 
