@@ -1187,7 +1187,7 @@ settings_menu_main_updater() {
                 "4 Install new Cores") settings_change_var "DOWNLOAD_NEW_CORES" "${SETTINGS_INI_FILES[$(basename ${MAIN_UPDATER_INI})]}" ;;
                 "5 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "${SETTINGS_INI_FILES[$(basename ${MAIN_UPDATER_INI})]}" ;;
                 "6 Install Cheats") settings_change_var "UPDATE_CHEATS" "${SETTINGS_INI_FILES[$(basename ${MAIN_UPDATER_INI})]}" ;;
-                "7 Install new Linux versions") settings_change_var "UPDATE_LINUX" "${SETTINGS_INI_FILES[$(basename ${MAIN_UPDATER_INI})]}" ;;
+                "7 Install Linux updates") settings_change_var "UPDATE_LINUX" "${SETTINGS_INI_FILES[$(basename ${MAIN_UPDATER_INI})]}" ;;
                 "8 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "${SETTINGS_INI_FILES[$(basename ${MAIN_UPDATER_INI})]}" ;;
                 "9 Force full resync")
                     local SOMETHING="false"
