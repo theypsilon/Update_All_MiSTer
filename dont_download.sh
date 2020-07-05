@@ -1791,7 +1791,10 @@ settings_menu_names_txt() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "\"names.txt\" Updater Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${NAMES_TXT_UPDATER_INI})"$'\n'$'\n'"Installs name.txt file containing curated names for your cores."$'\n'"You can also contribute to the naming of the cores at:"$'\n'"https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${NAMES_TXT_UPDATER_INI})
+"$'\n'"Installs name.txt file containing curated names for your cores.
+You can also contribute to the naming of the cores at:
+https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
                 "${ACTIVATE}" "Activated: ${NAMES_TXT_UPDATER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${NAMES_TXT_UPDATER_INI})" \
                 "3 Region" "${NAMES_REGION}" \
