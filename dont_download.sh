@@ -1156,7 +1156,7 @@ settings_menu_main_updater() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Main Updater Settings" \
-                --menu "$(settings_menu_descr_text $(settings_normalize_ini_file ${EXPORTED_INI_PATH}) $(settings_normalize_ini_file ${MAIN_UPDATER_INI}))" 17 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${MAIN_UPDATER_INI})" 17 75 25 \
                 "${ACTIVATE}" "Activated: ${MAIN_UPDATER}" \
                 "2 Cores versions" "$([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8 forks with ENCC' || echo 'Official Cores from MiSTer-devel')" \
                 "3 INI file"  "$(settings_normalize_ini_file ${MAIN_UPDATER_INI})" \
@@ -1319,7 +1319,7 @@ settings_menu_jotego_updater() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Jotego Updater Settings" \
-                --menu "$(settings_menu_descr_text $(settings_normalize_ini_file ${EXPORTED_INI_PATH}) $(settings_normalize_ini_file ${JOTEGO_UPDATER_INI}))" 13 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 13 75 25 \
                 "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${JOTEGO_UPDATER_INI})" \
                 "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
@@ -1420,7 +1420,7 @@ settings_menu_unofficial_updater() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Unofficial Updater Settings" \
-                --menu "$(settings_menu_descr_text $(settings_normalize_ini_file ${EXPORTED_INI_PATH}) $(settings_normalize_ini_file ${UNOFFICIAL_UPDATER_INI}))" 13 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${UNOFFICIAL_UPDATER_INI})" 13 75 25 \
                 "${ACTIVATE}" "Activated: ${UNOFFICIAL_UPDATER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${UNOFFICIAL_UPDATER_INI})" \
                 "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
@@ -1501,7 +1501,7 @@ settings_menu_llapi_updater() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "LLAPI Updater Settings" \
-                --menu "$(settings_menu_descr_text $(settings_normalize_ini_file ${EXPORTED_INI_PATH}) $(settings_normalize_ini_file ${LLAPI_UPDATER_INI}))" 11 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${LLAPI_UPDATER_INI})" 11 75 25 \
                 "${ACTIVATE}" "Activated: ${LLAPI_UPDATER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${LLAPI_UPDATER_INI})" \
                 "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
@@ -1553,7 +1553,7 @@ settings_menu_bios_getter() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "BIOS-Getter Settings" \
-                --menu "$(settings_menu_descr_text $(settings_normalize_ini_file ${EXPORTED_INI_PATH}) $(settings_normalize_ini_file ${BIOS_GETTER_INI}))" 10 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${BIOS_GETTER_INI})" 10 75 25 \
                 "${ACTIVATE}" "Activated: ${BIOS_GETTER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${BIOS_GETTER_INI})" \
                 "BACK"  "" 2> ${TMP}
@@ -1609,7 +1609,7 @@ settings_menu_mame_getter() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "MAME-Getter Settings" \
-                --menu "$(settings_menu_descr_text $(settings_normalize_ini_file ${EXPORTED_INI_PATH}) $(settings_normalize_ini_file ${MAME_GETTER_INI}))" 12 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${MAME_GETTER_INI})" 12 75 25 \
                 "${ACTIVATE}" "Activated: ${MAME_GETTER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${MAME_GETTER_INI})" \
                 "3 MAME ROM directory" "${ROMMAME}" \
@@ -1700,7 +1700,7 @@ settings_menu_hbmame_getter() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "HBMAME-Getter Settings" \
-                --menu "$(settings_menu_descr_text $(settings_normalize_ini_file ${EXPORTED_INI_PATH}) $(settings_normalize_ini_file ${HBMAME_GETTER_INI}))" 12 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${HBMAME_GETTER_INI})" 12 75 25 \
                 "${ACTIVATE}" "Activated: ${HBMAME_GETTER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${HBMAME_GETTER_INI})" \
                 "3 HBMAME ROM directory" "${ROMHBMAME}" \
@@ -1791,7 +1791,7 @@ settings_menu_names_txt() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "\"names.txt\" Updater Settings" \
-                --menu "$(settings_menu_descr_text $(settings_normalize_ini_file ${EXPORTED_INI_PATH}) $(settings_normalize_ini_file ${NAMES_TXT_UPDATER_INI}))"$'\n'$'\n'"Installs name.txt file containing curated names for your cores."$'\n'"You can also contribute to the naming of the cores at:"$'\n'"https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${NAMES_TXT_UPDATER_INI})"$'\n'$'\n'"Installs name.txt file containing curated names for your cores."$'\n'"You can also contribute to the naming of the cores at:"$'\n'"https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
                 "${ACTIVATE}" "Activated: ${NAMES_TXT_UPDATER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${NAMES_TXT_UPDATER_INI})" \
                 "3 Region" "${NAMES_REGION}" \
@@ -1893,7 +1893,7 @@ settings_menu_arcade_organizer() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Arcade Organizer Settings" \
-                --menu "$(settings_menu_descr_text $(settings_normalize_ini_file ${EXPORTED_INI_PATH}) $(settings_normalize_ini_file ${ARCADE_ORGANIZER_INI}))" 12 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${ARCADE_ORGANIZER_INI})" 12 75 25 \
                 "${ACTIVATE}" "Activated: ${ARCADE_ORGANIZER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${ARCADE_ORGANIZER_INI})" \
                 "3 Skip MRA-Alternatives" "${SKIPALTS}" \
@@ -2149,8 +2149,8 @@ settings_files_to_save() {
 }
 
 settings_menu_descr_text() {
-    local INI_A="${1}"
-    local INI_B="${2}"
+    local INI_A="$(settings_normalize_ini_file ${1})"
+    local INI_B="$(settings_normalize_ini_file ${2})"
     if [[ "${INI_A}" == "${INI_B}" ]] ; then
         echo "Settings loaded from '${INI_A}'"
     else
@@ -2204,7 +2204,16 @@ settings_change_var() {
     done
 
     if [ ${NEXT_INDEX} -eq -1 ] ; then
-        NEXT_INDEX=0
+        if [[ "${DEBUG_UPDATER:-false}" != "true" ]] ; then
+            NEXT_INDEX=0
+        else
+            echo "Bug on NEXT_INDEX"
+            echo "VAR: ${VAR}"
+            echo "INI_PATH: ${INI_PATH}"
+            echo "VALUE: ${VALUE}"
+            echo "DEFAULT: ${DEFAULT}"
+            exit 1
+        fi
     fi
 
     VALUE="${OPTIONS[${NEXT_INDEX}]}"
