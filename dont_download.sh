@@ -686,7 +686,7 @@ find_mras() {
 update_names_txt() {
     draw_separator
 
-    echo "Checking names.txt"
+    echo "Updating names.txt"
     echo
 
     local TMP_NAMES="/tmp/ua_names.txt"
@@ -721,6 +721,8 @@ update_names_txt() {
         echo "${UPDATE_ALL_VERSION}" > "${LAST_NAMES_UPDATER_RUN}"
         echo "$(date)" >> "${LAST_NAMES_UPDATER_RUN}"
     else
+        echo "No changes detected."
+        echo
         echo "Skipping names.txt..."
     fi
 }
