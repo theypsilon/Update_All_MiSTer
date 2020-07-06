@@ -203,6 +203,8 @@ initialize() {
         echo "Not found."
     fi
 
+    export SSL_SECURITY_OPTION
+
     LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
     WORK_PATH="/media/fat/Scripts/.update_all"
 
