@@ -696,6 +696,8 @@ update_names_txt() {
         NAMES_SORT_CODE="Manufacturer"
     fi
 
+    load_vars_from_ini "${NAMES_TXT_UPDATER_INI}" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
+
     set +e
     curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o "${TMP_NAMES}" "https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/master/names_${NAMES_CHAR_CODE}_${NAMES_SORT_CODE}_${NAMES_REGION}.txt"
     local RET_CURL=$?
@@ -709,6 +711,10 @@ update_names_txt() {
     if ! diff "${TMP_NAMES}" "/media/fat/names.txt" > /dev/null 2>&1 ; then
         cp "${TMP_NAMES}" "/media/fat/names.txt"
         echo "Downloaded new names.txt"
+        echo
+        echo "Region Code: ${NAMES_REGION}"
+        echo "Char Code: ${NAMES_CHAR_CODE}"
+        echo "Sort Code: ${NAMES_SORT_CODE}"
         if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
             REBOOT_NEEDED="true"
         fi
