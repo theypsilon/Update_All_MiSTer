@@ -2021,31 +2021,19 @@ settings_menu_exit_and_run() {
         set -e
         case $SURE_RET in
             0)
-                (
-                    local MAIN_UPDATER_INI="${SETTINGS_OPTIONS_MAIN_UPDATER_INI[0]}"
-                    local JOTEGO_UPDATER_INI="${SETTINGS_OPTIONS_JOTEGO_UPDATER_INI[0]}"
-                    local UNOFFICIAL_UPDATER_INI="${SETTINGS_OPTIONS_UNOFFICIAL_UPDATER_INI[0]}"
-                    local LLAPI_UPDATER_INI="${SETTINGS_OPTIONS_LLAPI_UPDATER_INI[0]}"
-                    local BIOS_GETTER_INI="${SETTINGS_OPTIONS_BIOS_GETTER_INI[0]}"
-                    local MAME_GETTER_INI="${SETTINGS_OPTIONS_MAME_GETTER_INI[0]}"
-                    local HBMAME_GETTER_INI="${SETTINGS_OPTIONS_HBMAME_GETTER_INI[0]}"
-                    local NAMES_TXT_UPDATER_INI="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER_INI[0]}"
-                    local ARCADE_ORGANIZER_INI="${SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI[0]}"
+                load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "MAIN_UPDATER_INI" "JOTEGO_UPDATER_INI" "UNOFFICIAL_UPDATER_INI" "LLAPI_UPDATER_INI" \
+                    "BIOS_GETTER_INI" "MAME_GETTER_INI" "HBMAME_GETTER_INI" "NAMES_TXT_UPDATER_INI" "ARCADE_ORGANIZER_INI"
 
-                    load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "MAIN_UPDATER_INI" "JOTEGO_UPDATER_INI" "UNOFFICIAL_UPDATER_INI" "LLAPI_UPDATER_INI" \
-                        "BIOS_GETTER_INI" "MAME_GETTER_INI" "HBMAME_GETTER_INI" "NAMES_TXT_UPDATER_INI" "ARCADE_ORGANIZER_INI"
-
-                    cp "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ${ORIGINAL_INI_PATH}
-                    sed -i "s%MAIN_UPDATER_INI=.*%MAIN_UPDATER_INI=\"$(settings_domain_ini_file ${MAIN_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                    sed -i "s%JOTEGO_UPDATER_INI=.*%JOTEGO_UPDATER_INI=\"$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                    sed -i "s%UNOFFICIAL_UPDATER_INI=.*%UNOFFICIAL_UPDATER_INI=\"$(settings_domain_ini_file ${UNOFFICIAL_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                    sed -i "s%LLAPI_UPDATER_INI=.*%LLAPI_UPDATER_INI=\"$(settings_domain_ini_file ${LLAPI_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                    sed -i "s%BIOS_GETTER_INI=.*%BIOS_GETTER_INI=\"$(settings_domain_ini_file ${BIOS_GETTER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                    sed -i "s%MAME_GETTER_INI=.*%MAME_GETTER_INI=\"$(settings_domain_ini_file ${MAME_GETTER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                    sed -i "s%HBMAME_GETTER_INI=.*%HBMAME_GETTER_INI=\"$(settings_domain_ini_file ${HBMAME_GETTER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                    sed -i "s%NAMES_TXT_UPDATER_INI=.*%NAMES_TXT_UPDATER_INI=\"$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                    sed -i "s%ARCADE_ORGANIZER_INI=.*%ARCADE_ORGANIZER_INI=\"$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                )
+                cp "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ${ORIGINAL_INI_PATH}
+                sed -i "s%MAIN_UPDATER_INI=.*%MAIN_UPDATER_INI=\"$(settings_domain_ini_file ${MAIN_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
+                sed -i "s%JOTEGO_UPDATER_INI=.*%JOTEGO_UPDATER_INI=\"$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
+                sed -i "s%UNOFFICIAL_UPDATER_INI=.*%UNOFFICIAL_UPDATER_INI=\"$(settings_domain_ini_file ${UNOFFICIAL_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
+                sed -i "s%LLAPI_UPDATER_INI=.*%LLAPI_UPDATER_INI=\"$(settings_domain_ini_file ${LLAPI_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
+                sed -i "s%BIOS_GETTER_INI=.*%BIOS_GETTER_INI=\"$(settings_domain_ini_file ${BIOS_GETTER_INI})\"%g" "${ORIGINAL_INI_PATH}"
+                sed -i "s%MAME_GETTER_INI=.*%MAME_GETTER_INI=\"$(settings_domain_ini_file ${MAME_GETTER_INI})\"%g" "${ORIGINAL_INI_PATH}"
+                sed -i "s%HBMAME_GETTER_INI=.*%HBMAME_GETTER_INI=\"$(settings_domain_ini_file ${HBMAME_GETTER_INI})\"%g" "${ORIGINAL_INI_PATH}"
+                sed -i "s%NAMES_TXT_UPDATER_INI=.*%NAMES_TXT_UPDATER_INI=\"$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
+                sed -i "s%ARCADE_ORGANIZER_INI=.*%ARCADE_ORGANIZER_INI=\"$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})\"%g" "${ORIGINAL_INI_PATH}"
                 ;;
             *) return ;;
         esac
