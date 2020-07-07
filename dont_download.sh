@@ -81,8 +81,6 @@ LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
 WORK_PATH="/media/fat/Scripts/.update_all"
 GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH="${WORK_PATH}/${LOG_FILENAME}"
-LAST_NAMES_UPDATER_RUN="${WORK_PATH}/$(basename ${EXPORTED_INI_PATH%.*}.last_names_txt_run)"
-LAST_ARCADE_ORGANIZER_RUN="${WORK_PATH}/$(basename ${EXPORTED_INI_PATH%.*}.last_arcade_organizer_run)"
 LAST_MRA_PROCESSING_PATH=
 BIOS_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS/master/bios-getter.sh"
 MAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh"
@@ -544,61 +542,8 @@ read_ini_arcade_organizer() {
     fi
 }
 
-prepare_arcade_organizer() {
-    local SCRIPT_PATH="${1}"
-    local SCRIPT_INI="${2}"
-
-    read_ini_arcade_organizer "${SCRIPT_PATH}" "${SCRIPT_INI}"
-}
-
-prepare_arcade_organizer_2() {
-    local SCRIPT_PATH="${1}"
-    local SCRIPT_INI="${2}"
-
-    read_ini_arcade_organizer "${SCRIPT_PATH}" "${SCRIPT_INI}"
-
-    if [ ! -d "${ARCADE_ORGANIZER_ORGDIR}" ] ; then
-        return
-    fi
-
-    if [ -s "${UPDATED_MRAS}" ] && [[ "${ARCADE_ORGANIZER_SKIPALTS}" == "true" ]]; then
-        cat ${UPDATED_MRAS} | grep -vi "/_alternatives/" > ${UPDATED_MRAS} || true
-    fi
-
-    local LAST_ARCADE_ORGANIZER_TIME=$(date --date='@-86400' +"%Y%m%d:%H%M%S")
-    local LAST_NAMES_UPDATER_TIME=$(date --date='@-86400' +"%Y%m%d:%H%M%S")
-    if [ -f ${LAST_ARCADE_ORGANIZER_RUN} ] ; then
-        local LAST_ARCADE_ORGANIZER_TIME=$(cat "${LAST_ARCADE_ORGANIZER_RUN}" | sed '2q;d')
-        LAST_ARCADE_ORGANIZER_TIME=$(date -d "${LAST_ARCADE_ORGANIZER_TIME}" +"%Y%m%d:%H%M%S")
-    fi
-    if [ -f ${LAST_NAMES_UPDATER_RUN} ] ; then
-        local LAST_NAMES_UPDATER_TIME=$(cat "${LAST_NAMES_UPDATER_RUN}" | sed '2q;d')
-        LAST_NAMES_UPDATER_TIME=$(date -d "${LAST_NAMES_UPDATER_TIME}" +"%Y%m%d:%H%M%S")
-    fi
-
-    local N_MRA_LINKED=$(find "${ARCADE_ORGANIZER_ORGDIR}/" -type f -print0 | xargs -r0 readlink -f | sort | uniq | wc -l)
-    local N_MRA_DEPTH1=$(find "${ARCADE_ORGANIZER_MRADIR}/" -maxdepth 1 -type f -iname "*.mra" | wc -l)
-
-    if [[ "${N_MRA_DEPTH1}" > "${N_MRA_LINKED}" ]] || \
-        [[ "${LAST_NAMES_UPDATER_TIME}" > "${LAST_ARCADE_ORGANIZER_TIME}" ]]
-    then
-        rm "${UPDATED_MRAS}" 2> /dev/null || true
-        touch "${UPDATED_MRAS}"
-        rm -rf "${ARCADE_ORGANIZER_ORGDIR}"
-    else
-        find "${ARCADE_ORGANIZER_ORGDIR}/" -xtype l -exec rm {} \; || true
-    fi
-}
-
 should_run_arcade_organizer() {
     true
-}
-
-should_run_arcade_organizer_2() {
-    [[ "${ARCADE_ORGANIZER_FORCE_FULL_RESYNC}" == "true" ]] || \
-    [ -s ${UPDATED_MRAS} ] || \
-    [ ! -d ${ARCADE_ORGANIZER_ORGDIR} ] || \
-    [ -z "$(ls -A ${ARCADE_ORGANIZER_ORGDIR})" ]
 }
 
 category_path() {
@@ -889,12 +834,8 @@ run_update_all() {
     fi
 
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-        run_mame_getter_script "_ARCADE-ORGANIZER" prepare_arcade_organizer should_run_arcade_organizer "${ARCADE_ORGANIZER_INI}" \
+        run_mame_getter_script "_ARCADE-ORGANIZER" read_ini_arcade_organizer should_run_arcade_organizer "${ARCADE_ORGANIZER_INI}" \
             "${ARCADE_ORGANIZER_URL}" "${UPDATED_MRAS}"
-        if [[ "${RUN_MAME_GETTER_SCRIPT_SKIPPED}" != "_ARCADE-ORGANIZER" ]]; then
-            echo "${UPDATE_ALL_VERSION}" > "${LAST_ARCADE_ORGANIZER_RUN}"
-            echo "$(date)" >> "${LAST_ARCADE_ORGANIZER_RUN}"
-        fi
     fi
 
     rm ${UPDATED_MRAS} 2> /dev/null || true
@@ -1796,7 +1737,7 @@ https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
                 "${ACTIVATE}")
                     settings_change_var "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
                     local NEW_NAMES_TXT_UPDATER=$(load_single_var_from_ini "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})")
-                    if [[ "${NEW_NAMES_TXT_UPDATER}" == "true" ]] && [ ! -f "${LAST_NAMES_UPDATER_RUN}" ] && [ -f "/media/fat/names.txt" ] ; then
+                    if [[ "${NEW_NAMES_TXT_UPDATER}" == "true" ]] && [ ! -f "/media/fat/Scripts/.cache/arcade-organizer/installed_names.txt" ] && [ -f "/media/fat/names.txt" ] ; then
                         set +e
                         DIALOGRC="${SETTINGS_TMP_DIALOGRC}" dialog --keep-window --msgbox "WARNING! Your current names.txt file will be overwritten after updating" 5 76
                         set -e
@@ -2022,18 +1963,6 @@ settings_menu_exit_and_run() {
     echo > "${SETTINGS_TMP_CONTINUE}"
 }
 
-settings_place_replace_value() {
-    local INI_FILE="${1}"
-    local VAR="${2}"
-    local VALUE="${3}"
-
-    if grep -q "${VAR}" "${INI_FILE}" ; then
-        sed -i "s%${VAR}=.*%${VAR}=\"${VALUE}\"%g" "${INI_FILE}"
-    else
-        echo "${VAR}=\"${VALUE}\"" >> "${INI_FILE}"
-    fi
-}
-
 settings_menu_cancel() {
 
     settings_files_to_save
@@ -2214,6 +2143,18 @@ settings_change_var() {
             echo >> ${INI_PATH}
         fi
         echo -n "${VAR}=\"${VALUE}\"" >> ${INI_PATH}
+    fi
+}
+
+settings_place_replace_value() {
+    local INI_FILE="${1}"
+    local VAR="${2}"
+    local VALUE="${3}"
+
+    if grep -q "${VAR}" "${INI_FILE}" ; then
+        sed -i "s%${VAR}=.*%${VAR}=\"${VALUE}\"%g" "${INI_FILE}"
+    else
+        echo "${VAR}=\"${VALUE}\"" >> "${INI_FILE}"
     fi
 }
 
