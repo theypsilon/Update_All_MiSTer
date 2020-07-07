@@ -812,7 +812,7 @@ run_update_all() {
 
     local NEW_MRA_TIME=$(date)
 
-    if [[ "${MAME_GETTER}" == "true" ]] || [[ "${HBMAME_GETTER}" == "true" ]] || [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
+    if [[ "${MAME_GETTER}" == "true" ]] || [[ "${HBMAME_GETTER}" == "true" ]] ; then
         find_mras
     fi
 
