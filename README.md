@@ -10,7 +10,7 @@ This script chains the following scripts:
 4. [LLAPI Cores Updater](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). Disabled by default.
 5. [BIOS Getter](https://github.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS) download bios for your installed systems from https://archive.org/
 6. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
-7. [names.txt Updater](https://github.com/ThreepwoodLeBrush/Names_MiSTer). Downloads a community curated names.txt file that enables better core names in the menus.
+7. [Names TXT Updater](https://github.com/theypsilon/Names_TXT_Updater_MiSTer). Downloads a community curated names.txt file that enables better core names in the menus.
 8. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
 This script also contains some snippets from the __Updater script__ maintained by [Locutus73](https://github.com/Locutus73).

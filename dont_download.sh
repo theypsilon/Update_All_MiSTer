@@ -204,6 +204,7 @@ initialize() {
     fi
 
     export SSL_SECURITY_OPTION
+    export CURL_RETRY
 
     LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
     WORK_PATH="/media/fat/Scripts/.update_all"
@@ -698,50 +699,6 @@ find_mras() {
     fi
 }
 
-update_names_txt() {
-    draw_separator
-
-    echo "Updating names.txt"
-    echo
-
-    local TMP_NAMES="/tmp/ua_names.txt"
-    rm "${TMP_NAMES}" 2> /dev/null || true
-
-    if [[ "${NAMES_CHAR_CODE}" == "CHAR28" ]] && [[ "${NAMES_SORT_CODE}" == "Common" ]] ; then
-        NAMES_SORT_CODE="Manufacturer"
-    fi
-
-    load_vars_from_ini "${NAMES_TXT_UPDATER_INI}" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
-
-    set +e
-    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o "${TMP_NAMES}" "https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/master/names_${NAMES_CHAR_CODE}_${NAMES_SORT_CODE}_${NAMES_REGION}.txt"
-    local RET_CURL=$?
-    set -e
-
-    if [ ${RET_CURL} -ne 0 ] ; then
-        FAILING_UPDATERS+=("names.txt")
-        return
-    fi
-
-    if ! diff "${TMP_NAMES}" "/media/fat/names.txt" > /dev/null 2>&1 ; then
-        cp "${TMP_NAMES}" "/media/fat/names.txt"
-        echo "Downloaded new names.txt"
-        echo
-        echo "Region Code: ${NAMES_REGION}"
-        echo "Char Code: ${NAMES_CHAR_CODE}"
-        echo "Sort Code: ${NAMES_SORT_CODE}"
-        if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-            REBOOT_NEEDED="true"
-        fi
-        echo "${UPDATE_ALL_VERSION}" > "${LAST_NAMES_UPDATER_RUN}"
-        echo "$(date)" >> "${LAST_NAMES_UPDATER_RUN}"
-    else
-        echo "No changes detected."
-        echo
-        echo "Skipping names.txt..."
-    fi
-}
-
 install_update_all_sh() {
     draw_separator
     echo "Installing update_all.sh in MiSTer /Scripts directory."
@@ -753,7 +710,7 @@ install_update_all_sh() {
     set -e
 
     if [ ${RET_CURL} -ne 0 ] ; then
-        FAILING_UPDATERS+=("Copy of update_all.sh to /Scripts")
+        FAILING_UPDATERS+=("Install-update_all.sh-to/Scripts")
         return
     fi
 
@@ -791,7 +748,7 @@ sequence() {
         echo "- HBMAME Getter"
     fi
     if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
-        echo "- \"names.txt\" Updater"
+        echo "- Names TXT Updater"
     fi
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
         echo "- Arcade Organizer"
@@ -881,28 +838,28 @@ run_update_all() {
     fi
 
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        run_updater_script https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh ${JOTEGO_UPDATER_INI}
+        run_updater_script "https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh" "${JOTEGO_UPDATER_INI}"
         if [ $UPDATER_RET -ne 0 ]; then
             FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}")
         fi
     fi
 
     if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-        run_updater_script https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh ${UNOFFICIAL_UPDATER_INI}
+        run_updater_script "https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh" "${UNOFFICIAL_UPDATER_INI}"
         if [ $UPDATER_RET -ne 0 ]; then
             FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}")
         fi
     fi
 
     if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
-        run_updater_script https://raw.githubusercontent.com/MiSTer-LLAPI/Updater_script_MiSTer/master/llapi_updater.sh ${LLAPI_UPDATER_INI}
+        run_updater_script "https://raw.githubusercontent.com/MiSTer-LLAPI/Updater_script_MiSTer/master/llapi_updater.sh" "${LLAPI_UPDATER_INI}"
         if [ $UPDATER_RET -ne 0 ]; then
             FAILING_UPDATERS+=("LLAPI")
         fi
     fi
 
     if [[ "${BIOS_GETTER}" == "true" ]] ; then
-        run_mame_getter_script "BIOS-GETTER" read_ini_bios_getter should_run_bios_getter ${BIOS_GETTER_INI} \
+        run_mame_getter_script "BIOS-GETTER" read_ini_bios_getter should_run_bios_getter "${BIOS_GETTER_INI}" \
             "${BIOS_GETTER_URL}" '.none'
         sleep ${WAIT_TIME_FOR_READING}
         sleep ${WAIT_TIME_FOR_READING}
@@ -915,21 +872,24 @@ run_update_all() {
     fi
 
     if [[ "${MAME_GETTER}" == "true" ]] ; then
-        run_mame_getter_script "MAME-GETTER" read_ini_mame_getter should_run_mame_getter ${MAME_GETTER_INI} \
+        run_mame_getter_script "MAME-GETTER" read_ini_mame_getter should_run_mame_getter "${MAME_GETTER_INI}" \
             "${MAME_GETTER_URL}" "${UPDATED_MAME_MRAS}"
     fi
 
     if [[ "${HBMAME_GETTER}" == "true" ]] ; then
-        run_mame_getter_script "HBMAME-GETTER" read_ini_hbmame_getter should_run_hbmame_getter ${HBMAME_GETTER_INI} \
+        run_mame_getter_script "HBMAME-GETTER" read_ini_hbmame_getter should_run_hbmame_getter "${HBMAME_GETTER_INI}" \
             "${HBMAME_GETTER_URL}" "${UPDATED_HBMAME_MRAS}"
     fi
 
     if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
-        update_names_txt
+        run_updater_script "https://raw.githubusercontent.com/theypsilon/Names_TXT_Updater_MiSTer/master/dont_download.sh" "${NAMES_TXT_UPDATER_INI}"
+        if [ $UPDATER_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("Names.txt_Updater")
+        fi
     fi
 
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-        run_mame_getter_script "_ARCADE-ORGANIZER" prepare_arcade_organizer should_run_arcade_organizer ${ARCADE_ORGANIZER_INI} \
+        run_mame_getter_script "_ARCADE-ORGANIZER" prepare_arcade_organizer should_run_arcade_organizer "${ARCADE_ORGANIZER_INI}" \
             "${ARCADE_ORGANIZER_URL}" "${UPDATED_MRAS}"
         if [[ "${RUN_MAME_GETTER_SCRIPT_SKIPPED}" != "_ARCADE-ORGANIZER" ]]; then
             echo "${UPDATE_ALL_VERSION}" > "${LAST_ARCADE_ORGANIZER_RUN}"
@@ -985,8 +945,8 @@ run_update_all() {
         echo "${NEW_MRA_TIME}" >> "${LAST_MRA_PROCESSING_PATH}"
     fi
 
-    if [[ "${REBOOT_NEEDED}" == "true" ]] ; then
-        REBOOT_PAUSE=$((WAIT_TIME_FOR_READING * 2))
+    if [ -f /tmp/ua_reboot_needed ] || [[ "${REBOOT_NEEDED}" == "true" ]] ; then
+        REBOOT_PAUSE=$((2 + WAIT_TIME_FOR_READING * 2))
         if [[ "${AUTOREBOOT}" == "true" && "${REBOOT_PAUSE}" -ge 0 ]] ; then
             echo "Rebooting in ${REBOOT_PAUSE} seconds"
             sleep "${REBOOT_PAUSE}"
@@ -1087,7 +1047,7 @@ settings_menu_update_all() {
                 "5 BIOS Getter" "$(settings_active_tag ${BIOS_GETTER}) BIOS files for your systems" \
                 "6 MAME Getter" "$(settings_active_tag ${MAME_GETTER}) MAME ROMs for arcades" \
                 "7 HBMAME Getter" "$(settings_active_tag ${HBMAME_GETTER}) HBMAME ROMs for arcades" \
-                "8 \"names.txt\" Updater" "$(settings_active_tag ${NAMES_TXT_UPDATER}) Better core names in the menus" \
+                "8 Names TXT Updater" "$(settings_active_tag ${NAMES_TXT_UPDATER}) Better core names in the menus" \
                 "9 Arcade Organizer" "$(settings_active_tag ${ARCADE_ORGANIZER}) Creates folder for easy navigation" \
                 "SAVE" "Writes all changes to the INI file/s" \
                 "EXIT and RUN UPDATE ALL" "" 2> ${TMP}
@@ -1104,7 +1064,7 @@ settings_menu_update_all() {
                 "5 BIOS Getter") settings_menu_bios_getter ;;
                 "6 MAME Getter") settings_menu_mame_getter ;;
                 "7 HBMAME Getter") settings_menu_hbmame_getter ;;
-                "8 \"names.txt\" Updater") settings_menu_names_txt ;;
+                "8 Names TXT Updater") settings_menu_names_txt ;;
                 "9 Arcade Organizer")
                     if [[ "${UPDATE_ALL_PC_UPDATER}" == "false" ]] ; then
                         settings_menu_arcade_organizer
@@ -1813,7 +1773,7 @@ settings_menu_names_txt() {
             local ACTIVATE="1 $(settings_active_action ${NAMES_TXT_UPDATER})"
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "\"names.txt\" Updater Settings" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Names TXT Updater Settings" \
                 --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${NAMES_TXT_UPDATER_INI})
 "$'\n'"Installs name.txt file containing curated names for your cores.
 You can also contribute to the naming of the cores at:
@@ -2042,21 +2002,36 @@ settings_menu_exit_and_run() {
                     "BIOS_GETTER_INI" "MAME_GETTER_INI" "HBMAME_GETTER_INI" "NAMES_TXT_UPDATER_INI" "ARCADE_ORGANIZER_INI"
 
                 cp "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ${ORIGINAL_INI_PATH}
-                sed -i "s%MAIN_UPDATER_INI=.*%MAIN_UPDATER_INI=\"$(settings_domain_ini_file ${MAIN_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                sed -i "s%JOTEGO_UPDATER_INI=.*%JOTEGO_UPDATER_INI=\"$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                sed -i "s%UNOFFICIAL_UPDATER_INI=.*%UNOFFICIAL_UPDATER_INI=\"$(settings_domain_ini_file ${UNOFFICIAL_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                sed -i "s%LLAPI_UPDATER_INI=.*%LLAPI_UPDATER_INI=\"$(settings_domain_ini_file ${LLAPI_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                sed -i "s%BIOS_GETTER_INI=.*%BIOS_GETTER_INI=\"$(settings_domain_ini_file ${BIOS_GETTER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                sed -i "s%MAME_GETTER_INI=.*%MAME_GETTER_INI=\"$(settings_domain_ini_file ${MAME_GETTER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                sed -i "s%HBMAME_GETTER_INI=.*%HBMAME_GETTER_INI=\"$(settings_domain_ini_file ${HBMAME_GETTER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                sed -i "s%NAMES_TXT_UPDATER_INI=.*%NAMES_TXT_UPDATER_INI=\"$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})\"%g" "${ORIGINAL_INI_PATH}"
-                sed -i "s%ARCADE_ORGANIZER_INI=.*%ARCADE_ORGANIZER_INI=\"$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})\"%g" "${ORIGINAL_INI_PATH}"
+
+                echo >> "${ORIGINAL_INI_PATH}"
+
+                settings_place_replace_value "${ORIGINAL_INI_PATH}" "MAIN_UPDATER_INI" "$(settings_domain_ini_file ${MAIN_UPDATER_INI})"
+                settings_place_replace_value "${ORIGINAL_INI_PATH}" "JOTEGO_UPDATER_INI" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})"
+                settings_place_replace_value "${ORIGINAL_INI_PATH}" "UNOFFICIAL_UPDATER_INI" "$(settings_domain_ini_file ${UNOFFICIAL_UPDATER_INI})"
+                settings_place_replace_value "${ORIGINAL_INI_PATH}" "LLAPI_UPDATER_INI" "$(settings_domain_ini_file ${LLAPI_UPDATER_INI})"
+                settings_place_replace_value "${ORIGINAL_INI_PATH}" "BIOS_GETTER_INI" "$(settings_domain_ini_file ${BIOS_GETTER_INI})"
+                settings_place_replace_value "${ORIGINAL_INI_PATH}" "MAME_GETTER_INI" "$(settings_domain_ini_file ${MAME_GETTER_INI})"
+                settings_place_replace_value "${ORIGINAL_INI_PATH}" "HBMAME_GETTER_INI" "$(settings_domain_ini_file ${HBMAME_GETTER_INI})"
+                settings_place_replace_value "${ORIGINAL_INI_PATH}" "NAMES_TXT_UPDATER_INI" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})"
+                settings_place_replace_value "${ORIGINAL_INI_PATH}" "ARCADE_ORGANIZER_INI" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
                 ;;
             *) return ;;
         esac
     fi
 
     echo > "${SETTINGS_TMP_CONTINUE}"
+}
+
+settings_place_replace_value() {
+    local INI_FILE="${1}"
+    local VAR="${2}"
+    local VALUE="${3}"
+
+    if grep -q "${VAR}" "${INI_FILE}" ; then
+        sed -i "s%${VAR}=.*%${VAR}=\"${VALUE}\"%g" "${INI_FILE}"
+    else
+        echo "${VAR}=\"${VALUE}\"" >> "${INI_FILE}"
+    fi
 }
 
 settings_menu_cancel() {
