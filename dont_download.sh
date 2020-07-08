@@ -886,7 +886,10 @@ run_update_all() {
         echo "${NEW_MRA_TIME}" >> "${LAST_MRA_PROCESSING_PATH}"
     fi
 
-    if [ -f /tmp/ua_reboot_needed ] || [[ "${REBOOT_NEEDED}" == "true" ]] ; then
+    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && { \
+        [ -f /tmp/ua_reboot_needed ] || \
+        [[ "${REBOOT_NEEDED}" == "true" ]] ; \
+    } ; then
         REBOOT_PAUSE=$((2 + WAIT_TIME_FOR_READING * 2))
         if [[ "${AUTOREBOOT}" == "true" && "${REBOOT_PAUSE}" -ge 0 ]] ; then
             echo "Rebooting in ${REBOOT_PAUSE} seconds"
