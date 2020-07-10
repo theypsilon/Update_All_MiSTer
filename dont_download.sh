@@ -28,36 +28,36 @@ set_default_options() {
     ENCC_FORKS="false" # Possible values: "true", "false"
 
     MAIN_UPDATER="true"
-    MAIN_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
+    MAIN_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
 
     JOTEGO_UPDATER="true"
-    JOTEGO_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
+    JOTEGO_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
 
     UNOFFICIAL_UPDATER="false"
-    UNOFFICIAL_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
+    UNOFFICIAL_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
 
     LLAPI_UPDATER="false"
-    LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably /media/fat/Scripts/update_all.ini
+    LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
 
     BIOS_GETTER="true"
-    BIOS_GETTER_INI="/media/fat/Scripts/update_bios-getter.ini"
+    BIOS_GETTER_INI="update_bios-getter.ini"
 
     MAME_GETTER="true"
-    MAME_GETTER_INI="/media/fat/Scripts/update_mame-getter.ini"
+    MAME_GETTER_INI="update_mame-getter.ini"
     MAME_GETTER_FORCE_FULL_RESYNC="false"
 
     HBMAME_GETTER="true"
-    HBMAME_GETTER_INI="/media/fat/Scripts/update_hbmame-getter.ini"
+    HBMAME_GETTER_INI="update_hbmame-getter.ini"
     HBMAME_GETTER_FORCE_FULL_RESYNC="false"
 
     NAMES_TXT_UPDATER="false"
-    NAMES_TXT_UPDATER_INI="/media/fat/Scripts/update_names-txt.ini"
+    NAMES_TXT_UPDATER_INI="update_names-txt.ini"
     NAMES_REGION="US"
     NAMES_CHAR_CODE="CHAR18"
     NAMES_SORT_CODE="Common"
 
     ARCADE_ORGANIZER="true"
-    ARCADE_ORGANIZER_INI="/media/fat/Scripts/update_arcade-organizer.ini"
+    ARCADE_ORGANIZER_INI="update_arcade-organizer.ini"
     ARCADE_ORGANIZER_FORCE_FULL_RESYNC="false"
 
     COUNTDOWN_TIME=15
@@ -74,7 +74,6 @@ UPDATE_ALL_VERSION="1.2"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
 UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
 AUTO_UPDATE_LAUNCHER="${AUTO_UPDATE_LAUNCHER:-true}"
-CURRENT_DIR_PATH="$(pwd)/"
 ORIGINAL_SCRIPT_PATH="${0}"
 ORIGINAL_INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
@@ -161,12 +160,12 @@ load_single_var_from_ini() {
 }
 
 initialize() {
-    if [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] ; then
+    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] ; then
         local MAYBE_NEW_LAUNCHER="/tmp/ua_maybe_new_launcher.sh"
         rm "${MAYBE_NEW_LAUNCHER}" 2> /dev/null || true
         curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o "${MAYBE_NEW_LAUNCHER}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh" > /dev/null 2>&1 || true
-        if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [ -d "/media/fat/Scripts/" ]; then
-            local OLD_SCRIPT_PATH="/media/fat/Scripts/$(basename ${ORIGINAL_SCRIPT_PATH})"
+        if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [ -d "${BASE_PATH}/Scripts/" ]; then
+            local OLD_SCRIPT_PATH="${BASE_PATH}/Scripts/$(basename ${ORIGINAL_SCRIPT_PATH})"
             if ! diff "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" > /dev/null 2>&1 && \
                 grep -q "theypsilon" "${MAYBE_NEW_LAUNCHER}" && \
                 grep -q "export SSL_SECURITY_OPTION" "${MAYBE_NEW_LAUNCHER}" && \
@@ -646,23 +645,41 @@ find_mras() {
 
 install_update_all_sh() {
     draw_separator
+
     echo "Installing update_all.sh in MiSTer /Scripts directory."
     mkdir -p ../Scripts
 
-    set +e
-    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ../Scripts/update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
-    local RET_CURL=$?
-    set -e
+    if [ ! -f ../Scripts/update_all.sh ] ; then
+        set +e
+        curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ../Scripts/update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
+        local RET_CURL=$?
+        set -e
 
-    if [ ${RET_CURL} -ne 0 ] ; then
-        FAILING_UPDATERS+=("Install-update_all.sh-to/Scripts")
-        return
+        if [ ${RET_CURL} -ne 0 ] ; then
+            FAILING_UPDATERS+=("Install-update_all.sh-to/Scripts")
+            return
+        fi
     fi
 
-    if [ -f update_all.ini ] ; then
-        echo "Installing update_all.ini too."
-        cp update_all.ini ../Scripts/update_all.ini
-    fi
+    local INI_FILES=( \
+        "update_all.ini" \
+        "${MAIN_UPDATER_INI}" \
+        "${JOTEGO_UPDATER_INI}" \
+        "${UNOFFICIAL_UPDATER_INI}" \
+        "${LLAPI_UPDATER_INI}" \
+        "${BIOS_GETTER_INI}" \
+        "${MAME_GETTER_INI}" \
+        "${HBMAME_GETTER_INI}" \
+        "${NAMES_TXT_UPDATER_INI}" \
+        "${ARCADE_ORGANIZER_INI}" \
+    )
+
+    for INI_FILE in "${INI_FILES[@]}" ; do
+        if [ -f "${INI_FILE}" ] ; then
+            echo "           ${INI_FILE} too."
+            cp "${INI_FILE}" "../Scripts/${INI_FILE}"
+        fi
+    done
 }
 
 sequence() {
@@ -698,8 +715,8 @@ sequence() {
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
         echo "- Arcade Organizer"
     fi
-    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] && [ ! -f ../Scripts/update_all.sh ] ; then
-        echo "- update_all.sh Script"
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
+        echo "- Install update_all.sh at /Scripts"
     fi
 }
 
@@ -842,7 +859,7 @@ run_update_all() {
     rm ${UPDATED_MAME_MRAS} 2> /dev/null || true
     rm ${UPDATED_HBMAME_MRAS} 2> /dev/null || true
 
-    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] && [ ! -f ../Scripts/update_all.sh ] ; then
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
         install_update_all_sh
     fi
 
@@ -2017,12 +2034,27 @@ settings_menu_save() {
             if [ -f "${EXPORTED_INI_PATH}" ] ; then
                 cp "${EXPORTED_INI_PATH}" "${ORIGINAL_INI_PATH}" 2> /dev/null || true
             fi
+            settings_copy_inis_to_updater_pc
             set +e
             dialog --keep-window --msgbox "   Saved" 0 0
             set -e
             ;;
         *) ;;
     esac
+}
+
+settings_copy_inis_to_updater_pc() {
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] || [ ! -d "../updater-pc/" ] ; then
+        return
+    fi
+    for file in "${SETTINGS_FILES_TO_SAVE_RET_ARRAY[@]}" ; do
+        if [[ "$(dirname ${file})" == "." ]] ; then
+            cp "${file}" "../updater-pc/$(basename ${file})"
+        fi
+    done
+    if [[ "$(dirname ${ORIGINAL_INI_PATH})" == "." ]] ; then
+        cp "${ORIGINAL_INI_PATH}" "../updater-pc/$(basename ${ORIGINAL_INI_PATH})"
+    fi
 }
 
 declare -A SETTINGS_INI_FILES
@@ -2048,7 +2080,7 @@ settings_create_domain_ini_files() {
 }
 
 settings_normalize_ini_file() {
-    echo "${@}" | sed "s%${CURRENT_DIR_PATH}%%gI ; s%^\./%%g"
+    echo "${@}" | sed "s%${BASE_PATH}/Scripts/%%gI ; s%^\./%%g"
 }
 
 SETTINGS_FILES_TO_SAVE_RET_ARRAY=()

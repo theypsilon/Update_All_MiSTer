@@ -66,42 +66,42 @@ ENCC_FORKS="false"
 # "false" to skip the Main Updater entirely
 MAIN_UPDATER="true"
 # Specific INI settings for this script if you need it.
-MAIN_UPDATER_INI="/media/fat/Scripts/update_all.ini"
+MAIN_UPDATER_INI="update_all.ini"
 
 # "false" to skip Jotego Updater entirely
 JOTEGO_UPDATER="true"
 # Specific INI settings for this script if you need it.
-JOTEGO_UPDATER_INI="/media/fat/Scripts/update_all.ini"
+JOTEGO_UPDATER_INI="update_all.ini"
 
 # "true" to activate the unofficial cores Updater
 UNOFFICIAL_UPDATER="false"
 # Specific INI settings for this script if you need it.
-UNOFFICIAL_UPDATER_INI="/media/fat/Scripts/update_all.ini"
+UNOFFICIAL_UPDATER_INI="update_all.ini"
 
 # "true" to activate the LLAPI Updater
 LLAPI_UPDATER="false"
 # Specific INI settings for this script if you need it.
-LLAPI_UPDATER_INI="/media/fat/Scripts/update_all.ini"
+LLAPI_UPDATER_INI="update_all.ini"
 
 # "false" to skip downloading BIOS for some systems.
 BIOS_GETTER="true"
 # Specific INI settings for this script if you need it.
-BIOS_GETTER_INI="/media/fat/Scripts/update_bios-getter.ini"
+BIOS_GETTER_INI="update_bios-getter.ini"
 
 # "false" to skip downloading MAME roms.
 MAME_GETTER="true"
 # Specific INI settings for this script if you need it.
-MAME_GETTER_INI="/media/fat/Scripts/update_mame-getter.ini"
+MAME_GETTER_INI="update_mame-getter.ini"
 
 # "false" to skip downloading HBMAME roms.
 HBMAME_GETTER="true"
 # Specific INI settings for this script if you need it.
-HBMAME_GETTER_INI="/media/fat/Scripts/update_hbmame-getter.ini"
+HBMAME_GETTER_INI="update_hbmame-getter.ini"
 
 # "true" to enable the names.txt Updater
 NAMES_TXT_UPDATER="false"
 # Specific INI settings for this script if you need it.
-NAMES_TXT_UPDATER_INI="/media/fat/Scripts/update_names-txt.ini"
+NAMES_TXT_UPDATER_INI="update_names-txt.ini"
 # Sets the downloaded names.txt Region Code to "US", "EU" or "JP"
 NAMES_REGION="US"
 # Sets the downloaded names.txt Char Code to "CHAR18" or "CHAR28"
@@ -112,7 +112,7 @@ NAMES_SORT_CODE="Common"
 # "false" to skip running the arcade organizer.
 ARCADE_ORGANIZER="true"
 # Specific INI settings for this script if you need it.
-ARCADE_ORGANIZER_INI="/media/fat/Scripts/update_arcade-organizer.ini"
+ARCADE_ORGANIZER_INI="update_arcade-organizer.ini"
 
 # "false" to not reboot automatically after a system component has been updated.
 # System component here means menu.rbf, MiSTer binary, Linux, and such.
