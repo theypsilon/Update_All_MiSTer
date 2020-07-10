@@ -2197,7 +2197,6 @@ settings_make_ini_from() {
     local INI_SOURCE="${1}"
     local INI_TARGET="${2}"
     rm ${INI_TARGET} 2> /dev/null || true
-    echo $INI_SOURCE > tests.log
     if [ -f ${INI_SOURCE} ] ; then
         cp ${INI_SOURCE} ${INI_TARGET}
     else
