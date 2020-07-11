@@ -66,22 +66,22 @@ ENCC_FORKS="false"
 # "false" to skip the Main Updater entirely
 MAIN_UPDATER="true"
 # Specific INI settings for this script if you need it.
-MAIN_UPDATER_INI="update_all.ini"
+MAIN_UPDATER_INI="update.ini"
 
 # "false" to skip Jotego Updater entirely
 JOTEGO_UPDATER="true"
 # Specific INI settings for this script if you need it.
-JOTEGO_UPDATER_INI="update_all.ini"
+JOTEGO_UPDATER_INI="update_jtcores.ini"
 
 # "true" to activate the unofficial cores Updater
 UNOFFICIAL_UPDATER="false"
 # Specific INI settings for this script if you need it.
-UNOFFICIAL_UPDATER_INI="update_all.ini"
+UNOFFICIAL_UPDATER_INI="update_unofficials.ini"
 
 # "true" to activate the LLAPI Updater
 LLAPI_UPDATER="false"
 # Specific INI settings for this script if you need it.
-LLAPI_UPDATER_INI="update_all.ini"
+LLAPI_UPDATER_INI="update_llapi.ini"
 
 # "false" to skip downloading BIOS for some systems.
 BIOS_GETTER="true"

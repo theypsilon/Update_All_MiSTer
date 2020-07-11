@@ -79,9 +79,11 @@ ORIGINAL_INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
 CURRENT_DIR="$(pwd)/"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
 SETTINGS_ON_FILENAME="settings-on"
-WORK_PATH="/media/fat/Scripts/.update_all"
+WORK_OLD_PATH="/media/fat/Scripts/.update_all"
+WORK_NEW_PATH="/media/fat/Scripts/.cache/update_all"
+WORK_PATH=
 GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
-GLOG_PATH="${WORK_PATH}/${LOG_FILENAME}"
+GLOG_PATH=".update_all_log"
 LAST_MRA_PROCESSING_PATH=
 BIOS_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS/master/bios-getter.sh"
 MAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh"
@@ -116,7 +118,11 @@ initialize_global_log() {
     rm ${GLOG_TEMP} 2> /dev/null || true
     exec 6>&1 ; exec 7>&2 # Saving stdout and stderr
     enable_global_log
-    trap "mv ${GLOG_TEMP} ${GLOG_PATH}" EXIT
+    trap trap_global_log EXIT
+}
+
+trap_global_log() {
+    mv "${GLOG_TEMP}" "${GLOG_PATH}" 2> /dev/null
 }
 
 load_ini_file() {
@@ -199,9 +205,28 @@ initialize() {
         EXPORTED_INI_PATH="update_all.ini"
     fi
 
-    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
-        export TERMINFO="terminfo"
+    WORK_PATH="${WORK_OLD_PATH}"
+    if [ ! -d "${WORK_PATH}" ] ; then
+        WORK_PATH="${WORK_NEW_PATH}"
+        if [ ! -d "${WORK_PATH}" ] ; then
+            mkdir -p "${WORK_PATH}"
+            MAME_GETTER_FORCE_FULL_RESYNC="true"
+            HBMAME_GETTER_FORCE_FULL_RESYNC="true"
+            ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
+
+            echo
+            echo "Creating '${WORK_PATH}' for the first time."
+
+            if [ ! -f "${EXPORTED_INI_PATH}" ] ; then
+                echo "MAIN_UPDATER_INI=\"update.ini\"" >> "${EXPORTED_INI_PATH}"
+                echo "JOTEGO_UPDATER_INI=\"update_jtcores.ini\"" >> "${EXPORTED_INI_PATH}"
+                echo "UNOFFICIAL_UPDATER_INI=\"update_unofficials.ini\"" >> "${EXPORTED_INI_PATH}"
+                echo "LLAPI_UPDATER_INI=\"update_llapi.ini\"" >> "${EXPORTED_INI_PATH}"
+            fi
+        fi
     fi
+
+    GLOG_PATH="${WORK_PATH}/${LOG_FILENAME}"
 
     echo
     echo "Reading INI file '${EXPORTED_INI_PATH}':"
@@ -216,20 +241,6 @@ initialize() {
 
     export SSL_SECURITY_OPTION
     export CURL_RETRY
-
-    LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
-    WORK_PATH="/media/fat/Scripts/.update_all"
-
-    if [ ! -d ${WORK_PATH} ] ; then
-        mkdir -p ${WORK_PATH}
-        MAME_GETTER_FORCE_FULL_RESYNC="true"
-        HBMAME_GETTER_FORCE_FULL_RESYNC="true"
-        ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
-
-        echo
-        echo "Creating '${WORK_PATH}' for the first time."
-        echo "Performing a full forced update."
-    fi
 
     if [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
         MAME_GETTER_FORCE_FULL_RESYNC="true"
@@ -247,7 +258,9 @@ initialize() {
         sleep ${WAIT_TIME_FOR_READING}
     fi
 
-
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
+        export TERMINFO="terminfo"
+    fi
 }
 
 post_load_update_all_ini() {
@@ -2102,8 +2115,16 @@ SETTINGS_FILES_TO_SAVE_RET_TEXT=
 settings_files_to_save() {
     SETTINGS_FILES_TO_SAVE_RET_TEXT=""
     SETTINGS_FILES_TO_SAVE_RET_ARRAY=()
+    local TMP_1=$(mktemp)
+    local TMP_2=$(mktemp)
     for file in ${!SETTINGS_INI_FILES[@]} ; do
-        if ! diff -q "${file}" "${SETTINGS_INI_FILES[${file}]}" > /dev/null 2>&1 && \
+        if [ -f "${file}" ] ; then
+            cat "${file}" | sort > "${TMP_1}"
+        fi
+        if [ -f "${SETTINGS_INI_FILES[${file}]}" ] ; then
+            cat "${SETTINGS_INI_FILES[${file}]}" | sort > "${TMP_2}"
+        fi
+        if ! diff -q "${TMP_1}" "${TMP_2}" > /dev/null 2>&1 && \
             { \
                 grep -q '[^[:space:]]' "${file}" > /dev/null 2>&1 \
                 || grep -q '[^[:space:]]' "${SETTINGS_INI_FILES[${file}]}" > /dev/null 2>&1 \
@@ -2113,6 +2134,8 @@ settings_files_to_save() {
             SETTINGS_FILES_TO_SAVE_RET_ARRAY+=("${file}")
         fi
     done
+    rm "${TMP_1}"
+    rm "${TMP_2}"
 }
 
 settings_menu_descr_text() {
@@ -2189,9 +2212,9 @@ settings_change_var() {
 
     if [[ "${VALUE}" != "${DEFAULT}" ]] ; then
         if [ ! -z "$(tail -c 1 "${INI_PATH}")" ] ; then
-            echo >> ${INI_PATH}
+            echo >> "${INI_PATH}"
         fi
-        echo -n "${VAR}=\"${VALUE}\"" >> ${INI_PATH}
+        echo -n "${VAR}=\"${VALUE}\"" >> "${INI_PATH}"
     fi
 }
 
