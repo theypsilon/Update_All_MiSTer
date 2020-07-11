@@ -76,7 +76,9 @@ UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
 AUTO_UPDATE_LAUNCHER="${AUTO_UPDATE_LAUNCHER:-true}"
 ORIGINAL_SCRIPT_PATH="${0}"
 ORIGINAL_INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
+CURRENT_DIR="$(pwd)/"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
+SETTINGS_ON_FILENAME="settings-on"
 WORK_PATH="/media/fat/Scripts/.update_all"
 GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH="${WORK_PATH}/${LOG_FILENAME}"
@@ -85,6 +87,18 @@ BIOS_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_BIOS_SCRIP
 MAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh"
 HBMAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh"
 ARCADE_ORGANIZER_URL="https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh"
+INI_REFERENCES=( \
+    "EXPORTED_INI_PATH" \
+    "MAIN_UPDATER_INI" \
+    "JOTEGO_UPDATER_INI" \
+    "UNOFFICIAL_UPDATER_INI" \
+    "LLAPI_UPDATER_INI" \
+    "BIOS_GETTER_INI" \
+    "MAME_GETTER_INI" \
+    "HBMAME_GETTER_INI" \
+    "NAMES_TXT_UPDATER_INI" \
+    "ARCADE_ORGANIZER_INI" \
+)
 
 enable_global_log() {
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
@@ -150,7 +164,7 @@ load_single_var_from_ini() {
     local TMP_2=$(mktemp)
     grep "^ *${VAR}=" ${TMP_1} >> ${TMP_2} || true
 
-    declare -n VALUE="${VAR}"
+    local -n VALUE="${VAR}"
     VALUE=
     source ${TMP_2}
 
@@ -165,11 +179,10 @@ initialize() {
         rm "${MAYBE_NEW_LAUNCHER}" 2> /dev/null || true
         curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o "${MAYBE_NEW_LAUNCHER}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh" > /dev/null 2>&1 || true
         if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [ -d "${BASE_PATH}/Scripts/" ]; then
-            local OLD_SCRIPT_PATH="${BASE_PATH}/Scripts/$(basename ${ORIGINAL_SCRIPT_PATH})"
-            if ! diff "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" > /dev/null 2>&1 && \
-                grep -q "theypsilon" "${MAYBE_NEW_LAUNCHER}" && \
-                grep -q "export SSL_SECURITY_OPTION" "${MAYBE_NEW_LAUNCHER}" && \
-                [[ "$(wc -l ${MAYBE_NEW_LAUNCHER} | awk '{print $1}')" == "110" ]]
+            local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
+            if [ -f "${OLD_SCRIPT_PATH}" ] && \
+                ! diff "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" > /dev/null 2>&1 && \
+                [[ "$(md5sum ${MAYBE_NEW_LAUNCHER} | awk '{print $1}')" == "5c5e3b530efd1ec3b4e3aff72ee9edb7" ]]
             then
                 cp "${MAYBE_NEW_LAUNCHER}"  "${OLD_SCRIPT_PATH}" || true
             fi
@@ -182,7 +195,7 @@ initialize() {
     echo "The All-in-One Updater for MiSTer"
     echo "Version ${UPDATE_ALL_VERSION}"
 
-    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] && [[ "${EXPORTED_INI_PATH}" == "/tmp/update_all.ini" ]] ; then
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
         EXPORTED_INI_PATH="update_all.ini"
     fi
 
@@ -195,6 +208,7 @@ initialize() {
     if [ -f "${EXPORTED_INI_PATH}" ] ; then
         cp "${EXPORTED_INI_PATH}" "${ORIGINAL_INI_PATH}" 2> /dev/null || true
         load_ini_file "${ORIGINAL_INI_PATH}"
+        post_load_update_all_ini
         echo "OK."
     else
         echo "Not found."
@@ -233,9 +247,18 @@ initialize() {
         sleep ${WAIT_TIME_FOR_READING}
     fi
 
-    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
-        ARCADE_ORGANIZER="false"
+
+}
+
+post_load_update_all_ini() {
+    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+        return
     fi
+    ARCADE_ORGANIZER="false"
+    for ref in "${INI_REFERENCES[@]}" ; do
+        local -n INI_FILE="${ref}"
+        INI_FILE=$(echo "${INI_FILE}" | sed "s%${BASE_PATH}/Scripts/%%g")
+    done
 }
 
 MAIN_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
@@ -674,7 +697,8 @@ install_update_all_sh() {
         "${ARCADE_ORGANIZER_INI}" \
     )
 
-    for INI_FILE in "${INI_FILES[@]}" ; do
+    for ref in "${INI_REFERENCES[@]}" ; do
+        local -n INI_FILE="${ref}"
         if [ -f "${INI_FILE}" ] ; then
             echo "           ${INI_FILE} too."
             cp "${INI_FILE}" "../Scripts/${INI_FILE}"
@@ -727,6 +751,10 @@ countdown() {
     echo " ${BOLD_IN}*${BOLD_OUT}Press <${BOLD_IN}UP${BOLD_OUT}>, To enter the SETTINGS screen."
     echo -n " ${BOLD_IN}*${BOLD_OUT}Press <${BOLD_IN}DOWN${BOLD_OUT}>, To continue now."
     local COUNTDOWN_SELECTION="continue"
+    if [ -f "${SETTINGS_ON_FILENAME}" ] ; then
+        COUNTDOWN_TIME=-1
+        COUNTDOWN_SELECTION="menu"
+    fi
     set +e
     echo -e '\e[3A\e[K'
     for (( i=0; i <= COUNTDOWN_TIME ; i++)); do
@@ -1057,9 +1085,7 @@ settings_menu_update_all() {
     if [ -f "${ORIGINAL_INI_PATH}" ] ; then
         set_default_options
         load_ini_file "${ORIGINAL_INI_PATH}"
-        if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
-            ARCADE_ORGANIZER="false"
-        fi
+        post_load_update_all_ini
     fi
 }
 
@@ -2034,27 +2060,15 @@ settings_menu_save() {
             if [ -f "${EXPORTED_INI_PATH}" ] ; then
                 cp "${EXPORTED_INI_PATH}" "${ORIGINAL_INI_PATH}" 2> /dev/null || true
             fi
-            settings_copy_inis_to_updater_pc
             set +e
             dialog --keep-window --msgbox "   Saved" 0 0
             set -e
+            if [ -f "${SETTINGS_ON_FILENAME}" ] ; then
+                rm "${SETTINGS_ON_FILENAME}" 2> /dev/null || true
+            fi
             ;;
         *) ;;
     esac
-}
-
-settings_copy_inis_to_updater_pc() {
-    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] || [ ! -d "../updater-pc/" ] ; then
-        return
-    fi
-    for file in "${SETTINGS_FILES_TO_SAVE_RET_ARRAY[@]}" ; do
-        if [[ "$(dirname ${file})" == "." ]] ; then
-            cp "${file}" "../updater-pc/$(basename ${file})"
-        fi
-    done
-    if [[ "$(dirname ${ORIGINAL_INI_PATH})" == "." ]] ; then
-        cp "${ORIGINAL_INI_PATH}" "../updater-pc/$(basename ${ORIGINAL_INI_PATH})"
-    fi
 }
 
 declare -A SETTINGS_INI_FILES
@@ -2080,7 +2094,7 @@ settings_create_domain_ini_files() {
 }
 
 settings_normalize_ini_file() {
-    echo "${@}" | sed "s%${BASE_PATH}/Scripts/%%gI ; s%^\./%%g"
+    echo "${@}" | sed "s%${CURRENT_DIR}%%gI ; s%^\./%%g"
 }
 
 SETTINGS_FILES_TO_SAVE_RET_ARRAY=()
@@ -2115,7 +2129,7 @@ settings_try_add_ini_option() {
     local INI_OPTION_ARRAY_NAME="${1}"
     local MAYBE_NEW_INI="${2}"
 
-    declare -n INI_OPTIONS="${INI_OPTION_ARRAY_NAME}"
+    local -n INI_OPTIONS="${INI_OPTION_ARRAY_NAME}"
     MAYBE_NEW_INI="$(settings_normalize_ini_file ${MAYBE_NEW_INI})"
 
     local CONTAINED="false"
@@ -2133,7 +2147,7 @@ settings_try_add_ini_option() {
 settings_change_var() {
     local VAR="${1}"
     local INI_PATH="${2}"
-    declare -n OPTIONS="SETTINGS_OPTIONS_${VAR}"
+    local -n OPTIONS="SETTINGS_OPTIONS_${VAR}"
     local DEFAULT="${OPTIONS[0]}"
 
     local VALUE="$(load_single_var_from_ini ${VAR} ${INI_PATH})"
