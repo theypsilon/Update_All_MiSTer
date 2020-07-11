@@ -1112,8 +1112,8 @@ settings_menu_main_updater() {
             local MAME_ALT_ROMS="${SETTINGS_OPTIONS_MAME_ALT_ROMS[0]}"
             local AUTOREBOOT="${SETTINGS_OPTIONS_AUTOREBOOT[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "MAIN_UPDATER" "MAIN_UPDATER_INI" "ENCC_FORKS"
-            load_ini_file "$(settings_domain_ini_file ${MAIN_UPDATER_INI})"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "MAIN_UPDATER" "MAIN_UPDATER_INI" "ENCC_FORKS" "AUTOREBOOT"
+            load_vars_from_ini "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" "DOWNLOAD_NEW_CORES" "MAME_ALT_ROMS" "UPDATE_CHEATS" "UPDATE_LINUX"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -1152,7 +1152,7 @@ settings_menu_main_updater() {
                 "5 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" ;;
                 "6 Install Cheats") settings_change_var "UPDATE_CHEATS" "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" ;;
                 "7 Install Linux updates") settings_change_var "UPDATE_LINUX" "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" ;;
-                "8 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" ;;
+                "8 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "9 Force full resync")
                     local SOMETHING="false"
                     if [ -f "/media/fat/Scripts/.mister_updater/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" ] ; then
