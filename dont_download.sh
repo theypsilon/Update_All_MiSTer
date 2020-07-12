@@ -369,6 +369,12 @@ run_mame_getter_script() {
     if [ -f "${SCRIPT_INI}" ] ; then
         dos2unix < "${SCRIPT_INI}" 2> /dev/null > ${INIFILE_FIXED} || true
     fi
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
+        sed -i 's/\/media\/fat/\.\./g ' ${SCRIPT_PATH}
+    fi
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
+        sed -i 's/#!\/bin\/bash/#!bash/g ' ${SCRIPT_PATH}
+    fi
 
     ${SCRIPT_READ_INI} ${SCRIPT_PATH} ${INIFILE_FIXED}
 
@@ -379,12 +385,6 @@ run_mame_getter_script() {
         echo "STARTING: ${SCRIPT_TITLE}"
         chmod +x ${SCRIPT_PATH}
         sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
-        if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
-            sed -i 's/\/media\/fat/\.\./g ' ${SCRIPT_PATH}
-        fi
-        if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
-            sed -i 's/#!\/bin\/bash/#!bash/g ' ${SCRIPT_PATH}
-        fi
 
         set +e
         if [[ "${SCRIPT_TITLE}" == "_ARCADE-ORGANIZER" ]] ; then
@@ -629,11 +629,6 @@ UPDATED_MRAS=".none"
 UPDATED_MAME_MRAS=".none"
 UPDATED_HBMAME_MRAS=".none"
 find_mras() {
-    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
-        touch .none
-        return
-    fi
-
     draw_separator
 
     UPDATED_MRAS=$(mktemp)
