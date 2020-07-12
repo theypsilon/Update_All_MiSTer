@@ -1574,7 +1574,7 @@ settings_menu_bios_getter() {
 settings_menu_mame_getter() {
     local TMP=$(mktemp)
 
-    SETTINGS_OPTIONS_MAME_GETTER_INI=("update_hbmame-getter.ini" "$(settings_normalize_ini_file ${EXPORTED_INI_PATH})")
+    SETTINGS_OPTIONS_MAME_GETTER_INI=("update_mame-getter.ini" "$(settings_normalize_ini_file ${EXPORTED_INI_PATH})")
     settings_try_add_ini_option 'SETTINGS_OPTIONS_MAME_GETTER_INI' "${MAME_GETTER_INI}"
     SETTINGS_OPTIONS_ROMMAME=("games/mame" "_Arcade/mame")
 
@@ -1665,7 +1665,7 @@ settings_menu_mame_getter() {
 settings_menu_hbmame_getter() {
     local TMP=$(mktemp)
 
-    SETTINGS_OPTIONS_HBMAME_GETTER_INI=("update_mame-getter.ini" "$(settings_normalize_ini_file ${EXPORTED_INI_PATH})")
+    SETTINGS_OPTIONS_HBMAME_GETTER_INI=("update_hbmame-getter.ini" "$(settings_normalize_ini_file ${EXPORTED_INI_PATH})")
     settings_try_add_ini_option 'SETTINGS_OPTIONS_HBMAME_GETTER_INI' "${HBMAME_GETTER_INI}"
     SETTINGS_OPTIONS_ROMHBMAME=("games/hbmame" "_Arcade/hbmame")
 
