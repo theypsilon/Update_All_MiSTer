@@ -679,23 +679,25 @@ find_mras() {
     fi
 }
 
-install_update_all_sh() {
+install_scripts() {
     draw_separator
 
     echo "Installing update_all.sh in MiSTer /Scripts directory."
     mkdir -p ../Scripts
 
-    if [ ! -f ../Scripts/update_all.sh ] ; then
-        set +e
-        curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ../Scripts/update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
-        local RET_CURL=$?
-        set -e
+    rm /tmp/ua_install.update_all.sh 2> /dev/null || true
 
-        if [ ${RET_CURL} -ne 0 ] ; then
-            FAILING_UPDATERS+=("Install-update_all.sh-to/Scripts")
-            return
-        fi
+    set +e
+    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_install.update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
+    local RET_CURL=$?
+    set -e
+
+    if [ ${RET_CURL} -ne 0 ] ; then
+        FAILING_UPDATERS+=("Install-update_all.sh-to/Scripts")
+        return
     fi
+
+    cp /tmp/ua_install.update_all.sh ../Scripts/update_all.sh
 
     local INI_FILES=( \
         "update_all.ini" \
@@ -717,6 +719,22 @@ install_update_all_sh() {
             cp "${INI_FILE}" "../Scripts/${INI_FILE}"
         fi
     done
+
+    echo
+    echo "Installing arcade_organizer.sh in MiSTer /Scripts directory."
+    rm /tmp/ua_install.arcade_organizer.sh 2> /dev/null || true
+
+    set +e
+    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_install.arcade_organizer.sh "${ARCADE_ORGANIZER_URL}"
+    local RET_CURL=$?
+    set -e
+
+    if [ ${RET_CURL} -ne 0 ] ; then
+        FAILING_UPDATERS+=("Install-arcade_organizer.sh-to/Scripts")
+        return
+    fi
+
+    cp /tmp/ua_install.arcade_organizer.sh ../Scripts/arcade_organizer.sh
 }
 
 sequence() {
@@ -753,7 +771,7 @@ sequence() {
         echo "- Arcade Organizer"
     fi
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
-        echo "- Install update_all.sh at /Scripts"
+        echo "- Install update_all.sh && arcade_organizer.sh at /Scripts"
     fi
 }
 
@@ -901,7 +919,7 @@ run_update_all() {
     rm ${UPDATED_HBMAME_MRAS} 2> /dev/null || true
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
-        install_update_all_sh
+        install_scripts
     fi
 
     draw_separator
@@ -1067,15 +1085,7 @@ settings_menu_update_all() {
                 "6 MAME Getter") settings_menu_mame_getter ;;
                 "7 HBMAME Getter") settings_menu_hbmame_getter ;;
                 "8 Names TXT Updater") settings_menu_names_txt ;;
-                "9 Arcade Organizer")
-                    if [[ "${UPDATE_ALL_PC_UPDATER}" == "false" ]] ; then
-                        settings_menu_arcade_organizer
-                    else
-                        set +e
-                        dialog --keep-window --msgbox "Arcade Organizer should be run from MiSTer\n\nThe generated files need to be created with MiSTer OS to work fine" 7 75
-                        set -e
-                    fi
-                    ;;
+                "9 Arcade Organizer") settings_menu_arcade_organizer ;;
                 "SAVE") settings_menu_save ;;
                 "EXIT and RUN UPDATE ALL") settings_menu_exit_and_run ;;
                 *) settings_menu_cancel ;;
@@ -1864,6 +1874,10 @@ settings_menu_arcade_organizer() {
             load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER" "ARCADE_ORGANIZER_INI"
             load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
 
+            if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
+                ARCADE_ORGANIZER="false"
+            fi
+
             if [[ "${ARCADE_ORGANIZER_SKIPALTS}" != "" ]] ; then
                 SKIPALTS="${ARCADE_ORGANIZER_SKIPALTS}"
             fi
@@ -1893,7 +1907,15 @@ settings_menu_arcade_organizer() {
             fi
 
             case "${DEFAULT_SELECTION}" in
-                "${ACTIVATE}") settings_change_var "ARCADE_ORGANIZER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "${ACTIVATE}")
+                    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+                        settings_change_var "ARCADE_ORGANIZER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+                    else
+                        set +e
+                        dialog --keep-window --msgbox "Arcade Organizer should be run from MiSTer\n\nRun arcade_organizer.sh there after the first run of 'Update All' is done" 7 77
+                        set -e
+                    fi
+                    ;;
                 "2 INI file") settings_change_var "ARCADE_ORGANIZER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "3 Skip MRA-Alternatives") settings_change_var "SKIPALTS" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
                 "4 Clean Organized")
