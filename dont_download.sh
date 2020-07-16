@@ -2091,6 +2091,12 @@ settings_menu_save() {
             if [ -f "${EXPORTED_INI_PATH}" ] ; then
                 cp "${EXPORTED_INI_PATH}" "${ORIGINAL_INI_PATH}" 2> /dev/null || true
             fi
+            if [ -d ../updater-pc ] ; then
+                for ref in "${INI_REFERENCES[@]}" ; do
+                    local -n INI_FILE="${ref}"
+                    cp "${INI_FILE}" "../updater-pc/$(basename ${INI_FILE})" 2> /dev/null || true
+                done
+            fi
             set +e
             dialog --keep-window --msgbox "   Saved" 0 0
             set -e
