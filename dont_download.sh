@@ -73,6 +73,7 @@ set_default_options
 UPDATE_ALL_VERSION="1.2"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
 UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
+CURL_RETRY="--connect-timeout 15 --max-time 180 --retry 3 --retry-delay 5"
 AUTO_UPDATE_LAUNCHER="${AUTO_UPDATE_LAUNCHER:-true}"
 ORIGINAL_SCRIPT_PATH="${0}"
 ORIGINAL_INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
@@ -183,7 +184,7 @@ initialize() {
     if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] ; then
         local MAYBE_NEW_LAUNCHER="/tmp/ua_maybe_new_launcher.sh"
         rm "${MAYBE_NEW_LAUNCHER}" 2> /dev/null || true
-        curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o "${MAYBE_NEW_LAUNCHER}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh" > /dev/null 2>&1 || true
+        curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o "${MAYBE_NEW_LAUNCHER}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh" > /dev/null 2>&1 || true
         if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [ -d "${BASE_PATH}/Scripts/" ]; then
             local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
             if [ -f "${OLD_SCRIPT_PATH}" ] && \
@@ -324,7 +325,7 @@ run_updater_script() {
     local SCRIPT_PATH="/tmp/ua_current_updater.sh"
     rm ${SCRIPT_PATH} 2> /dev/null || true
 
-    fetch_or_exit ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
+    fetch_or_exit ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
 
     sed -i "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
     sed -i 's/${AUTOREBOOT}/false/g' ${SCRIPT_PATH}
@@ -362,7 +363,7 @@ run_mame_getter_script() {
     echo "Downloading the most recent $(basename ${SCRIPT_FILENAME}) script."
     echo " "
 
-    fetch_or_exit ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
+    fetch_or_exit ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
     echo
 
     local INIFILE_FIXED=$(mktemp)
@@ -419,7 +420,7 @@ read_remote_mame_getter_script_ini() {
     local SCRIPT_PATH="/tmp/ua_temp_script"
     rm "${SCRIPT_PATH}" 2> /dev/null || true
 
-    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} \
+    curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} \
         --fail --location \
         -o ${SCRIPT_PATH} \
         ${SCRIPT_URL} > /dev/null 2>&1
@@ -683,7 +684,7 @@ install_scripts() {
     rm /tmp/ua_install.update_all.sh 2> /dev/null || true
 
     set +e
-    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_install.update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
+    curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_install.update_all.sh https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh
     local RET_CURL=$?
     set -e
 
@@ -720,7 +721,7 @@ install_scripts() {
     rm /tmp/ua_install.arcade_organizer.sh 2> /dev/null || true
 
     set +e
-    curl ${CURL_RETRY} ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_install.arcade_organizer.sh "${ARCADE_ORGANIZER_URL}"
+    curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_install.arcade_organizer.sh "${ARCADE_ORGANIZER_URL}"
     local RET_CURL=$?
     set -e
 
