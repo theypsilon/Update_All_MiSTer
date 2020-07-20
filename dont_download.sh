@@ -87,8 +87,8 @@ GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH=".update_all.log"
 LAST_MRA_PROCESSING_PATH=
 BIOS_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS/master/bios-getter.sh"
-MAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh"
-HBMAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh"
+MAME_GETTER_URL="https://raw.githubusercontent.com/theypsilon/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh"
+HBMAME_GETTER_URL="https://raw.githubusercontent.com/theypsilon/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh"
 ARCADE_ORGANIZER_URL="https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh"
 INI_REFERENCES=( \
     "EXPORTED_INI_PATH" \
@@ -388,13 +388,14 @@ run_mame_getter_script() {
         sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
 
         set +e
-        if [[ "${SCRIPT_TITLE}" == "_ARCADE-ORGANIZER" ]] ; then
-            ${SCRIPT_PATH} --optimized
-        elif [ -s ${MRA_INPUT} ] ; then
-            ${SCRIPT_PATH} --input-file ${MRA_INPUT}
-        else
-            ${SCRIPT_PATH}
-        fi
+        #if [[ "${SCRIPT_TITLE}" == "_ARCADE-ORGANIZER" ]] ; then
+        #    ${SCRIPT_PATH} --optimized
+        #elif [ -s ${MRA_INPUT} ] ; then
+        #    ${SCRIPT_PATH} --input-file ${MRA_INPUT}
+        #else
+        #    ${SCRIPT_PATH}
+        #fi
+        ${SCRIPT_PATH} --optimized
         local SCRIPT_RET=$?
         set -e
 
@@ -497,6 +498,10 @@ read_ini_mame_getter() {
 }
 
 should_run_mame_getter() {
+    true
+}
+
+should_run_mame_getter_2() {
     [[ "${MAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] || \
     [ -s ${UPDATED_MAME_MRAS} ] || \
     [ ! -d ${MAME_GETTER_ROMDIR} ] || \
@@ -535,6 +540,10 @@ read_ini_hbmame_getter() {
 }
 
 should_run_hbmame_getter() {
+    true
+}
+
+should_run_hbmame_getter_2() {
     [[ "${HBMAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] || \
     [ -s ${UPDATED_HBMAME_MRAS} ] || \
     [ ! -d ${HBMAME_GETTER_ROMDIR} ] || \
@@ -884,9 +893,9 @@ run_update_all() {
 
     local NEW_MRA_TIME=$(date)
 
-    if [[ "${MAME_GETTER}" == "true" ]] || [[ "${HBMAME_GETTER}" == "true" ]] ; then
-        find_mras
-    fi
+    #if [[ "${MAME_GETTER}" == "true" ]] || [[ "${HBMAME_GETTER}" == "true" ]] ; then
+    #    find_mras
+    #fi
 
     if [[ "${MAME_GETTER}" == "true" ]] ; then
         run_mame_getter_script "MAME-GETTER" read_ini_mame_getter should_run_mame_getter "${MAME_GETTER_INI}" \
