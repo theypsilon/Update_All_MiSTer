@@ -1787,6 +1787,10 @@ settings_menu_names_txt() {
 
             local ACTIVATE="1 $(settings_active_action ${NAMES_TXT_UPDATER})"
 
+            if [[ "${NAMES_CHAR_CODE}" == "CHAR28" ]] && [[ "${NAMES_SORT_CODE}" == "Common" ]] ; then
+                NAMES_SORT_CODE="Manufacturer"
+            fi
+
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Names TXT Updater Settings" \
                 --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${NAMES_TXT_UPDATER_INI})
@@ -1826,8 +1830,15 @@ https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
                         dialog --keep-window --msgbox "It's recommended to set rbf_hide_datecode=1 on MiSTer.ini when using CHAR28" 5 80
                         set -e
                     fi
+                    if [[ "${NEW_NAMES_CHAR_CODE}" == "CHAR28" ]] && [[ "${NAMES_SORT_CODE}" == "Common" ]] ; then
+                        settings_change_var "NAMES_SORT_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})"
+                    fi
                     ;;
-                "5 Sort Code") settings_change_var "NAMES_SORT_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})" ;;
+                "5 Sort Code")
+                    if [[ "${NAMES_CHAR_CODE}" == "CHAR18" ]] ; then
+                        settings_change_var "NAMES_SORT_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})"
+                    fi
+                    ;;
                 "6 Remove \"names.txt\"")
                     if [ -f /media/fat/names.txt ] ; then
                         set +e
