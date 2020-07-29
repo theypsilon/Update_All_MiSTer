@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 1.3 - 2020-07-29
+
+### Added
+- Misc submenu in Settings screen.
+- Toggle button in Settings screen to activate/deactivate scripts faster.
+- Clean all cores in misc menu. [#9](https://github.com/theypsilon/Update_All_MiSTer/issues/9)
+- Option to change Organized folder to _Arcade added.
+- Option to change pause time added.
+- Option to change countdown time added.
+- Settings screen made compatible with updater-pc for windows.
+- Added /nopause argument option for updater-pc windows runnables (update_all_win.bat and update_all_win_db9_snac8.bat).
+- Added exit code return for updater-pc for windows.
+- Added forced Settings screen when file 'settings-on' is present on the folder that contains update_all script. This file will be removed automatically after save.
+
+### Changed
+- Optimized MAME Getter, HBMAME Getter and Arcade Organizer for first runs.
+- Autoreboot option moved to Misc submenu.
+- Default updater INI files for clean setups are now: update.ini, update_jtcores.ini, update_unofficials.ini and update_llapi.ini.
+- Removed support for INI options: *MAME_GETTER_FORCE_FULL_RESYNC*, *HBMAME_GETTER_FORCE_FULL_RESYNC*, *ARCADE_ORGANIZER_FORCE_FULL_RESYNC*.
+- Fixes in INI handling, now it works correctly in some corner cases that weren't properly covered before.
+- Other minor fixes.
+
 ## Version 1.2 - 2020-07-03
 
 ### Added

@@ -70,7 +70,7 @@ set_default_options() {
 }
 set_default_options
 # ========= CODE STARTS HERE =========
-UPDATE_ALL_VERSION="1.2"
+UPDATE_ALL_VERSION="1.3"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
 UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
 CURL_RETRY="--connect-timeout 15 --max-time 180 --retry 3 --retry-delay 5"
@@ -349,11 +349,8 @@ run_updater_script() {
 RUN_MAME_GETTER_SCRIPT_SKIPPED=
 run_mame_getter_script() {
     local SCRIPT_TITLE="${1}"
-    local SCRIPT_READ_INI="${2}"
-    local SCRIPT_CONDITION="${3}"
-    local SCRIPT_INI="${4}"
-    local SCRIPT_URL="${5}"
-    local MRA_INPUT="${6}"
+    local SCRIPT_URL="${2}"
+    local SCRIPT_INI="${3}"
 
     local SCRIPT_FILENAME="${SCRIPT_URL/*\//}"
     local SCRIPT_PATH="/tmp/${SCRIPT_FILENAME%.*}.sh"
@@ -366,10 +363,6 @@ run_mame_getter_script() {
     fetch_or_exit ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
     echo
 
-    local INIFILE_FIXED=$(mktemp)
-    if [ -f "${SCRIPT_INI}" ] ; then
-        dos2unix < "${SCRIPT_INI}" 2> /dev/null > ${INIFILE_FIXED} || true
-    fi
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
         sed -i 's/\/media\/fat/\.\./g ' ${SCRIPT_PATH}
     fi
@@ -377,46 +370,33 @@ run_mame_getter_script() {
         sed -i 's/#!\/bin\/bash/#!bash/g ' ${SCRIPT_PATH}
     fi
 
-    ${SCRIPT_READ_INI} ${SCRIPT_PATH} ${INIFILE_FIXED}
+    echo
+    echo "STARTING: ${SCRIPT_TITLE}"
+    chmod +x ${SCRIPT_PATH}
+    sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
 
-    rm ${INIFILE_FIXED}
+    set +e
+    ${SCRIPT_PATH} --optimized
+    local SCRIPT_RET=$?
+    set -e
 
-    if ${SCRIPT_CONDITION} ; then
-        echo
-        echo "STARTING: ${SCRIPT_TITLE}"
-        chmod +x ${SCRIPT_PATH}
-        sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
-
-        set +e
-        #if [[ "${SCRIPT_TITLE}" == "_ARCADE-ORGANIZER" ]] ; then
-        #    ${SCRIPT_PATH} --optimized
-        #elif [ -s ${MRA_INPUT} ] ; then
-        #    ${SCRIPT_PATH} --input-file ${MRA_INPUT}
-        #else
-        #    ${SCRIPT_PATH}
-        #fi
-        ${SCRIPT_PATH} --optimized
-        local SCRIPT_RET=$?
-        set -e
-
-        if [ $SCRIPT_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("${SCRIPT_TITLE}")
-        fi
-
-        rm ${SCRIPT_PATH}
-        echo "FINISHED: ${SCRIPT_TITLE}"
-        echo
-        sleep ${WAIT_TIME_FOR_READING}
-    else
-        RUN_MAME_GETTER_SCRIPT_SKIPPED="${SCRIPT_TITLE}"
-        echo "Skipping ${SCRIPT_TITLE}..."
+    if [ $SCRIPT_RET -ne 0 ]; then
+        FAILING_UPDATERS+=("${SCRIPT_TITLE}")
     fi
+
+    rm ${SCRIPT_PATH}
+    echo "FINISHED: ${SCRIPT_TITLE}"
+    echo
+    sleep ${WAIT_TIME_FOR_READING}
 }
 
-read_remote_mame_getter_script_ini() {
+RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT=
+run_quiet_mame_getter_script() {
     local SCRIPT_URL="${1}"
-    local SCRIPT_READ_INI="${2}"
-    local SCRIPT_INI="${3}"
+    local SCRIPT_INI="${2}"
+    local SCRIPT_ARGS="${3}"
+
+    RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT=""
 
     local SCRIPT_PATH="/tmp/ua_temp_script"
     rm "${SCRIPT_PATH}" 2> /dev/null || true
@@ -424,171 +404,20 @@ read_remote_mame_getter_script_ini() {
     curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} \
         --fail --location \
         -o ${SCRIPT_PATH} \
-        ${SCRIPT_URL} > /dev/null 2>&1
+        ${SCRIPT_URL} > /dev/null 2>&1 || return
 
-    local INIFILE_FIXED=$(mktemp)
-    if [ -f "${SCRIPT_INI}" ] ; then
-        dos2unix < "${SCRIPT_INI}" 2> /dev/null > ${INIFILE_FIXED} || true
+    if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
+        sed -i 's/\/media\/fat/\.\./g ' ${SCRIPT_PATH}
     fi
-
-    ${SCRIPT_READ_INI} ${SCRIPT_PATH} ${INIFILE_FIXED}
-
-    rm ${INIFILE_FIXED}
-}
-
-BIOS_GETTER_BIOSDIR=
-BIOS_GETTER_GAMESDIR=
-read_ini_bios_getter() {
-    local SCRIPT_PATH="${1}"
-    local SCRIPT_INI="${2}"
-
-    if [ -s ${SCRIPT_PATH} ] ; then
-        BIOS_GETTER_BIOSDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "BIOSDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
-        BIOS_GETTER_GAMESDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "GAMESDIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
+    if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
+        sed -i 's/#!\/bin\/bash/#!bash/g ' ${SCRIPT_PATH}
     fi
+    sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
 
-    if [ ! -s ${SCRIPT_INI} ] ; then
-        return
-    fi
+    chmod +x ${SCRIPT_PATH}
+    ${SCRIPT_PATH} "${SCRIPT_ARGS}" > "/tmp/ua_temp_output"
 
-    if [ `grep -c "BIOSDIR=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        BIOS_GETTER_BIOSDIR=`grep "BIOSDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
-    fi 2>/dev/null
-
-    if [ `grep -c "GAMESDIR=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        BIOS_GETTER_GAMESDIR=`grep "GAMESDIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
-    fi 2>/dev/null
-}
-
-should_run_bios_getter() {
-    true
-}
-
-MAME_GETTER_ROMDIR=
-MAME_GETTER_MRADIR=
-read_ini_mame_getter() {
-    local SCRIPT_PATH="${1}"
-    local SCRIPT_INI="${2}"
-
-    if [ -s ${SCRIPT_PATH} ] ; then
-        MAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMMAME=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
-        MAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
-    fi
-
-    if [ ! -s ${SCRIPT_INI} ] ; then
-        return
-    fi
-
-    if [ `grep -c "ROMDIR=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        MAME_GETTER_ROMDIR=`grep "ROMDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
-    fi 2>/dev/null
-
-    if [ `grep -c "ROMMAME=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        MAME_GETTER_ROMDIR=`grep "ROMMAME" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
-    fi 2>/dev/null
-
-    if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        MAME_GETTER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
-    fi 2>/dev/null
-}
-
-should_run_mame_getter() {
-    true
-}
-
-should_run_mame_getter_2() {
-    [[ "${MAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] || \
-    [ -s ${UPDATED_MAME_MRAS} ] || \
-    [ ! -d ${MAME_GETTER_ROMDIR} ] || \
-    [ -z "$(ls -A ${MAME_GETTER_ROMDIR})" ]
-}
-
-HBMAME_GETTER_ROMDIR=
-HBMAME_GETTER_MRADIR=
-read_ini_hbmame_getter() {
-    local SCRIPT_PATH="${1}"
-    local SCRIPT_INI="${2}"
-
-    if [ -s ${SCRIPT_PATH} ] ; then
-        HBMAME_GETTER_ROMDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ROMHBMAME=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
-        HBMAME_GETTER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//')
-    fi
-
-    if [ ! -s ${SCRIPT_INI} ] ; then
-        return
-    fi
-
-    if [ `grep -c "ROMDIR=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        HBMAME_GETTER_ROMDIR=`grep "ROMDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
-    fi 2>/dev/null
-
-    if [ `grep -c "ROMHBMAME=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        HBMAME_GETTER_ROMDIR=`grep "ROMHBMAME" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
-    fi 2>/dev/null
-
-    if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        HBMAME_GETTER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^"//' -e 's/"$//'`
-    fi 2>/dev/null
-}
-
-should_run_hbmame_getter() {
-    true
-}
-
-should_run_hbmame_getter_2() {
-    [[ "${HBMAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] || \
-    [ -s ${UPDATED_HBMAME_MRAS} ] || \
-    [ ! -d ${HBMAME_GETTER_ROMDIR} ] || \
-    [ -z "$(ls -A ${HBMAME_GETTER_ROMDIR})" ]
-}
-
-ARCADE_ORGANIZER_ORGDIR=
-ARCADE_ORGANIZER_MRADIR=
-ARCADE_ORGANIZER_SKIPALTS=
-read_ini_arcade_organizer() {
-    local SCRIPT_PATH="${1}"
-    local SCRIPT_INI="${2}"
-
-    if [ -s ${SCRIPT_PATH} ] ; then
-        ARCADE_ORGANIZER_ORGDIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "ORGDIR" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
-        ARCADE_ORGANIZER_MRADIR=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "MRADIR=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
-        ARCADE_ORGANIZER_SKIPALTS=$(grep "^[^#;]" "${SCRIPT_PATH}" | grep "SKIPALTS=" | head -n 1 | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//')
-    fi
-
-    if [ ! -s ${SCRIPT_INI} ] ; then
-        return
-    fi
-
-    if [ `grep -c "ORGDIR=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        ARCADE_ORGANIZER_ORGDIR=`grep "ORGDIR" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//'`
-    fi 2>/dev/null 
-
-    if [ `grep -c "MRADIR=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        ARCADE_ORGANIZER_MRADIR=`grep "MRADIR=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//'`
-    fi 2>/dev/null
-
-    if [ `grep -c "SKIPALTS=" "${SCRIPT_INI}"` -gt 0 ]
-    then
-        ARCADE_ORGANIZER_SKIPALTS=`grep "SKIPALTS=" "${SCRIPT_INI}" | awk -F "=" '{print$2}' | sed -e 's/^ *//' -e 's/ *$//' -e 's/^ *"//' -e 's/" *$//'`
-    fi 2>/dev/null
-
-    if [[ "${ARCADE_ORGANIZER_SKIPALTS}" == "true" ]] && [ -s ${UPDATED_MRAS} ] ; then
-        sed -i "/\/_alternatives\//d ; /^ *$/d" ${UPDATED_MRAS}
-    fi
-}
-
-should_run_arcade_organizer() {
-    true
+    RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT="/tmp/ua_temp_output"
 }
 
 category_path() {
@@ -632,55 +461,6 @@ delete_if_empty() {
             echo " - $dir"
         done
         echo
-    fi
-}
-
-UPDATED_MRAS=".none"
-UPDATED_MAME_MRAS=".none"
-UPDATED_HBMAME_MRAS=".none"
-find_mras() {
-    draw_separator
-
-    UPDATED_MRAS=$(mktemp)
-    UPDATED_MAME_MRAS=$(mktemp)
-    UPDATED_HBMAME_MRAS=$(mktemp)
-
-    LAST_MRA_PROCESSING_PATH="${WORK_PATH}/$(basename ${EXPORTED_INI_PATH%.*}.last_mra_processing)"
-
-    local LAST_MRA_PROCESSING_TIME=$(date --date='@-86400')
-    if [ -f ${LAST_MRA_PROCESSING_PATH} ] ; then
-        LAST_MRA_PROCESSING_TIME=$(cat "${LAST_MRA_PROCESSING_PATH}" | sed '2q;d')
-    fi
-
-    for path in $(arcade_paths ${MAIN_UPDATER_INI} ${JOTEGO_UPDATER_INI} ${UNOFFICIAL_UPDATER_INI}) ; do
-        find ${path}/ -maxdepth 1 -type f -name "*.mra" -newerct "${LAST_MRA_PROCESSING_TIME}" >> ${UPDATED_MRAS}
-        if [ -d ${path}/_alternatives ] ; then
-            find ${path}/_alternatives/  -type f -name "*.mra" -newerct "${LAST_MRA_PROCESSING_TIME}" >> ${UPDATED_MRAS}
-        fi
-    done
-
-    if [ -s ${UPDATED_MRAS} ] ; then
-        cat ${UPDATED_MRAS} | grep -ve 'HBMame\.mra$' > ${UPDATED_MAME_MRAS} || true
-        cat ${UPDATED_MRAS} | grep -e 'HBMame\.mra$' > ${UPDATED_HBMAME_MRAS} || true
-    fi
-
-    local UPDATED_MRAS_WCL=$(wc -l ${UPDATED_MRAS} | awk '{print $1}')
-    echo "Found ${UPDATED_MRAS_WCL} new MRAs."
-    if [ ${UPDATED_MRAS_WCL} -ge 1 ] ; then
-        echo "$(wc -l ${UPDATED_MAME_MRAS} | awk '{print $1}') use mame."
-        echo "$(wc -l ${UPDATED_HBMAME_MRAS} | awk '{print $1}') use hbmame."
-    fi
-    sleep ${WAIT_TIME_FOR_READING}
-    echo
-
-    if [[ "${MAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] ; then
-        rm ${UPDATED_MAME_MRAS}
-    fi
-    if [[ "${HBMAME_GETTER_FORCE_FULL_RESYNC}" == "true" ]] ; then
-        rm ${UPDATED_HBMAME_MRAS}
-    fi
-    if [[ "${ARCADE_ORGANIZER_FORCE_FULL_RESYNC}" == "true" ]] ; then
-        rm ${UPDATED_MRAS}
     fi
 }
 
@@ -885,26 +665,17 @@ run_update_all() {
     fi
 
     if [[ "${BIOS_GETTER}" == "true" ]] ; then
-        run_mame_getter_script "BIOS-GETTER" read_ini_bios_getter should_run_bios_getter "${BIOS_GETTER_INI}" \
-            "${BIOS_GETTER_URL}" '.none'
+        run_mame_getter_script "BIOS-GETTER" "${BIOS_GETTER_URL}" "${BIOS_GETTER_INI}"
         sleep ${WAIT_TIME_FOR_READING}
         sleep ${WAIT_TIME_FOR_READING}
     fi
 
-    local NEW_MRA_TIME=$(date)
-
-    #if [[ "${MAME_GETTER}" == "true" ]] || [[ "${HBMAME_GETTER}" == "true" ]] ; then
-    #    find_mras
-    #fi
-
     if [[ "${MAME_GETTER}" == "true" ]] ; then
-        run_mame_getter_script "MAME-GETTER" read_ini_mame_getter should_run_mame_getter "${MAME_GETTER_INI}" \
-            "${MAME_GETTER_URL}" "${UPDATED_MAME_MRAS}"
+        run_mame_getter_script "MAME-GETTER" "${MAME_GETTER_URL}" "${MAME_GETTER_INI}"
     fi
 
     if [[ "${HBMAME_GETTER}" == "true" ]] ; then
-        run_mame_getter_script "HBMAME-GETTER" read_ini_hbmame_getter should_run_hbmame_getter "${HBMAME_GETTER_INI}" \
-            "${HBMAME_GETTER_URL}" "${UPDATED_HBMAME_MRAS}"
+        run_mame_getter_script "HBMAME-GETTER" "${HBMAME_GETTER_URL}" "${HBMAME_GETTER_INI}"
     fi
 
     if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
@@ -915,13 +686,8 @@ run_update_all() {
     fi
 
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-        run_mame_getter_script "_ARCADE-ORGANIZER" read_ini_arcade_organizer should_run_arcade_organizer "${ARCADE_ORGANIZER_INI}" \
-            "${ARCADE_ORGANIZER_URL}" "${UPDATED_MRAS}"
+        run_mame_getter_script "_ARCADE-ORGANIZER" "${ARCADE_ORGANIZER_URL}" "${ARCADE_ORGANIZER_INI}"
     fi
-
-    rm ${UPDATED_MRAS} 2> /dev/null || true
-    rm ${UPDATED_MAME_MRAS} 2> /dev/null || true
-    rm ${UPDATED_HBMAME_MRAS} 2> /dev/null || true
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
         install_scripts
@@ -934,7 +700,8 @@ run_update_all() {
         "${BASE_PATH}/games/hbmame" \
         "${BASE_PATH}/_Arcade/mame" \
         "${BASE_PATH}/_Arcade/hbmame" \
-        "${BASE_PATH}/_Arcade/mra_backup"
+        "${BASE_PATH}/_Arcade/mra_backup" \
+        "${BASE_PATH}/_Arcade/_Organized"
 
     local EXIT_CODE=0
     if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
@@ -953,8 +720,10 @@ run_update_all() {
         echo "Update All ${UPDATE_ALL_VERSION} finished. Your MiSTer has been updated successfully!"
     fi
 
+    local END_TIME=$(date)
+
     echo
-    echo "End time: $(date)"
+    echo "End time: ${END_TIME}"
     echo
 
     if [[ "${UPDATE_ALL_OS}" != "WINDOWS" ]] ; then
@@ -964,7 +733,7 @@ run_update_all() {
 
     if [[ "${EXIT_CODE}" == "0" ]] && [[ "${LAST_MRA_PROCESSING_PATH}" != "" ]]; then
         echo "${UPDATE_ALL_VERSION}" > "${LAST_MRA_PROCESSING_PATH}"
-        echo "${NEW_MRA_TIME}" >> "${LAST_MRA_PROCESSING_PATH}"
+        echo "${END_TIME}" >> "${LAST_MRA_PROCESSING_PATH}"
     fi
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && { \
@@ -990,7 +759,8 @@ run_update_all() {
 ### SETTINGS GLOBAL TMP VARS ##
 SETTINGS_TMP_BREAK="/tmp/ua_break"
 SETTINGS_TMP_CONTINUE="/tmp/ua_continue"
-SETTINGS_TMP_DIALOGRC="/tmp/ua_dialog"
+SETTINGS_TMP_BLACK_DIALOGRC="/tmp/ua_black_dialog"
+SETTINGS_TMP_RED_DIALOGRC="/tmp/ua_red_dialog"
 
 settings_menu_update_all() {
     rm "${SETTINGS_TMP_BREAK}" 2> /dev/null || true
@@ -1030,11 +800,17 @@ settings_menu_update_all() {
     settings_add_domain_ini_file "${ARCADE_ORGANIZER_INI}"
     settings_create_domain_ini_files
 
-    rm "${SETTINGS_TMP_DIALOGRC}" 2> /dev/null || true
-    dialog --create-rc "${SETTINGS_TMP_DIALOGRC}"
+    rm "${SETTINGS_TMP_BLACK_DIALOGRC}" 2> /dev/null || true
+    dialog --create-rc "${SETTINGS_TMP_BLACK_DIALOGRC}"
     sed -i "s/use_colors = OFF/use_colors = ON/g;
             s/use_shadow = OFF/use_shadow = ON/g;
-            s/BLUE/BLACK/g" "${SETTINGS_TMP_DIALOGRC}"
+            s/BLUE/BLACK/g" "${SETTINGS_TMP_BLACK_DIALOGRC}"
+
+    rm "${SETTINGS_TMP_RED_DIALOGRC}" 2> /dev/null || true
+    dialog --create-rc "${SETTINGS_TMP_RED_DIALOGRC}"
+    sed -i "s/use_colors = OFF/use_colors = ON/g;
+            s/use_shadow = OFF/use_shadow = ON/g;
+            s/BLUE/RED/g" "${SETTINGS_TMP_RED_DIALOGRC}"
 
     local TMP=$(mktemp)
     while true ; do
@@ -1063,8 +839,11 @@ settings_menu_update_all() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Abort" --ok-label "Select" --title "Update All ${UPDATE_ALL_VERSION} Settings" \
-                --menu "Settings loaded from '$(settings_normalize_ini_file ${EXPORTED_INI_PATH})'" 18 75 25 \
+            dialog --keep-window \
+                --default-item "${DEFAULT_SELECTION}" \
+                --cancel-label "Abort" --ok-label "Select" --extra-button --extra-label "Toggle" \
+                --title "Update All ${UPDATE_ALL_VERSION} Settings" \
+                --menu "Settings loaded from '$(settings_normalize_ini_file ${EXPORTED_INI_PATH})'" 19 75 25 \
                 "1 Main Updater"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores and resources" \
                 "2 Jotego Updater" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego" \
                 "3 Unofficial Updater"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
@@ -1074,25 +853,47 @@ settings_menu_update_all() {
                 "7 HBMAME Getter" "$(settings_active_tag ${HBMAME_GETTER}) HBMAME ROMs for arcades" \
                 "8 Names TXT Updater" "$(settings_active_tag ${NAMES_TXT_UPDATER}) Better core names in the menus" \
                 "9 Arcade Organizer" "$(settings_active_tag ${ARCADE_ORGANIZER}) Creates folder for easy navigation" \
+                "0 Misc" "" \
                 "SAVE" "Writes all changes to the INI file/s" \
                 "EXIT and RUN UPDATE ALL" "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
-            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
-                DEFAULT_SELECTION="$(cat ${TMP})"
-            fi
+
             case "${DEFAULT_SELECTION}" in
-                "1 Main Updater") settings_menu_main_updater ;;
-                "2 Jotego Updater") settings_menu_jotego_updater ;;
-                "3 Unofficial Updater") settings_menu_unofficial_updater ;;
-                "4 LLAPI Updater") settings_menu_llapi_updater ;;
-                "5 BIOS Getter") settings_menu_bios_getter ;;
-                "6 MAME Getter") settings_menu_mame_getter ;;
-                "7 HBMAME Getter") settings_menu_hbmame_getter ;;
-                "8 Names TXT Updater") settings_menu_names_txt ;;
-                "9 Arcade Organizer") settings_menu_arcade_organizer ;;
-                "SAVE") settings_menu_save ;;
-                "EXIT and RUN UPDATE ALL") settings_menu_exit_and_run ;;
+                "0")
+                    case "$(cat ${TMP})" in
+                        "1 Main Updater") settings_menu_main_updater ;;
+                        "2 Jotego Updater") settings_menu_jotego_updater ;;
+                        "3 Unofficial Updater") settings_menu_unofficial_updater ;;
+                        "4 LLAPI Updater") settings_menu_llapi_updater ;;
+                        "5 BIOS Getter") settings_menu_bios_getter ;;
+                        "6 MAME Getter") settings_menu_mame_getter ;;
+                        "7 HBMAME Getter") settings_menu_hbmame_getter ;;
+                        "8 Names TXT Updater") settings_menu_names_txt ;;
+                        "9 Arcade Organizer") settings_menu_arcade_organizer ;;
+                        "0 Misc") settings_menu_misc ;;
+                        "SAVE") settings_menu_save ;;
+                        "EXIT and RUN UPDATE ALL") settings_menu_exit_and_run ;;
+                        *) settings_menu_cancel ;;
+                    esac
+                    ;;
+                "3")
+                    case "$(cat ${TMP})" in
+                        "1 Main Updater") settings_change_var "MAIN_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "2 Jotego Updater") settings_change_var "JOTEGO_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "3 Unofficial Updater") settings_change_var "UNOFFICIAL_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "4 LLAPI Updater") settings_change_var "LLAPI_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "5 BIOS Getter") settings_change_var "BIOS_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "6 MAME Getter") settings_change_var "MAME_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "7 HBMAME Getter") settings_change_var "HBMAME_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "8 Names TXT Updater") settings_change_var "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "9 Arcade Organizer") settings_change_var "ARCADE_ORGANIZER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "0 Misc") ;;
+                        "SAVE") ;;
+                        "EXIT and RUN UPDATE ALL") ;;
+                        *) settings_menu_cancel ;;
+                    esac
+                    ;;
                 *) settings_menu_cancel ;;
             esac
         )
@@ -1127,7 +928,6 @@ settings_menu_main_updater() {
     SETTINGS_OPTIONS_UPDATE_LINUX=("true" "false")
     SETTINGS_OPTIONS_UPDATE_CHEATS=("once" "true" "false")
     SETTINGS_OPTIONS_MAME_ALT_ROMS=("true" "false")
-    SETTINGS_OPTIONS_AUTOREBOOT=("true" "false")
 
     while true ; do
         (
@@ -1138,9 +938,8 @@ settings_menu_main_updater() {
             local UPDATE_CHEATS="${SETTINGS_OPTIONS_UPDATE_CHEATS[0]}"
             local UPDATE_LINUX="${SETTINGS_OPTIONS_UPDATE_LINUX[0]}"
             local MAME_ALT_ROMS="${SETTINGS_OPTIONS_MAME_ALT_ROMS[0]}"
-            local AUTOREBOOT="${SETTINGS_OPTIONS_AUTOREBOOT[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "MAIN_UPDATER" "MAIN_UPDATER_INI" "ENCC_FORKS" "AUTOREBOOT"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "MAIN_UPDATER" "MAIN_UPDATER_INI" "ENCC_FORKS"
             load_vars_from_ini "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" "DOWNLOAD_NEW_CORES" "MAME_ALT_ROMS" "UPDATE_CHEATS" "UPDATE_LINUX"
 
             local DEFAULT_SELECTION=
@@ -1154,7 +953,7 @@ settings_menu_main_updater() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Main Updater Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${MAIN_UPDATER_INI})" 17 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${MAIN_UPDATER_INI})" 16 75 25 \
                 "${ACTIVATE}" "Activated: ${MAIN_UPDATER}" \
                 "2 Cores versions" "$([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8 forks with ENCC' || echo 'Official Cores from MiSTer-devel')" \
                 "3 INI file"  "$(settings_normalize_ini_file ${MAIN_UPDATER_INI})" \
@@ -1162,8 +961,7 @@ settings_menu_main_updater() {
                 "5 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
                 "6 Install Cheats" "${UPDATE_CHEATS}" \
                 "7 Install Linux updates" "${UPDATE_LINUX}" \
-                "8 Autoreboot (if needed)" "${AUTOREBOOT}" \
-                "9 Force full resync" "Clears \"last_successful_run\" file et al" \
+                "8 Force full resync" "Clears \"last_successful_run\" file et al" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -1180,8 +978,7 @@ settings_menu_main_updater() {
                 "5 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" ;;
                 "6 Install Cheats") settings_change_var "UPDATE_CHEATS" "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" ;;
                 "7 Install Linux updates") settings_change_var "UPDATE_LINUX" "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" ;;
-                "8 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "9 Force full resync")
+                "8 Force full resync")
                     local SOMETHING="false"
                     if [ -f "/media/fat/Scripts/.mister_updater/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" ] ; then
                         SOMETHING="true"
@@ -1592,10 +1389,6 @@ settings_menu_mame_getter() {
             load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "MAME_GETTER" "MAME_GETTER_INI"
             load_ini_file "$(settings_domain_ini_file ${MAME_GETTER_INI})"
 
-            if [[ "${MAME_GETTER_ROMDIR}" != "" ]] ; then
-                ROMMAME="${MAME_GETTER_ROMDIR}"
-            fi
-
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
@@ -1625,25 +1418,25 @@ settings_menu_mame_getter() {
                 "2 INI file") settings_change_var "MAME_GETTER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "3 MAME ROM directory") settings_change_var "ROMMAME" "$(settings_domain_ini_file ${MAME_GETTER_INI})" ;;
                 "4 Clean MAME")
-                    read_remote_mame_getter_script_ini \
-                        "${MAME_GETTER_URL}" \
-                        read_ini_mame_getter \
-                        "$(settings_domain_ini_file ${MAME_GETTER_INI})" || {
-                            settings_menu_connection_problem
-                            continue
-                        }
+                    run_quiet_mame_getter_script "${MAME_GETTER_URL}" "$(settings_domain_ini_file ${MAME_GETTER_INI})" --print-ini-options
+                    if [[ "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}" == "" ]] ; then
+                        settings_menu_connection_problem
+                        continue
+                    fi
 
-                    if [ -d "${MAME_GETTER_ROMDIR}" ] ; then
+                    local ROMMAME=$(load_single_var_from_ini "ROMMAME" "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}")
+
+                    if [ -d "${ROMMAME}" ] ; then
                         set +e
-                        DIALOGRC="${SETTINGS_TMP_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
-                            --yesno "WARNING! You will lose ALL the data contained in the folder:\n${MAME_GETTER_ROMDIR}" \
+                        DIALOGRC="${SETTINGS_TMP_BLACK_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
+                            --yesno "WARNING! You will lose ALL the data contained in the folder:\n${ROMMAME}" \
                             6 66
                         local SURE_RET=$?
                         set -e
                         if [[ "${SURE_RET}" == "0" ]] ; then
-                            rm -rf "${MAME_GETTER_ROMDIR}"
+                            rm -rf "${ROMMAME}"
                             set +e
-                            dialog --keep-window --msgbox "${MAME_GETTER_ROMDIR} Removed" 5 36
+                            dialog --keep-window --msgbox "${ROMMAME} Removed" 5 36
                             set -e
                         else
                             set +e
@@ -1652,7 +1445,7 @@ settings_menu_mame_getter() {
                         fi
                     else
                         set +e
-                        dialog --keep-window --msgbox "${MAME_GETTER_ROMDIR} doesn't exist" 5 50
+                        dialog --keep-window --msgbox "${ROMMAME} doesn't exist" 5 50
                         set -e
                     fi
                     ;;
@@ -1683,10 +1476,6 @@ settings_menu_hbmame_getter() {
             load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "HBMAME_GETTER" "HBMAME_GETTER_INI"
             load_ini_file "$(settings_domain_ini_file ${HBMAME_GETTER_INI})"
 
-            if [[ "${HBMAME_GETTER_ROMDIR}" != "" ]] ; then
-                ROMHBMAME="${HBMAME_GETTER_ROMDIR}"
-            fi
-
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
@@ -1716,25 +1505,25 @@ settings_menu_hbmame_getter() {
                 "2 INI file") settings_change_var "HBMAME_GETTER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "3 HBMAME ROM directory") settings_change_var "ROMHBMAME" "$(settings_domain_ini_file ${HBMAME_GETTER_INI})" ;;
                 "4 Clean HBMAME")
-                    read_remote_mame_getter_script_ini \
-                        "${HBMAME_GETTER_URL}" \
-                        read_ini_hbmame_getter \
-                        "$(settings_domain_ini_file ${HBMAME_GETTER_INI})" || {
-                            settings_menu_connection_problem
-                            continue
-                        }
+                    run_quiet_mame_getter_script "${HBMAME_GETTER_URL}" "$(settings_domain_ini_file ${HBMAME_GETTER_INI})" --print-ini-options
+                    if [[ "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}" == "" ]] ; then
+                        settings_menu_connection_problem
+                        continue
+                    fi
 
-                    if [ -d "${HBMAME_GETTER_ROMDIR}" ] ; then
+                    local ROMHBMAME=$(load_single_var_from_ini "ROMHBMAME" "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}")
+
+                    if [ -d "${ROMHBMAME}" ] ; then
                         set +e
-                        DIALOGRC="${SETTINGS_TMP_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
-                            --yesno "WARNING! You will lose ALL the data contained in the folder:\n${HBMAME_GETTER_ROMDIR}" \
+                        DIALOGRC="${SETTINGS_TMP_BLACK_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
+                            --yesno "WARNING! You will lose ALL the data contained in the folder:\n${ROMHBMAME}" \
                             6 66
                         local SURE_RET=$?
                         set -e
                         if [[ "${SURE_RET}" == "0" ]] ; then
-                            rm -rf "${HBMAME_GETTER_ROMDIR}"
+                            rm -rf "${ROMHBMAME}"
                             set +e
-                            dialog --keep-window --msgbox "${HBMAME_GETTER_ROMDIR} Removed" 5 36
+                            dialog --keep-window --msgbox "${ROMHBMAME} Removed" 5 36
                             set -e
                         else
                             set +e
@@ -1743,7 +1532,7 @@ settings_menu_hbmame_getter() {
                         fi
                     else
                         set +e
-                        dialog --keep-window --msgbox "${HBMAME_GETTER_ROMDIR} doesn't exist" 5 50
+                        dialog --keep-window --msgbox "${ROMHBMAME} doesn't exist" 5 50
                         set -e
                     fi
                     ;;
@@ -1817,7 +1606,7 @@ https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
                     local NEW_NAMES_TXT_UPDATER=$(load_single_var_from_ini "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})")
                     if [[ "${NEW_NAMES_TXT_UPDATER}" == "true" ]] && [ ! -f "/media/fat/Scripts/.cache/arcade-organizer/installed_names.txt" ] && [ -f "/media/fat/names.txt" ] ; then
                         set +e
-                        DIALOGRC="${SETTINGS_TMP_DIALOGRC}" dialog --keep-window --msgbox "WARNING! Your current names.txt file will be overwritten after updating" 5 76
+                        DIALOGRC="${SETTINGS_TMP_BLACK_DIALOGRC}" dialog --keep-window --msgbox "WARNING! Your current names.txt file will be overwritten after updating" 5 76
                         set -e
                     fi
                     ;;
@@ -1880,22 +1669,20 @@ settings_menu_arcade_organizer() {
     SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI=("update_arcade-organizer.ini" "$(settings_normalize_ini_file ${EXPORTED_INI_PATH})")
     settings_try_add_ini_option 'SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI' "${ARCADE_ORGANIZER_INI}"
     SETTINGS_OPTIONS_SKIPALTS=("true" "false")
+    SETTINGS_OPTIONS_ORGDIR=("/media/fat/_Arcade/_Organized" "/media/fat/_Arcade")
 
     while true ; do
         (
             local ARCADE_ORGANIZER="${SETTINGS_OPTIONS_ARCADE_ORGANIZER[0]}"
             local ARCADE_ORGANIZER_INI="${SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI[0]}"
             local SKIPALTS="${SETTINGS_OPTIONS_SKIPALTS[0]}"
+            local ORGDIR="${SETTINGS_OPTIONS_ORGDIR[0]}"
 
             load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER" "ARCADE_ORGANIZER_INI"
             load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
 
             if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
                 ARCADE_ORGANIZER="false"
-            fi
-
-            if [[ "${ARCADE_ORGANIZER_SKIPALTS}" != "" ]] ; then
-                SKIPALTS="${ARCADE_ORGANIZER_SKIPALTS}"
             fi
 
             local DEFAULT_SELECTION=
@@ -1909,11 +1696,12 @@ settings_menu_arcade_organizer() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Arcade Organizer Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${ARCADE_ORGANIZER_INI})" 12 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${ARCADE_ORGANIZER_INI})" 13 75 25 \
                 "${ACTIVATE}" "Activated: ${ARCADE_ORGANIZER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${ARCADE_ORGANIZER_INI})" \
                 "3 Skip MRA-Alternatives" "${SKIPALTS}" \
-                "4 Clean Organized" "Deletes the Arcade Organizer folder" \
+                "4 Organized Folders" "${ORGDIR}/*" \
+                "5 Clean Folders" "Deletes the Arcade Organizer folders" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -1934,24 +1722,34 @@ settings_menu_arcade_organizer() {
                     ;;
                 "2 INI file") settings_change_var "ARCADE_ORGANIZER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "3 Skip MRA-Alternatives") settings_change_var "SKIPALTS" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
-                "4 Clean Organized")
-                    read_remote_mame_getter_script_ini \
-                        "${ARCADE_ORGANIZER_URL}" \
-                        read_ini_arcade_organizer \
-                        "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" || {
-                            settings_menu_connection_problem
-                            continue
-                        }
+                "4 Organized Folders") settings_change_var "ORGDIR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "5 Clean Folders")
+                    run_quiet_mame_getter_script "${ARCADE_ORGANIZER_URL}" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" --print-orgdir-folders
+                    if [[ "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}" == "" ]] ; then
+                        settings_menu_connection_problem
+                        continue
+                    fi
 
-                    if [ -d "${ARCADE_ORGANIZER_ORGDIR}" ] ; then
+                    local ORGDIR_FOLDERS=()
+                    local YESNO_MESSAGE="WARNING! You will lose ALL the data contained in the folders:"
+                    while IFS="" read -r p || [ -n "${p}" ] ; do
+                        if [ -d "${p}" ] ; then
+                            ORGDIR_FOLDERS+=( "${p}" )
+                            YESNO_MESSAGE="${YESNO_MESSAGE}\n  ${p}"
+                        fi
+                    done < "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}"
+
+                    if [ "${#ORGDIR_FOLDERS[@]}" -ge 1 ] ; then
                         set +e
-                        DIALOGRC="${SETTINGS_TMP_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
-                            --yesno "WARNING! You will lose ALL the data contained in the folder:\n${ARCADE_ORGANIZER_ORGDIR}" \
-                            6 66
+                        DIALOGRC="${SETTINGS_TMP_BLACK_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
+                            --yesno "${YESNO_MESSAGE}" \
+                            $((${#ORGDIR_FOLDERS[@]} + 5)) 66
                         local SURE_RET=$?
                         set -e
                         if [[ "${SURE_RET}" == "0" ]] ; then
-                            rm -rf "${ARCADE_ORGANIZER_ORGDIR}"
+                            for p in "${ORGDIR_FOLDERS[@]}" ; do
+                                rm -rf "${p}"
+                            done
                             set +e
                             dialog --keep-window --msgbox "Organized folder Cleared" 5 29
                             set -e
@@ -1980,22 +1778,32 @@ settings_menu_arcade_organizer() {
 settings_menu_misc() {
     local TMP=$(mktemp)
 
+    SETTINGS_OPTIONS_AUTOREBOOT=("true" "false")
+    SETTINGS_OPTIONS_WAIT_TIME_FOR_READING=("4" "0" "30")
+    SETTINGS_OPTIONS_COUNTDOWN_TIME=("15" "4" "60")
+
     while true ; do
         (
+            local AUTOREBOOT="${SETTINGS_OPTIONS_AUTOREBOOT[0]}"
+            local WAIT_TIME_FOR_READING="${SETTINGS_OPTIONS_WAIT_TIME_FOR_READING[0]}"
+            local COUNTDOWN_TIME="${SETTINGS_OPTIONS_COUNTDOWN_TIME[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME"
+
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
             else
-                DEFAULT_SELECTION="1 Clean MAME"
+                DEFAULT_SELECTION="1 Autoreboot (if needed)"
             fi
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
                 --menu "" 11 75 25 \
-                "1 Clean MAME" "Deletes the mame folder" \
-                "2 Clean HBMAME" "Deletes the hbmame folder" \
-                "3 Remove \"names.txt\"" "Back to standard core names based on RBF files" \
-                "4 Clean Organized" "Deletes the folder created by the Arcade Organizer" \
+                "1 Autoreboot (if needed)" "${AUTOREBOOT}" \
+                "2 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                "3 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                "4 Clear All Cores" "Removes all CORES and MRA folders." \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -2005,7 +1813,72 @@ settings_menu_misc() {
             fi
 
             case "${DEFAULT_SELECTION}" in
+                "1 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "2 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "3 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "4 Clear All Cores")
+                    local FILES_FOLDERS=("_Arcade" "_Computer" "_Console" "_Other" "_Utility" "_LLAPI" "_Jotego" "_CPS1" "_Unofficial")
 
+                    local TO_DELETE=()
+                    local YESNO_MESSAGE="\n                          CRITICAL WARNING !!\n\nYou will lose ALL data contained in following folders:"
+                    for i in "${FILES_FOLDERS[@]}" ; do
+                        local ELEMENT="${BASE_PATH}/${i}"
+                        if [ -d "${ELEMENT}" ] ; then
+                            TO_DELETE+=( "${ELEMENT}" )
+                            YESNO_MESSAGE="${YESNO_MESSAGE}\n  ${ELEMENT}/*"
+                        elif [ -f "${ELEMENT}" ] ; then
+                            TO_DELETE+=( "${ELEMENT}" )
+                            YESNO_MESSAGE="${YESNO_MESSAGE}\n  ${ELEMENT}"
+                        fi
+                    done
+
+                    if [ "${#TO_DELETE[@]}" -ge 1 ] ; then
+                        set +e
+                        DIALOGRC="${SETTINGS_TMP_RED_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
+                            --yesno "${YESNO_MESSAGE}" \
+                            $((${#TO_DELETE[@]} + 8)) 75
+                        local SURE_RET=$?
+                        set -e
+
+                        if [[ "${SURE_RET}" == "0" ]] ; then
+                            set +e
+                            DIALOGRC="${SETTINGS_TMP_RED_DIALOGRC}" dialog --keep-window --title "BE CAREFUL" --defaultno \
+                                --yesno "Are you REALLY sure?\n\nMake sure you have read the directory list in previous screen!\nEverything appearing there will be gone forever.\n\n\"Yes\" means you know what you are doing here. Otherwise, you might\nregret this later!" \
+                                11 75
+                            local SURE_RET=$?
+                            set -e
+                        fi
+
+                        if [[ "${SURE_RET}" == "0" ]] ; then
+                            DIALOGRC="${SETTINGS_TMP_RED_DIALOGRC}" dialog --infobox "Deleting files and folders, please wait..." 3 47
+
+                            for dir in "${TO_DELETE[@]}" ; do
+                                rm -rf "${dir}"
+                            done
+
+                            rm "/media/fat/Scripts/.mister_updater/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 2> /dev/null || true
+                            rm "/media/fat/Scripts/.mister_updater/MRA-Alternatives_"* 2> /dev/null || true
+
+                            rm "/media/fat/Scripts/.mister_updater_jt/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 2> /dev/null || true
+                            rm "/media/fat/Scripts/.mister_updater_jt/MRA-Alternatives_"* 2> /dev/null || true
+
+                            rm "/media/fat/Scripts/.mister_updater_unofficials/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 2> /dev/null || true
+                            rm "/media/fat/Scripts/.mister_updater_unofficials/MRA-Alternatives_"* 2> /dev/null || true
+
+                            set +e
+                            dialog --keep-window --msgbox "All cores and MRAs have been removed" 5 45
+                            set -e
+                        else
+                            set +e
+                            dialog --keep-window --msgbox "Operaton Canceled" 5 22
+                            set -e
+                        fi
+                    else
+                        set +e
+                        dialog --keep-window --msgbox "No folders or files to clear" 5 35
+                        set -e
+                    fi
+                    ;;
                 *) echo > "${SETTINGS_TMP_BREAK}" ;;
             esac
         )
