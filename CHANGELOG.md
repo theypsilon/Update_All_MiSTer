@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Default updater INI files for clean setups are now: update.ini, update_jtcores.ini, update_unofficials.ini and update_llapi.ini.
 - Removed support for INI options: *MAME_GETTER_FORCE_FULL_RESYNC*, *HBMAME_GETTER_FORCE_FULL_RESYNC*, *ARCADE_ORGANIZER_FORCE_FULL_RESYNC*.
 - Fixes in INI handling, now it works correctly in some corner cases that weren't properly covered before.
+- Cache files moved from Scripts/.update_all to Scripts/.cache/update_all
 - Other minor fixes.
 
 ## Version 1.2 - 2020-07-03
