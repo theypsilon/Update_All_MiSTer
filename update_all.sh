@@ -93,17 +93,12 @@ else
     export DEBUG_UPDATER
 fi
 
-chmod +x ${SCRIPT_PATH}
-
 export CURL_RETRY
 export ALLOW_INSECURE_SSL
 export SSL_SECURITY_OPTION
 export EXPORTED_INI_PATH="${INI_PATH}"
 
-if ! ${SCRIPT_PATH} ; then
-    echo "Script ${ORIGINAL_SCRIPT_PATH} failed!"
-    echo
-fi
+bash "${SCRIPT_PATH}" || echo -e "Script ${ORIGINAL_SCRIPT_PATH} failed!\n"
 
 rm ${SCRIPT_PATH}
 
