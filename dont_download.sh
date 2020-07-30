@@ -189,7 +189,7 @@ initialize() {
             local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
             if [ -f "${OLD_SCRIPT_PATH}" ] && \
                 ! diff "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" > /dev/null 2>&1 && \
-                [[ "$(md5sum ${MAYBE_NEW_LAUNCHER} | awk '{print $1}')" == "5c5e3b530efd1ec3b4e3aff72ee9edb7" ]]
+                [[ "$(md5sum ${MAYBE_NEW_LAUNCHER} | awk '{print $1}')" == "1422ef7e811c771dcecb7d1f97a49464" ]]
             then
                 cp "${MAYBE_NEW_LAUNCHER}"  "${OLD_SCRIPT_PATH}" || true
             fi
