@@ -168,3 +168,5 @@ https://github.com/theypsilon/Updater_script_MiSTer_Unofficial<br>
 https://github.com/MiSTer-LLAPI/Updater_script_MiSTer<br>
 https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS<br>
 https://github.com/MAME-GETTER/_arcade-organizer<br>
+
+[![HitCount](http://hits.dwyl.com/theypsilon/Update_All_MiSTer.svg)](http://hits.dwyl.com/theypsilon/Update_All_MiSTer)
