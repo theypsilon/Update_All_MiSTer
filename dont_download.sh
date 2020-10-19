@@ -86,10 +86,19 @@ WORK_PATH=
 GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH=".update_all.log"
 LAST_MRA_PROCESSING_PATH=
+MISTER_DEVEL_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
+MISTER_DB9_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_DB9/master/mister_updater.sh"
+JOTEGO_UPDATER_URL="https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh"
+UNOFFICIAL_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh"
+LLAPI_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-LLAPI/Updater_script_MiSTer/master/llapi_updater.sh"
+NAMES_TXT_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Names_TXT_Updater_MiSTer/master/dont_download.sh"
 BIOS_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS/master/bios-getter.sh"
 MAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh"
 HBMAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh"
 ARCADE_ORGANIZER_URL="https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh"
+MISTER_MAIN_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater"
+JOTEGO_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_jt"
+UNOFFICIAL_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_unofficials"
 INI_REFERENCES=( \
     "EXPORTED_INI_PATH" \
     "MAIN_UPDATER_INI" \
@@ -275,12 +284,11 @@ post_load_update_all_ini() {
     done
 }
 
-MAIN_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
-DB9_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_DB9/master/mister_updater.sh"
+MAIN_UPDATER_URL="${MISTER_DEVEL_UPDATER_URL}"
 select_main_updater() {
     case "${ENCC_FORKS}" in
         true)
-            MAIN_UPDATER_URL="${DB9_UPDATER_URL}"
+            MAIN_UPDATER_URL="${MISTER_DB9_UPDATER_URL}"
             ;;
         *)
             ;;
@@ -336,6 +344,16 @@ run_updater_script() {
     fi
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
         sed -i "s/ *60)/77)/g" ${SCRIPT_PATH}
+    fi
+    if [[ "${SCRIPT_URL}" == "${MISTER_DEVEL_UPDATER_URL}" ]] && [ -f "${MISTER_MAIN_UPDATER_WORK_FOLDER}/db9" ] ; then
+        sed -i 's/if \[\[ "$MAX_VERSION" > "$MAX_LOCAL_VERSION" \]\]/if \[\[ "$MAX_VERSION" > "$MAX_LOCAL_VERSION" \]\] || ! \[\[ "${CORE_URL}" =~ SD-Installer \]\]/g' ${SCRIPT_PATH}
+        pushd "${MISTER_MAIN_UPDATER_WORK_FOLDER}" > /dev/null 2>&1
+        rm -rf db9 || true
+		rm -rf *.last_successful_run || true
+		rm -rf *.log || true
+		rm -rf menu_* || true
+		rm -rf MiSTer_* || true
+        popd > /dev/null 2>&1
     fi
 
     set +e
@@ -635,7 +653,7 @@ run_update_all() {
         select_main_updater
         run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
         if [ $UPDATER_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater/${LOG_FILENAME}")
+            FAILING_UPDATERS+=("${MISTER_MAIN_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
         fi
         sleep 1
         if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && tail -n 30 ${GLOG_TEMP} | grep -q "You should reboot" ; then
@@ -644,21 +662,21 @@ run_update_all() {
     fi
 
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        run_updater_script "https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh" "${JOTEGO_UPDATER_INI}"
+        run_updater_script "${JOTEGO_UPDATER_URL}" "${JOTEGO_UPDATER_INI}"
         if [ $UPDATER_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_jt/${LOG_FILENAME}")
+            FAILING_UPDATERS+=("${JOTEGO_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
         fi
     fi
 
     if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-        run_updater_script "https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh" "${UNOFFICIAL_UPDATER_INI}"
+        run_updater_script "${UNOFFICIAL_UPDATER_URL}" "${UNOFFICIAL_UPDATER_INI}"
         if [ $UPDATER_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("/media/fat/Scripts/.mister_updater_unofficials/${LOG_FILENAME}")
+            FAILING_UPDATERS+=("${UNOFFICIAL_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
         fi
     fi
 
     if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
-        run_updater_script "https://raw.githubusercontent.com/MiSTer-LLAPI/Updater_script_MiSTer/master/llapi_updater.sh" "${LLAPI_UPDATER_INI}"
+        run_updater_script "${LLAPI_UPDATER_URL}" "${LLAPI_UPDATER_INI}"
         if [ $UPDATER_RET -ne 0 ]; then
             FAILING_UPDATERS+=("LLAPI")
         fi
@@ -679,7 +697,7 @@ run_update_all() {
     fi
 
     if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
-        run_updater_script "https://raw.githubusercontent.com/theypsilon/Names_TXT_Updater_MiSTer/master/dont_download.sh" "${NAMES_TXT_UPDATER_INI}"
+        run_updater_script "${NAMES_TXT_UPDATER_URL}" "${NAMES_TXT_UPDATER_INI}"
         if [ $UPDATER_RET -ne 0 ]; then
             FAILING_UPDATERS+=("Names.txt_Updater")
         fi
@@ -981,7 +999,7 @@ settings_menu_main_updater() {
                 "7 Install Linux updates") settings_change_var "UPDATE_LINUX" "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" ;;
                 "8 Force full resync")
                     local SOMETHING="false"
-                    if [ -f "/media/fat/Scripts/.mister_updater/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" ] ; then
+                    if [ -f "${MISTER_MAIN_UPDATER_WORK_FOLDER}/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" ] ; then
                         SOMETHING="true"
                         set +e
                         dialog --keep-window --title "Delete last_successful_run" --defaultno \
@@ -990,14 +1008,14 @@ settings_menu_main_updater() {
                         local SURE_RET=$?
                         set -e
                         if [[ "${SURE_RET}" == "0" ]] ; then
-                            rm "/media/fat/Scripts/.mister_updater/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run"
+                            rm "${MISTER_MAIN_UPDATER_WORK_FOLDER}/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run"
                             set +e
                             dialog --keep-window --msgbox "Removed file:\n/Scripts/.mister_updater/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 6 75
                             set -e
                         fi
                     fi
 
-                    local MISTER_MAIN_BINARY=/media/fat/Scripts/.mister_updater/MiSTer_20*
+                    local MISTER_MAIN_BINARY="${MISTER_MAIN_UPDATER_WORK_FOLDER}/MiSTer_20"*
                     MISTER_MAIN_BINARY=$(echo ${MISTER_MAIN_BINARY})
                     if [ -f "${MISTER_MAIN_BINARY}" ] ; then
                         SOMETHING="true"
@@ -1015,7 +1033,7 @@ settings_menu_main_updater() {
                         fi
                     fi
 
-                    local MISTER_MENU_CORE=/media/fat/Scripts/.mister_updater/menu_20*
+                    local MISTER_MENU_CORE="${MISTER_MAIN_UPDATER_WORK_FOLDER}/menu_20"*
                     MISTER_MENU_CORE=$(echo ${MISTER_MENU_CORE})
                     if [ -f "${MISTER_MENU_CORE}" ] ; then
                         SOMETHING="true"
@@ -1033,7 +1051,7 @@ settings_menu_main_updater() {
                         fi
                     fi
 
-                    local MRA_ALTERNATIVES_ZIP=/media/fat/Scripts/.mister_updater/MRA-Alternatives_*
+                    local MRA_ALTERNATIVES_ZIP="${MISTER_MAIN_UPDATER_WORK_FOLDER}/MRA-Alternatives_"*
                     MRA_ALTERNATIVES_ZIP=$(echo ${MRA_ALTERNATIVES_ZIP})
                     if [ -f "${MRA_ALTERNATIVES_ZIP}" ] ; then
                         SOMETHING="true"
@@ -1051,7 +1069,7 @@ settings_menu_main_updater() {
                         fi
                     fi
 
-                    local FILTERS_ZIP=/media/fat/Scripts/.mister_updater/Filters_*
+                    local FILTERS_ZIP="${MISTER_MAIN_UPDATER_WORK_FOLDER}/Filters_"*
                     FILTERS_ZIP=$(echo ${FILTERS_ZIP})
                     if [ -f "${FILTERS_ZIP}" ] ; then
                         SOMETHING="true"
@@ -1136,7 +1154,7 @@ settings_menu_jotego_updater() {
                 "4 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
                 "5 Force full resync")
                     local SOMETHING="false"
-                    if [ -f "/media/fat/Scripts/.mister_updater_jt/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" ] ; then
+                    if [ -f "${JOTEGO_UPDATER_WORK_FOLDER}/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" ] ; then
                         SOMETHING="true"
                         set +e
                         dialog --keep-window --title "Delete last_successful_run" --defaultno \
@@ -1145,14 +1163,14 @@ settings_menu_jotego_updater() {
                         local SURE_RET=$?
                         set -e
                         if [[ "${SURE_RET}" == "0" ]] ; then
-                            rm "/media/fat/Scripts/.mister_updater_jt/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run"
+                            rm "${JOTEGO_UPDATER_WORK_FOLDER}/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run"
                             set +e
                             dialog --keep-window --msgbox "Removed file:\n/Scripts/.mister_updater_jt/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 6 75
                             set -e
                         fi
                     fi
 
-                    local MRA_ALTERNATIVES_ZIP=/media/fat/Scripts/.mister_updater_jt/MRA-Alternatives_*
+                    local MRA_ALTERNATIVES_ZIP=${JOTEGO_UPDATER_WORK_FOLDER}/MRA-Alternatives_*
                     MRA_ALTERNATIVES_ZIP=$(echo ${MRA_ALTERNATIVES_ZIP})
                     if [ -f "${MRA_ALTERNATIVES_ZIP}" ] ; then
                         SOMETHING="true"
@@ -1236,7 +1254,7 @@ settings_menu_unofficial_updater() {
                 "3 Install new Cores") settings_change_var "DOWNLOAD_NEW_CORES" "$(settings_domain_ini_file ${UNOFFICIAL_UPDATER_INI})" ;;
                 "4 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "$(settings_domain_ini_file ${UNOFFICIAL_UPDATER_INI})" ;;
                 "5 Force full resync")
-                    if [ -f "/media/fat/Scripts/.mister_updater_unofficials/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" ] ; then
+                    if [ -f "${UNOFFICIAL_UPDATER_WORK_FOLDER}/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" ] ; then
                         set +e
                         dialog --keep-window --title "Are you sure?" --defaultno \
                             --yesno "Your next update will become much slower\nif you delete \"last_successful_run\"" \
@@ -1244,7 +1262,7 @@ settings_menu_unofficial_updater() {
                         local SURE_RET=$?
                         set -e
                         if [[ "${SURE_RET}" == "0" ]] ; then
-                            rm "/media/fat/Scripts/.mister_updater_unofficials/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run"
+                            rm "${UNOFFICIAL_UPDATER_WORK_FOLDER}/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run"
                             set +e
                             dialog --keep-window --msgbox "Removed file:\n/Scripts/.mister_updater_unofficials/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 6 75
                             set -e
@@ -1857,14 +1875,14 @@ settings_menu_misc() {
                                 rm -rf "${dir}"
                             done
 
-                            rm "/media/fat/Scripts/.mister_updater/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 2> /dev/null || true
-                            rm "/media/fat/Scripts/.mister_updater/MRA-Alternatives_"* 2> /dev/null || true
+                            rm "${MISTER_MAIN_UPDATER_WORK_FOLDER}/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 2> /dev/null || true
+                            rm "${MISTER_MAIN_UPDATER_WORK_FOLDER}/MRA-Alternatives_"* 2> /dev/null || true
 
-                            rm "/media/fat/Scripts/.mister_updater_jt/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 2> /dev/null || true
-                            rm "/media/fat/Scripts/.mister_updater_jt/MRA-Alternatives_"* 2> /dev/null || true
+                            rm "${JOTEGO_UPDATER_WORK_FOLDER}/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 2> /dev/null || true
+                            rm "${JOTEGO_UPDATER_WORK_FOLDER}/MRA-Alternatives_"* 2> /dev/null || true
 
-                            rm "/media/fat/Scripts/.mister_updater_unofficials/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 2> /dev/null || true
-                            rm "/media/fat/Scripts/.mister_updater_unofficials/MRA-Alternatives_"* 2> /dev/null || true
+                            rm "${UNOFFICIAL_UPDATER_WORK_FOLDER}/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" 2> /dev/null || true
+                            rm "${UNOFFICIAL_UPDATER_WORK_FOLDER}/MRA-Alternatives_"* 2> /dev/null || true
 
                             set +e
                             dialog --keep-window --msgbox "All cores and MRAs have been removed" 5 45
