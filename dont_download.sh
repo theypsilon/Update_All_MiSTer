@@ -768,6 +768,7 @@ settings_menu_update_all() {
 
     ### SETTINGS GLOBAL OPTIONS ##
     SETTINGS_OPTIONS_MAIN_UPDATER=("true" "false")
+    SETTINGS_OPTIONS_ENCC_FORKS=("false" "true")
     SETTINGS_OPTIONS_JOTEGO_UPDATER=("true" "false")
     SETTINGS_OPTIONS_UNOFFICIAL_UPDATER=("false" "true")
     SETTINGS_OPTIONS_LLAPI_UPDATER=("false" "true")
@@ -824,6 +825,7 @@ settings_menu_update_all() {
             local HBMAME_GETTER="${SETTINGS_OPTIONS_HBMAME_GETTER[0]}"
             local ARCADE_ORGANIZER="${SETTINGS_OPTIONS_ARCADE_ORGANIZER[0]}"
             local NAMES_TXT_UPDATER="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER[0]}"
+            local ENCC_FORKS="${SETTINGS_OPTIONS_ENCC_FORKS[0]}"
 
             load_ini_file "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
 
@@ -844,7 +846,7 @@ settings_menu_update_all() {
                 --cancel-label "Abort" --ok-label "Select" --extra-button --extra-label "Toggle" \
                 --title "Update All ${UPDATE_ALL_VERSION} Settings" \
                 --menu "Settings loaded from '$(settings_normalize_ini_file ${EXPORTED_INI_PATH})'" 19 75 25 \
-                "1 Main Updater"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores and resources" \
+                "1 Main Updater"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores from $([[ ${ENCC_FORKS} == 'true' ]] && echo 'MiSTer-DB9' || echo 'MiSTer-devel')" \
                 "2 Jotego Updater" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego" \
                 "3 Unofficial Updater"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
                 "4 LLAPI Updater" "$(settings_active_tag ${LLAPI_UPDATER}) Forks adapted to LLAPI" \
@@ -923,7 +925,6 @@ settings_menu_main_updater() {
 
     SETTINGS_OPTIONS_MAIN_UPDATER_INI=("$(settings_normalize_ini_file ${EXPORTED_INI_PATH})" "update.ini")
     settings_try_add_ini_option 'SETTINGS_OPTIONS_MAIN_UPDATER_INI' "${MAIN_UPDATER_INI}"
-    SETTINGS_OPTIONS_ENCC_FORKS=("false" "true")
     SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES=("true" "false")
     SETTINGS_OPTIONS_UPDATE_LINUX=("true" "false")
     SETTINGS_OPTIONS_UPDATE_CHEATS=("once" "true" "false")
