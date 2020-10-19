@@ -40,7 +40,7 @@ NOTE: You should extract also `update_all.ini` in these.
 
 
 
-## Offline Setup
+## MiSTer Offline Setup
 
 Check [updater-pc](./updater-pc) to download all the MiSTer files from your PC.
 
@@ -50,87 +50,11 @@ Useful if you can't connect your MiSTer to internet.
 
 ## Further Configuration
 
-In case you would like to modify options by hand, you can create a `update_all.ini` file sitting next to where you have downloaded `update_all.sh`. In case you renamed `update_all.sh` you need to rename its INI file too, so they both share the same basename.
+In case you would like to configure Update All so it downloads exactly what you need, you can do it through the Settings screen.
 
-You may change the following parameters:
+![settings screen](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/f66d6ba9-91e1-4581-82a2-c51f7f5424d5.jpeg "Settings Screen")
 
-```bash
-# Base directory for all script’s tasks, "/media/fat" for SD root, "/media/usb0" for USB drive root.
-BASE_PATH="/media/fat"
-
-# Selects Main MiSTer Updater to be used.
-## "false" to use the Official Main MiSTer Updater.
-## "true" to use the DB9 Fork Main MiSTer Updater
-ENCC_FORKS="false"
-
-# "false" to skip the Main Updater entirely
-MAIN_UPDATER="true"
-# Specific INI settings for this script if you need it.
-MAIN_UPDATER_INI="update.ini"
-
-# "false" to skip Jotego Updater entirely
-JOTEGO_UPDATER="true"
-# Specific INI settings for this script if you need it.
-JOTEGO_UPDATER_INI="update_jtcores.ini"
-
-# "true" to activate the unofficial cores Updater
-UNOFFICIAL_UPDATER="false"
-# Specific INI settings for this script if you need it.
-UNOFFICIAL_UPDATER_INI="update_unofficials.ini"
-
-# "true" to activate the LLAPI Updater
-LLAPI_UPDATER="false"
-# Specific INI settings for this script if you need it.
-LLAPI_UPDATER_INI="update_llapi.ini"
-
-# "false" to skip downloading BIOS for some systems.
-BIOS_GETTER="true"
-# Specific INI settings for this script if you need it.
-BIOS_GETTER_INI="update_bios-getter.ini"
-
-# "false" to skip downloading MAME roms.
-MAME_GETTER="true"
-# Specific INI settings for this script if you need it.
-MAME_GETTER_INI="update_mame-getter.ini"
-
-# "false" to skip downloading HBMAME roms.
-HBMAME_GETTER="true"
-# Specific INI settings for this script if you need it.
-HBMAME_GETTER_INI="update_hbmame-getter.ini"
-
-# "true" to enable the names.txt Updater
-NAMES_TXT_UPDATER="false"
-# Specific INI settings for this script if you need it.
-NAMES_TXT_UPDATER_INI="update_names-txt.ini"
-# Sets the downloaded names.txt Region Code to "US", "EU" or "JP"
-NAMES_REGION="US"
-# Sets the downloaded names.txt Char Code to "CHAR18" or "CHAR28"
-NAMES_CHAR_CODE="CHAR18"
-# Sets the downloaded names.txt Sort Code to "Manufacturer" or "Common"
-NAMES_SORT_CODE="Common"
-
-# "false" to skip running the arcade organizer.
-ARCADE_ORGANIZER="true"
-# Specific INI settings for this script if you need it.
-ARCADE_ORGANIZER_INI="update_arcade-organizer.ini"
-
-# "false" to not reboot automatically after a system component has been updated.
-# System component here means menu.rbf, MiSTer binary, Linux, and such.
-AUTOREBOOT="true"
-
-# Waiting time between scripts.
-WAIT_TIME_FOR_READING=4
-
-###########################
-# Troubleshooting Options #
-###########################
-
-# Network resilience parameters
-CURL_RETRY="--connect-timeout 15 --max-time 240 --retry 3 --retry-delay 5 --silent --show-error"
-ALLOW_INSECURE_SSL="true"
-```
-
-
+The Settings screen will show up if you press UP in your controller or keyboard during the countdown showing up right after starting `update_all.sh` in your MiSTer. Please, don't forget to select `SAVE` to keep all the changes you have done before leaving.
 
 ## Optimizations
 
