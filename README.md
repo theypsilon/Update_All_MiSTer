@@ -1,4 +1,4 @@
-# Update All [![HitCount](http://hits.dwyl.com/theypsilon/Update_All_MiSTer.svg)](http://hits.dwyl.com/theypsilon/Update_All_MiSTer)
+# Update All ![ViewCount](https://views.whatilearened.today/views/github/theypsilon/Update_All_MiSTer.svg)
 All-in-one script for keeping up-to-date with the [MiSTer](https://github.com/MiSTer-devel/Main_MiSTer/wiki) ecosystem.
 
 This script chains the following scripts:
