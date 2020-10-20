@@ -1,4 +1,4 @@
-# Update All
+# Update All [![HitCount](http://hits.dwyl.com/theypsilon/Update_All_MiSTer.svg)](http://hits.dwyl.com/theypsilon/Update_All_MiSTer)
 All-in-one script for keeping up-to-date with the [MiSTer](https://github.com/MiSTer-devel/Main_MiSTer/wiki) ecosystem.
 
 This script chains the following scripts:
@@ -92,5 +92,3 @@ https://github.com/theypsilon/Updater_script_MiSTer_Unofficial<br>
 https://github.com/MiSTer-LLAPI/Updater_script_MiSTer<br>
 https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS<br>
 https://github.com/MAME-GETTER/_arcade-organizer<br>
-
-[![HitCount](http://hits.dwyl.com/theypsilon/Update_All_MiSTer.svg)](http://hits.dwyl.com/theypsilon/Update_All_MiSTer)
