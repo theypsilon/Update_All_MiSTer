@@ -83,6 +83,14 @@ SETTINGS_ON_FILENAME="settings-on"
 WORK_OLD_PATH="/media/fat/Scripts/.update_all"
 WORK_NEW_PATH="/media/fat/Scripts/.cache/update_all"
 WORK_PATH=
+MISTER_MAIN_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater"
+JOTEGO_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_jt"
+UNOFFICIAL_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_unofficials"
+ARCADE_ORGANIZER_INSTALLED_NAMES_TXT="/media/fat/Scripts/.cache/arcade-organizer/installed_names.txt"
+ARCADE_ORGANIZER_FOLDER_OPTION_1="/media/fat/_Arcade/_Organized"
+ARCADE_ORGANIZER_FOLDER_OPTION_2="/media/fat/_Arcade"
+MISTER_INI_PATH="/media/fat/MiSTer.ini"
+NAMES_TXT_PATH="/media/fat/names.txt"
 GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH=".update_all.log"
 LAST_MRA_PROCESSING_PATH=
@@ -96,9 +104,6 @@ BIOS_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_BIOS_SCRIP
 MAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh"
 HBMAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh"
 ARCADE_ORGANIZER_URL="https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh"
-MISTER_MAIN_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater"
-JOTEGO_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_jt"
-UNOFFICIAL_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_unofficials"
 INI_REFERENCES=( \
     "EXPORTED_INI_PATH" \
     "MAIN_UPDATER_INI" \
@@ -318,7 +323,7 @@ fetch_or_exit() {
     exit 1
 }
 
-UPDATER_RET=0
+RUN_UPDATER_SCRIPT_RET=0
 run_updater_script() {
     local SCRIPT_URL="${1}"
     local SCRIPT_INI="${2}"
@@ -358,7 +363,7 @@ run_updater_script() {
 
     set +e
     cat ${SCRIPT_PATH} | bash -
-    UPDATER_RET=$?
+    RUN_UPDATER_SCRIPT_RET=$?
     set -e
 
     sleep ${WAIT_TIME_FOR_READING}
@@ -652,7 +657,7 @@ run_update_all() {
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
         select_main_updater
         run_updater_script ${MAIN_UPDATER_URL} ${MAIN_UPDATER_INI}
-        if [ $UPDATER_RET -ne 0 ]; then
+        if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
             FAILING_UPDATERS+=("${MISTER_MAIN_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
         fi
         sleep 1
@@ -663,21 +668,21 @@ run_update_all() {
 
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
         run_updater_script "${JOTEGO_UPDATER_URL}" "${JOTEGO_UPDATER_INI}"
-        if [ $UPDATER_RET -ne 0 ]; then
+        if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
             FAILING_UPDATERS+=("${JOTEGO_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
         fi
     fi
 
     if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
         run_updater_script "${UNOFFICIAL_UPDATER_URL}" "${UNOFFICIAL_UPDATER_INI}"
-        if [ $UPDATER_RET -ne 0 ]; then
+        if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
             FAILING_UPDATERS+=("${UNOFFICIAL_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
         fi
     fi
 
     if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
         run_updater_script "${LLAPI_UPDATER_URL}" "${LLAPI_UPDATER_INI}"
-        if [ $UPDATER_RET -ne 0 ]; then
+        if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
             FAILING_UPDATERS+=("LLAPI")
         fi
     fi
@@ -698,7 +703,7 @@ run_update_all() {
 
     if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
         run_updater_script "${NAMES_TXT_UPDATER_URL}" "${NAMES_TXT_UPDATER_INI}"
-        if [ $UPDATER_RET -ne 0 ]; then
+        if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
             FAILING_UPDATERS+=("Names.txt_Updater")
         fi
     fi
@@ -1623,7 +1628,7 @@ https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
                 "${ACTIVATE}")
                     settings_change_var "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
                     local NEW_NAMES_TXT_UPDATER=$(load_single_var_from_ini "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})")
-                    if [[ "${NEW_NAMES_TXT_UPDATER}" == "true" ]] && [ ! -f "/media/fat/Scripts/.cache/arcade-organizer/installed_names.txt" ] && [ -f "/media/fat/names.txt" ] ; then
+                    if [[ "${NEW_NAMES_TXT_UPDATER}" == "true" ]] && [ ! -f "${ARCADE_ORGANIZER_INSTALLED_NAMES_TXT}" ] && [ -f "${NAMES_TXT_PATH}" ] ; then
                         set +e
                         DIALOGRC="${SETTINGS_TMP_BLACK_DIALOGRC}" dialog --keep-window --msgbox "WARNING! Your current names.txt file will be overwritten after updating" 5 76
                         set -e
@@ -1633,7 +1638,7 @@ https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
                 "3 Region") settings_change_var "NAMES_REGION" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})" ;;
                 "4 Char Code") settings_change_var "NAMES_CHAR_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})"
                     local NEW_NAMES_CHAR_CODE=$(load_single_var_from_ini "NAMES_CHAR_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})")
-                    if [[ "${NEW_NAMES_CHAR_CODE}" == "CHAR28" ]] && ! grep -q "rbf_hide_datecode=1" /media/fat/MiSTer.ini 2> /dev/null ; then
+                    if [[ "${NEW_NAMES_CHAR_CODE}" == "CHAR28" ]] && ! grep -q "rbf_hide_datecode=1" "${MISTER_INI_PATH}" 2> /dev/null ; then
                         set +e
                         dialog --keep-window --msgbox "It's recommended to set rbf_hide_datecode=1 on MiSTer.ini when using CHAR28" 5 80
                         set -e
@@ -1648,7 +1653,7 @@ https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
                     fi
                     ;;
                 "6 Remove \"names.txt\"")
-                    if [ -f /media/fat/names.txt ] ; then
+                    if [ -f "${NAMES_TXT_PATH}" ] ; then
                         set +e
                         dialog --keep-window --title "Are you sure?" --defaultno \
                             --yesno "If you have done changes to names.txt, they will be lost" \
@@ -1656,7 +1661,7 @@ https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
                         local SURE_RET=$?
                         set -e
                         if [[ "${SURE_RET}" == "0" ]] ; then
-                            rm /media/fat/names.txt
+                            rm "${NAMES_TXT_PATH}"
                             set +e
                             dialog --keep-window --msgbox "names.txt Removed" 5 22
                             set -e
@@ -1688,7 +1693,7 @@ settings_menu_arcade_organizer() {
     SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI=("update_arcade-organizer.ini" "$(settings_normalize_ini_file ${EXPORTED_INI_PATH})")
     settings_try_add_ini_option 'SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI' "${ARCADE_ORGANIZER_INI}"
     SETTINGS_OPTIONS_SKIPALTS=("true" "false")
-    SETTINGS_OPTIONS_ORGDIR=("/media/fat/_Arcade/_Organized" "/media/fat/_Arcade")
+    SETTINGS_OPTIONS_ORGDIR=("${ARCADE_ORGANIZER_FOLDER_OPTION_1}" "${ARCADE_ORGANIZER_FOLDER_OPTION_2}")
 
     while true ; do
         (
