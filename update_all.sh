@@ -100,6 +100,6 @@ export EXPORTED_INI_PATH="${INI_PATH}"
 
 bash "${SCRIPT_PATH}" || echo -e "Script ${ORIGINAL_SCRIPT_PATH} failed!\n"
 
-rm ${SCRIPT_PATH}
+rm ${SCRIPT_PATH} 2> /dev/null || true
 
 exit 0
