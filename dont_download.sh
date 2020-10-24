@@ -93,7 +93,6 @@ MISTER_INI_PATH="/media/fat/MiSTer.ini"
 NAMES_TXT_PATH="/media/fat/names.txt"
 GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH=".update_all.log"
-LAST_MRA_PROCESSING_PATH=
 UPDATE_ALL_URL="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh"
 MISTER_DEVEL_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
 MISTER_DB9_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_DB9/master/mister_updater.sh"
@@ -195,6 +194,34 @@ load_single_var_from_ini() {
     echo "${VALUE}"
 }
 
+fetch_or_exit() {
+    local SCRIPT_PATH="${1}"
+    local SCRIPT_URL="${2}"
+
+    if curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL} ; then return ; fi
+
+    echo "There was some network problem."
+    echo
+    echo "Following file couldn't be downloaded:"
+    echo ${@: -1}
+    echo
+    echo "Please try again later."
+    echo
+    exit 1
+}
+
+fetch_or_continue() {
+    local SCRIPT_PATH="${1}"
+    local SCRIPT_URL="${2}"
+
+    curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
+}
+
+make_folder() {
+    local FOLDER_PATH="${1}"
+    mkdir -p "${FOLDER_PATH}"
+}
+
 initialize() {
     if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] ; then
         local MAYBE_NEW_LAUNCHER="/tmp/ua_maybe_new_launcher.sh"
@@ -225,7 +252,7 @@ initialize() {
     if [ ! -d "${WORK_PATH}" ] ; then
         WORK_PATH="${WORK_NEW_PATH}"
         if [ ! -d "${WORK_PATH}" ] ; then
-            mkdir -p "${WORK_PATH}"
+            make_folder "${WORK_PATH}"
             MAME_GETTER_FORCE_FULL_RESYNC="true"
             HBMAME_GETTER_FORCE_FULL_RESYNC="true"
             ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
@@ -310,29 +337,6 @@ draw_separator() {
     echo "################################################################################"
     echo
     sleep 1
-}
-
-fetch_or_exit() {
-    local SCRIPT_PATH="${1}"
-    local SCRIPT_URL="${2}"
-
-    if curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL} ; then return ; fi
-
-    echo "There was some network problem."
-    echo
-    echo "Following file couldn't be downloaded:"
-    echo ${@: -1}
-    echo
-    echo "Please try again later."
-    echo
-    exit 1
-}
-
-fetch_or_continue() {
-    local SCRIPT_PATH="${1}"
-    local SCRIPT_URL="${2}"
-
-    curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
 }
 
 RUN_UPDATER_SCRIPT_RET=0
@@ -500,7 +504,7 @@ install_scripts() {
     draw_separator
 
     echo "Installing update_all.sh in MiSTer /Scripts directory."
-    mkdir -p ../Scripts
+    make_folder "../Scripts"
 
     rm /tmp/ua_install.update_all.sh 2> /dev/null || true
 
@@ -761,11 +765,6 @@ run_update_all() {
     if [[ "${UPDATE_ALL_OS}" != "WINDOWS" ]] ; then
         echo "Full log for more details: ${GLOG_PATH}"
         echo
-    fi
-
-    if [[ "${EXIT_CODE}" == "0" ]] && [[ "${LAST_MRA_PROCESSING_PATH}" != "" ]]; then
-        echo "${UPDATE_ALL_VERSION}" > "${LAST_MRA_PROCESSING_PATH}"
-        echo "${END_TIME}" >> "${LAST_MRA_PROCESSING_PATH}"
     fi
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && { \
