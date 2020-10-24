@@ -2,11 +2,7 @@
 
 set -euo pipefail
 
-CURL_RETRY="--connect-timeout 15 --max-time 120 --retry 3 --retry-delay 5 --silent --show-error"
-ALLOW_INSECURE_SSL="true"
-SSL_SECURITY_OPTION="--insecure"
 EXPORTED_INI_PATH="update_all.ini"
-
 UPDATE_ALL_SOURCE="true"
 source dont_download.sh
 
@@ -21,7 +17,6 @@ fetch_or_continue() {
 UPDATE_ALL_LAUNCHER_MD5="68b329da9893e34099c7d8ad5cb9c940"
 
 FAKE_MEDIA_FAT="media_fat"
-mkdir -p "${FAKE_MEDIA_FAT}"
 
 BASE_PATH="${FAKE_MEDIA_FAT}"
 WORK_OLD_PATH="${FAKE_MEDIA_FAT}/Scripts/.update_all"
@@ -35,7 +30,8 @@ ARCADE_ORGANIZER_FOLDER_OPTION_2="${FAKE_MEDIA_FAT}/_Arcade"
 MISTER_INI_PATH="${FAKE_MEDIA_FAT}/MiSTer.ini"
 NAMES_TXT_PATH="${FAKE_MEDIA_FAT}/names.txt"
 
-echo "wrong" > update_all.sh
+mkdir -p "${FAKE_MEDIA_FAT}"
+echo "wrong" > "${EXPORTED_INI_PATH%.*}.sh"
 mkdir -p "${BASE_PATH}/Scripts/"
 mkdir -p "${MISTER_MAIN_UPDATER_WORK_FOLDER}"
 echo "" > "${MISTER_MAIN_UPDATER_WORK_FOLDER}/db9"
