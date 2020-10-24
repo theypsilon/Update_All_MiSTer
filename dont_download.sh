@@ -368,10 +368,10 @@ run_updater_script() {
         sed -i 's/if \[\[ "$MAX_VERSION" > "$MAX_LOCAL_VERSION" \]\]/if \[\[ "$MAX_VERSION" > "$MAX_LOCAL_VERSION" \]\] || ! \[\[ "${CORE_URL}" =~ SD-Installer \]\]/g' ${SCRIPT_PATH}
         pushd "${MISTER_MAIN_UPDATER_WORK_FOLDER}" > /dev/null 2>&1
         rm -rf db9 || true
-		rm -rf *.last_successful_run || true
-		rm -rf *.log || true
-		rm -rf menu_* || true
-		rm -rf MiSTer_* || true
+        rm -rf *.last_successful_run || true
+        rm -rf *.log || true
+        rm -rf menu_* || true
+        rm -rf MiSTer_* || true
         popd > /dev/null 2>&1
     fi
 
