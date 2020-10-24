@@ -230,6 +230,7 @@ initialize() {
             rm "${MAYBE_NEW_LAUNCHER}" 2> /dev/null || true
             fetch_or_continue "${MAYBE_NEW_LAUNCHER}" "${UPDATE_ALL_URL}" > /dev/null 2>&1 || true
             if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [[ "$(md5sum ${MAYBE_NEW_LAUNCHER} | awk '{print $1}')" == "${UPDATE_ALL_LAUNCHER_MD5}" ]] ; then
+                rm "${OLD_SCRIPT_PATH}" 2> /dev/null || true
                 cp "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" || true
             fi
         fi
