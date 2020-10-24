@@ -73,6 +73,7 @@ set_default_options
 UPDATE_ALL_VERSION="1.3"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
 UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
+UPDATE_ALL_LAUNCHER_MD5="1422ef7e811c771dcecb7d1f97a49464"
 CURL_RETRY="--connect-timeout 15 --max-time 180 --retry 3 --retry-delay 5"
 AUTO_UPDATE_LAUNCHER="${AUTO_UPDATE_LAUNCHER:-true}"
 ORIGINAL_SCRIPT_PATH="${0}"
@@ -223,17 +224,14 @@ make_folder() {
 }
 
 initialize() {
-    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] ; then
-        local MAYBE_NEW_LAUNCHER="/tmp/ua_maybe_new_launcher.sh"
-        rm "${MAYBE_NEW_LAUNCHER}" 2> /dev/null || true
-        fetch_or_continue "${MAYBE_NEW_LAUNCHER}" "${UPDATE_ALL_URL}" > /dev/null 2>&1 || true
-        if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [ -d "${BASE_PATH}/Scripts/" ]; then
-            local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
-            if [ -f "${OLD_SCRIPT_PATH}" ] && \
-                ! diff "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" > /dev/null 2>&1 && \
-                [[ "$(md5sum ${MAYBE_NEW_LAUNCHER} | awk '{print $1}')" == "1422ef7e811c771dcecb7d1f97a49464" ]]
-            then
-                cp "${MAYBE_NEW_LAUNCHER}"  "${OLD_SCRIPT_PATH}" || true
+    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] && [ -d "${BASE_PATH}/Scripts/" ] ; then
+        local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
+        if [ ! -f "${OLD_SCRIPT_PATH}" ] || [[ "$(md5sum ${OLD_SCRIPT_PATH} | awk '{print $1}')" != "${UPDATE_ALL_LAUNCHER_MD5}" ]] ; then
+            local MAYBE_NEW_LAUNCHER="/tmp/ua_maybe_new_launcher.sh"
+            rm "${MAYBE_NEW_LAUNCHER}" 2> /dev/null || true
+            fetch_or_continue "${MAYBE_NEW_LAUNCHER}" "${UPDATE_ALL_URL}" > /dev/null 2>&1 || true
+            if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [[ "$(md5sum ${MAYBE_NEW_LAUNCHER} | awk '{print $1}')" == "${UPDATE_ALL_LAUNCHER_MD5}" ]] ; then
+                cp "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" || true
             fi
         fi
     fi

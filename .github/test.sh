@@ -18,6 +18,8 @@ fetch_or_continue() {
     echo "" > "${1}"
 }
 
+UPDATE_ALL_LAUNCHER_MD5="68b329da9893e34099c7d8ad5cb9c940"
+
 FAKE_MEDIA_FAT="media_fat"
 mkdir -p "${FAKE_MEDIA_FAT}"
 
@@ -32,6 +34,12 @@ ARCADE_ORGANIZER_FOLDER_OPTION_1="${FAKE_MEDIA_FAT}/_Arcade/_Organized"
 ARCADE_ORGANIZER_FOLDER_OPTION_2="${FAKE_MEDIA_FAT}/_Arcade"
 MISTER_INI_PATH="${FAKE_MEDIA_FAT}/MiSTer.ini"
 NAMES_TXT_PATH="${FAKE_MEDIA_FAT}/names.txt"
+
+echo "wrong" > update_all.sh
+mkdir -p "${BASE_PATH}/Scripts/"
+mkdir -p "${MISTER_MAIN_UPDATER_WORK_FOLDER}"
+echo "" > "${MISTER_MAIN_UPDATER_WORK_FOLDER}/db9"
+mkdir -p "${BASE_PATH}/games/mame"
 
 UNOFFICIAL_UPDATER="true"
 LLAPI_UPDATER="true"
