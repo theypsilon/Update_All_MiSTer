@@ -199,7 +199,7 @@ initialize() {
     if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] ; then
         local MAYBE_NEW_LAUNCHER="/tmp/ua_maybe_new_launcher.sh"
         rm "${MAYBE_NEW_LAUNCHER}" 2> /dev/null || true
-        curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o "${MAYBE_NEW_LAUNCHER}" "${UPDATE_ALL_URL}" > /dev/null 2>&1 || true
+        fetch_or_continue "${MAYBE_NEW_LAUNCHER}" "${UPDATE_ALL_URL}" > /dev/null 2>&1 || true
         if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [ -d "${BASE_PATH}/Scripts/" ]; then
             local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
             if [ -f "${OLD_SCRIPT_PATH}" ] && \
@@ -313,7 +313,10 @@ draw_separator() {
 }
 
 fetch_or_exit() {
-    if curl ${@} ; then return ; fi
+    local SCRIPT_PATH="${1}"
+    local SCRIPT_URL="${2}"
+
+    if curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL} ; then return ; fi
 
     echo "There was some network problem."
     echo
@@ -323,6 +326,13 @@ fetch_or_exit() {
     echo "Please try again later."
     echo
     exit 1
+}
+
+fetch_or_continue() {
+    local SCRIPT_PATH="${1}"
+    local SCRIPT_URL="${2}"
+
+    curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
 }
 
 RUN_UPDATER_SCRIPT_RET=0
@@ -340,7 +350,7 @@ run_updater_script() {
     local SCRIPT_PATH="/tmp/ua_current_updater.sh"
     rm ${SCRIPT_PATH} 2> /dev/null || true
 
-    fetch_or_exit ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
+    fetch_or_exit "${SCRIPT_PATH}" "${SCRIPT_URL}"
 
     sed -i "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
     sed -i 's/${AUTOREBOOT}/false/g' ${SCRIPT_PATH}
@@ -385,7 +395,7 @@ run_mame_getter_script() {
     echo "Downloading the most recent $(basename ${SCRIPT_FILENAME}) script."
     echo " "
 
-    fetch_or_exit ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o ${SCRIPT_PATH} ${SCRIPT_URL}
+    fetch_or_exit "${SCRIPT_PATH}" "${SCRIPT_URL}"
     echo
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
@@ -426,10 +436,7 @@ run_quiet_mame_getter_script() {
     local SCRIPT_PATH="/tmp/ua_temp_script"
     rm "${SCRIPT_PATH}" 2> /dev/null || true
 
-    curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} \
-        --fail --location \
-        -o ${SCRIPT_PATH} \
-        ${SCRIPT_URL} > /dev/null 2>&1 || return
+    fetch_or_continue "${SCRIPT_PATH}" "${SCRIPT_URL}" > /dev/null 2>&1 || return
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
         sed -i 's/\/media\/fat/\.\./g ' ${SCRIPT_PATH}
@@ -498,7 +505,7 @@ install_scripts() {
     rm /tmp/ua_install.update_all.sh 2> /dev/null || true
 
     set +e
-    curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_install.update_all.sh "${UPDATE_ALL_URL}"
+    fetch_or_continue "/tmp/ua_install.update_all.sh" "${UPDATE_ALL_URL}"
     local RET_CURL=$?
     set -e
 
@@ -535,7 +542,7 @@ install_scripts() {
     rm /tmp/ua_install.arcade_organizer.sh 2> /dev/null || true
 
     set +e
-    curl ${CURL_RETRY} --silent --show-error ${SSL_SECURITY_OPTION} --fail --location -o /tmp/ua_install.arcade_organizer.sh "${ARCADE_ORGANIZER_URL}"
+    fetch_or_continue "/tmp/ua_install.arcade_organizer.sh" "${ARCADE_ORGANIZER_URL}"
     local RET_CURL=$?
     set -e
 
