@@ -23,7 +23,7 @@ set -euo pipefail
 
 
 # ========= OPTIONS ==================
-CURL_RETRY="--connect-timeout 15 --max-time 180 --retry 3 --retry-delay 5"
+CURL_RETRY="--connect-timeout 15 --max-time 600 --retry 3 --retry-delay 5"
 ALLOW_INSECURE_SSL="true"
 
 # ========= CODE STARTS HERE =========
