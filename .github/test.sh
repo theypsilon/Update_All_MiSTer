@@ -10,10 +10,9 @@ EXPORTED_INI_PATH="update_all.ini"
 UPDATE_ALL_SOURCE="true"
 source dont_download.sh
 
-set -x
-
 FAKE_UPDATER="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/.github/fake.sh"
 
+UPDATE_ALL_URL="${FAKE_UPDATER}"
 MISTER_DEVEL_UPDATER_URL="${FAKE_UPDATER}"
 MISTER_DB9_UPDATER_URL="${FAKE_UPDATER}"
 JOTEGO_UPDATER_URL="${FAKE_UPDATER}"
@@ -26,6 +25,7 @@ HBMAME_GETTER_URL="${FAKE_UPDATER}"
 ARCADE_ORGANIZER_URL="${FAKE_UPDATER}"
 
 FAKE_MEDIA_FAT="media_fat"
+mkdir -p "${FAKE_MEDIA_FAT}"
 
 BASE_PATH="${FAKE_MEDIA_FAT}"
 WORK_OLD_PATH="${FAKE_MEDIA_FAT}/Scripts/.update_all"
@@ -33,15 +33,17 @@ WORK_NEW_PATH="${FAKE_MEDIA_FAT}/Scripts/.cache/update_all"
 MISTER_MAIN_UPDATER_WORK_FOLDER="${FAKE_MEDIA_FAT}/Scripts/.mister_updater"
 JOTEGO_UPDATER_WORK_FOLDER="${FAKE_MEDIA_FAT}/Scripts/.mister_updater_jt"
 UNOFFICIAL_UPDATER_WORK_FOLDER="${FAKE_MEDIA_FAT}/Scripts/.mister_updater_unofficials"
+ARCADE_ORGANIZER_INSTALLED_NAMES_TXT="${FAKE_MEDIA_FAT}/Scripts/.cache/arcade-organizer/installed_names.txt"
+ARCADE_ORGANIZER_FOLDER_OPTION_1="${FAKE_MEDIA_FAT}/_Arcade/_Organized"
+ARCADE_ORGANIZER_FOLDER_OPTION_2="${FAKE_MEDIA_FAT}/_Arcade"
+MISTER_INI_PATH="${FAKE_MEDIA_FAT}/MiSTer.ini"
+NAMES_TXT_PATH="${FAKE_MEDIA_FAT}/names.txt"
 
 AUTOREBOOT="false"
 UNOFFICIAL_UPDATER="true"
 LLAPI_UPDATER="true"
 NAMES_TXT_UPDATER="true"
-ENCC_FORKS="false"
 
-run_update_all
-
-ENCC_FORKS="true"
+set -x
 
 run_update_all
