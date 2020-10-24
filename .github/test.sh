@@ -10,19 +10,13 @@ EXPORTED_INI_PATH="update_all.ini"
 UPDATE_ALL_SOURCE="true"
 source dont_download.sh
 
-FAKE_UPDATER="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/.github/fake.sh"
+fetch_or_exit() {
+    echo "" > "${1}"
+}
 
-UPDATE_ALL_URL="${FAKE_UPDATER}"
-MISTER_DEVEL_UPDATER_URL="${FAKE_UPDATER}"
-MISTER_DB9_UPDATER_URL="${FAKE_UPDATER}"
-JOTEGO_UPDATER_URL="${FAKE_UPDATER}"
-UNOFFICIAL_UPDATER_URL="${FAKE_UPDATER}"
-LLAPI_UPDATER_URL="${FAKE_UPDATER}"
-NAMES_TXT_UPDATER_URL="${FAKE_UPDATER}"
-BIOS_GETTER_URL="${FAKE_UPDATER}"
-MAME_GETTER_URL="${FAKE_UPDATER}"
-HBMAME_GETTER_URL="${FAKE_UPDATER}"
-ARCADE_ORGANIZER_URL="${FAKE_UPDATER}"
+fetch_or_continue() {
+    echo "" > "${1}"
+}
 
 FAKE_MEDIA_FAT="media_fat"
 mkdir -p "${FAKE_MEDIA_FAT}"
