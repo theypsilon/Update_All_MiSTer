@@ -1,4 +1,4 @@
-# Update All ![ViewCount](https://views.whatilearened.today/views/github/theypsilon/Update_All_MiSTer.svg)
+# Update All ![ViewCount](https://views.whatilearened.today/views/github/theypsilon/Update_All_MiSTer.svg) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/josembarroso.svg?style=social&label=Follow%20%40josembarroso)](https://twitter.com/josembarroso)
 All-in-one script for keeping up-to-date with the [MiSTer](https://github.com/MiSTer-devel/Main_MiSTer/wiki) ecosystem.
 
 This script chains the following scripts:
@@ -74,7 +74,7 @@ Consider funding [Alexey Melnikov "Sorgelig"](https://www.patreon.com/FPGAMiSTer
 
 ## License
 
-Copyright © 2020, [José Manuel Barroso Galindo](https://github.com/theypsilon).
+Copyright © 2020, [José Manuel Barroso Galindo](https://twitter.com/josembarroso). 
 Released under the [GPL v3 License](LICENSE).
 
 
