@@ -44,11 +44,9 @@ set_default_options() {
 
     MAME_GETTER="true"
     MAME_GETTER_INI="update_mame-getter.ini"
-    MAME_GETTER_FORCE_FULL_RESYNC="false"
 
     HBMAME_GETTER="true"
     HBMAME_GETTER_INI="update_hbmame-getter.ini"
-    HBMAME_GETTER_FORCE_FULL_RESYNC="false"
 
     NAMES_TXT_UPDATER="false"
     NAMES_TXT_UPDATER_INI="update_names-txt.ini"
@@ -58,7 +56,6 @@ set_default_options() {
 
     ARCADE_ORGANIZER="true"
     ARCADE_ORGANIZER_INI="update_arcade-organizer.ini"
-    ARCADE_ORGANIZER_FORCE_FULL_RESYNC="false"
 
     COUNTDOWN_TIME=15
     WAIT_TIME_FOR_READING=4
@@ -251,9 +248,6 @@ initialize() {
         WORK_PATH="${WORK_NEW_PATH}"
         if [ ! -d "${WORK_PATH}" ] ; then
             make_folder "${WORK_PATH}"
-            MAME_GETTER_FORCE_FULL_RESYNC="true"
-            HBMAME_GETTER_FORCE_FULL_RESYNC="true"
-            ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
 
             echo
             echo "Creating '${WORK_PATH}' for the first time."
@@ -282,22 +276,6 @@ initialize() {
 
     export SSL_SECURITY_OPTION
     export CURL_RETRY
-
-    if [[ "${ALWAYS_ASSUME_NEW_STANDARD_MRA:-false}" == "true" ]] || [[ "${ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA:-false}" == "true" ]] ; then
-        MAME_GETTER_FORCE_FULL_RESYNC="true"
-        HBMAME_GETTER_FORCE_FULL_RESYNC="true"
-        ARCADE_ORGANIZER_FORCE_FULL_RESYNC="true"
-
-        echo
-        echo "'ALWAYS_ASSUME_NEW_STANDARD_MRA' and 'ALWAYS_ASSUME_NEW_ALTERNATIVE_MRA' options"
-        echo "are deprecated and will be removed in a later version of Update All."
-        echo
-        echo "Please, change your INI file and use these options accordingly:"
-        echo "    MAME_GETTER_FORCE_FULL_RESYNC=\"true\""
-        echo "    HBMAME_GETTER_FORCE_FULL_RESYNC=\"true\""
-        echo "    ARCADE_ORGANIZER_FORCE_FULL_RESYNC=\"true\""
-        sleep ${WAIT_TIME_FOR_READING}
-    fi
 
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
         export TERMINFO="terminfo"
