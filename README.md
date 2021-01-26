@@ -86,9 +86,11 @@ I take no responsibility for any data loss or any damage you may incur because o
 Please check the README.md of the scripts being called by Update All:
 
 https://github.com/MiSTer-devel/Updater_script_MiSTer<br>
-https://github.com/theypsilon/Updater_script_MiSTer_DB9<br>
+https://github.com/MiSTer-DB9/Updater_script_MiSTer_DB9<br>
+https://github.com/MiSTer-LLAPI/Updater_script_MiSTer<br>
 https://github.com/jotego/Updater_script_MiSTer<br>
 https://github.com/theypsilon/Updater_script_MiSTer_Unofficial<br>
-https://github.com/MiSTer-LLAPI/Updater_script_MiSTer<br>
+https://github.com/theypsilon/Names_TXT_Updater_MiSTer<br>
 https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS<br>
 https://github.com/MAME-GETTER/_arcade-organizer<br>
+https://github.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS<br>
