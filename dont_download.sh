@@ -65,6 +65,9 @@ set_default_options() {
         ENCC_FORKS="true"
     fi
 }
+if [[ "$(pwd)" == "/" ]] ; then
+    cd "$(dirname ${EXPORTED_INI_PATH})"
+fi
 set_default_options
 # ========= CODE STARTS HERE =========
 UPDATE_ALL_VERSION="1.3"
