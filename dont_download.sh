@@ -65,9 +65,6 @@ set_default_options() {
         ENCC_FORKS="true"
     fi
 }
-if [[ "$(pwd)" == "/" ]] ; then
-    cd "$(dirname ${EXPORTED_INI_PATH})"
-fi
 set_default_options
 # ========= CODE STARTS HERE =========
 UPDATE_ALL_VERSION="1.3"
@@ -77,7 +74,7 @@ UPDATE_ALL_LAUNCHER_MD5="ac10fbada40e3e5f133bc0eee0dd53d5"
 AUTO_UPDATE_LAUNCHER="${AUTO_UPDATE_LAUNCHER:-true}"
 ORIGINAL_SCRIPT_PATH="${0}"
 ORIGINAL_INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
-CURRENT_DIR="$(pwd)/"
+CURRENT_DIR="$(dirname ${EXPORTED_INI_PATH})/"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
 SETTINGS_ON_FILENAME="settings-on"
 WORK_OLD_PATH="/media/fat/Scripts/.update_all"
@@ -223,6 +220,11 @@ make_folder() {
 }
 
 initialize() {
+    # Needed when fbterminal=0
+    if [[ "$(pwd)" == "/" ]] ; then
+        cd "${CURRENT_DIR}"
+    fi
+    
     if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] && [ -d "${BASE_PATH}/Scripts/" ] ; then
         local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
         if [ ! -f "${OLD_SCRIPT_PATH}" ] || [[ "$(md5sum ${OLD_SCRIPT_PATH} | awk '{print $1}')" != "${UPDATE_ALL_LAUNCHER_MD5}" ]] ; then
