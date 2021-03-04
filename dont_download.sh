@@ -396,7 +396,7 @@ run_mame_getter_script() {
     sed -i "s%INIFILE=%INIFILE=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
 
     set +e
-    ${SCRIPT_PATH} --optimized
+    ${SCRIPT_PATH}
     local SCRIPT_RET=$?
     set -e
 
