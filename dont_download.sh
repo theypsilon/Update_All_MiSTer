@@ -86,6 +86,7 @@ UNOFFICIAL_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_unofficials"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT="/media/fat/Scripts/.cache/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_FOLDER_OPTION_1="/media/fat/_Arcade/_Organized"
 ARCADE_ORGANIZER_FOLDER_OPTION_2="/media/fat/_Arcade"
+ARCADE_ORGANIZER_FOLDER_OPTION_3="/media/fat/_Arcade Organized"
 MISTER_INI_PATH="/media/fat/MiSTer.ini"
 NAMES_TXT_PATH="/media/fat/names.txt"
 GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
@@ -1682,7 +1683,7 @@ settings_menu_arcade_organizer() {
     SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI=("update_arcade-organizer.ini" "$(settings_normalize_ini_file ${EXPORTED_INI_PATH})")
     settings_try_add_ini_option 'SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI' "${ARCADE_ORGANIZER_INI}"
     SETTINGS_OPTIONS_SKIPALTS=("true" "false")
-    SETTINGS_OPTIONS_ORGDIR=("${ARCADE_ORGANIZER_FOLDER_OPTION_1}" "${ARCADE_ORGANIZER_FOLDER_OPTION_2}")
+    SETTINGS_OPTIONS_ORGDIR=("${ARCADE_ORGANIZER_FOLDER_OPTION_1}" "${ARCADE_ORGANIZER_FOLDER_OPTION_2}" "${ARCADE_ORGANIZER_FOLDER_OPTION_3}")
 
     while true ; do
         (
