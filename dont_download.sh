@@ -135,7 +135,7 @@ initialize_global_log() {
 }
 
 trap_global_log() {
-    mv "${GLOG_TEMP}" "${GLOG_PATH}" 2> /dev/null
+    mv "${GLOG_TEMP}" "${GLOG_PATH}" 2> /dev/null || true
 }
 
 load_ini_file() {
@@ -757,6 +757,7 @@ run_update_all() {
         if [[ "${AUTOREBOOT}" == "true" && "${REBOOT_PAUSE}" -ge 0 ]] ; then
             echo "Rebooting in ${REBOOT_PAUSE} seconds"
             sleep "${REBOOT_PAUSE}"
+            trap_global_log
             reboot now
         else
             echo "You should reboot"
