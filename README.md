@@ -53,16 +53,6 @@ In case you would like to configure Update All so it downloads exactly what you 
 
 The Settings screen will show up if you press UP in your controller or keyboard during the countdown showing up right after starting `update_all.sh` in your MiSTer. Please, don't forget to select `SAVE` to keep all the changes you have done before leaving.
 
-## Optimizations
-
-The __MAME__ and __HBMAME Getters__ are skipped if no new MRA are detected in the device.
-
-If there are new MRAs that contains MAME roms, __MAME Getter__ will be executed if enabled.
-
-If there are new MRAs that contains HBMAME roms, __HBMAME Getter__ will be executed if enabled.
-
-__Arcade Organizer__ is also skipped if there isn't any new MRA.
-
 ## Funding
 
 Consider funding [Alexey Melnikov "Sorgelig"](https://www.patreon.com/FPGAMiSTer) for his invaluable work on the [MiSTer project](https://github.com/MiSTer-devel/Main_MiSTer/wiki).
@@ -81,7 +71,7 @@ And finally, if you would like to support my work, you may tip me here:
 
 ## License
 
-Copyright © 2020, [José Manuel Barroso Galindo](https://twitter.com/josembarroso). 
+Copyright © 2020-2021, [José Manuel Barroso Galindo](https://twitter.com/josembarroso). 
 Released under the [GPL v3 License](LICENSE).
 
 
