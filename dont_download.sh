@@ -60,6 +60,7 @@ set_default_options() {
     COUNTDOWN_TIME=15
     WAIT_TIME_FOR_READING=4
     AUTOREBOOT="true"
+    KEEP_USBMOUNT_CONF="false"
 
     if [[ "${UPDATE_ALL_PC_UPDATER_ENCC_FORKS:-}" == "true" ]] ; then
         ENCC_FORKS="true"
@@ -89,6 +90,8 @@ ARCADE_ORGANIZER_FOLDER_OPTION_2="/media/fat/_Arcade"
 ARCADE_ORGANIZER_FOLDER_OPTION_3="/media/fat/_Arcade Organized"
 MISTER_INI_PATH="/media/fat/MiSTer.ini"
 NAMES_TXT_PATH="/media/fat/names.txt"
+USBMOUNT_CONF_PATH="/etc/usbmount/usbmount.conf"
+USBMOUNT_CONF_TMP="/tmp/ua_usbmount.conf"
 GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH=".update_all.log"
 UPDATE_ALL_URL="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh"
@@ -651,7 +654,21 @@ run_update_all() {
 
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
         select_main_updater
+        if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] ; then
+            cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}"
+            echo "KEEP_USBMOUNT_CONF: ${USBMOUNT_CONF_PATH} saved."
+        fi
         run_updater_script ${SELECT_MAIN_UPDATER_RET} ${MAIN_UPDATER_INI}
+        if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] && ! diff -q "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}" ; then
+            cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_PATH}.backup"
+            cp "${USBMOUNT_CONF_TMP}" "${USBMOUNT_CONF_PATH}"
+            echo "${USBMOUNT_CONF_PATH} was replaced by the Main Updater!"
+            echo "Restoring old version because KEEP_USBMOUNT_CONF=\"true\""
+            echo "There is a backup for the newest version available at '${USBMOUNT_CONF_PATH}.backup' in case you want to revert this operation."
+            sleep ${WAIT_TIME_FOR_READING}
+            sleep ${WAIT_TIME_FOR_READING}
+            sleep ${WAIT_TIME_FOR_READING}
+        fi
         if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
             FAILING_UPDATERS+=("${MISTER_MAIN_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
         fi
