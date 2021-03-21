@@ -38,6 +38,7 @@ mkdir -p "${BASE_PATH}/Scripts/"
 mkdir -p "${MISTER_MAIN_UPDATER_WORK_FOLDER}"
 echo "" > "${MISTER_MAIN_UPDATER_WORK_FOLDER}/db9"
 mkdir -p "${BASE_PATH}/games/mame"
+echo "" > "${USBMOUNT_CONF_PATH}"
 
 UNOFFICIAL_UPDATER="true"
 LLAPI_UPDATER="true"
