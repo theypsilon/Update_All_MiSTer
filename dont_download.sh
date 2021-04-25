@@ -137,8 +137,11 @@ initialize_global_log() {
     trap trap_global_log EXIT
 }
 
+TRAP_GLOBAL_LOG_RAN="false"
 trap_global_log() {
-    mv "${GLOG_TEMP}" "${GLOG_PATH}" 2> /dev/null || true
+    if [[ "${TRAP_GLOBAL_LOG_RAN}" == "true" ]] ; then return ; fi
+    mv "${GLOG_TEMP}" "${GLOG_PATH}" 2> /dev/null
+    TRAP_GLOBAL_LOG_RAN="true"
 }
 
 load_ini_file() {
