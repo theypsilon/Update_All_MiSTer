@@ -84,6 +84,8 @@ WORK_PATH=
 MISTER_MAIN_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater"
 JOTEGO_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_jt"
 UNOFFICIAL_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_unofficials"
+MAME_GETTER_LASTRUN_PATH="/media/fat/Scripts/.cache/mame-getter/last_run"
+HBMAME_GETTER_LASTRUN_PATH="/media/fat/Scripts/.cache/hbmame-getter/last_run"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT="/media/fat/Scripts/.cache/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_FOLDER_OPTION_1="/media/fat/_Arcade/_Organized"
 ARCADE_ORGANIZER_FOLDER_OPTION_2="/media/fat/_Arcade"
@@ -1435,11 +1437,12 @@ settings_menu_mame_getter() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "MAME-Getter Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${MAME_GETTER_INI})" 12 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${MAME_GETTER_INI})" 13 75 25 \
                 "${ACTIVATE}" "Activated: ${MAME_GETTER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${MAME_GETTER_INI})" \
                 "3 MAME ROM directory" "${ROMMAME}" \
-                "4 Clean MAME" "Deletes the mame folder" \
+                "4 Clean MAME ROMs" "Deletes the mame folder" \
+                "5 Force full resync" "Clears \"last_run\" file" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -1452,7 +1455,7 @@ settings_menu_mame_getter() {
                 "${ACTIVATE}") settings_change_var "MAME_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "2 INI file") settings_change_var "MAME_GETTER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "3 MAME ROM directory") settings_change_var "ROMMAME" "$(settings_domain_ini_file ${MAME_GETTER_INI})" ;;
-                "4 Clean MAME")
+                "4 Clean MAME ROMs")
                     run_quiet_mame_getter_script "${MAME_GETTER_URL}" "$(settings_domain_ini_file ${MAME_GETTER_INI})" --print-ini-options
                     if [[ "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}" == "" ]] ; then
                         settings_menu_connection_problem
@@ -1481,6 +1484,30 @@ settings_menu_mame_getter() {
                     else
                         set +e
                         dialog --keep-window --msgbox "${ROMMAME} doesn't exist" 5 50
+                        set -e
+                    fi
+                    ;;
+                "5 Force full resync")
+                    if [ -f "${MAME_GETTER_LASTRUN_PATH}" ] ; then
+                        set +e
+                        dialog --keep-window --title "Are you sure?" --defaultno \
+                            --yesno "Your next update will become much slower\nif you delete \"last_run\"" \
+                            6 45
+                        local SURE_RET=$?
+                        set -e
+                        if [[ "${SURE_RET}" == "0" ]] ; then
+                            rm "${MAME_GETTER_LASTRUN_PATH}"
+                            set +e
+                            dialog --keep-window --msgbox "Removed file:\n${MAME_GETTER_LASTRUN_PATH}" 6 75
+                            set -e
+                        else
+                            set +e
+                            dialog --keep-window --msgbox "Operaton Canceled" 5 22
+                            set -e
+                        fi
+                    else
+                        set +e
+                        dialog --keep-window --msgbox "File doesn't exist:\n${MAME_GETTER_LASTRUN_PATH}" 6 75
                         set -e
                     fi
                     ;;
@@ -1522,11 +1549,12 @@ settings_menu_hbmame_getter() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "HBMAME-Getter Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${HBMAME_GETTER_INI})" 12 75 25 \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${HBMAME_GETTER_INI})" 13 75 25 \
                 "${ACTIVATE}" "Activated: ${HBMAME_GETTER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${HBMAME_GETTER_INI})" \
                 "3 HBMAME ROM directory" "${ROMHBMAME}" \
-                "4 Clean HBMAME" "Deletes the hbmame folder" \
+                "4 Clean HBMAME ROMs" "Deletes the hbmame folder" \
+                "5 Force full resync" "Clears \"last_run\" file" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -1539,7 +1567,7 @@ settings_menu_hbmame_getter() {
                 "${ACTIVATE}") settings_change_var "HBMAME_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "2 INI file") settings_change_var "HBMAME_GETTER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "3 HBMAME ROM directory") settings_change_var "ROMHBMAME" "$(settings_domain_ini_file ${HBMAME_GETTER_INI})" ;;
-                "4 Clean HBMAME")
+                "4 Clean HBMAME ROMs")
                     run_quiet_mame_getter_script "${HBMAME_GETTER_URL}" "$(settings_domain_ini_file ${HBMAME_GETTER_INI})" --print-ini-options
                     if [[ "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}" == "" ]] ; then
                         settings_menu_connection_problem
@@ -1568,6 +1596,30 @@ settings_menu_hbmame_getter() {
                     else
                         set +e
                         dialog --keep-window --msgbox "${ROMHBMAME} doesn't exist" 5 50
+                        set -e
+                    fi
+                    ;;
+                "5 Force full resync")
+                    if [ -f "${HBMAME_GETTER_LASTRUN_PATH}" ] ; then
+                        set +e
+                        dialog --keep-window --title "Are you sure?" --defaultno \
+                            --yesno "Your next update will become much slower\nif you delete \"last_run\"" \
+                            6 45
+                        local SURE_RET=$?
+                        set -e
+                        if [[ "${SURE_RET}" == "0" ]] ; then
+                            rm "${HBMAME_GETTER_LASTRUN_PATH}"
+                            set +e
+                            dialog --keep-window --msgbox "Removed file:\n${HBMAME_GETTER_LASTRUN_PATH}" 6 75
+                            set -e
+                        else
+                            set +e
+                            dialog --keep-window --msgbox "Operaton Canceled" 5 22
+                            set -e
+                        fi
+                    else
+                        set +e
+                        dialog --keep-window --msgbox "File doesn't exist:\n${HBMAME_GETTER_LASTRUN_PATH}" 6 75
                         set -e
                     fi
                     ;;
