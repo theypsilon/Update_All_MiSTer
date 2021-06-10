@@ -1127,14 +1127,14 @@ settings_menu_jotego_updater() {
 
     SETTINGS_OPTIONS_JOTEGO_UPDATER_INI=("$(settings_normalize_ini_file ${EXPORTED_INI_PATH})" "update_jtcores.ini")
     settings_try_add_ini_option 'SETTINGS_OPTIONS_JOTEGO_UPDATER_INI' "${JOTEGO_UPDATER_INI}"
-    SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES=("true" "false")
+    SETTINGS_OPTIONS_DOWNLOAD_BETA_CORES=("false" "true")
     SETTINGS_OPTIONS_MAME_ALT_ROMS=("true" "false")
 
     while true ; do
         (
             local JOTEGO_UPDATER="${SETTINGS_OPTIONS_JOTEGO_UPDATER[0]}"
             local JOTEGO_UPDATER_INI="${SETTINGS_OPTIONS_JOTEGO_UPDATER_INI[0]}"
-            local DOWNLOAD_NEW_CORES="${SETTINGS_OPTIONS_DOWNLOAD_NEW_CORES[0]}"
+            local DOWNLOAD_BETA_CORES="${SETTINGS_OPTIONS_DOWNLOAD_BETA_CORES[0]}"
             local MAME_ALT_ROMS="${SETTINGS_OPTIONS_MAME_ALT_ROMS[0]}"
 
             load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "JOTEGO_UPDATER" "JOTEGO_UPDATER_INI"
@@ -1154,7 +1154,7 @@ settings_menu_jotego_updater() {
                 --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 13 75 25 \
                 "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
                 "2 INI file"  "$(settings_normalize_ini_file ${JOTEGO_UPDATER_INI})" \
-                "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
+                "3 Install Beta Cores" "${DOWNLOAD_BETA_CORES}" \
                 "4 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
                 "5 Force full resync" "Clears \"last_successful_run\" file et al" \
                 "BACK"  "" 2> ${TMP}
@@ -1168,7 +1168,7 @@ settings_menu_jotego_updater() {
             case "${DEFAULT_SELECTION}" in
                 "${ACTIVATE}") settings_change_var "JOTEGO_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "2 INI file") settings_change_var "JOTEGO_UPDATER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "3 Install new Cores") settings_change_var "DOWNLOAD_NEW_CORES" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
+                "3 Install Beta Cores") settings_change_var "DOWNLOAD_BETA_CORES" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
                 "4 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
                 "5 Force full resync")
                     local SOMETHING="false"
