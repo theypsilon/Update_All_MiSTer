@@ -103,10 +103,10 @@ JOTEGO_UPDATER_URL="https://raw.githubusercontent.com/jotego/Updater_script_MiST
 UNOFFICIAL_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh"
 LLAPI_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-LLAPI/Updater_script_MiSTer/master/llapi_updater.sh"
 NAMES_TXT_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Names_TXT_Updater_MiSTer/master/dont_download.sh"
-BIOS_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS/master/bios-getter.sh"
-MAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh"
-HBMAME_GETTER_URL="https://raw.githubusercontent.com/MAME-GETTER/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh"
-ARCADE_ORGANIZER_URL="https://raw.githubusercontent.com/MAME-GETTER/_arcade-organizer/master/_arcade-organizer.sh"
+BIOS_GETTER_URL="https://raw.githubusercontent.com/theypsilon/MiSTer_BIOS_SCRIPTS/master/bios-getter.sh"
+MAME_GETTER_URL="https://raw.githubusercontent.com/atrac17/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh"
+HBMAME_GETTER_URL="https://raw.githubusercontent.com/atrac17/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh"
+ARCADE_ORGANIZER_URL="https://raw.githubusercontent.com/theypsilon/_arcade-organizer/master/_arcade-organizer.sh"
 INI_REFERENCES=( \
     "EXPORTED_INI_PATH" \
     "MAIN_UPDATER_INI" \
