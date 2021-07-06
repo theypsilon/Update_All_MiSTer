@@ -8,10 +8,10 @@ This script chains the following scripts:
 2. [Jotego Cores Updater](https://github.com/jotego/Updater_script_MiSTer). Downloads many advanced cores made by [Jotego](https://github.com/jotego).
 3. [Unofficial Cores Updater](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial). Downloads [some cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) that are not yet released but are fairly stable. Disabled by default.
 4. [LLAPI Cores Updater](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). Disabled by default.
-5. [BIOS Getter](https://github.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS) download bios for your installed systems from https://archive.org/
-6. [MAME and HBMAME Getter](https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
+5. [BIOS Getter](https://github.com/theypsilon/MiSTer_BIOS_SCRIPTS) download bios for your installed systems from https://archive.org/
+6. [MAME and HBMAME Getter](https://github.com/atrac17/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
 7. [Names TXT Updater](https://github.com/theypsilon/Names_TXT_Updater_MiSTer). Downloads a community curated names.txt file that enables better core names in the menus.
-8. [Arcade Organizer](https://github.com/MAME-GETTER/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
+8. [Arcade Organizer](https://github.com/theypsilon/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
 This script also contains some snippets from the __Updater script__ maintained by [Locutus73](https://github.com/Locutus73).
 
@@ -89,6 +89,6 @@ https://github.com/MiSTer-LLAPI/Updater_script_MiSTer<br>
 https://github.com/jotego/Updater_script_MiSTer<br>
 https://github.com/theypsilon/Updater_script_MiSTer_Unofficial<br>
 https://github.com/theypsilon/Names_TXT_Updater_MiSTer<br>
-https://github.com/MAME-GETTER/MiSTer_MAME_SCRIPTS<br>
-https://github.com/MAME-GETTER/_arcade-organizer<br>
-https://github.com/MAME-GETTER/MiSTer_BIOS_SCRIPTS<br>
+https://github.com/atrac17/MiSTer_MAME_SCRIPTS<br>
+https://github.com/theypsilon/_arcade-organizer<br>
+https://github.com/theypsilon/MiSTer_BIOS_SCRIPTS<br>
