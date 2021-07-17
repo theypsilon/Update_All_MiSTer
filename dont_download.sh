@@ -229,8 +229,40 @@ make_folder() {
 }
 
 initialize() {
-    # Needed when fbterminal=0
-    if [[ "$(pwd)" == "/" ]] ; then
+    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "$(pwd)/" != "${CURRENT_DIR}" ]] ; then
+        message_ignored_root_ini "update_all.ini"
+        message_ignored_root_ini "update.ini"
+        message_ignored_root_ini "update_jtcores.ini"
+        message_ignored_root_ini "update_unofficials.ini"
+        message_ignored_root_ini "update_llapi.ini"
+        message_ignored_root_ini "update_bios-getter.ini"
+        message_ignored_root_ini "update_mame-getter.ini"
+        message_ignored_root_ini "update_hbmame-getter.ini"
+        message_ignored_root_ini "update_names-txt.ini"
+        message_ignored_root_ini "update_arcade-organizer.ini"
+        if [ ${#MESSAGE_IGNORED_ROOT_INI_ARRAY[@]} -ne 0 ] ; then
+            echo "NEW CHANGE! As of 2021.07.17, Update All will now look for INI files"
+            echo "            stored in the same folder as $(basename ${EXPORTED_INI_PATH%.*}).sh"
+            echo "            Any INI files at $(pwd) will be ignored."
+            echo
+
+
+            for INI in "${MESSAGE_IGNORED_ROOT_INI_ARRAY[@]}" ; do
+                echo "WARNING! $(pwd)/${INI} will be ignored."
+                if [ -f "/media/fat/Scripts/${INI}" ] ; then
+                    echo "         /media/fat/Scripts/${INI} will be used instead."
+                else
+                    echo "         default values will be used instead."
+                fi
+            done
+
+            echo
+            echo "Waiting 30 seconds because of the warning messages..."
+            echo
+            echo "TIP: Move or remove these files to avoid the warnings."
+
+            sleep 30s
+        fi
         cd "${CURRENT_DIR}"
     fi
     
@@ -293,6 +325,14 @@ initialize() {
 
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
         export TERMINFO="terminfo"
+    fi
+}
+
+
+MESSAGE_IGNORED_ROOT_INI_ARRAY=()
+message_ignored_root_ini() {
+    if [ -f "${1}" ] ; then
+        MESSAGE_IGNORED_ROOT_INI_ARRAY+=("${1}")
     fi
 }
 
