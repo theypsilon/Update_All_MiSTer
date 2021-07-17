@@ -1246,6 +1246,24 @@ settings_menu_jotego_updater() {
                         fi
                     fi
 
+                    local BETA_MRA_ALTERNATIVES_ZIP=${JOTEGO_UPDATER_WORK_FOLDER}/BetaMRA-Alternatives_*
+                    BETA_MRA_ALTERNATIVES_ZIP=$(echo ${BETA_MRA_ALTERNATIVES_ZIP})
+                    if [ -f "${BETA_MRA_ALTERNATIVES_ZIP}" ] ; then
+                        SOMETHING="true"
+                        set +e
+                        dialog --keep-window --title "Delete $(basename ${BETA_MRA_ALTERNATIVES_ZIP})" --defaultno \
+                            --yesno "Select \"YES\" if you want to force an update on Beta MRA-Alternatives" \
+                            5 75
+                        local SURE_RET=$?
+                        set -e
+                        if [[ "${SURE_RET}" == "0" ]] ; then
+                            rm "${BETA_MRA_ALTERNATIVES_ZIP}"
+                            set +e
+                            dialog --keep-window --msgbox "Removed file:\n/${BETA_MRA_ALTERNATIVES_ZIP}" 6 75
+                            set -e
+                        fi
+                    fi
+
                     if [[ "${SOMETHING}" == "false" ]] ; then
                         set +e
                         dialog --keep-window --msgbox "Nothing to be cleared" 5 27
