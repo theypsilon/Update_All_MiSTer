@@ -229,7 +229,7 @@ make_folder() {
 }
 
 initialize() {
-    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "$(pwd)/" != "${CURRENT_DIR}" ]] ; then
+    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "$(pwd)" != "$(cd ${CURRENT_DIR} && pwd)" ]] ; then
         message_ignored_root_ini "update_all.ini"
         message_ignored_root_ini "update.ini"
         message_ignored_root_ini "update_jtcores.ini"
