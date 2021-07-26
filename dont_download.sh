@@ -65,6 +65,8 @@ set_default_options() {
     if [[ "${UPDATE_ALL_PC_UPDATER_ENCC_FORKS:-}" == "true" ]] ; then
         ENCC_FORKS="true"
     fi
+
+    ARCADE_ORGANIZER_2_ALPHA_ENABLED="false"
 }
 set_default_options
 # ========= CODE STARTS HERE =========
@@ -107,6 +109,7 @@ BIOS_GETTER_URL="https://raw.githubusercontent.com/theypsilon/MiSTer_BIOS_SCRIPT
 MAME_GETTER_URL="https://raw.githubusercontent.com/atrac17/MiSTer_MAME_SCRIPTS/master/mame-merged-set-getter.sh"
 HBMAME_GETTER_URL="https://raw.githubusercontent.com/atrac17/MiSTer_MAME_SCRIPTS/master/hbmame-merged-set-getter.sh"
 ARCADE_ORGANIZER_URL="https://raw.githubusercontent.com/theypsilon/_arcade-organizer/master/_arcade-organizer.sh"
+ARCADE_ORGANIZER_2ALPHA_URL="https://raw.githubusercontent.com/theypsilon/_arcade-organizer/2.0/_arcade-organizer.sh"
 INI_REFERENCES=( \
     "EXPORTED_INI_PATH" \
     "MAIN_UPDATER_INI" \
@@ -766,7 +769,13 @@ run_update_all() {
     fi
 
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-        run_mame_getter_script "_ARCADE-ORGANIZER" "${ARCADE_ORGANIZER_URL}" "${ARCADE_ORGANIZER_INI}"
+        local ao_url=
+        if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" ]] ; then
+            ao_url="${ARCADE_ORGANIZER_2ALPHA_URL}"
+        else
+            ao_url="${ARCADE_ORGANIZER_URL}"
+        fi
+        run_mame_getter_script "_ARCADE-ORGANIZER" "${ao_url}" "${ARCADE_ORGANIZER_INI}"
     fi
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
@@ -1869,7 +1878,13 @@ settings_menu_arcade_organizer() {
                 "3 Skip MRA-Alternatives") settings_change_var "SKIPALTS" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
                 "4 Organized Folders") settings_change_var "ORGDIR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
                 "5 Clean Folders")
-                    run_quiet_mame_getter_script "${ARCADE_ORGANIZER_URL}" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" --print-orgdir-folders
+                    local ao_url=
+                    if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" ]] ; then
+                        ao_url="${ARCADE_ORGANIZER_2ALPHA_URL}"
+                    else
+                        ao_url="${ARCADE_ORGANIZER_URL}"
+                    fi
+                    run_quiet_mame_getter_script "${ao_url}" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" --print-orgdir-folders
                     if [[ "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}" == "" ]] ; then
                         settings_menu_connection_problem
                         continue
@@ -1926,14 +1941,16 @@ settings_menu_misc() {
     SETTINGS_OPTIONS_AUTOREBOOT=("true" "false")
     SETTINGS_OPTIONS_WAIT_TIME_FOR_READING=("4" "0" "30")
     SETTINGS_OPTIONS_COUNTDOWN_TIME=("15" "4" "60")
+    SETTINGS_OPTIONS_ARCADE_ORGANIZER_2_ALPHA_ENABLED=("false" "true")
 
     while true ; do
         (
             local AUTOREBOOT="${SETTINGS_OPTIONS_AUTOREBOOT[0]}"
             local WAIT_TIME_FOR_READING="${SETTINGS_OPTIONS_WAIT_TIME_FOR_READING[0]}"
             local COUNTDOWN_TIME="${SETTINGS_OPTIONS_COUNTDOWN_TIME[0]}"
+            local ARCADE_ORGANIZER_2_ALPHA_ENABLED="${SETTINGS_OPTIONS_ARCADE_ORGANIZER_2_ALPHA_ENABLED[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "ARCADE_ORGANIZER_2_ALPHA_ENABLED"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -1944,11 +1961,12 @@ settings_menu_misc() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
-                --menu "" 11 75 25 \
+                --menu "" 12 75 25 \
                 "1 Autoreboot (if needed)" "${AUTOREBOOT}" \
                 "2 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
                 "3 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
                 "4 Clear All Cores" "Removes all CORES and MRA folders." \
+                "5 Arcade Organizer 2.0 Alpha" "Activated: ${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -2022,6 +2040,23 @@ settings_menu_misc() {
                         set +e
                         dialog --keep-window --msgbox "No folders or files to clear" 5 35
                         set -e
+                    fi
+                    ;;
+                "5 Arcade Organizer 2.0 Alpha")
+                    if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" == "false" ]] ; then
+                        set +e
+                        dialog --keep-window --title "Are you sure?" --defaultno \
+                            --yesno "You are activating an ALPHA version that might not work correctly." \
+                            5 75
+                        local SURE_RET=$?
+                        set -e
+                        if [[ "${SURE_RET}" == "0" ]] ; then
+                            settings_change_var "ARCADE_ORGANIZER_2_ALPHA_ENABLED" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+                            touch "${ARCADE_ORGANIZER_INI}"
+                        fi
+                    else
+                        settings_change_var "ARCADE_ORGANIZER_2_ALPHA_ENABLED" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+                        touch "${ARCADE_ORGANIZER_INI}"
                     fi
                     ;;
                 *) echo > "${SETTINGS_TMP_BREAK}" ;;
