@@ -1945,7 +1945,7 @@ settings_menu_2alpha_arcade_organizer() {
     SETTINGS_OPTIONS_ORGDIR=("${ARCADE_ORGANIZER_FOLDER_OPTION_1}" "${ARCADE_ORGANIZER_FOLDER_OPTION_2}" "${ARCADE_ORGANIZER_FOLDER_OPTION_3}")
     SETTINGS_OPTIONS_TOPDIR=("" "platform" "core" "year")
     SETTINGS_OPTIONS_PREPEND_YEAR=("false" "true")
-    SETTINGS_OPTIONS_MAD_DB=("https://raw.githubusercontent.com/theypsilon/BetaMAD/db/mad_db.json.zip" "https://raw.githubusercontent.com/theypsilon/BetaMAD/db/mad_db.json.zip")
+    SETTINGS_OPTIONS_MAD_DB=("https://raw.githubusercontent.com/theypsilon/MAD_Database_MiSTer/db/mad_db.json.zip" "https://raw.githubusercontent.com/theypsilon/MAD_Database_MiSTer/db/mad_db.json.zip")
     SETTINGS_OPTIONS_VERBOSE=("false" "true")
 
     while true ; do
