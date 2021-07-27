@@ -770,7 +770,7 @@ run_update_all() {
 
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
         local ao_url=
-        if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" ]] ; then
+        if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" == "true" ]] ; then
             ao_url="${ARCADE_ORGANIZER_2ALPHA_URL}"
         else
             ao_url="${ARCADE_ORGANIZER_URL}"
@@ -911,6 +911,7 @@ settings_menu_update_all() {
             local ARCADE_ORGANIZER="${SETTINGS_OPTIONS_ARCADE_ORGANIZER[0]}"
             local NAMES_TXT_UPDATER="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER[0]}"
             local ENCC_FORKS="${SETTINGS_OPTIONS_ENCC_FORKS[0]}"
+            local ARCADE_ORGANIZER_2_ALPHA_ENABLED="false"
 
             load_ini_file "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
 
@@ -957,7 +958,13 @@ settings_menu_update_all() {
                         "6 MAME Getter") settings_menu_mame_getter ;;
                         "7 HBMAME Getter") settings_menu_hbmame_getter ;;
                         "8 Names TXT Updater") settings_menu_names_txt ;;
-                        "9 Arcade Organizer") settings_menu_arcade_organizer ;;
+                        "9 Arcade Organizer")
+                            if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" == "true" ]] ; then
+                                settings_menu_2alpha_arcade_organizer
+                            else
+                                settings_menu_arcade_organizer
+                            fi
+                            ;;
                         "0 Misc") settings_menu_misc ;;
                         "SAVE") settings_menu_save ;;
                         "EXIT and RUN UPDATE ALL") settings_menu_exit_and_run ;;
@@ -1878,13 +1885,7 @@ settings_menu_arcade_organizer() {
                 "3 Skip MRA-Alternatives") settings_change_var "SKIPALTS" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
                 "4 Organized Folders") settings_change_var "ORGDIR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
                 "5 Clean Folders")
-                    local ao_url=
-                    if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" ]] ; then
-                        ao_url="${ARCADE_ORGANIZER_2ALPHA_URL}"
-                    else
-                        ao_url="${ARCADE_ORGANIZER_URL}"
-                    fi
-                    run_quiet_mame_getter_script "${ao_url}" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" --print-orgdir-folders
+                    run_quiet_mame_getter_script "${ARCADE_ORGANIZER_URL}" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" --print-orgdir-folders
                     if [[ "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}" == "" ]] ; then
                         settings_menu_connection_problem
                         continue
@@ -1935,6 +1936,676 @@ settings_menu_arcade_organizer() {
     rm ${TMP}
 }
 
+settings_menu_2alpha_arcade_organizer() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI=("update_arcade-organizer.ini" "$(settings_normalize_ini_file ${EXPORTED_INI_PATH})")
+    settings_try_add_ini_option 'SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI' "${ARCADE_ORGANIZER_INI}"
+    SETTINGS_OPTIONS_SKIPALTS=("true" "false")
+    SETTINGS_OPTIONS_ORGDIR=("${ARCADE_ORGANIZER_FOLDER_OPTION_1}" "${ARCADE_ORGANIZER_FOLDER_OPTION_2}" "${ARCADE_ORGANIZER_FOLDER_OPTION_3}")
+    SETTINGS_OPTIONS_TOPDIR=("" "platform" "core" "year")
+    SETTINGS_OPTIONS_PREPEND_YEAR=("false" "true")
+    SETTINGS_OPTIONS_MAD_DB=("https://raw.githubusercontent.com/theypsilon/BetaMAD/db/mad_db.json.zip" "https://raw.githubusercontent.com/theypsilon/BetaMAD/db/mad_db.json.zip")
+    SETTINGS_OPTIONS_VERBOSE=("false" "true")
+
+    while true ; do
+        (
+            local ARCADE_ORGANIZER="${SETTINGS_OPTIONS_ARCADE_ORGANIZER[0]}"
+            local ARCADE_ORGANIZER_INI="${SETTINGS_OPTIONS_ARCADE_ORGANIZER_INI[0]}"
+            local SKIPALTS="${SETTINGS_OPTIONS_SKIPALTS[0]}"
+            local ORGDIR="${SETTINGS_OPTIONS_ORGDIR[0]}"
+            local TOPDIR="${SETTINGS_OPTIONS_TOPDIR[0]}"
+            local PREPEND_YEAR="${SETTINGS_OPTIONS_PREPEND_YEAR[0]}"
+            local MAD_DB="${SETTINGS_OPTIONS_MAD_DB[0]}"
+            local VERBOSE="${SETTINGS_OPTIONS_VERBOSE[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER" "ARCADE_ORGANIZER_INI"
+            load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
+
+            if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
+                ARCADE_ORGANIZER="false"
+            fi
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 $(settings_active_action ${ARCADE_ORGANIZER})"
+            fi
+
+            local ACTIVATE="1 $(settings_active_action ${ARCADE_ORGANIZER})"
+            local MAD_DB_DESCRIPTION="${MAD_DB#*.*/}"
+            MAD_DB_DESCRIPTION="${MAD_DB_DESCRIPTION%.zip}"
+            MAD_DB_DESCRIPTION="${MAD_DB_DESCRIPTION:0:50}"
+
+            if [[ "${TOPDIR}" == "" ]] ; then
+                TOPDIR_DESCRIPTION="Disabled"
+            else
+                TOPDIR_DESCRIPTION="From '${TOPDIR}' subfolder"
+            fi
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Settings" \
+                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                "${ACTIVATE}"               "Activated: ${ARCADE_ORGANIZER}" \
+                "2 INI file"                "$(settings_normalize_ini_file ${ARCADE_ORGANIZER_INI})" \
+                "3 Organized Folders"       "${ORGDIR}/*" \
+                "4 Selected Database"         "${MAD_DB_DESCRIPTION}" \
+                "5 Top additional folders"    "${TOPDIR_DESCRIPTION}" \
+                "6 Skip MRA-Alternatives"   "$(settings_menu_yesno_bool_text ${SKIPALTS})" \
+                "7 Chronological sort below"  "$(settings_menu_yesno_bool_text ${PREPEND_YEAR})" \
+                "8 Verbose script output"     "$(settings_menu_yesno_bool_text ${VERBOSE})" \
+                "9 Alphabetic"        "Options for 0-9 and A-Z folders" \
+                "0 Region"            "Options for Regions (World, Japan, USA...)" \
+                "A Collections"       "Options for Platform, Core, Category, Year..." \
+                "S Video & Input"     "Options for Rotation, Resolution, Inputs..." \
+                "D Extra Software"    "Options for Hombrew, Bootleg, Hacks..." \
+                "F Advanced Submenu"  "Advanced Options" \
+                "BACK"                        "                                               " 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "${ACTIVATE}")
+                    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+                        settings_change_var "ARCADE_ORGANIZER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+                    else
+                        set +e
+                        dialog --keep-window --msgbox "Arcade Organizer should be run from MiSTer\n\nRun arcade_organizer.sh there after the first run of 'Update All' is done" 7 77
+                        set -e
+                    fi
+                    ;;
+                "2 INI file") settings_change_var "ARCADE_ORGANIZER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "6 Skip MRA-Alternatives") settings_change_var "SKIPALTS" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "3 Organized Folders") settings_change_var "ORGDIR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "4 Selected Database") settings_change_var "MAD_DB" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "7 Chronological sort below") settings_change_var "PREPEND_YEAR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "5 Top additional folders") settings_change_var "TOPDIR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "8 Verbose script output")  settings_change_var "VERBOSE" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "9 Alphabetic") settings_menu_ao_alphabetic_options ;;
+                "0 Region") settings_menu_ao_region_options ;;
+                "A Collections") settings_menu_ao_collections_options ;;
+                "S Video & Input") settings_menu_ao_video_and_inputs_options ;;
+                "D Extra Software") settings_menu_ao_extra_software_options ;;
+                "F Advanced Submenu") settings_menu_ao_advanced_options ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_ao_advanced_options() {
+    local TMP=$(mktemp)
+
+    while true ; do
+        (
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
+            load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="BACK"
+            fi
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Advanced Options" \
+                --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                "1 Clean Folders"           "Deletes the Arcade Organizer folders" \
+                "BACK"  "                                               " 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "1 Clean Folders")
+                    run_quiet_mame_getter_script "${ARCADE_ORGANIZER_2ALPHA_URL}" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" --print-orgdir-folders
+                    if [[ "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}" == "" ]] ; then
+                        settings_menu_connection_problem
+                        continue
+                    fi
+
+                    local ORGDIR_FOLDERS=()
+                    local YESNO_MESSAGE="WARNING! You will lose ALL the data contained in the folders:"
+                    while IFS="" read -r p || [ -n "${p}" ] ; do
+                        if [ -d "${p}" ] ; then
+                            ORGDIR_FOLDERS+=( "${p}" )
+                            YESNO_MESSAGE="${YESNO_MESSAGE}\n  ${p}"
+                        fi
+                    done < "${RUN_QUIET_MAME_GETTER_SCRIPT_OUTPUT}"
+
+                    if [ "${#ORGDIR_FOLDERS[@]}" -ge 1 ] ; then
+                        set +e
+                        DIALOGRC="${SETTINGS_TMP_BLACK_DIALOGRC}" dialog --keep-window --title "ARE YOU SURE?" --defaultno \
+                            --yesno "${YESNO_MESSAGE}" \
+                            $((${#ORGDIR_FOLDERS[@]} + 5)) 66
+                        local SURE_RET=$?
+                        set -e
+                        if [[ "${SURE_RET}" == "0" ]] ; then
+                            for p in "${ORGDIR_FOLDERS[@]}" ; do
+                                rm -rf "${p}"
+                            done
+                            set +e
+                            dialog --keep-window --msgbox "Organized folder Cleared" 5 29
+                            set -e
+                        else
+                            set +e
+                            dialog --keep-window --msgbox "Operaton Canceled" 5 22
+                            set -e
+                        fi
+                    else
+                        set +e
+                        dialog --keep-window --msgbox "Organized folder doesn't exist" 5 35
+                        set -e
+                    fi
+                    ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_ao_alphabetic_options() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_AZ_DIR=("true" "false")
+
+    while true ; do
+        (
+            local AZ_DIR="${SETTINGS_OPTIONS_AZ_DIR[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
+            load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 Alphabetic folders"
+            fi
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Alphabetic Options" \
+                --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                "1 Alphabetic folders"               "$(settings_menu_yesno_bool_text ${AZ_DIR})" \
+                "BACK"  "                                               " 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "1 Alphabetic folders") settings_change_var "AZ_DIR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_ao_region_options() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_REGION_DIR=("true" "false")
+    SETTINGS_OPTIONS_REGION_MAIN=("DEV PREFERRED" "Japan" "World" "USA" "Asia" "Europe" "Hispanic" "Spain" "Argentina" "Italy" "Brazil" "France" "German" "Germany")
+    SETTINGS_OPTIONS_REGION_OTHER=("1" "0" "2")
+
+    while true ; do
+        (
+            local REGION_DIR="${SETTINGS_OPTIONS_REGION_DIR[0]}"
+            local REGION_MAIN="${SETTINGS_OPTIONS_REGION_MAIN[0]}"
+            local REGION_OTHER="${SETTINGS_OPTIONS_REGION_OTHER[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
+            load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 Region folders"
+            fi
+
+            if [[ "${REGION_MAIN}" == "DEV PREFERRED" ]] ; then
+                REGION_MAIN_DESCRIPTION="Region preferred by the MiSTer Core author"
+            else
+                REGION_MAIN_DESCRIPTION="${REGION_MAIN}"
+            fi
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Region Options" \
+                --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                "1 Region folders"               "$(settings_menu_yesno_bool_text ${REGION_DIR})" \
+                "2 Main region"                  "${REGION_MAIN_DESCRIPTION}" \
+                "3 MRAs with other regions"                  "$(settings_menu_boolflagpresence_text ${REGION_OTHER} Region)" \
+                "BACK"  "                                               " 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "1 Region folders") settings_change_var "REGION_DIR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "2 Main region") settings_change_var "REGION_MAIN" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "3 MRAs with other regions") settings_change_var "REGION_OTHER" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_ao_collections_options() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_PLATFORM_DIR=("true" "false")
+    SETTINGS_OPTIONS_CORE_DIR=("true" "false")
+    SETTINGS_OPTIONS_CATEGORY_DIR=("true" "false")
+    SETTINGS_OPTIONS_MANUFACTURER_DIR=("true" "false")
+    SETTINGS_OPTIONS_SERIES_DIR=("true" "false")
+    SETTINGS_OPTIONS_BEST_OF_DIR=("true" "false")
+
+    while true ; do
+        (
+            local PLATFORM_DIR="${SETTINGS_OPTIONS_PLATFORM_DIR[0]}"
+            local CORE_DIR="${SETTINGS_OPTIONS_CORE_DIR[0]}"
+            local CATEGORY_DIR="${SETTINGS_OPTIONS_CATEGORY_DIR[0]}"
+            local MANUFACTURER_DIR="${SETTINGS_OPTIONS_MANUFACTURER_DIR[0]}"
+            local SERIES_DIR="${SETTINGS_OPTIONS_SERIES_DIR[0]}"
+            local BEST_OF_DIR="${SETTINGS_OPTIONS_BEST_OF_DIR[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
+            load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 Platform folders"
+            fi
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Collections Options" \
+                --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                "1 Platform folders"               "$(settings_menu_yesno_bool_text ${PLATFORM_DIR})" \
+                "2 MiSTer Core folders"            "$(settings_menu_yesno_bool_text ${CORE_DIR})" \
+                "3 Year options"                   "" \
+                "4 Category folders"               "$(settings_menu_yesno_bool_text ${CATEGORY_DIR})" \
+                "5 Manufacturer folders"           "$(settings_menu_yesno_bool_text ${MANUFACTURER_DIR})" \
+                "6 Series folders"                 "$(settings_menu_yesno_bool_text ${SERIES_DIR})" \
+                "7 Best-of folders"                "$(settings_menu_yesno_bool_text ${BEST_OF_DIR})" \
+                "BACK"  "                                               " 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "1 Platform folders"    ) settings_change_var "PLATFORM_DIR"     "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "2 MiSTer Core folders" ) settings_change_var "CORE_DIR"         "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "3 Year options"        ) settings_menu_ao_year_options ;;
+                "4 Category folders"    ) settings_change_var "CATEGORY_DIR"     "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "5 Manufacturer folders") settings_change_var "MANUFACTURER_DIR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "6 Series folders"      ) settings_change_var "SERIES_DIR"       "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "7 Best-of folders"     ) settings_change_var "BEST_OF_DIR"      "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_ao_year_options() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_YEAR_DIR=("true" "false")
+    SETTINGS_OPTIONS_DECADES_DIR=("true" "false")
+
+    while true ; do
+        (
+            local YEAR_DIR="${SETTINGS_OPTIONS_YEAR_DIR[0]}"
+            local DECADES_DIR="${SETTINGS_OPTIONS_DECADE_DIR[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
+            load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 Year folders"
+            fi
+
+            if [[ "${YEAR_DIR}" == "true" ]] ; then
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Year Options" \
+                --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                    "1 Year folders"            "$(settings_menu_yesno_bool_text ${YEAR_DIR})" \
+                    "2 Decade folders"         "$(settings_menu_yesno_bool_text ${DECADES_DIR})" \
+                    "BACK"  "                                               " 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            else
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Year Options" \
+                --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                    "1 Year folders"            "$(settings_menu_yesno_bool_text ${YEAR_DIR})" \
+                    "BACK"  "                                               " 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            fi
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "1 Year folders" ) settings_change_var "YEAR_DIR"         "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "2 Decade folders"        ) settings_change_var "DECADES_DIR"         "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_ao_video_and_inputs_options() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_RESOLUTION_DIR=("true" "false")
+    SETTINGS_OPTIONS_ROTATION_DIR=("true" "false")
+    SETTINGS_OPTIONS_MOVE_INPUTS_DIR=("true" "false")
+    SETTINGS_OPTIONS_NUM_BUTTONS_DIR=("true" "false")
+    SETTINGS_OPTIONS_SPECIAL_CONTROLS_DIR=("true" "false")
+    SETTINGS_OPTIONS_NUM_CONTROLLERS_DIR=("true" "false")
+    SETTINGS_OPTIONS_COCKTAIL_DIR=("true" "false")
+    SETTINGS_OPTIONS_NUM_MONITORS_DIR=("true" "false")
+
+    while true ; do
+        (
+            local RESOLUTION_DIR="${SETTINGS_OPTIONS_RESOLUTION_DIR[0]}"
+            local ROTATION_DIR="${SETTINGS_OPTIONS_ROTATION_DIR[0]}"
+            local MOVE_INPUTS_DIR="${SETTINGS_OPTIONS_MOVE_INPUTS_DIR[0]}"
+            local NUM_BUTTONS_DIR="${SETTINGS_OPTIONS_NUM_BUTTONS_DIR[0]}"
+            local SPECIAL_CONTROLS_DIR="${SETTINGS_OPTIONS_SPECIAL_CONTROLS_DIR[0]}"
+            local NUM_CONTROLLERS_DIR="${SETTINGS_OPTIONS_NUM_CONTROLLERS_DIR[0]}"
+            local COCKTAIL_DIR="${SETTINGS_OPTIONS_COCKTAIL_DIR[0]}"
+            local NUM_MONITORS_DIR="${SETTINGS_OPTIONS_NUM_MONITORS_DIR[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
+            load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 Resolution options"
+            fi
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Video & Inputs Options" \
+                --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                "1 Resolution options"          "" \
+                "2 Rotation options"            "" \
+                "3 Move Inputs folders"         "$(settings_menu_yesno_bool_text ${MOVE_INPUTS_DIR})" \
+                "4 Num Buttons folders"         "$(settings_menu_yesno_bool_text ${NUM_BUTTONS_DIR})" \
+                "5 Special Inputs folders"      "$(settings_menu_yesno_bool_text ${SPECIAL_CONTROLS_DIR})" \
+                "6 Num Controllers folders"     "$(settings_menu_yesno_bool_text ${NUM_CONTROLLERS_DIR})" \
+                "7 Cockail folders"             "$(settings_menu_yesno_bool_text ${COCKTAIL_DIR})" \
+                "8 Num Monitors folders"        "$(settings_menu_yesno_bool_text ${NUM_MONITORS_DIR})" \
+                "BACK"  "                                               " 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "1 Resolution options"    ) settings_menu_ao_resolution_options ;;
+                "2 Rotation options" ) settings_menu_ao_rotation_options ;;
+                "3 Move Inputs folders"        ) settings_change_var "MOVE_INPUTS_DIR"         "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "4 Num Buttons folders"    ) settings_change_var "NUM_BUTTONS_DIR"     "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "5 Special Inputs folders") settings_change_var "SPECIAL_CONTROLS_DIR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "6 Num Controllers folders"      ) settings_change_var "NUM_CONTROLLERS_DIR"       "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "7 Cockail folders"     ) settings_change_var "COCKTAIL_DIR"      "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "8 Num Monitors folders"     ) settings_change_var "NUM_MONITORS_DIR"      "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_ao_resolution_options() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_RESOLUTION_DIR=("true" "false")
+    SETTINGS_OPTIONS_RESOLUTION_15KHZ=("true" "false")
+    SETTINGS_OPTIONS_RESOLUTION_24KHZ=("true" "false")
+    SETTINGS_OPTIONS_RESOLUTION_31KHZ=("true" "false")
+    SETTINGS_OPTIONS_ROTATION_270=("true" "false")
+    SETTINGS_OPTIONS_FLIP=("true" "false")
+    SETTINGS_OPTIONS_COCKTAIL_DIR=("true" "false")
+    SETTINGS_OPTIONS_NUM_MONITORS_DIR=("true" "false")
+
+    while true ; do
+        (
+            local RESOLUTION_DIR="${SETTINGS_OPTIONS_RESOLUTION_DIR[0]}"
+            local RESOLUTION_15KHZ="${SETTINGS_OPTIONS_RESOLUTION_15KHZ[0]}"
+            local RESOLUTION_24KHZ="${SETTINGS_OPTIONS_RESOLUTION_24KHZ[0]}"
+            local RESOLUTION_31KHZ="${SETTINGS_OPTIONS_RESOLUTION_31KHZ[0]}"
+            local ROTATION_270="${SETTINGS_OPTIONS_ROTATION_270[0]}"
+            local FLIP="${SETTINGS_OPTIONS_FLIP[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
+            load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 Resolution folders"
+            fi
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Resolution Options" \
+            --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                "1 Resolution folders"            "$(settings_menu_yesno_bool_text ${RESOLUTION_DIR})" \
+                "2 15 kHz Scan Rate"         "$(settings_menu_yesno_bool_text ${RESOLUTION_15KHZ})" \
+                "3 24 kHz Scan Rate"         "$(settings_menu_yesno_bool_text ${RESOLUTION_24KHZ})" \
+                "4 31 kHz Scan Rate"         "$(settings_menu_yesno_bool_text ${RESOLUTION_31KHZ})" \
+                "BACK"  "                                               " 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "1 Resolution folders" ) settings_change_var "RESOLUTION_DIR"         "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "2 15 kHz Scan Rate"        ) settings_change_var "RESOLUTION_15KHZ"         "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "3 24 kHz Scan Rate"    ) settings_change_var "RESOLUTION_24KHZ"     "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "4 31 kHz Scan Rate"      ) settings_change_var "RESOLUTION_31KHZ" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_ao_rotation_options() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_ROTATION_DIR=("true" "false")
+    SETTINGS_OPTIONS_ROTATION_0=("true" "false")
+    SETTINGS_OPTIONS_ROTATION_90=("true" "false")
+    SETTINGS_OPTIONS_ROTATION_180=("true" "false")
+    SETTINGS_OPTIONS_ROTATION_270=("true" "false")
+    SETTINGS_OPTIONS_FLIP=("true" "false")
+
+    while true ; do
+        (
+            local ROTATION_DIR="${SETTINGS_OPTIONS_ROTATION_DIR[0]}"
+            local ROTATION_0="${SETTINGS_OPTIONS_ROTATION_0[0]}"
+            local ROTATION_90="${SETTINGS_OPTIONS_ROTATION_90[0]}"
+            local ROTATION_180="${SETTINGS_OPTIONS_ROTATION_180[0]}"
+            local ROTATION_270="${SETTINGS_OPTIONS_ROTATION_270[0]}"
+            local FLIP="${SETTINGS_OPTIONS_FLIP[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
+            load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 Rotation folders"
+            fi
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Rotation Options" \
+            --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                "1 Rotation folders"            "$(settings_menu_yesno_bool_text ${ROTATION_DIR})" \
+                "2 Horizontal"         "$(settings_menu_yesno_bool_text ${ROTATION_0})" \
+                "3 Vertical Clockwise"         "$(settings_menu_yesno_bool_text ${ROTATION_90})" \
+                "4 Vertical Counter-Clockwise"      "$(settings_menu_yesno_bool_text ${ROTATION_270})" \
+                "5 Horizontal (reversed)"         "$(settings_menu_yesno_bool_text ${ROTATION_180})" \
+                "6 Flip"     "$(settings_menu_yesno_bool_text ${FLIP})" \
+                "BACK"  "                                               " 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "1 Rotation folders" ) settings_change_var "ROTATION_DIR"         "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "2 Horizontal"        ) settings_change_var "ROTATION_0"         "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "3 Vertical Clockwise"    ) settings_change_var "ROTATION_90"     "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "4 Vertical Counter-Clockwise") settings_change_var "ROTATION_270" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "5 Horizontal (reversed)"      ) settings_change_var "ROTATION_180" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "6 Flip"      ) settings_change_var "FLIP"       "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_ao_extra_software_options() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_HOMEBREW=("1" "0" "2")
+    SETTINGS_OPTIONS_BOOTLEG=("1" "0" "2")
+    SETTINGS_OPTIONS_HACKS=("1" "0" "2")
+    SETTINGS_OPTIONS_TRANSLATIONS=("1" "0" "2")
+    SETTINGS_OPTIONS_ENHANCEMENTS=("1" "0" "2")
+
+    while true ; do
+        (
+            local HOMEBREW="${SETTINGS_OPTIONS_HOMEBREW[0]}"
+            local BOOTLEG="${SETTINGS_OPTIONS_BOOTLEG[0]}"
+            local HACKS="${SETTINGS_OPTIONS_HACKS[0]}"
+            local TRANSLATIONS="${SETTINGS_OPTIONS_TRANSLATIONS[0]}"
+            local ENHANCEMENTS="${SETTINGS_OPTIONS_ENHANCEMENTS[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
+            load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 Hombrew"
+            fi
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Alpha Extra Software Options" \
+                --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
+                "1 Hombrew"          "$(settings_menu_boolflagpresence_text ${HOMEBREW} Hombrew)" \
+                "2 Bootleg"            "$(settings_menu_boolflagpresence_text ${BOOTLEG} Bootleg)" \
+                "3 Enhancements"      "$(settings_menu_boolflagpresence_text ${ENHANCEMENTS} Enhancements)" \
+                "4 Translations"         "$(settings_menu_boolflagpresence_text ${TRANSLATIONS} Translations)" \
+                "5 Hacks"         "$(settings_menu_boolflagpresence_text ${HACKS} Hacks)" \
+                "BACK"  "                                               " 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "1 Hombrew"    ) settings_change_var "HOMEBREW"     "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "2 Bootleg" ) settings_change_var "BOOTLEG"         "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "5 Hacks"        ) settings_change_var "HACKS"         "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "4 Translations"    ) settings_change_var "TRANSLATIONS"     "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "3 Enhancements") settings_change_var "ENHANCEMENTS" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
 settings_menu_misc() {
     local TMP=$(mktemp)
 
@@ -1966,7 +2637,7 @@ settings_menu_misc() {
                 "2 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
                 "3 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
                 "4 Clear All Cores" "Removes all CORES and MRA folders." \
-                "5 Arcade Organizer 2.0 Alpha" "Activated: ${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" \
+                "5 Arcade Organizer 2.0 Alpha" "$(settings_menu_yesno_bool_text ${ARCADE_ORGANIZER_2_ALPHA_ENABLED})" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -2243,6 +2914,23 @@ settings_menu_descr_text() {
     else
         echo "Settings loaded from '${INI_A}' and '${INI_B}'"
     fi
+}
+
+settings_menu_yesno_bool_text() {
+    local VALUE="${1}"
+    if [[ "${VALUE}" == "true" ]] ; then
+        echo "Yes"
+    else
+        echo "No"
+    fi
+}
+
+settings_menu_boolflagpresence_text() {
+    case "${1}" in
+        "0") echo "Ignore them entirely" ;;
+        "1") echo "Place them only on its ${2} folder" ;;
+        *) echo "Place them everywhere" ;;
+    esac
 }
 
 settings_try_add_ini_option() {
