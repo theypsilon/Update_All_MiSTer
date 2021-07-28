@@ -2519,7 +2519,7 @@ settings_menu_ao_rotation_options() {
                 "3 Vertical Clockwise"         "$(settings_menu_yesno_bool_text ${ROTATION_90})" \
                 "4 Vertical Counter-Clockwise"      "$(settings_menu_yesno_bool_text ${ROTATION_270})" \
                 "5 Horizontal (reversed)"         "$(settings_menu_yesno_bool_text ${ROTATION_180})" \
-                "6 Flip"     "$(settings_menu_yesno_bool_text ${FLIP})" \
+                "6 Cores with Flip in opposite Rotations"     "$(settings_menu_yesno_bool_text ${FLIP})" \
                 "BACK"  "                                               " 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -2534,7 +2534,7 @@ settings_menu_ao_rotation_options() {
                 "3 Vertical Clockwise"    ) settings_change_var "ROTATION_90"     "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
                 "4 Vertical Counter-Clockwise") settings_change_var "ROTATION_270" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
                 "5 Horizontal (reversed)"      ) settings_change_var "ROTATION_180" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
-                "6 Flip"      ) settings_change_var "FLIP"       "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "6 Cores with Flip in opposite Rotations"      ) settings_change_var "FLIP"       "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
                 *) echo > "${SETTINGS_TMP_BREAK}" ;;
             esac
         )
