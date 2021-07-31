@@ -518,9 +518,12 @@ arcade_paths() {
 delete_if_empty() {
     local DELETED_EMPTY_DIRS=()
     for dir in "${@}" ; do
-        if [ -d ${dir} ] && [ -z "$(ls -A ${dir})" ] ; then
-            rm -rf "${dir}"
-            DELETED_EMPTY_DIRS+=(${dir})
+        if [ -d "${dir}" ] ; then
+            local LS_RET=$(ls -A "${dir}")
+            if [ -z "${LS_RET}" ] ; then
+                rm -rf "${dir}"
+                DELETED_EMPTY_DIRS+=("${dir}")
+            fi
         fi
     done
 
@@ -790,7 +793,8 @@ run_update_all() {
         "${BASE_PATH}/_Arcade/mame" \
         "${BASE_PATH}/_Arcade/hbmame" \
         "${BASE_PATH}/_Arcade/mra_backup" \
-        "${BASE_PATH}/_Arcade/_Organized"
+        "${BASE_PATH}/_Arcade/_Organized" \
+        "${BASE_PATH}/_Arcade Organized"
 
     local EXIT_CODE=0
     if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
@@ -1924,6 +1928,7 @@ settings_menu_arcade_organizer() {
                         dialog --keep-window --msgbox "Organized folder doesn't exist" 5 35
                         set -e
                     fi
+                    delete_if_empty "${BASE_PATH}/_Arcade/_Organized" "${BASE_PATH}/_Arcade Organized" > /dev/null
                     ;;
                 *) echo > "${SETTINGS_TMP_BREAK}" ;;
             esac
@@ -2097,6 +2102,7 @@ settings_menu_ao_advanced_options() {
                             for p in "${ORGDIR_FOLDERS[@]}" ; do
                                 rm -rf "${p}"
                             done
+
                             set +e
                             dialog --keep-window --msgbox "Organized folder Cleared" 5 29
                             set -e
@@ -2110,6 +2116,7 @@ settings_menu_ao_advanced_options() {
                         dialog --keep-window --msgbox "Organized folder doesn't exist" 5 35
                         set -e
                     fi
+                    delete_if_empty "${BASE_PATH}/_Arcade/_Organized" "${BASE_PATH}/_Arcade Organized" > /dev/null
                     ;;
                 *) echo > "${SETTINGS_TMP_BREAK}" ;;
             esac
