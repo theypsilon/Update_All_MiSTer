@@ -1,5 +1,5 @@
 # MiSTer Updater script for PC (Windows and Linux)
-Download [*updater-pc.zip*](https://github.com/theypsilon/Update_All_MiSTer/releases/download/1.3/updater-pc.zip) and extract the contents on an **EMPTY** folder. Access the new *updater-pc* folder. On Windows execute *update_all_win.bat* or *update_all_win_db9_snac8.bat", on Linux execute *update_all_linux.sh*.
+Download [*updater-pc.zip*](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/updater-pc.zip) and extract the contents on an **EMPTY** folder. Access the new *updater-pc* folder. On Windows execute *update_all_win.bat* or *update_all_win_db9_snac8.bat", on Linux execute *update_all_linux.sh*.
 
 Any configuration file should be placed at *updater-pc/update_all.ini* before you execute anything. (optional)
 
