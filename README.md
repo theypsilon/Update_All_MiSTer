@@ -18,7 +18,7 @@ This script also contains some snippets from the __Updater script__ maintained b
 
 ## Setup
 
-Download this [ZIP file](https://github.com/theypsilon/Update_All_MiSTer/releases/download/1.3/update_all.zip) and extract `update_all.sh` to your `/Scripts` folder on your primary SD card.
+Download this [ZIP file](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all.zip) and extract `update_all.sh` to your `/Scripts` folder on your primary SD card.
 
 Then turn on your __MiSTer__, go to the _Scripts_ menu and run this script from there.
 
@@ -29,9 +29,9 @@ It will take around 30 minutes the first time you run it, but later runs should 
 ## Alternative Setups
 
 Other setups that might be useful for you:
-- [JTBIN ZIP](https://github.com/theypsilon/Update_All_MiSTer/releases/download/1.3/update_all_jtbin.zip): Users that would like to download @jotego betas by default, can use this setup instead. You may also enable this option from the `Settings Screen` in the "Jotego Updater" submenu.
-- [usb0 ZIP](https://github.com/theypsilon/Update_All_MiSTer/releases/download/1.3/update_all_usb0.zip): For people using USB as primary storage. You will be able to run this script from there and install all cores, roms, and MRAs on `/media/usb0`.
-- [DB9/SNAC8 ZIP](https://github.com/theypsilon/Update_All_MiSTer/releases/download/1.3/update_all_db9_snac8.zip): Enables [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers.
+- [JTBIN ZIP](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all_jtbin.zip): Users that would like to download @jotego betas by default, can use this setup instead. You may also enable this option from the `Settings Screen` in the "Jotego Updater" submenu.
+- [usb0 ZIP](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all_usb0.zip): For people using USB as primary storage. You will be able to run this script from there and install all cores, roms, and MRAs on `/media/usb0`.
+- [DB9/SNAC8 ZIP](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all_db9_snac8.zip): Enables [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers.
 
 
 NOTE: You should extract also all the INI files contained in these.
