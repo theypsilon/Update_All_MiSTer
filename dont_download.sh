@@ -81,14 +81,14 @@ CURRENT_DIR="$(dirname ${EXPORTED_INI_PATH})/"
 LOG_FILENAME="$(basename ${EXPORTED_INI_PATH%.*}.log)"
 SETTINGS_ON_FILENAME="settings-on"
 WORK_OLD_PATH="/media/fat/Scripts/.update_all"
-WORK_NEW_PATH="/media/fat/Scripts/.cache/update_all"
+WORK_NEW_PATH="/media/fat/Scripts/.config/update_all"
 WORK_PATH=
 MISTER_MAIN_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater"
 JOTEGO_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_jt"
 UNOFFICIAL_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_unofficials"
-MAME_GETTER_LASTRUN_PATH="/media/fat/Scripts/.cache/mame-getter/last_run"
-HBMAME_GETTER_LASTRUN_PATH="/media/fat/Scripts/.cache/hbmame-getter/last_run"
-ARCADE_ORGANIZER_INSTALLED_NAMES_TXT="/media/fat/Scripts/.cache/arcade-organizer/installed_names.txt"
+MAME_GETTER_LASTRUN_PATH="/media/fat/Scripts/.config/mame-getter/last_run"
+HBMAME_GETTER_LASTRUN_PATH="/media/fat/Scripts/.config/hbmame-getter/last_run"
+ARCADE_ORGANIZER_INSTALLED_NAMES_TXT="/media/fat/Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_FOLDER_OPTION_1="/media/fat/_Arcade/_Organized"
 ARCADE_ORGANIZER_FOLDER_OPTION_2="/media/fat/_Arcade"
 ARCADE_ORGANIZER_FOLDER_OPTION_3="/media/fat/_Arcade Organized"
@@ -122,6 +122,17 @@ INI_REFERENCES=( \
     "NAMES_TXT_UPDATER_INI" \
     "ARCADE_ORGANIZER_INI" \
 )
+
+CACHE_UPDATE_ALL_PATH="/media/fat/Scripts/.cache/update_all"
+CACHE_MAME_GETTER_PATH="/media/fat/Scripts/.cache/mame-getter"
+CACHE_HBMAME_GETTER_PATH="/media/fat/Scripts/.cache/hbmame-getter"
+CACHE_ARCADE_ORGANIZER_PATH="/media/fat/Scripts/.cache/arcade-organizer"
+
+CONFIG_FOLDER_PATH="/media/fat/Scripts/.config"
+CONFIG_UPDATE_ALL_PATH="/media/fat/Scripts/.config/update_all"
+CONFIG_MAME_GETTER_PATH="/media/fat/Scripts/.config/mame-getter"
+CONFIG_HBMAME_GETTER_PATH="/media/fat/Scripts/.config/hbmame-getter"
+CONFIG_ARCADE_ORGANIZER_PATH="/media/fat/Scripts/.config/arcade-organizer"
 
 enable_global_log() {
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
@@ -268,7 +279,7 @@ initialize() {
         fi
         cd "${CURRENT_DIR}"
     fi
-    
+
     if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] && [ -d "${BASE_PATH}/Scripts/" ] ; then
         local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
         if [ ! -f "${OLD_SCRIPT_PATH}" ] || [[ "$(md5sum ${OLD_SCRIPT_PATH} | awk '{print $1}')" != "${UPDATE_ALL_LAUNCHER_MD5}" ]] ; then
@@ -291,6 +302,12 @@ initialize() {
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
         EXPORTED_INI_PATH="update_all.ini"
     fi
+
+    mkdir -p "${CONFIG_FOLDER_PATH}"
+    [ -d "${CACHE_UPDATE_ALL_PATH}" ] && mv "${CACHE_UPDATE_ALL_PATH}" "${CONFIG_UPDATE_ALL_PATH}"
+    [ -d "${CACHE_MAME_GETTER_PATH}" ] && mv "${CACHE_MAME_GETTER_PATH}" "${CONFIG_MAME_GETTER_PATH}"
+    [ -d "${CACHE_HBMAME_GETTER_PATH}" ] && mv "${CACHE_HBMAME_GETTER_PATH}" "${CONFIG_HBMAME_GETTER_PATH}"
+    [ -d "${CACHE_ARCADE_ORGANIZER_PATH}" ] && mv "${CACHE_ARCADE_ORGANIZER_PATH}" "${CONFIG_ARCADE_ORGANIZER_PATH}"
 
     WORK_PATH="${WORK_OLD_PATH}"
     if [ ! -d "${WORK_PATH}" ] ; then
@@ -794,7 +811,8 @@ run_update_all() {
         "${BASE_PATH}/_Arcade/hbmame" \
         "${BASE_PATH}/_Arcade/mra_backup" \
         "${BASE_PATH}/_Arcade/_Organized" \
-        "${BASE_PATH}/_Arcade Organized"
+        "${BASE_PATH}/_Arcade Organized" \
+        "/media/fat/Scripts/.cache"
 
     local EXIT_CODE=0
     if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
