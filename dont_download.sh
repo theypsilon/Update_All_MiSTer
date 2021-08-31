@@ -104,6 +104,7 @@ GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH=".update_all.log"
 UPDATE_ALL_URL="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh"
 MISTER_DEVEL_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
+MISTER_DEVEL_LINUX_ONLY_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_Linux_Only_MiSTer/master/mister_updater.sh"
 DOWNLOADER_URL=""
 MISTER_DB9_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-DB9/Updater_script_MiSTer_DB9/master/mister_updater.sh"
 JOTEGO_UPDATER_URL="https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh"
@@ -425,10 +426,11 @@ run_updater_script() {
 
     sed -i "s%INI_PATH=%INI_PATH=\"${SCRIPT_INI}\" #%g" ${SCRIPT_PATH}
     sed -i 's/${AUTOREBOOT}/false/g' ${SCRIPT_PATH}
-    sed -i 's/--max-time 120/--max-time 240/g' ${SCRIPT_PATH}
+    if [[ "${SCRIPT_URL}" != "${MISTER_DEVEL_LINUX_ONLY_UPDATER_URL}" ]] ; then
+        sed -i 's/UPDATE_LINUX="true"/UPDATE_LINUX="false"/g' ${SCRIPT_PATH}
+    fi
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
         sed -i 's/\/media\/fat/\.\./g ' ${SCRIPT_PATH}
-        sed -i 's/UPDATE_LINUX="true"/UPDATE_LINUX="false"/g' ${SCRIPT_PATH}
     fi
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
         sed -i "s/ *60)/77)/g" ${SCRIPT_PATH}
@@ -784,21 +786,7 @@ run_update_all() {
             fi
         else
             select_main_updater
-            if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] ; then
-                cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}"
-                echo "KEEP_USBMOUNT_CONF: ${USBMOUNT_CONF_PATH} saved."
-            fi
             run_updater_script ${SELECT_MAIN_UPDATER_RET} ${MAIN_UPDATER_INI}
-            if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] && ! diff -q "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}" ; then
-                cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_PATH}.backup"
-                cp "${USBMOUNT_CONF_TMP}" "${USBMOUNT_CONF_PATH}"
-                echo "${USBMOUNT_CONF_PATH} was replaced by the Main Updater!"
-                echo "Restoring old version because KEEP_USBMOUNT_CONF=\"true\""
-                echo "There is a backup for the newest version available at '${USBMOUNT_CONF_PATH}.backup' in case you want to revert this operation."
-                sleep ${WAIT_TIME_FOR_READING}
-                sleep ${WAIT_TIME_FOR_READING}
-                sleep ${WAIT_TIME_FOR_READING}
-            fi
             if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
                 FAILING_UPDATERS+=("${MISTER_MAIN_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
             fi
@@ -920,15 +908,30 @@ run_update_all() {
         "${BASE_PATH}/_Arcade Organized" \
         "/media/fat/Scripts/.cache"
 
-    if [[ "${MAIN_UPDATER}" == "true" ]] && [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+    if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${MAIN_UPDATER}" == "true" ]] ; then
         if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] ; then
             cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}"
             echo "KEEP_USBMOUNT_CONF: ${USBMOUNT_CONF_PATH} saved."
         fi
-        export UPDATE_LINUX="only"
-        unset DEFAULT_DB_URL
-        unset DEFAULT_DB_ID
-        run_downloader_script "${DOWNLOADER_URL}" "Linux Update"
+        
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            export UPDATE_LINUX="only"
+            unset DEFAULT_DB_URL
+            unset DEFAULT_DB_ID
+            run_downloader_script "${DOWNLOADER_URL}" "Linux Update"
+            if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log")
+            fi
+        else
+            run_updater_script ${MISTER_DEVEL_LINUX_ONLY_UPDATER_URL} ${MAIN_UPDATER_INI}
+            if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("${MISTER_MAIN_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
+            fi
+            sleep 1
+            if tail -n 30 ${GLOG_TEMP} | grep -q "You should reboot" ; then
+                REBOOT_NEEDED="true"
+            fi
+        fi
         if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] && ! diff -q "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}" ; then
             sync
             cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_PATH}.backup"
@@ -940,9 +943,6 @@ run_update_all() {
             sleep ${WAIT_TIME_FOR_READING}
             sleep ${WAIT_TIME_FOR_READING}
             sleep ${WAIT_TIME_FOR_READING}
-        fi
-        if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log")
         fi
     fi
 
