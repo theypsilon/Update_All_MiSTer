@@ -26,6 +26,7 @@ set_default_options() {
     BASE_PATH="/media/fat"
 
     ENCC_FORKS="false" # Possible values: "true", "false"
+    DOWNLOADER_WHEN_POSSIBLE="false" # Possible values: "true", "false"
 
     MAIN_UPDATER="true"
     MAIN_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
@@ -38,6 +39,8 @@ set_default_options() {
 
     LLAPI_UPDATER="false"
     LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
+
+    ARCADE_OFFSET_DOWNLOADER="false"
 
     BIOS_GETTER="true"
     BIOS_GETTER_INI="update_bios-getter.ini"
@@ -84,6 +87,7 @@ WORK_OLD_PATH="/media/fat/Scripts/.update_all"
 WORK_NEW_PATH="/media/fat/Scripts/.config/update_all"
 WORK_PATH=
 MISTER_MAIN_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater"
+MISTER_DOWNLOADER_WORK_FOLDER="/media/fat/Scripts/.config/downloader"
 JOTEGO_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_jt"
 UNOFFICIAL_UPDATER_WORK_FOLDER="/media/fat/Scripts/.mister_updater_unofficials"
 MAME_GETTER_LASTRUN_PATH="/media/fat/Scripts/.config/mame-getter/last_run"
@@ -100,6 +104,7 @@ GLOG_TEMP="/tmp/tmp.global.${LOG_FILENAME}"
 GLOG_PATH=".update_all.log"
 UPDATE_ALL_URL="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh"
 MISTER_DEVEL_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-devel/Updater_script_MiSTer/master/mister_updater.sh"
+DOWNLOADER_URL=""
 MISTER_DB9_UPDATER_URL="https://raw.githubusercontent.com/MiSTer-DB9/Updater_script_MiSTer_DB9/master/mister_updater.sh"
 JOTEGO_UPDATER_URL="https://raw.githubusercontent.com/jotego/Updater_script_MiSTer/master/mister_updater.sh"
 UNOFFICIAL_UPDATER_URL="https://raw.githubusercontent.com/theypsilon/Updater_script_MiSTer_Unofficial/master/mister_updater.sh"
@@ -122,6 +127,17 @@ INI_REFERENCES=( \
     "NAMES_TXT_UPDATER_INI" \
     "ARCADE_ORGANIZER_INI" \
 )
+
+DOWNLOADER_DB9_DB_URL=""
+DOWNLOADER_JT_BETAS_DB_URL=""
+DOWNLOADER_JT_STABLE_DB_URL=""
+DOWNLOADER_JT_DB_ID="jt"
+DOWNLOADER_LLAPI_DB_URL=""
+DOWNLOADER_LLAPI_DB_ID="distribution_llapi"
+DOWNLOADER_UNOFFICIALS_DB_URL=""
+DOWNLOADER_UNOFFICIALS_DB_ID="distribution_unofficial"
+DOWNLOADER_ARCADE_OFFSET_DB_URL=""
+DOWNLOADER_ARCADE_OFFSET_DB_ID="arcade_offset"
 
 CACHE_UPDATE_ALL_PATH="/media/fat/Scripts/.cache/update_all"
 CACHE_MAME_GETTER_PATH="/media/fat/Scripts/.cache/mame-getter"
@@ -323,6 +339,7 @@ initialize() {
                 echo "JOTEGO_UPDATER_INI=\"update_jtcores.ini\"" >> "${EXPORTED_INI_PATH}"
                 echo "UNOFFICIAL_UPDATER_INI=\"update_unofficials.ini\"" >> "${EXPORTED_INI_PATH}"
                 echo "LLAPI_UPDATER_INI=\"update_llapi.ini\"" >> "${EXPORTED_INI_PATH}"
+                #echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
             fi
         fi
     fi
@@ -430,6 +447,34 @@ run_updater_script() {
     set +e
     cat ${SCRIPT_PATH} | bash -
     RUN_UPDATER_SCRIPT_RET=$?
+    set -e
+
+    sleep ${WAIT_TIME_FOR_READING}
+}
+
+RUN_DOWNLOADER_SCRIPT_RET=0
+run_downloader_script() {
+    local SCRIPT_URL="${1}"
+
+    draw_separator
+
+    if [[ "${2:-}" != "" ]] ; then
+        echo "Running ${2:-}"
+        echo
+    fi
+
+    local SCRIPT_PATH="/tmp/ua_current_updater.sh"
+    rm ${SCRIPT_PATH} 2> /dev/null || true
+
+    fetch_or_exit "${SCRIPT_PATH}" "${SCRIPT_URL}"
+    chmod +x ${SCRIPT_PATH}
+
+    export DOWNLOADER_LAUNCHER_PATH="downloader.ini"
+    export ALLOW_REBOOT="0"
+
+    set +e
+    ${SCRIPT_PATH}
+    RUN_DOWNLOADER_SCRIPT_RET=$?
     set -e
 
     sleep ${WAIT_TIME_FOR_READING}
@@ -613,21 +658,28 @@ install_scripts() {
 
 sequence() {
     echo "Sequence:"
+    local UPDATER_KIND="Updater"
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+        UPDATER_KIND="Downloader"
+    fi
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
         if [[ "${ENCC_FORKS}" == "true" ]] ; then
-            echo "- Main Updater: DB9 / SNAC8"
+            echo "- Main ${UPDATER_KIND}: DB9 / SNAC8"
         else
-            echo "- Main Updater: MiSTer-devel"
+            echo "- Main ${UPDATER_KIND}: MiSTer-devel"
         fi
     fi
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        echo "- Jotego Updater"
+        echo "- Jotego ${UPDATER_KIND}"
     fi
     if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-        echo "- Unofficial Updater"
+        echo "- Unofficial ${UPDATER_KIND}"
     fi
     if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
-        echo "- LLAPI Updater"
+        echo "- LLAPI ${UPDATER_KIND}"
+    fi
+    if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
+        echo "- Arcade Offset Downloader"
     fi
     if [[ "${BIOS_GETTER}" == "true" ]] ; then
         echo "- BIOS Getter"
@@ -721,49 +773,103 @@ run_update_all() {
     FAILING_UPDATERS=()
 
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
-        select_main_updater
-        if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] ; then
-            cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}"
-            echo "KEEP_USBMOUNT_CONF: ${USBMOUNT_CONF_PATH} saved."
-        fi
-        run_updater_script ${SELECT_MAIN_UPDATER_RET} ${MAIN_UPDATER_INI}
-        if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] && ! diff -q "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}" ; then
-            cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_PATH}.backup"
-            cp "${USBMOUNT_CONF_TMP}" "${USBMOUNT_CONF_PATH}"
-            echo "${USBMOUNT_CONF_PATH} was replaced by the Main Updater!"
-            echo "Restoring old version because KEEP_USBMOUNT_CONF=\"true\""
-            echo "There is a backup for the newest version available at '${USBMOUNT_CONF_PATH}.backup' in case you want to revert this operation."
-            sleep ${WAIT_TIME_FOR_READING}
-            sleep ${WAIT_TIME_FOR_READING}
-            sleep ${WAIT_TIME_FOR_READING}
-        fi
-        if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("${MISTER_MAIN_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
-        fi
-        sleep 1
-        if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && tail -n 30 ${GLOG_TEMP} | grep -q "You should reboot" ; then
-            REBOOT_NEEDED="true"
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            export UPDATE_LINUX="false"
+            if [[ "${ENCC_FORKS}" == "true" ]] ; then
+                export DEFAULT_DB_URL="${DOWNLOADER_DB9_DB_URL}"
+            fi
+            run_downloader_script "${DOWNLOADER_URL}" "MiSTer Downloader"
+            if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("MiSTer Downloader")
+            fi
+        else
+            select_main_updater
+            if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] ; then
+                cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}"
+                echo "KEEP_USBMOUNT_CONF: ${USBMOUNT_CONF_PATH} saved."
+            fi
+            run_updater_script ${SELECT_MAIN_UPDATER_RET} ${MAIN_UPDATER_INI}
+            if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] && ! diff -q "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}" ; then
+                cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_PATH}.backup"
+                cp "${USBMOUNT_CONF_TMP}" "${USBMOUNT_CONF_PATH}"
+                echo "${USBMOUNT_CONF_PATH} was replaced by the Main Updater!"
+                echo "Restoring old version because KEEP_USBMOUNT_CONF=\"true\""
+                echo "There is a backup for the newest version available at '${USBMOUNT_CONF_PATH}.backup' in case you want to revert this operation."
+                sleep ${WAIT_TIME_FOR_READING}
+                sleep ${WAIT_TIME_FOR_READING}
+                sleep ${WAIT_TIME_FOR_READING}
+            fi
+            if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("${MISTER_MAIN_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
+            fi
+            sleep 1
+            if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && tail -n 30 ${GLOG_TEMP} | grep -q "You should reboot" ; then
+                REBOOT_NEEDED="true"
+            fi
         fi
     fi
 
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        run_updater_script "${JOTEGO_UPDATER_URL}" "${JOTEGO_UPDATER_INI}"
-        if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("${JOTEGO_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            settings_reset_domain_ini_files
+            settings_add_domain_ini_file "update_jtcores.ini"
+            load_vars_from_ini "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" "DOWNLOAD_BETA_CORES"
+            if [[ "${DOWNLOAD_BETA_CORES:-false}" == "true" ]] ; then
+                export DEFAULT_DB_URL="${DOWNLOADER_JT_BETAS_DB_URL}"
+            else
+                export DEFAULT_DB_URL="${DOWNLOADER_JT_STABLE_DB_URL}"
+            fi
+            export DEFAULT_DB_ID="${DOWNLOADER_JT_DB_ID}"
+            run_downloader_script "${DOWNLOADER_URL}" "JT Downloader"
+            if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("JT Downloader")
+            fi
+        else
+            run_updater_script "${JOTEGO_UPDATER_URL}" "${JOTEGO_UPDATER_INI}"
+            if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("${JOTEGO_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
+            fi
         fi
     fi
 
     if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-        run_updater_script "${UNOFFICIAL_UPDATER_URL}" "${UNOFFICIAL_UPDATER_INI}"
-        if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("${UNOFFICIAL_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            export DEFAULT_DB_URL="${DOWNLOADER_UNOFFICIALS_DB_URL}"
+            export DEFAULT_DB_ID="${DOWNLOADER_UNOFFICIALS_DB_ID}"
+            run_downloader_script "${DOWNLOADER_URL}" "Unofficial Downloader"
+            if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("Unofficial Downloader")
+            fi
+        else
+            run_updater_script "${UNOFFICIAL_UPDATER_URL}" "${UNOFFICIAL_UPDATER_INI}"
+            if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("${UNOFFICIAL_UPDATER_WORK_FOLDER}/${LOG_FILENAME}")
+            fi
         fi
     fi
 
     if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
-        run_updater_script "${LLAPI_UPDATER_URL}" "${LLAPI_UPDATER_INI}"
-        if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("LLAPI")
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            export DEFAULT_DB_URL="${DOWNLOADER_LLAPI_DB_URL}"
+            export DEFAULT_DB_ID="${DOWNLOADER_LLAPI_DB_ID}"
+            run_downloader_script "${DOWNLOADER_URL}" "LLAPI Downloader"
+            if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("LLAPI Downloader")
+            fi
+        else
+            run_updater_script "${LLAPI_UPDATER_URL}" "${LLAPI_UPDATER_INI}"
+            if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("LLAPI")
+            fi
+        fi
+    fi
+
+    if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
+        export DEFAULT_DB_URL="${DOWNLOADER_ARCADE_OFFSET_DB_URL}"
+        export DEFAULT_DB_ID="${DOWNLOADER_ARCADE_OFFSET_DB_ID}"
+        run_downloader_script "${DOWNLOADER_URL}" "Arcade Offset Downloader"
+        if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("Arcade Offset Downloader")
         fi
     fi
 
@@ -814,6 +920,32 @@ run_update_all() {
         "${BASE_PATH}/_Arcade Organized" \
         "/media/fat/Scripts/.cache"
 
+    if [[ "${MAIN_UPDATER}" == "true" ]] && [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+        if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] ; then
+            cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}"
+            echo "KEEP_USBMOUNT_CONF: ${USBMOUNT_CONF_PATH} saved."
+        fi
+        export UPDATE_LINUX="only"
+        unset DEFAULT_DB_URL
+        unset DEFAULT_DB_ID
+        run_downloader_script "${DOWNLOADER_URL}" "Linux Update"
+        if [[ "${KEEP_USBMOUNT_CONF}" == "true" ]] && ! diff -q "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_TMP}" ; then
+            sync
+            cp "${USBMOUNT_CONF_PATH}" "${USBMOUNT_CONF_PATH}.backup"
+            cp "${USBMOUNT_CONF_TMP}" "${USBMOUNT_CONF_PATH}"
+            sync
+            echo "${USBMOUNT_CONF_PATH} was replaced by the Main Downloader!"
+            echo "Restoring old version because KEEP_USBMOUNT_CONF=\"true\""
+            echo "There is a backup for the newest version available at '${USBMOUNT_CONF_PATH}.backup' in case you want to revert this operation."
+            sleep ${WAIT_TIME_FOR_READING}
+            sleep ${WAIT_TIME_FOR_READING}
+            sleep ${WAIT_TIME_FOR_READING}
+        fi
+        if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
+            FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log")
+        fi
+    fi
+
     local EXIT_CODE=0
     if [ ${#FAILING_UPDATERS[@]} -ge 1 ] ; then
         echo "There were some errors in the Updaters."
@@ -843,6 +975,7 @@ run_update_all() {
     fi
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && { \
+        [ -f /tmp/MiSTer_downloader_needs_reboot ] || \
         [ -f /tmp/ua_reboot_needed ] || \
         [[ "${REBOOT_NEEDED}" == "true" ]] ; \
     } ; then
@@ -934,6 +1067,7 @@ settings_menu_update_all() {
             local NAMES_TXT_UPDATER="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER[0]}"
             local ENCC_FORKS="${SETTINGS_OPTIONS_ENCC_FORKS[0]}"
             local ARCADE_ORGANIZER_2_ALPHA_ENABLED="false"
+            local DOWNLOADER_WHEN_POSSIBLE="false"
 
             load_ini_file "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
 
@@ -941,11 +1075,18 @@ settings_menu_update_all() {
                 ARCADE_ORGANIZER="false"
             fi
 
+            local SCRIPT_TYPE=
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+                SCRIPT_TYPE="Downloader"
+            else
+                SCRIPT_TYPE="Updater"
+            fi
+
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
             else
-                DEFAULT_SELECTION="1 Main Updater"
+                DEFAULT_SELECTION="1 Main ${SCRIPT_TYPE}"
             fi
 
             set +e
@@ -954,10 +1095,10 @@ settings_menu_update_all() {
                 --cancel-label "Abort" --ok-label "Select" --extra-button --extra-label "Toggle" \
                 --title "Update All ${UPDATE_ALL_VERSION} Settings" \
                 --menu "Settings loaded from '$(settings_normalize_ini_file ${EXPORTED_INI_PATH})'" 19 75 25 \
-                "1 Main Updater"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores from $([[ ${ENCC_FORKS} == 'true' ]] && echo 'MiSTer-DB9' || echo 'MiSTer-devel')" \
-                "2 Jotego Updater" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego" \
-                "3 Unofficial Updater"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
-                "4 LLAPI Updater" "$(settings_active_tag ${LLAPI_UPDATER}) Forks adapted to LLAPI" \
+                "1 Main ${SCRIPT_TYPE}"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores from $([[ ${ENCC_FORKS} == 'true' ]] && echo 'MiSTer-DB9' || echo 'MiSTer-devel')" \
+                "2 Jotego ${SCRIPT_TYPE}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego" \
+                "3 Unofficial ${SCRIPT_TYPE}"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
+                "4 LLAPI ${SCRIPT_TYPE}" "$(settings_active_tag ${LLAPI_UPDATER}) Forks adapted to LLAPI" \
                 "5 BIOS Getter" "$(settings_active_tag ${BIOS_GETTER}) BIOS files for your systems" \
                 "6 MAME Getter" "$(settings_active_tag ${MAME_GETTER}) MAME ROMs for arcades" \
                 "7 HBMAME Getter" "$(settings_active_tag ${HBMAME_GETTER}) HBMAME ROMs for arcades" \
@@ -972,10 +1113,10 @@ settings_menu_update_all() {
             case "${DEFAULT_SELECTION}" in
                 "0")
                     case "$(cat ${TMP})" in
-                        "1 Main Updater") settings_menu_main_updater ;;
-                        "2 Jotego Updater") settings_menu_jotego_updater ;;
-                        "3 Unofficial Updater") settings_menu_unofficial_updater ;;
-                        "4 LLAPI Updater") settings_menu_llapi_updater ;;
+                        "1 Main ${SCRIPT_TYPE}") settings_menu_main_updater ;;
+                        "2 Jotego ${SCRIPT_TYPE}") settings_menu_jotego_updater ;;
+                        "3 Unofficial ${SCRIPT_TYPE}") settings_menu_unofficial_updater ;;
+                        "4 LLAPI ${SCRIPT_TYPE}") settings_menu_llapi_updater ;;
                         "5 BIOS Getter") settings_menu_bios_getter ;;
                         "6 MAME Getter") settings_menu_mame_getter ;;
                         "7 HBMAME Getter") settings_menu_hbmame_getter ;;
@@ -995,10 +1136,10 @@ settings_menu_update_all() {
                     ;;
                 "3")
                     case "$(cat ${TMP})" in
-                        "1 Main Updater") settings_change_var "MAIN_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                        "2 Jotego Updater") settings_change_var "JOTEGO_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                        "3 Unofficial Updater") settings_change_var "UNOFFICIAL_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                        "4 LLAPI Updater") settings_change_var "LLAPI_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "1 Main ${SCRIPT_TYPE}") settings_change_var "MAIN_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "2 Jotego ${SCRIPT_TYPE}") settings_change_var "JOTEGO_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "3 Unofficial ${SCRIPT_TYPE}") settings_change_var "UNOFFICIAL_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "4 LLAPI ${SCRIPT_TYPE}") settings_change_var "LLAPI_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "5 BIOS Getter") settings_change_var "BIOS_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "6 MAME Getter") settings_change_var "MAME_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "7 HBMAME Getter") settings_change_var "HBMAME_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
@@ -1053,8 +1194,9 @@ settings_menu_main_updater() {
             local UPDATE_CHEATS="${SETTINGS_OPTIONS_UPDATE_CHEATS[0]}"
             local UPDATE_LINUX="${SETTINGS_OPTIONS_UPDATE_LINUX[0]}"
             local MAME_ALT_ROMS="${SETTINGS_OPTIONS_MAME_ALT_ROMS[0]}"
+            local DOWNLOADER_WHEN_POSSIBLE="false"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "MAIN_UPDATER" "MAIN_UPDATER_INI" "ENCC_FORKS"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "MAIN_UPDATER" "MAIN_UPDATER_INI" "ENCC_FORKS" "DOWNLOADER_WHEN_POSSIBLE"
             load_vars_from_ini "$(settings_domain_ini_file ${MAIN_UPDATER_INI})" "DOWNLOAD_NEW_CORES" "MAME_ALT_ROMS" "UPDATE_CHEATS" "UPDATE_LINUX"
 
             local DEFAULT_SELECTION=
@@ -1066,20 +1208,31 @@ settings_menu_main_updater() {
 
             local ACTIVATE="1 $(settings_active_action ${MAIN_UPDATER})"
 
-            set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Main Updater Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${MAIN_UPDATER_INI})" 16 75 25 \
-                "${ACTIVATE}" "Activated: ${MAIN_UPDATER}" \
-                "2 Cores versions" "$([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8 forks with ENCC' || echo 'Official Cores from MiSTer-devel')" \
-                "3 INI file"  "$(settings_normalize_ini_file ${MAIN_UPDATER_INI})" \
-                "4 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
-                "5 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
-                "6 Install Cheats" "${UPDATE_CHEATS}" \
-                "7 Install Linux updates" "${UPDATE_LINUX}" \
-                "8 Force full resync" "Clears \"last_successful_run\" file et al" \
-                "BACK"  "" 2> ${TMP}
-            DEFAULT_SELECTION="$?"
-            set -e
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Main Downloader Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${EXPORTED_INI_PATH})" 10 75 25 \
+                    "${ACTIVATE}" "Activated: ${MAIN_UPDATER}" \
+                    "2 Cores versions" "$([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8 forks with ENCC' || echo 'Official Cores from MiSTer-devel')" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            else
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Main Updater Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${MAIN_UPDATER_INI})" 16 75 25 \
+                    "${ACTIVATE}" "Activated: ${MAIN_UPDATER}" \
+                    "2 Cores versions" "$([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8 forks with ENCC' || echo 'Official Cores from MiSTer-devel')" \
+                    "3 INI file"  "$(settings_normalize_ini_file ${MAIN_UPDATER_INI})" \
+                    "4 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
+                    "5 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
+                    "6 Install Cheats" "${UPDATE_CHEATS}" \
+                    "7 Install Linux updates" "${UPDATE_LINUX}" \
+                    "8 Force full resync" "Clears \"last_successful_run\" file et al" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            fi
 
             if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
@@ -1226,18 +1379,28 @@ settings_menu_jotego_updater() {
             fi
 
             local ACTIVATE="1 $(settings_active_action ${JOTEGO_UPDATER})"
-
-            set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Jotego Updater Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 13 75 25 \
-                "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
-                "2 INI file"  "$(settings_normalize_ini_file ${JOTEGO_UPDATER_INI})" \
-                "3 Install Beta Cores" "${DOWNLOAD_BETA_CORES}" \
-                "4 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
-                "5 Force full resync" "Clears \"last_successful_run\" file et al" \
-                "BACK"  "" 2> ${TMP}
-            DEFAULT_SELECTION="$?"
-            set -e
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Jotego Downloader Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 10 75 25 \
+                    "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
+                    "3 Install Beta Cores" "${DOWNLOAD_BETA_CORES}" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            else
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Jotego Updater Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 13 75 25 \
+                    "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
+                    "2 INI file"  "$(settings_normalize_ini_file ${JOTEGO_UPDATER_INI})" \
+                    "3 Install Beta Cores" "${DOWNLOAD_BETA_CORES}" \
+                    "4 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
+                    "5 Force full resync" "Clears \"last_successful_run\" file et al" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            fi
 
             if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
@@ -1346,17 +1509,27 @@ settings_menu_unofficial_updater() {
 
             local ACTIVATE="1 $(settings_active_action ${UNOFFICIAL_UPDATER})"
 
-            set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Unofficial Updater Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${UNOFFICIAL_UPDATER_INI})" 13 75 25 \
-                "${ACTIVATE}" "Activated: ${UNOFFICIAL_UPDATER}" \
-                "2 INI file"  "$(settings_normalize_ini_file ${UNOFFICIAL_UPDATER_INI})" \
-                "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
-                "4 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
-                "5 Force full resync" "Clears \"last_successful_run\" file" \
-                "BACK"  "" 2> ${TMP}
-            DEFAULT_SELECTION="$?"
-            set -e
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Unofficial Downloader Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${EXPORTED_INI_PATH})" 9 75 25 \
+                    "${ACTIVATE}" "Activated: ${UNOFFICIAL_UPDATER}" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            else
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Unofficial Updater Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${UNOFFICIAL_UPDATER_INI})" 13 75 25 \
+                    "${ACTIVATE}" "Activated: ${UNOFFICIAL_UPDATER}" \
+                    "2 INI file"  "$(settings_normalize_ini_file ${UNOFFICIAL_UPDATER_INI})" \
+                    "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
+                    "4 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
+                    "5 Force full resync" "Clears \"last_successful_run\" file" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            fi
 
             if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
@@ -1427,15 +1600,25 @@ settings_menu_llapi_updater() {
 
             local ACTIVATE="1 $(settings_active_action ${LLAPI_UPDATER})"
 
-            set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "LLAPI Updater Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${LLAPI_UPDATER_INI})" 11 75 25 \
-                "${ACTIVATE}" "Activated: ${LLAPI_UPDATER}" \
-                "2 INI file"  "$(settings_normalize_ini_file ${LLAPI_UPDATER_INI})" \
-                "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
-                "BACK"  "" 2> ${TMP}
-            DEFAULT_SELECTION="$?"
-            set -e
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "LLAPI Downloader Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${EXPORTED_INI_PATH})" 9 75 25 \
+                    "${ACTIVATE}" "Activated: ${LLAPI_UPDATER}" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            else
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "LLAPI Updater Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${LLAPI_UPDATER_INI})" 11 75 25 \
+                    "${ACTIVATE}" "Activated: ${LLAPI_UPDATER}" \
+                    "2 INI file"  "$(settings_normalize_ini_file ${LLAPI_UPDATER_INI})" \
+                    "3 Install new Cores" "${DOWNLOAD_NEW_CORES}" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            fi
 
             if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
@@ -2627,6 +2810,8 @@ settings_menu_misc() {
     SETTINGS_OPTIONS_WAIT_TIME_FOR_READING=("4" "0" "30")
     SETTINGS_OPTIONS_COUNTDOWN_TIME=("15" "4" "60")
     SETTINGS_OPTIONS_ARCADE_ORGANIZER_2_ALPHA_ENABLED=("false" "true")
+    SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE=("false", "true")
+    SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER=("false" "true")
 
     while true ; do
         (
@@ -2634,8 +2819,10 @@ settings_menu_misc() {
             local WAIT_TIME_FOR_READING="${SETTINGS_OPTIONS_WAIT_TIME_FOR_READING[0]}"
             local COUNTDOWN_TIME="${SETTINGS_OPTIONS_COUNTDOWN_TIME[0]}"
             local ARCADE_ORGANIZER_2_ALPHA_ENABLED="${SETTINGS_OPTIONS_ARCADE_ORGANIZER_2_ALPHA_ENABLED[0]}"
+            local DOWNLOADER_WHEN_POSSIBLE="${SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE[0]}"
+            local ARCADE_OFFSET_DOWNLOADER="${SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "ARCADE_ORGANIZER_2_ALPHA_ENABLED"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "ARCADE_ORGANIZER_2_ALPHA_ENABLED" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -2646,12 +2833,14 @@ settings_menu_misc() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
-                --menu "" 12 75 25 \
-                "1 Autoreboot (if needed)" "${AUTOREBOOT}" \
-                "2 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
-                "3 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
-                "4 Clear All Cores" "Removes all CORES and MRA folders." \
-                "5 Arcade Organizer 2.0 Beta" "$(settings_menu_yesno_bool_text ${ARCADE_ORGANIZER_2_ALPHA_ENABLED})" \
+                --menu "" 13 75 25 \
+#                "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
+                "2 Arcade Offset Downloader" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
+                "3 Autoreboot (if needed)" "${AUTOREBOOT}" \
+                "4 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                "5 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                "6 Clear All Cores" "Removes all CORES and MRA folders." \
+                "7 Arcade Organizer 2.0 Beta" "$(settings_menu_yesno_bool_text ${ARCADE_ORGANIZER_2_ALPHA_ENABLED})" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -2661,10 +2850,12 @@ settings_menu_misc() {
             fi
 
             case "${DEFAULT_SELECTION}" in
-                "1 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "2 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "3 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "4 Clear All Cores")
+                "1 Use new Downloader") settings_change_var "DOWNLOADER_WHEN_POSSIBLE" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "2 Arcade Offset Downloader") settings_change_var "ARCADE_OFFSET_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "3 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "4 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "5 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "6 Clear All Cores")
                     local FILES_FOLDERS=("_Arcade" "_Computer" "_Console" "_Other" "_Utility" "_LLAPI" "_Jotego" "_CPS1" "_Unofficial")
 
                     local TO_DELETE=()
@@ -2727,7 +2918,7 @@ settings_menu_misc() {
                         set -e
                     fi
                     ;;
-                "5 Arcade Organizer 2.0 Beta")
+                "7 Arcade Organizer 2.0 Beta")
                     if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" == "false" ]] ; then
                         set +e
                         dialog --keep-window --title "Are you sure?" --defaultno \
