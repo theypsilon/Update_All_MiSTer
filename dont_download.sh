@@ -2834,8 +2834,6 @@ settings_menu_misc() {
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
                 --menu "" 12 75 25 \
-#                "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
-#                "2 Arcade Offset Downloader" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
                 "3 Autoreboot (if needed)" "${AUTOREBOOT}" \
                 "4 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
                 "5 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
