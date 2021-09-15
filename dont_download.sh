@@ -74,6 +74,9 @@ set_default_options() {
 set_default_options
 # ========= CODE STARTS HERE =========
 UPDATE_ALL_VERSION="1.3"
+if [ -f /media/fat/payoyo_cheese.txt ] ; then
+    UPDATE_ALL_VERSION="1.4"
+fi
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
 UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
 UPDATE_ALL_LAUNCHER_MD5="ac10fbada40e3e5f133bc0eee0dd53d5"
@@ -129,16 +132,16 @@ INI_REFERENCES=( \
     "ARCADE_ORGANIZER_INI" \
 )
 
-DOWNLOADER_DB9_DB_URL=""
-DOWNLOADER_JT_BETAS_DB_URL=""
-DOWNLOADER_JT_STABLE_DB_URL=""
-DOWNLOADER_JT_DB_ID="jt"
-DOWNLOADER_LLAPI_DB_URL=""
-DOWNLOADER_LLAPI_DB_ID="distribution_llapi"
-DOWNLOADER_UNOFFICIALS_DB_URL=""
-DOWNLOADER_UNOFFICIALS_DB_ID="distribution_unofficial"
-DOWNLOADER_ARCADE_OFFSET_DB_URL=""
-DOWNLOADER_ARCADE_OFFSET_DB_ID="arcade_offset"
+DOWNLOADER_DB9_DB_URL="https://raw.githubusercontent.com/MiSTer-DB9/Distribution_MiSTer/main/dbencc.json.zip"
+DOWNLOADER_JT_BETAS_DB_URL="https://raw.githubusercontent.com/theypsilon/JT_Cores_MiSTer/jtbin/jtbindb.json.zip"
+DOWNLOADER_JT_STABLE_DB_URL="https://raw.githubusercontent.com/theypsilon/JT_Cores_MiSTer/jtstable/jtstabledb.json.zip"
+DOWNLOADER_JT_DB_ID="jtcores"
+DOWNLOADER_LLAPI_DB_URL="https://raw.githubusercontent.com/theypsilon/LLAPI_Folder_MiSTer/main/llapidb.json.zip"
+DOWNLOADER_LLAPI_DB_ID="llapi_folder"
+DOWNLOADER_UNOFFICIALS_DB_URL="https://raw.githubusercontent.com/theypsilon/Distribution_Unofficial_MiSTer/main/unofficialdb.json.zip"
+DOWNLOADER_UNOFFICIALS_DB_ID="theypsilon_unofficial_distribution"
+DOWNLOADER_ARCADE_OFFSET_DB_URL="https://raw.githubusercontent.com/theypsilon/Arcade_Offset_Folder_MiSTer/db/arcadeoffsetdb.json.zip"
+DOWNLOADER_ARCADE_OFFSET_DB_ID="arcade_offset_folder"
 
 CACHE_UPDATE_ALL_PATH="/media/fat/Scripts/.cache/update_all"
 CACHE_MAME_GETTER_PATH="/media/fat/Scripts/.cache/mame-getter"
@@ -2831,6 +2834,21 @@ settings_menu_misc() {
                 DEFAULT_SELECTION="1 Autoreboot (if needed)"
             fi
 
+            if [ -f /media/fat/payoyo_cheese.txt ] ; then
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
+                    --menu "" 12 75 25 \
+                    "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
+                    "2 Arcade Offset Downloader" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
+                    "3 Autoreboot (if needed)" "${AUTOREBOOT}" \
+                    "4 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                    "5 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                    "6 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "7 Arcade Organizer 2.0 Beta" "$(settings_menu_yesno_bool_text ${ARCADE_ORGANIZER_2_ALPHA_ENABLED})" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            else
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
                 --menu "" 12 75 25 \
@@ -2842,6 +2860,7 @@ settings_menu_misc() {
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
+            fi
 
             if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
