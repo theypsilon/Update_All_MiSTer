@@ -71,10 +71,7 @@ set_default_options() {
 }
 set_default_options
 # ========= CODE STARTS HERE =========
-UPDATE_ALL_VERSION="1.3"
-if [ -f /media/fat/payoyo_cheese.txt ] ; then
-    UPDATE_ALL_VERSION="1.4"
-fi
+UPDATE_ALL_VERSION="1.4"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
 UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
 UPDATE_ALL_LAUNCHER_MD5="ac10fbada40e3e5f133bc0eee0dd53d5"
@@ -342,9 +339,7 @@ initialize() {
                     echo "JOTEGO_UPDATER_INI=\"update_jtcores.ini\"" >> "${EXPORTED_INI_PATH}"
                     echo "UNOFFICIAL_UPDATER_INI=\"update_unofficials.ini\"" >> "${EXPORTED_INI_PATH}"
                     echo "LLAPI_UPDATER_INI=\"update_llapi.ini\"" >> "${EXPORTED_INI_PATH}"
-                    if [ -f /media/fat/payoyo_cheese.txt ] ; then
-                        echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
-                    fi
+                    echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
                 fi
             fi
         fi
@@ -363,7 +358,7 @@ initialize() {
         echo "Not found."
     fi
 
-    if [ -f /media/fat/payoyo_cheese.txt ] && [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "false" ]] ; then
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "false" ]] ; then
         if ! grep -q '[^[:space:]]' "${MAIN_UPDATER_INI}" 2> /dev/null && \
             ! grep -q '[^[:space:]]' "${UNOFFICIAL_UPDATER_INI}" 2> /dev/null && \
             ! grep -q '[^[:space:]]' "${LLAPI_UPDATER_INI}" 2> /dev/null && \
@@ -2832,31 +2827,18 @@ settings_menu_misc() {
                 DEFAULT_SELECTION="1 Autoreboot (if needed)"
             fi
 
-            if [ -f /media/fat/payoyo_cheese.txt ] ; then
-                set +e
-                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
-                    --menu "" 13 75 25 \
-                    "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
-                    "2 Arcade Offset Downloader" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
-                    "3 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
-                    "4 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
-                    "5 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
-                    "6 Clear All Cores" "Removes all CORES and MRA folders." \
-                    "BACK"  "" 2> ${TMP}
-                DEFAULT_SELECTION="$?"
-                set -e
-            else
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
-                --menu "" 11 75 25 \
-                "3 Autoreboot (if needed)" "${AUTOREBOOT}" \
+                --menu "" 13 75 25 \
+                "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
+                "2 Arcade Offset Downloader" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
+                "3 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
                 "4 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
                 "5 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
                 "6 Clear All Cores" "Removes all CORES and MRA folders." \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
-            fi
 
             if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
