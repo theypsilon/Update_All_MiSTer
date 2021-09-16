@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 1.4 - 2021-09-17
+
+### Added
+- Downloader support. Main cores, JT cores, LLAPI cores, and Unofficial cores can be installed now using the new [MiSTer Downloader](https://github.com/MiSTer-devel/Downloader_MiSTer/). New users or old users without custom setups (non-default options at update.ini, update_unofficials.ini, update_llapi.ini or update_jtcores.ini, except DOWNLOAD_BETA_CORES which doesn't count) will have it activated by default. Old users with custom setups may activate it through the Misc menu, like shown in [this video](https://www.youtube.com/watch?v=0DgLUXY3jvU). Keep in mind though, that your custom options will not be considered by the new Downloader.
+- Arcade Organizer 2.0. Arcade Organizer changelog is [here](https://github.com/theypsilon/_arcade-organizer/blob/master/CHANGELOG.md). The Settings Screen offers a new Arcade Organizer menu that allows you to change many new options from the 2.0 version.
+- Arcade Offset. Patched MRA files maintained by Atrac17. Check its [repository](https://github.com/atrac17/Arcade_Offset) for more info.
+- KEEP_USBMOUNT_CONF option at update_all.ini. When set to true, it will keep the /etc/usbmount/usbmount.conf file between Linux updates.
+
+### Changed
+- Linux Updates are now always performed at the end.
+- Scripts/.cache folder has been renamed to Scripts/.config.
+- Installation ZIPs are now located at GitHub Releases.
+- Minor tweaks and fixes.
+
 ## Version 1.3 - 2020-07-29
 
 ### Added
