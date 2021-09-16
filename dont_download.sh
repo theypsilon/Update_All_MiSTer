@@ -68,8 +68,6 @@ set_default_options() {
     if [[ "${UPDATE_ALL_PC_UPDATER_ENCC_FORKS:-}" == "true" ]] ; then
         ENCC_FORKS="true"
     fi
-
-    ARCADE_ORGANIZER_2_ALPHA_ENABLED="false"
 }
 set_default_options
 # ========= CODE STARTS HERE =========
@@ -323,28 +321,30 @@ initialize() {
         EXPORTED_INI_PATH="update_all.ini"
     fi
 
-    mkdir -p "${CONFIG_FOLDER_PATH}"
-    [ -d "${CACHE_UPDATE_ALL_PATH}" ] && mv "${CACHE_UPDATE_ALL_PATH}" "${CONFIG_UPDATE_ALL_PATH}"
-    [ -d "${CACHE_MAME_GETTER_PATH}" ] && mv "${CACHE_MAME_GETTER_PATH}" "${CONFIG_MAME_GETTER_PATH}"
-    [ -d "${CACHE_HBMAME_GETTER_PATH}" ] && mv "${CACHE_HBMAME_GETTER_PATH}" "${CONFIG_HBMAME_GETTER_PATH}"
-    [ -d "${CACHE_ARCADE_ORGANIZER_PATH}" ] && mv "${CACHE_ARCADE_ORGANIZER_PATH}" "${CONFIG_ARCADE_ORGANIZER_PATH}"
+    if [ ! -f skip_me ] ; then
+        mkdir -p "${CONFIG_FOLDER_PATH}"
+        [ -d "${CACHE_UPDATE_ALL_PATH}" ] && mv "${CACHE_UPDATE_ALL_PATH}" "${CONFIG_UPDATE_ALL_PATH}"
+        [ -d "${CACHE_MAME_GETTER_PATH}" ] && mv "${CACHE_MAME_GETTER_PATH}" "${CONFIG_MAME_GETTER_PATH}"
+        [ -d "${CACHE_HBMAME_GETTER_PATH}" ] && mv "${CACHE_HBMAME_GETTER_PATH}" "${CONFIG_HBMAME_GETTER_PATH}"
+        [ -d "${CACHE_ARCADE_ORGANIZER_PATH}" ] && mv "${CACHE_ARCADE_ORGANIZER_PATH}" "${CONFIG_ARCADE_ORGANIZER_PATH}"
 
-    WORK_PATH="${WORK_OLD_PATH}"
-    if [ ! -d "${WORK_PATH}" ] ; then
-        WORK_PATH="${WORK_NEW_PATH}"
+        WORK_PATH="${WORK_OLD_PATH}"
         if [ ! -d "${WORK_PATH}" ] ; then
-            make_folder "${WORK_PATH}"
+            WORK_PATH="${WORK_NEW_PATH}"
+            if [ ! -d "${WORK_PATH}" ] ; then
+                make_folder "${WORK_PATH}"
 
-            echo
-            echo "Creating '${WORK_PATH}' for the first time."
+                echo
+                echo "Creating '${WORK_PATH}' for the first time."
 
-            if [ ! -f "${EXPORTED_INI_PATH}" ] ; then
-                echo "MAIN_UPDATER_INI=\"update.ini\"" >> "${EXPORTED_INI_PATH}"
-                echo "JOTEGO_UPDATER_INI=\"update_jtcores.ini\"" >> "${EXPORTED_INI_PATH}"
-                echo "UNOFFICIAL_UPDATER_INI=\"update_unofficials.ini\"" >> "${EXPORTED_INI_PATH}"
-                echo "LLAPI_UPDATER_INI=\"update_llapi.ini\"" >> "${EXPORTED_INI_PATH}"
-                if [ -f /media/fat/payoyo_cheese.txt ] ; then
-                    echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
+                if [ ! -f "${EXPORTED_INI_PATH}" ] ; then
+                    echo "MAIN_UPDATER_INI=\"update.ini\"" >> "${EXPORTED_INI_PATH}"
+                    echo "JOTEGO_UPDATER_INI=\"update_jtcores.ini\"" >> "${EXPORTED_INI_PATH}"
+                    echo "UNOFFICIAL_UPDATER_INI=\"update_unofficials.ini\"" >> "${EXPORTED_INI_PATH}"
+                    echo "LLAPI_UPDATER_INI=\"update_llapi.ini\"" >> "${EXPORTED_INI_PATH}"
+                    if [ -f /media/fat/payoyo_cheese.txt ] ; then
+                        echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
+                    fi
                 fi
             fi
         fi
@@ -899,13 +899,7 @@ run_update_all() {
     fi
 
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
-        local ao_url=
-        if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" == "true" ]] ; then
-            ao_url="${ARCADE_ORGANIZER_2BETA_URL}"
-        else
-            ao_url="${ARCADE_ORGANIZER_URL}"
-        fi
-        run_mame_getter_script "_ARCADE-ORGANIZER" "${ao_url}" "${ARCADE_ORGANIZER_INI}"
+        run_mame_getter_script "_ARCADE-ORGANIZER" "${ARCADE_ORGANIZER_URL}" "${ARCADE_ORGANIZER_INI}"
     fi
 
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
@@ -1082,7 +1076,6 @@ settings_menu_update_all() {
             local ARCADE_ORGANIZER="${SETTINGS_OPTIONS_ARCADE_ORGANIZER[0]}"
             local NAMES_TXT_UPDATER="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER[0]}"
             local ENCC_FORKS="${SETTINGS_OPTIONS_ENCC_FORKS[0]}"
-            local ARCADE_ORGANIZER_2_ALPHA_ENABLED="false"
             local DOWNLOADER_WHEN_POSSIBLE="false"
 
             load_ini_file "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
@@ -1137,13 +1130,7 @@ settings_menu_update_all() {
                         "6 MAME Getter") settings_menu_mame_getter ;;
                         "7 HBMAME Getter") settings_menu_hbmame_getter ;;
                         "8 Names TXT Updater") settings_menu_names_txt ;;
-                        "9 Arcade Organizer")
-                            if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" == "true" ]] ; then
-                                settings_menu_2beta_arcade_organizer
-                            else
-                                settings_menu_arcade_organizer
-                            fi
-                            ;;
+                        "9 Arcade Organizer") settings_menu_2beta_arcade_organizer ;;
                         "0 Misc") settings_menu_misc ;;
                         "SAVE") settings_menu_save ;;
                         "EXIT and RUN UPDATE ALL") settings_menu_exit_and_run ;;
@@ -2156,7 +2143,7 @@ settings_menu_2beta_arcade_organizer() {
     SETTINGS_OPTIONS_ORGDIR=("${ARCADE_ORGANIZER_FOLDER_OPTION_1}" "${ARCADE_ORGANIZER_FOLDER_OPTION_2}" "${ARCADE_ORGANIZER_FOLDER_OPTION_3}")
     SETTINGS_OPTIONS_TOPDIR=("" "platform" "core" "year")
     SETTINGS_OPTIONS_PREPEND_YEAR=("false" "true")
-    SETTINGS_OPTIONS_MAD_DB=("https://raw.githubusercontent.com/theypsilon/MAD_Database_MiSTer/db/mad_db.json.zip" "https://raw.githubusercontent.com/misteraddons/MiSTer_Arcade_MAD/db/mad_db.json.zip")
+    SETTINGS_OPTIONS_MAD_DB=("https://raw.githubusercontent.com/misteraddons/MiSTer_Arcade_MAD/db/mad_db.json.zip" "https://raw.githubusercontent.com/theypsilon/MAD_Database_MiSTer/db/mad_db.json.zip")
     SETTINGS_OPTIONS_VERBOSE=("false" "true")
 
     while true ; do
@@ -2195,7 +2182,7 @@ settings_menu_2beta_arcade_organizer() {
                 TOPDIR_DESCRIPTION="From '${TOPDIR}' subfolder"
             fi
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Settings" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Settings" \
                 --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                 "${ACTIVATE}"               "Activated: ${ARCADE_ORGANIZER}" \
                 "2 INI file"                "$(settings_normalize_ini_file ${ARCADE_ORGANIZER_INI})" \
@@ -2269,7 +2256,7 @@ settings_menu_ao_advanced_options() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Advanced Options" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Advanced Options" \
                 --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                 "1 Clean Folders"           "Deletes the Arcade Organizer folders" \
                 "BACK"  "                                               " 2> ${TMP}
@@ -2355,7 +2342,7 @@ settings_menu_ao_alphabetic_options() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Alphabetic Options" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Alphabetic Options" \
                 --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                 "1 Alphabetic folders"               "$(settings_menu_yesno_bool_text ${AZ_DIR})" \
                 "BACK"  "                                               " 2> ${TMP}
@@ -2409,7 +2396,7 @@ settings_menu_ao_region_options() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Region Options" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Region Options" \
                 --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                 "1 Region folders"               "$(settings_menu_yesno_bool_text ${REGION_DIR})" \
                 "2 Main region"                  "${REGION_MAIN_DESCRIPTION}" \
@@ -2467,7 +2454,7 @@ settings_menu_ao_collections_options() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Collections Options" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Collections Options" \
                 --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                 "1 Platform folders"               "$(settings_menu_yesno_bool_text ${PLATFORM_DIR})" \
                 "2 MiSTer Core folders"            "$(settings_menu_yesno_bool_text ${CORE_DIR})" \
@@ -2512,7 +2499,7 @@ settings_menu_ao_year_options() {
     while true ; do
         (
             local YEAR_DIR="${SETTINGS_OPTIONS_YEAR_DIR[0]}"
-            local DECADES_DIR="${SETTINGS_OPTIONS_DECADE_DIR[0]}"
+            local DECADES_DIR="${SETTINGS_OPTIONS_DECADES_DIR[0]}"
 
             load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
             load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
@@ -2526,7 +2513,7 @@ settings_menu_ao_year_options() {
 
             if [[ "${YEAR_DIR}" == "true" ]] ; then
                 set +e
-                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Year Options" \
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Year Options" \
                 --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                     "1 Year folders"            "$(settings_menu_yesno_bool_text ${YEAR_DIR})" \
                     "2 Decade folders"         "$(settings_menu_yesno_bool_text ${DECADES_DIR})" \
@@ -2535,7 +2522,7 @@ settings_menu_ao_year_options() {
                 set -e
             else
                 set +e
-                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Year Options" \
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Year Options" \
                 --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                     "1 Year folders"            "$(settings_menu_yesno_bool_text ${YEAR_DIR})" \
                     "BACK"  "                                               " 2> ${TMP}
@@ -2595,7 +2582,7 @@ settings_menu_ao_video_and_inputs_options() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Video & Inputs Options" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Video & Inputs Options" \
                 --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                 "1 Resolution options"          "" \
                 "2 Rotation options"            "" \
@@ -2665,7 +2652,7 @@ settings_menu_ao_resolution_options() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Resolution Options" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Resolution Options" \
             --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                 "1 Resolution folders"            "$(settings_menu_yesno_bool_text ${RESOLUTION_DIR})" \
                 "2 15 kHz Scan Rate"         "$(settings_menu_yesno_bool_text ${RESOLUTION_15KHZ})" \
@@ -2725,7 +2712,7 @@ settings_menu_ao_rotation_options() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Rotation Options" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Rotation Options" \
             --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                 "1 Rotation folders"            "$(settings_menu_yesno_bool_text ${ROTATION_DIR})" \
                 "2 Horizontal"         "$(settings_menu_yesno_bool_text ${ROTATION_0})" \
@@ -2787,7 +2774,7 @@ settings_menu_ao_extra_software_options() {
             fi
 
             set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0~Beta Extra Software Options" \
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --no-shadow --title "Arcade Organizer 2.0 Extra Software Options" \
                 --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                 "1 Hombrew"          "$(settings_menu_boolflagpresence_text ${HOMEBREW} Hombrew)" \
                 "2 Bootleg"            "$(settings_menu_boolflagpresence_text ${BOOTLEG} Bootleg)" \
@@ -2825,7 +2812,6 @@ settings_menu_misc() {
     SETTINGS_OPTIONS_AUTOREBOOT=("true" "false")
     SETTINGS_OPTIONS_WAIT_TIME_FOR_READING=("4" "0" "30")
     SETTINGS_OPTIONS_COUNTDOWN_TIME=("15" "4" "60")
-    SETTINGS_OPTIONS_ARCADE_ORGANIZER_2_ALPHA_ENABLED=("false" "true")
     SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE=("false", "true")
     SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER=("false" "true")
 
@@ -2834,11 +2820,10 @@ settings_menu_misc() {
             local AUTOREBOOT="${SETTINGS_OPTIONS_AUTOREBOOT[0]}"
             local WAIT_TIME_FOR_READING="${SETTINGS_OPTIONS_WAIT_TIME_FOR_READING[0]}"
             local COUNTDOWN_TIME="${SETTINGS_OPTIONS_COUNTDOWN_TIME[0]}"
-            local ARCADE_ORGANIZER_2_ALPHA_ENABLED="${SETTINGS_OPTIONS_ARCADE_ORGANIZER_2_ALPHA_ENABLED[0]}"
             local DOWNLOADER_WHEN_POSSIBLE="${SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE[0]}"
             local ARCADE_OFFSET_DOWNLOADER="${SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "ARCADE_ORGANIZER_2_ALPHA_ENABLED" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -2850,26 +2835,24 @@ settings_menu_misc() {
             if [ -f /media/fat/payoyo_cheese.txt ] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
-                    --menu "" 14 75 25 \
+                    --menu "" 13 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
                     "2 Arcade Offset Downloader" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
                     "3 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
                     "4 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
                     "5 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
                     "6 Clear All Cores" "Removes all CORES and MRA folders." \
-                    "7 Arcade Organizer 2.0 Beta" "$(settings_menu_yesno_bool_text ${ARCADE_ORGANIZER_2_ALPHA_ENABLED})" \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
             else
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
-                --menu "" 12 75 25 \
+                --menu "" 11 75 25 \
                 "3 Autoreboot (if needed)" "${AUTOREBOOT}" \
                 "4 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
                 "5 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
                 "6 Clear All Cores" "Removes all CORES and MRA folders." \
-                "7 Arcade Organizer 2.0 Beta" "$(settings_menu_yesno_bool_text ${ARCADE_ORGANIZER_2_ALPHA_ENABLED})" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -2946,23 +2929,6 @@ settings_menu_misc() {
                         set +e
                         dialog --keep-window --msgbox "No folders or files to clear" 5 35
                         set -e
-                    fi
-                    ;;
-                "7 Arcade Organizer 2.0 Beta")
-                    if [[ "${ARCADE_ORGANIZER_2_ALPHA_ENABLED}" == "false" ]] ; then
-                        set +e
-                        dialog --keep-window --title "Are you sure?" --defaultno \
-                            --yesno "You are activating a BETA version that might contain bugs." \
-                            5 66
-                        local SURE_RET=$?
-                        set -e
-                        if [[ "${SURE_RET}" == "0" ]] ; then
-                            settings_change_var "ARCADE_ORGANIZER_2_ALPHA_ENABLED" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
-                            touch "${ARCADE_ORGANIZER_INI}"
-                        fi
-                    else
-                        settings_change_var "ARCADE_ORGANIZER_2_ALPHA_ENABLED" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
-                        touch "${ARCADE_ORGANIZER_INI}"
                     fi
                     ;;
                 *) echo > "${SETTINGS_TMP_BREAK}" ;;
