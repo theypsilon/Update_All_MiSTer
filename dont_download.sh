@@ -343,7 +343,9 @@ initialize() {
                 echo "JOTEGO_UPDATER_INI=\"update_jtcores.ini\"" >> "${EXPORTED_INI_PATH}"
                 echo "UNOFFICIAL_UPDATER_INI=\"update_unofficials.ini\"" >> "${EXPORTED_INI_PATH}"
                 echo "LLAPI_UPDATER_INI=\"update_llapi.ini\"" >> "${EXPORTED_INI_PATH}"
-                #echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
+                if [ -f /media/fat/payoyo_cheese.txt ] ; then
+                    echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
+                fi
             fi
         fi
     fi
@@ -359,6 +361,17 @@ initialize() {
         echo "OK."
     else
         echo "Not found."
+    fi
+
+    if [ -f /media/fat/payoyo_cheese.txt ] && [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "false" ]] ; then
+        if ! grep -q '[^[:space:]]' "${MAIN_UPDATER_INI}" 2> /dev/null && \
+            ! grep -q '[^[:space:]]' "${UNOFFICIAL_UPDATER_INI}" 2> /dev/null && \
+            ! grep -q '[^[:space:]]' "${LLAPI_UPDATER_INI}" 2> /dev/null && \
+            ! grep -v "DOWNLOAD_BETA_CORES=" "${JOTEGO_UPDATER_INI}" 2> /dev/null | grep -q '[^[:space:]]' ; then
+
+            echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
+            DOWNLOADER_WHEN_POSSIBLE="true"
+        fi
     fi
 
     export SSL_SECURITY_OPTION
@@ -664,7 +677,7 @@ install_scripts() {
 sequence() {
     echo "Sequence:"
     local UPDATER_KIND="Updater"
-    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
         UPDATER_KIND="Downloader"
     fi
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
@@ -778,7 +791,7 @@ run_update_all() {
     FAILING_UPDATERS=()
 
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
-        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
             export UPDATE_LINUX="false"
             if [[ "${ENCC_FORKS}" == "true" ]] ; then
                 export DEFAULT_DB_URL="${DOWNLOADER_DB9_DB_URL}"
@@ -801,7 +814,7 @@ run_update_all() {
     fi
 
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
             settings_reset_domain_ini_files
             settings_add_domain_ini_file "update_jtcores.ini"
             load_vars_from_ini "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" "DOWNLOAD_BETA_CORES"
@@ -824,7 +837,7 @@ run_update_all() {
     fi
 
     if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
             export DEFAULT_DB_URL="${DOWNLOADER_UNOFFICIALS_DB_URL}"
             export DEFAULT_DB_ID="${DOWNLOADER_UNOFFICIALS_DB_ID}"
             run_downloader_script "${DOWNLOADER_URL}" "Unofficial Downloader"
@@ -840,7 +853,7 @@ run_update_all() {
     fi
 
     if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
-        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
             export DEFAULT_DB_URL="${DOWNLOADER_LLAPI_DB_URL}"
             export DEFAULT_DB_ID="${DOWNLOADER_LLAPI_DB_ID}"
             run_downloader_script "${DOWNLOADER_URL}" "LLAPI Downloader"
@@ -917,7 +930,7 @@ run_update_all() {
             echo "KEEP_USBMOUNT_CONF: ${USBMOUNT_CONF_PATH} saved."
         fi
         
-        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
             export UPDATE_LINUX="only"
             unset DEFAULT_DB_URL
             unset DEFAULT_DB_ID
@@ -1079,7 +1092,7 @@ settings_menu_update_all() {
             fi
 
             local SCRIPT_TYPE=
-            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 SCRIPT_TYPE="Downloader"
             else
                 SCRIPT_TYPE="Updater"
@@ -1211,7 +1224,7 @@ settings_menu_main_updater() {
 
             local ACTIVATE="1 $(settings_active_action ${MAIN_UPDATER})"
 
-            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Main Downloader Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${EXPORTED_INI_PATH})" 10 75 25 \
@@ -1382,7 +1395,7 @@ settings_menu_jotego_updater() {
             fi
 
             local ACTIVATE="1 $(settings_active_action ${JOTEGO_UPDATER})"
-            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Jotego Downloader Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 10 75 25 \
@@ -1512,7 +1525,7 @@ settings_menu_unofficial_updater() {
 
             local ACTIVATE="1 $(settings_active_action ${UNOFFICIAL_UPDATER})"
 
-            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Unofficial Downloader Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${EXPORTED_INI_PATH})" 9 75 25 \
@@ -1603,7 +1616,7 @@ settings_menu_llapi_updater() {
 
             local ACTIVATE="1 $(settings_active_action ${LLAPI_UPDATER})"
 
-            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "LLAPI Downloader Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${EXPORTED_INI_PATH})" 9 75 25 \
