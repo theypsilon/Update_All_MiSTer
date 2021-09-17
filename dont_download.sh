@@ -989,6 +989,8 @@ run_update_all() {
             echo "Rebooting in ${REBOOT_PAUSE} seconds"
             sleep "${REBOOT_PAUSE}"
             trap_global_log
+            sync
+            sync
             reboot now
         else
             echo "You should reboot"
