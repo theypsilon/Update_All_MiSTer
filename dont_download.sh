@@ -318,29 +318,27 @@ initialize() {
         EXPORTED_INI_PATH="update_all.ini"
     fi
 
-    if [ ! -f skip_me ] ; then
-        mkdir -p "${CONFIG_FOLDER_PATH}"
-        [ -d "${CACHE_UPDATE_ALL_PATH}" ] && mv "${CACHE_UPDATE_ALL_PATH}" "${CONFIG_UPDATE_ALL_PATH}"
-        [ -d "${CACHE_MAME_GETTER_PATH}" ] && mv "${CACHE_MAME_GETTER_PATH}" "${CONFIG_MAME_GETTER_PATH}"
-        [ -d "${CACHE_HBMAME_GETTER_PATH}" ] && mv "${CACHE_HBMAME_GETTER_PATH}" "${CONFIG_HBMAME_GETTER_PATH}"
-        [ -d "${CACHE_ARCADE_ORGANIZER_PATH}" ] && mv "${CACHE_ARCADE_ORGANIZER_PATH}" "${CONFIG_ARCADE_ORGANIZER_PATH}"
+    mkdir -p "${CONFIG_FOLDER_PATH}"
+    [ -d "${CACHE_UPDATE_ALL_PATH}" ] && mv "${CACHE_UPDATE_ALL_PATH}" "${CONFIG_UPDATE_ALL_PATH}"
+    [ -d "${CACHE_MAME_GETTER_PATH}" ] && mv "${CACHE_MAME_GETTER_PATH}" "${CONFIG_MAME_GETTER_PATH}"
+    [ -d "${CACHE_HBMAME_GETTER_PATH}" ] && mv "${CACHE_HBMAME_GETTER_PATH}" "${CONFIG_HBMAME_GETTER_PATH}"
+    [ -d "${CACHE_ARCADE_ORGANIZER_PATH}" ] && mv "${CACHE_ARCADE_ORGANIZER_PATH}" "${CONFIG_ARCADE_ORGANIZER_PATH}"
 
-        WORK_PATH="${WORK_OLD_PATH}"
+    WORK_PATH="${WORK_OLD_PATH}"
+    if [ ! -d "${WORK_PATH}" ] ; then
+        WORK_PATH="${WORK_NEW_PATH}"
         if [ ! -d "${WORK_PATH}" ] ; then
-            WORK_PATH="${WORK_NEW_PATH}"
-            if [ ! -d "${WORK_PATH}" ] ; then
-                make_folder "${WORK_PATH}"
+            make_folder "${WORK_PATH}"
 
-                echo
-                echo "Creating '${WORK_PATH}' for the first time."
+            echo
+            echo "Creating '${WORK_PATH}' for the first time."
 
-                if [ ! -f "${EXPORTED_INI_PATH}" ] ; then
-                    echo "MAIN_UPDATER_INI=\"update.ini\"" >> "${EXPORTED_INI_PATH}"
-                    echo "JOTEGO_UPDATER_INI=\"update_jtcores.ini\"" >> "${EXPORTED_INI_PATH}"
-                    echo "UNOFFICIAL_UPDATER_INI=\"update_unofficials.ini\"" >> "${EXPORTED_INI_PATH}"
-                    echo "LLAPI_UPDATER_INI=\"update_llapi.ini\"" >> "${EXPORTED_INI_PATH}"
-                    echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
-                fi
+            if [ ! -f "${EXPORTED_INI_PATH}" ] ; then
+                echo "MAIN_UPDATER_INI=\"update.ini\"" >> "${EXPORTED_INI_PATH}"
+                echo "JOTEGO_UPDATER_INI=\"update_jtcores.ini\"" >> "${EXPORTED_INI_PATH}"
+                echo "UNOFFICIAL_UPDATER_INI=\"update_unofficials.ini\"" >> "${EXPORTED_INI_PATH}"
+                echo "LLAPI_UPDATER_INI=\"update_llapi.ini\"" >> "${EXPORTED_INI_PATH}"
+                echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
             fi
         fi
     fi
@@ -359,11 +357,13 @@ initialize() {
     fi
 
     if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "false" ]] ; then
-        if ! grep -q '[^[:space:]]' "${MAIN_UPDATER_INI}" 2> /dev/null && \
+        if [ ! -f "${WORK_PATH}/downloader_automatic_transition" ] && \
+            ! grep -q '[^[:space:]]' "${MAIN_UPDATER_INI}" 2> /dev/null && \
             ! grep -q '[^[:space:]]' "${UNOFFICIAL_UPDATER_INI}" 2> /dev/null && \
             ! grep -q '[^[:space:]]' "${LLAPI_UPDATER_INI}" 2> /dev/null && \
             ! grep -v "DOWNLOAD_BETA_CORES=" "${JOTEGO_UPDATER_INI}" 2> /dev/null | grep -q '[^[:space:]]' ; then
 
+            touch "${WORK_PATH}/downloader_automatic_transition"
             echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
             DOWNLOADER_WHEN_POSSIBLE="true"
         fi
