@@ -990,7 +990,9 @@ run_update_all() {
             sleep "${REBOOT_PAUSE}"
             trap_global_log
             sync
+            sleep 10
             sync
+            sleep 10
             reboot now
         else
             echo "You should reboot"
