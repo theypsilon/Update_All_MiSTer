@@ -2370,7 +2370,7 @@ settings_menu_ao_region_options() {
     local TMP=$(mktemp)
 
     SETTINGS_OPTIONS_REGION_DIR=("true" "false")
-    SETTINGS_OPTIONS_REGION_MAIN=("DEV PREFERRED" "Japan" "World" "USA" "Asia" "Europe" "Hispanic" "Spain" "Argentina" "Italy" "Brazil" "France" "German" "Germany")
+    SETTINGS_OPTIONS_REGION_MAIN=("DEV PREFERRED" "Japan" "World" "USA" "Asia" "Europe" "Hispanic" "Spain" "Argentina" "Italy" "Brazil" "France" "Germany")
     SETTINGS_OPTIONS_REGION_OTHER=("1" "0" "2")
 
     while true ; do
