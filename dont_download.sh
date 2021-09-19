@@ -986,13 +986,14 @@ run_update_all() {
     } ; then
         REBOOT_PAUSE=$((2 + WAIT_TIME_FOR_READING * 2))
         if [[ "${AUTOREBOOT}" == "true" && "${REBOOT_PAUSE}" -ge 0 ]] ; then
-            echo "Rebooting in ${REBOOT_PAUSE} seconds"
-            sleep "${REBOOT_PAUSE}"
+            echo "Rebooting in 10 seconds"
+            sleep 2
             trap_global_log
+            sleep 4
             sync
-            sleep 10
+            sleep 4
             sync
-            sleep 10
+            sleep 30
             reboot now
         else
             echo "You should reboot"
