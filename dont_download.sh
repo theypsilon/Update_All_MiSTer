@@ -364,6 +364,7 @@ initialize() {
             ! grep -v "DOWNLOAD_BETA_CORES=" "${JOTEGO_UPDATER_INI}" 2> /dev/null | grep -q '[^[:space:]]' ; then
 
             touch "${WORK_PATH}/downloader_automatic_transition"
+            echo >> "${EXPORTED_INI_PATH}"
             echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
             DOWNLOADER_WHEN_POSSIBLE="true"
         fi
