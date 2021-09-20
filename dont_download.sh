@@ -811,9 +811,11 @@ run_update_all() {
 
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
         if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-            settings_reset_domain_ini_files
-            settings_add_domain_ini_file "update_jtcores.ini"
-            load_vars_from_ini "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" "DOWNLOAD_BETA_CORES"
+            if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
+                settings_reset_domain_ini_files
+                settings_add_domain_ini_file "${JOTEGO_UPDATER_INI}"
+                load_vars_from_ini "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" "DOWNLOAD_BETA_CORES"
+            fi
             if [[ "${DOWNLOAD_BETA_CORES:-false}" == "true" ]] ; then
                 export DEFAULT_DB_URL="${DOWNLOADER_JT_BETAS_DB_URL}"
             else
