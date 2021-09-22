@@ -685,7 +685,9 @@ sequence() {
         echo "- Main ${UPDATER_KIND}: $([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8' || echo 'MiSTer-devel')"
     fi
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+        if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
+            load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+        fi
         echo "- Jotego ${UPDATER_KIND} ($([[ ${DOWNLOAD_BETA_CORES:-false} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))"
     fi
     if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
@@ -814,7 +816,6 @@ run_update_all() {
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
         if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
             if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
-                echo "Reading ${JOTEGO_UPDATER_INI}"
                 load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
             fi
             if [[ "${DOWNLOAD_BETA_CORES:-false}" == "true" ]] ; then
