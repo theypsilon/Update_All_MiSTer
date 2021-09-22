@@ -685,7 +685,8 @@ sequence() {
         echo "- Main ${UPDATER_KIND}: $([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8' || echo 'MiSTer-devel')"
     fi
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        echo "- Jotego ${UPDATER_KIND} ($([[ ${DOWNLOAD_BETA_CORES} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))"
+        load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+        echo "- Jotego ${UPDATER_KIND} ($([[ ${DOWNLOAD_BETA_CORES:-false} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))"
     fi
     if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
         echo "- Unofficial ${UPDATER_KIND}"
