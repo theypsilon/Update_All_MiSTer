@@ -138,17 +138,6 @@ DOWNLOADER_UNOFFICIALS_DB_ID="theypsilon_unofficial_distribution"
 DOWNLOADER_ARCADE_OFFSET_DB_URL="https://raw.githubusercontent.com/theypsilon/Arcade_Offset_Folder_MiSTer/db/arcadeoffsetdb.json.zip"
 DOWNLOADER_ARCADE_OFFSET_DB_ID="arcade_offset_folder"
 
-CACHE_UPDATE_ALL_PATH="/media/fat/Scripts/.cache/update_all"
-CACHE_MAME_GETTER_PATH="/media/fat/Scripts/.cache/mame-getter"
-CACHE_HBMAME_GETTER_PATH="/media/fat/Scripts/.cache/hbmame-getter"
-CACHE_ARCADE_ORGANIZER_PATH="/media/fat/Scripts/.cache/arcade-organizer"
-
-CONFIG_FOLDER_PATH="/media/fat/Scripts/.config"
-CONFIG_UPDATE_ALL_PATH="/media/fat/Scripts/.config/update_all"
-CONFIG_MAME_GETTER_PATH="/media/fat/Scripts/.config/mame-getter"
-CONFIG_HBMAME_GETTER_PATH="/media/fat/Scripts/.config/hbmame-getter"
-CONFIG_ARCADE_ORGANIZER_PATH="/media/fat/Scripts/.config/arcade-organizer"
-
 enable_global_log() {
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
     exec >  >(tee -ia ${GLOG_TEMP})
@@ -318,21 +307,30 @@ initialize() {
         EXPORTED_INI_PATH="update_all.ini"
     fi
 
-    mkdir -p "${CONFIG_FOLDER_PATH}"
-    [ -d "${CACHE_UPDATE_ALL_PATH}" ] && mv "${CACHE_UPDATE_ALL_PATH}" "${CONFIG_UPDATE_ALL_PATH}"
-    [ -d "${CACHE_MAME_GETTER_PATH}" ] && mv "${CACHE_MAME_GETTER_PATH}" "${CONFIG_MAME_GETTER_PATH}"
-    [ -d "${CACHE_HBMAME_GETTER_PATH}" ] && mv "${CACHE_HBMAME_GETTER_PATH}" "${CONFIG_HBMAME_GETTER_PATH}"
-    [ -d "${CACHE_ARCADE_ORGANIZER_PATH}" ] && mv "${CACHE_ARCADE_ORGANIZER_PATH}" "${CONFIG_ARCADE_ORGANIZER_PATH}"
+    local CACHE_FOLDER_PATH="/media/fat/Scripts/.cache"
+    local CACHE_UPDATE_ALL_PATH="${CACHE_FOLDER_PATH}/update_all"
+    local CACHE_MAME_GETTER_PATH="${CACHE_FOLDER_PATH}/mame-getter"
+    local CACHE_HBMAME_GETTER_PATH="${CACHE_FOLDER_PATH}/hbmame-getter"
+    local CACHE_ARCADE_ORGANIZER_PATH="${CACHE_FOLDER_PATH}/arcade-organizer"
+
+    local CONFIG_FOLDER_PATH="/media/fat/Scripts/.config"
+    local CONFIG_UPDATE_ALL_PATH="${CONFIG_FOLDER_PATH}/update_all"
+    local CONFIG_MAME_GETTER_PATH="${CONFIG_FOLDER_PATH}/mame-getter"
+    local CONFIG_HBMAME_GETTER_PATH="${CONFIG_FOLDER_PATH}/hbmame-getter"
+    local CONFIG_ARCADE_ORGANIZER_PATH="${CONFIG_FOLDER_PATH}/arcade-organizer"
+
+    if [ -d "${CACHE_FOLDER_PATH}" ] ; then
+        mkdir -p "${CONFIG_FOLDER_PATH}"
+        [ -d "${CACHE_UPDATE_ALL_PATH}" ] && mv "${CACHE_UPDATE_ALL_PATH}" "${CONFIG_UPDATE_ALL_PATH}"
+        [ -d "${CACHE_MAME_GETTER_PATH}" ] && mv "${CACHE_MAME_GETTER_PATH}" "${CONFIG_MAME_GETTER_PATH}"
+        [ -d "${CACHE_HBMAME_GETTER_PATH}" ] && mv "${CACHE_HBMAME_GETTER_PATH}" "${CONFIG_HBMAME_GETTER_PATH}"
+        [ -d "${CACHE_ARCADE_ORGANIZER_PATH}" ] && mv "${CACHE_ARCADE_ORGANIZER_PATH}" "${CONFIG_ARCADE_ORGANIZER_PATH}"
+    fi
 
     WORK_PATH="${WORK_OLD_PATH}"
     if [ ! -d "${WORK_PATH}" ] ; then
         WORK_PATH="${WORK_NEW_PATH}"
         if [ ! -d "${WORK_PATH}" ] ; then
-            make_folder "${WORK_PATH}"
-
-            echo
-            echo "Creating '${WORK_PATH}' for the first time."
-
             if [ ! -f "${EXPORTED_INI_PATH}" ] ; then
                 echo "MAIN_UPDATER_INI=\"update.ini\"" >> "${EXPORTED_INI_PATH}"
                 echo "JOTEGO_UPDATER_INI=\"update_jtcores.ini\"" >> "${EXPORTED_INI_PATH}"
@@ -354,6 +352,13 @@ initialize() {
         echo "OK."
     else
         echo "Not found."
+    fi
+
+    if [ ! -d "${WORK_PATH}" ] ; then
+        make_folder "${WORK_PATH}"
+
+        echo
+        echo "Creating '${WORK_PATH}' for the first time."
     fi
 
     if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "false" ]] ; then
@@ -1080,8 +1085,10 @@ settings_menu_update_all() {
             local NAMES_TXT_UPDATER="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER[0]}"
             local ENCC_FORKS="${SETTINGS_OPTIONS_ENCC_FORKS[0]}"
             local DOWNLOADER_WHEN_POSSIBLE="false"
+            local DOWNLOAD_BETA_CORES="false"
 
             load_ini_file "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+            load_vars_from_ini "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" "DOWNLOAD_BETA_CORES"
 
             if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
                 ARCADE_ORGANIZER="false"
@@ -1108,7 +1115,7 @@ settings_menu_update_all() {
                 --title "Update All ${UPDATE_ALL_VERSION} Settings" \
                 --menu "Settings loaded from '$(settings_normalize_ini_file ${EXPORTED_INI_PATH})'" 19 75 25 \
                 "1 Main ${SCRIPT_TYPE}"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores from $([[ ${ENCC_FORKS} == 'true' ]] && echo 'MiSTer-DB9' || echo 'MiSTer-devel')" \
-                "2 Jotego ${SCRIPT_TYPE}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego" \
+                "2 Jotego ${SCRIPT_TYPE}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego ($([[ ${DOWNLOAD_BETA_CORES} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))" \
                 "3 Unofficial ${SCRIPT_TYPE}"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
                 "4 LLAPI ${SCRIPT_TYPE}" "$(settings_active_tag ${LLAPI_UPDATER}) Forks adapted to LLAPI" \
                 "5 BIOS Getter" "$(settings_active_tag ${BIOS_GETTER}) BIOS files for your systems" \
