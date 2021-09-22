@@ -682,14 +682,10 @@ sequence() {
         UPDATER_KIND="Downloader"
     fi
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
-        if [[ "${ENCC_FORKS}" == "true" ]] ; then
-            echo "- Main ${UPDATER_KIND}: DB9 / SNAC8"
-        else
-            echo "- Main ${UPDATER_KIND}: MiSTer-devel"
-        fi
+        echo "- Main ${UPDATER_KIND}: $([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8' || echo 'MiSTer-devel')"
     fi
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        echo "- Jotego ${UPDATER_KIND}"
+        echo "- Jotego ${UPDATER_KIND} ($([[ ${DOWNLOAD_BETA_CORES} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))"
     fi
     if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
         echo "- Unofficial ${UPDATER_KIND}"
