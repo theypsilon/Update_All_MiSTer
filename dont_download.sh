@@ -2378,13 +2378,13 @@ settings_menu_ao_region_options() {
 
     SETTINGS_OPTIONS_REGION_DIR=("true" "false")
     SETTINGS_OPTIONS_REGION_MAIN=("DEV PREFERRED" "Japan" "World" "USA" "Asia" "Europe" "Hispanic" "Spain" "Argentina" "Italy" "Brazil" "France" "Germany")
-    SETTINGS_OPTIONS_REGION_OTHER=("1" "0" "2")
+    SETTINGS_OPTIONS_REGION_OTHERS=("1" "0" "2")
 
     while true ; do
         (
             local REGION_DIR="${SETTINGS_OPTIONS_REGION_DIR[0]}"
             local REGION_MAIN="${SETTINGS_OPTIONS_REGION_MAIN[0]}"
-            local REGION_OTHER="${SETTINGS_OPTIONS_REGION_OTHER[0]}"
+            local REGION_OTHERS="${SETTINGS_OPTIONS_REGION_OTHERS[0]}"
 
             load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ORGANIZER_INI"
             load_ini_file "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})"
@@ -2407,7 +2407,7 @@ settings_menu_ao_region_options() {
                 --menu "$(settings_menu_descr_text ${ARCADE_ORGANIZER_INI} ${ARCADE_ORGANIZER_INI})" 22 80 25 \
                 "1 Region folders"               "$(settings_menu_yesno_bool_text ${REGION_DIR})" \
                 "2 Main region"                  "${REGION_MAIN_DESCRIPTION}" \
-                "3 MRAs with other regions"                  "$(settings_menu_boolflagpresence_text ${REGION_OTHER} Region)" \
+                "3 MRAs with other regions"                  "$(settings_menu_boolflagpresence_text ${REGION_OTHERS} Region)" \
                 "BACK"  "                                               " 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -2419,7 +2419,7 @@ settings_menu_ao_region_options() {
             case "${DEFAULT_SELECTION}" in
                 "1 Region folders") settings_change_var "REGION_DIR" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
                 "2 Main region") settings_change_var "REGION_MAIN" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
-                "3 MRAs with other regions") settings_change_var "REGION_OTHER" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
+                "3 MRAs with other regions") settings_change_var "REGION_OTHERS" "$(settings_domain_ini_file ${ARCADE_ORGANIZER_INI})" ;;
                 *) echo > "${SETTINGS_TMP_BREAK}" ;;
             esac
         )
