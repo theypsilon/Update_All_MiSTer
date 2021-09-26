@@ -61,7 +61,7 @@ set_default_options() {
     ARCADE_ORGANIZER_INI="update_arcade-organizer.ini"
 
     COUNTDOWN_TIME=15
-    WAIT_TIME_FOR_READING=4
+    WAIT_TIME_FOR_READING=2
     AUTOREBOOT="true"
     KEEP_USBMOUNT_CONF="false"
 
@@ -2826,7 +2826,7 @@ settings_menu_misc() {
     local TMP=$(mktemp)
 
     SETTINGS_OPTIONS_AUTOREBOOT=("true" "false")
-    SETTINGS_OPTIONS_WAIT_TIME_FOR_READING=("4" "0" "30")
+    SETTINGS_OPTIONS_WAIT_TIME_FOR_READING=("2" "0" "30")
     SETTINGS_OPTIONS_COUNTDOWN_TIME=("15" "4" "60")
     SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE=("false", "true")
     SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER=("false" "true")
