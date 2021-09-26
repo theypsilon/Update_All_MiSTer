@@ -375,6 +375,15 @@ initialize() {
         fi
     fi
 
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+        if [[ "${JOTEGO_UPDATER_INI}" != "update_jtcores.ini" ]] ; then
+            cp "${JOTEGO_UPDATER_INI}" "update_jtcores.ini" 2> /dev/null || true
+            echo >> "${EXPORTED_INI_PATH}"
+            echo "JOTEGO_UPDATER_INI=\"update_jtcores.ini\"" >> "${EXPORTED_INI_PATH}"
+            JOTEGO_UPDATER_INI="update_jtcores.ini"
+        fi
+    fi
+
     export SSL_SECURITY_OPTION
     export CURL_RETRY
 
