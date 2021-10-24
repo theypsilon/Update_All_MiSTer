@@ -16,6 +16,7 @@
 
 import sys
 import os
+import os.path
 import configparser
 import json
 import re
@@ -37,6 +38,8 @@ def main():
 
     db_url_arcade_offset_folder = 'https://raw.githubusercontent.com/theypsilon/Arcade_Offset/db/arcadeoffsetdb.json.zip'
     db_id_arcade_offset_folder = 'arcade_offset_folder'
+
+    db_ids = [db_id_distribution_mister, db_id_jtcores, db_id_llapi_folder, db_id_theypsilon_unofficial_distribution, db_id_arcade_offset_folder]
 
     def env(name):
         return os.environ.get(name, 'false') == 'true'
@@ -69,6 +72,7 @@ def main():
         before = json.dumps(ini)
     except Exception as e:
         print('Could not read ini file %s' % ini_path)
+        print(e)
 
     def section(id):
         if id not in ini:
@@ -108,30 +112,56 @@ def main():
         log('No changes')
     else:
         mister_section = ''
-        if 'mister' in ini:
-            ini.pop('mister')
+        nomister_section = ''
+        pre_section = ''
+
+        if os.path.isfile(ini_path):
             header_regex = re.compile('\s*\[([-_a-z0-9]+)\].*', re.I)
             with open(ini_path, 'r') as configfile:
-                on_mister = False
+                no_section = 0
+                other_section = 1
+                common_section = 2
+
+                state = no_section
+                section = None
                 
                 for line in configfile.readlines():
                     match = header_regex.match(line)
-                    if on_mister:
-                        if bool(match):
-                            break
-                        mister_section += line
-                    else:
-                        if bool(match) and match[1].lower() == 'mister':
-                            on_mister = True
+
+                    if bool(match):
+                        section = match[1].lower()
+                        if section in db_ids:
+                            state = common_section
+                        else:
+                            state = other_section
+
+                    if state == no_section:
+                        pre_section += line
+                    elif state == common_section:
+                        pass
+                    elif state == other_section:
+                        if section in ini:
+                            ini.pop(section)
+
+                        if section == 'mister':
                             mister_section += line
+                        else:
+                            nomister_section += line
+                    else:
+                        raise Exception("Wrong state: " + str(state))
 
         config = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
         for header, section in ini.items():
             config[header] = section
 
         with open(ini_path, 'w') as configfile:
+
+            if pre_section != '':
+                configfile.write(pre_section.strip() + '\n\n')
             if mister_section != '':
                 configfile.write(mister_section.strip() + '\n\n')
+            if nomister_section != '':
+                configfile.write(nomister_section.strip() + '\n\n')
             config.write(configfile)
         
         log('Written changes on ' + ini_path)

@@ -138,6 +138,11 @@ DOWNLOADER_UNOFFICIALS_DB_ID="theypsilon_unofficial_distribution"
 DOWNLOADER_ARCADE_OFFSET_DB_URL="https://raw.githubusercontent.com/theypsilon/Arcade_Offset/db/arcadeoffsetdb.json.zip"
 DOWNLOADER_ARCADE_OFFSET_DB_ID="arcade_offset_folder"
 
+WRITE_DOWNLOADER_INI_SCRIPT_URL="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/legacy/write_downloader_ini.py"
+WRITE_DOWNLOADER_INI_SCRIPT_PATH="/tmp/write_downloader_ini.py"
+DOWNLOADER_INI_STANDARD_PATH="/media/fat/downloader.ini"
+DOWNLOADER_INI_TEMP_PATH="/tmp/downloader.ini"
+
 enable_global_log() {
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
     exec >  >(tee -ia ${GLOG_TEMP})
@@ -776,6 +781,11 @@ run_update_all() {
     sequence
     echo
 
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+        fetch_or_continue "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${WRITE_DOWNLOADER_INI_SCRIPT_URL}" > /dev/null 2>&1
+        chmod +x "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" > /dev/null 2>&1 || true
+    fi
+
     if dialog > /dev/null 2>&1 && [ ${COUNTDOWN_TIME} -gt 0 ] ; then
         if [[ -t 0 || -t 1 || -t 2 ]] ; then
             disable_global_log
@@ -799,16 +809,11 @@ run_update_all() {
     local REBOOT_NEEDED="false"
     FAILING_UPDATERS=()
 
+    RUNNING_DOWNLOADER="false"
+
     if [[ "${MAIN_UPDATER}" == "true" ]] ; then
         if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-            export UPDATE_LINUX="false"
-            if [[ "${ENCC_FORKS}" == "true" ]] ; then
-                export DEFAULT_DB_URL="${DOWNLOADER_DB9_DB_URL}"
-            fi
-            run_downloader_script "${DOWNLOADER_URL}" "MiSTer Downloader"
-            if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
-                FAILING_UPDATERS+=("MiSTer Downloader")
-            fi
+            RUNNING_DOWNLOADER="true"
         else
             select_main_updater
             run_updater_script ${SELECT_MAIN_UPDATER_RET} ${MAIN_UPDATER_INI}
@@ -824,19 +829,7 @@ run_update_all() {
 
     if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
         if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-            if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
-                load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
-            fi
-            if [[ "${DOWNLOAD_BETA_CORES:-false}" == "true" ]] ; then
-                export DEFAULT_DB_URL="${DOWNLOADER_JT_BETAS_DB_URL}"
-            else
-                export DEFAULT_DB_URL="${DOWNLOADER_JT_STABLE_DB_URL}"
-            fi
-            export DEFAULT_DB_ID="${DOWNLOADER_JT_DB_ID}"
-            run_downloader_script "${DOWNLOADER_URL}" "JT Downloader"
-            if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
-                FAILING_UPDATERS+=("JT Downloader")
-            fi
+            RUNNING_DOWNLOADER="true"
         else
             run_updater_script "${JOTEGO_UPDATER_URL}" "${JOTEGO_UPDATER_INI}"
             if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
@@ -847,12 +840,7 @@ run_update_all() {
 
     if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
         if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-            export DEFAULT_DB_URL="${DOWNLOADER_UNOFFICIALS_DB_URL}"
-            export DEFAULT_DB_ID="${DOWNLOADER_UNOFFICIALS_DB_ID}"
-            run_downloader_script "${DOWNLOADER_URL}" "Unofficial Downloader"
-            if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
-                FAILING_UPDATERS+=("Unofficial Downloader")
-            fi
+            RUNNING_DOWNLOADER="true"
         else
             run_updater_script "${UNOFFICIAL_UPDATER_URL}" "${UNOFFICIAL_UPDATER_INI}"
             if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
@@ -863,12 +851,7 @@ run_update_all() {
 
     if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
         if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-            export DEFAULT_DB_URL="${DOWNLOADER_LLAPI_DB_URL}"
-            export DEFAULT_DB_ID="${DOWNLOADER_LLAPI_DB_ID}"
-            run_downloader_script "${DOWNLOADER_URL}" "LLAPI Downloader"
-            if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
-                FAILING_UPDATERS+=("LLAPI Downloader")
-            fi
+            RUNNING_DOWNLOADER="true"
         else
             run_updater_script "${LLAPI_UPDATER_URL}" "${LLAPI_UPDATER_INI}"
             if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
@@ -878,11 +861,40 @@ run_update_all() {
     fi
 
     if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
-        export DEFAULT_DB_URL="${DOWNLOADER_ARCADE_OFFSET_DB_URL}"
-        export DEFAULT_DB_ID="${DOWNLOADER_ARCADE_OFFSET_DB_ID}"
-        run_downloader_script "${DOWNLOADER_URL}" "Arcade Offset Downloader"
+        RUNNING_DOWNLOADER="true"
+    fi
+
+    if [[ "${RUNNING_DOWNLOADER}" == "true" ]] ; then
+        if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
+            load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+        fi
+        export MAIN_UPDATER="${MAIN_UPDATER}"
+        export ENCC_FORKS="${ENCC_FORKS}"
+        export JOTEGO_UPDATER="${JOTEGO_UPDATER}"
+        export DOWNLOAD_BETA_CORES="${DOWNLOAD_BETA_CORES:-false}"
+        export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
+        export LLAPI_UPDATER="${LLAPI_UPDATER}"
+        export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
+
+        if [ ! -f "${DOWNLOADER_INI_STANDARD_PATH}" ] ; then
+            "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}"
+            cp "${DOWNLOADER_INI_STANDARD_PATH}" "${DOWNLOADER_INI_TEMP_PATH}"
+        else
+            cp "${DOWNLOADER_INI_STANDARD_PATH}" "${DOWNLOADER_INI_TEMP_PATH}"
+            "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_TEMP_PATH}"
+        fi
+
+        if diff -q "${DOWNLOADER_INI_TEMP_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}" > /dev/null 2>&1 ; then
+            export DOWNLOADER_INI_PATH="${DOWNLOADER_INI_STANDARD_PATH}"
+        else
+            export DOWNLOADER_INI_PATH="${DOWNLOADER_INI_TEMP_PATH}"
+        fi
+
+        export UPDATE_LINUX="false"
+        run_downloader_script "${DOWNLOADER_URL}" "Downloader"
         if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("Arcade Offset Downloader")
+            mv "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log" "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader1.log"
+            FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader1.log")
         fi
     fi
 
@@ -939,7 +951,8 @@ run_update_all() {
             unset DEFAULT_DB_ID
             run_downloader_script "${DOWNLOADER_URL}" "Linux Update"
             if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
-                FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log")
+                mv "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log" "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader2.log"
+                FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader2.log")
             fi
         else
             run_updater_script ${MISTER_DEVEL_LINUX_ONLY_UPDATER_URL} ${MAIN_UPDATER_INI}
@@ -3044,6 +3057,20 @@ settings_menu_save() {
                     local -n INI_FILE="${ref}"
                     cp "${INI_FILE}" "../updater-pc/$(basename ${INI_FILE})" 2> /dev/null || true
                 done
+            fi
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+                if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
+                    load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+                fi
+                load_vars_from_ini "${ORIGINAL_INI_PATH}" "MAIN_UPDATER" "ENCC_FORKS" "JOTEGO_UPDATER" "UNOFFICIAL_UPDATER" "LLAPI_UPDATER" "ARCADE_OFFSET_DOWNLOADER"
+                export MAIN_UPDATER="${MAIN_UPDATER}"
+                export ENCC_FORKS="${ENCC_FORKS}"
+                export JOTEGO_UPDATER="${JOTEGO_UPDATER}"
+                export DOWNLOAD_BETA_CORES="${DOWNLOAD_BETA_CORES:-false}"
+                export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
+                export LLAPI_UPDATER="${LLAPI_UPDATER}"
+                export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
+                "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}"
             fi
             set +e
             dialog --keep-window --msgbox "   Saved" 0 0
