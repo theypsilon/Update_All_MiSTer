@@ -56,7 +56,7 @@ def main():
 
     ini_path = sys.argv[1]
 
-    if not env('TEST') and (ini_path != '/media/fat/downloader.ini' or ini_path != '/tmp/downloader.ini'):
+    if not env('TEST') and ini_path != '/media/fat/downloader.ini' and ini_path != '/tmp/downloader.ini':
         print('Try: export TEST=true')
         raise Exception('Improper call to this script.')
 
