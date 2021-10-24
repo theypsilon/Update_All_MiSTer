@@ -35,7 +35,7 @@ def main():
     db_url_theypsilon_unofficial_distribution = 'https://raw.githubusercontent.com/theypsilon/Distribution_Unofficial_MiSTer/main/unofficialdb.json.zip'
     db_id_theypsilon_unofficial_distribution = 'theypsilon_unofficial_distribution'
 
-    db_url_arcade_offset_folder = 'https://raw.githubusercontent.com/theypsilon/Arcade_Offset_Folder_MiSTer/db/arcadeoffsetdb.json.zip'
+    db_url_arcade_offset_folder = 'https://raw.githubusercontent.com/theypsilon/Arcade_Offset/db/arcadeoffsetdb.json.zip'
     db_id_arcade_offset_folder = 'arcade_offset_folder'
 
     def env(name):
