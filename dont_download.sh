@@ -876,8 +876,8 @@ run_update_all() {
         export LLAPI_UPDATER="${LLAPI_UPDATER}"
         export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
 
-        if [ ! -f "${WORK_PATH}/initial_write" ] ; then
-            touch "${WORK_PATH}/initial_write"
+        if [ ! -f "${WORK_PATH}/downloader_initial_write" ] ; then
+            touch "${WORK_PATH}/downloader_initial_write"
             "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}"
         fi
 
