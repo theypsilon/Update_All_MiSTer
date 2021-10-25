@@ -781,10 +781,8 @@ run_update_all() {
     sequence
     echo
 
-    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-        fetch_or_continue "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${WRITE_DOWNLOADER_INI_SCRIPT_URL}" > /dev/null 2>&1
-        chmod +x "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" > /dev/null 2>&1 || true
-    fi
+    fetch_or_continue "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${WRITE_DOWNLOADER_INI_SCRIPT_URL}" > /dev/null 2>&1
+    chmod +x "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" > /dev/null 2>&1 || true
 
     if dialog > /dev/null 2>&1 && [ ${COUNTDOWN_TIME} -gt 0 ] ; then
         if [[ -t 0 || -t 1 || -t 2 ]] ; then
