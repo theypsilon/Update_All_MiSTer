@@ -876,6 +876,11 @@ run_update_all() {
         export LLAPI_UPDATER="${LLAPI_UPDATER}"
         export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
 
+        if [ ! -f "${WORK_PATH}/initial_write" ] ; then
+            touch "${WORK_PATH}/initial_write"
+            "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}"
+        fi
+
         if [ ! -f "${DOWNLOADER_INI_STANDARD_PATH}" ] ; then
             "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}"
             cp "${DOWNLOADER_INI_STANDARD_PATH}" "${DOWNLOADER_INI_TEMP_PATH}"
@@ -891,7 +896,7 @@ run_update_all() {
         fi
 
         export UPDATE_LINUX="false"
-        run_downloader_script "${DOWNLOADER_URL}" "Downloader"
+        run_downloader_script "${DOWNLOADER_URL}" "MiSTer Downloader"
         if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
             mv "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log" "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader1.log"
             FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader1.log")
