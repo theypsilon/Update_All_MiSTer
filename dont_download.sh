@@ -863,15 +863,17 @@ run_update_all() {
     fi
 
     if [[ "${RUNNING_DOWNLOADER}" == "true" ]] ; then
-        if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
-            load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+            if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
+                load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+            fi
+            export MAIN_UPDATER="${MAIN_UPDATER}"
+            export ENCC_FORKS="${ENCC_FORKS}"
+            export JOTEGO_UPDATER="${JOTEGO_UPDATER}"
+            export DOWNLOAD_BETA_CORES="${DOWNLOAD_BETA_CORES:-false}"
+            export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
+            export LLAPI_UPDATER="${LLAPI_UPDATER}"
         fi
-        export MAIN_UPDATER="${MAIN_UPDATER}"
-        export ENCC_FORKS="${ENCC_FORKS}"
-        export JOTEGO_UPDATER="${JOTEGO_UPDATER}"
-        export DOWNLOAD_BETA_CORES="${DOWNLOAD_BETA_CORES:-false}"
-        export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
-        export LLAPI_UPDATER="${LLAPI_UPDATER}"
         export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
 
         if [ ! -f "${WORK_PATH}/downloader_initial_write" ] ; then
@@ -3062,16 +3064,17 @@ settings_menu_save() {
                 done
             fi
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-                if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
-                    load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+                if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+                    if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
+                        load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+                    fi
+                    export MAIN_UPDATER="${MAIN_UPDATER}"
+                    export ENCC_FORKS="${ENCC_FORKS}"
+                    export JOTEGO_UPDATER="${JOTEGO_UPDATER}"
+                    export DOWNLOAD_BETA_CORES="${DOWNLOAD_BETA_CORES:-false}"
+                    export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
+                    export LLAPI_UPDATER="${LLAPI_UPDATER}"
                 fi
-                load_vars_from_ini "${ORIGINAL_INI_PATH}" "MAIN_UPDATER" "ENCC_FORKS" "JOTEGO_UPDATER" "UNOFFICIAL_UPDATER" "LLAPI_UPDATER" "ARCADE_OFFSET_DOWNLOADER"
-                export MAIN_UPDATER="${MAIN_UPDATER}"
-                export ENCC_FORKS="${ENCC_FORKS}"
-                export JOTEGO_UPDATER="${JOTEGO_UPDATER}"
-                export DOWNLOAD_BETA_CORES="${DOWNLOAD_BETA_CORES:-false}"
-                export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
-                export LLAPI_UPDATER="${LLAPI_UPDATER}"
                 export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
                 "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}"
             fi
