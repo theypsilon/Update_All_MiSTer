@@ -26,7 +26,7 @@ def main():
     db_url_mister_db9_distribution_mister = 'https://raw.githubusercontent.com/MiSTer-DB9/Distribution_MiSTer/main/dbencc.json.zip'
     db_id_distribution_mister = 'distribution_mister'
 
-    db_url_jtbin_jtcores = 'https://raw.githubusercontent.com/theypsilon/JT_Cores_MiSTer/jtbin/jtbindb.json.zip'
+    db_url_jtbin_jtcores = 'https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip'
     db_url_jtstable_jtcores = 'https://raw.githubusercontent.com/theypsilon/JT_Cores_MiSTer/jtstable/jtstabledb.json.zip'
     db_id_jtcores = 'jtcores'
 
