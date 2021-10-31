@@ -128,7 +128,7 @@ INI_REFERENCES=( \
 )
 
 DOWNLOADER_DB9_DB_URL="https://raw.githubusercontent.com/MiSTer-DB9/Distribution_MiSTer/main/dbencc.json.zip"
-DOWNLOADER_JT_BETAS_DB_URL="https://raw.githubusercontent.com/theypsilon/JT_Cores_MiSTer/jtbin/jtbindb.json.zip"
+DOWNLOADER_JT_BETAS_DB_URL="https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip"
 DOWNLOADER_JT_STABLE_DB_URL="https://raw.githubusercontent.com/theypsilon/JT_Cores_MiSTer/jtstable/jtstabledb.json.zip"
 DOWNLOADER_JT_DB_ID="jtcores"
 DOWNLOADER_LLAPI_DB_URL="https://raw.githubusercontent.com/MiSTer-LLAPI/LLAPI_folder_MiSTer/main/llapidb.json.zip"
