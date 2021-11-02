@@ -135,7 +135,7 @@ DOWNLOADER_LLAPI_DB_URL="https://raw.githubusercontent.com/MiSTer-LLAPI/LLAPI_fo
 DOWNLOADER_LLAPI_DB_ID="llapi_folder"
 DOWNLOADER_UNOFFICIALS_DB_URL="https://raw.githubusercontent.com/theypsilon/Distribution_Unofficial_MiSTer/main/unofficialdb.json.zip"
 DOWNLOADER_UNOFFICIALS_DB_ID="theypsilon_unofficial_distribution"
-DOWNLOADER_ARCADE_OFFSET_DB_URL="https://raw.githubusercontent.com/theypsilon/Arcade_Offset/db/arcadeoffsetdb.json.zip"
+DOWNLOADER_ARCADE_OFFSET_DB_URL="https://raw.githubusercontent.com/atrac17/Arcade_Offset/db/arcadeoffsetdb.json.zip"
 DOWNLOADER_ARCADE_OFFSET_DB_ID="arcade_offset_folder"
 
 WRITE_DOWNLOADER_INI_SCRIPT_URL="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/legacy/write_downloader_ini.py"
