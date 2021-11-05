@@ -129,7 +129,7 @@ def main():
                     match = header_regex.match(line)
 
                     if bool(match):
-                        section = match[1].lower()
+                        section = match.group(1).lower()
                         if section in db_ids:
                             state = common_section
                         else:
