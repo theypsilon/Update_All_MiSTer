@@ -254,8 +254,8 @@ make_folder() {
 
 initialize() {
     if [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-        local JUST_PWD="$(pwd)"
-        local CURRENT_DIR_PWD="$(cd ${CURRENT_DIR} && pwd)"
+        local JUST_PWD="$(/bin/pwd)"
+        local CURRENT_DIR_PWD="$(cd ${CURRENT_DIR} && /bin/pwd)"
         if [[ "${JUST_PWD^^}" != "${CURRENT_DIR_PWD^^}" ]] ; then
             message_ignored_root_ini "update_all.ini"
             message_ignored_root_ini "update.ini"
@@ -270,12 +270,12 @@ initialize() {
             if [ ${#MESSAGE_IGNORED_ROOT_INI_ARRAY[@]} -ne 0 ] ; then
                 echo "NEW CHANGE! As of 2021.07.17, Update All will now look for INI files"
                 echo "            stored in the same folder as $(basename ${EXPORTED_INI_PATH%.*}).sh"
-                echo "            Any INI files at $(pwd) will be ignored."
+                echo "            Any INI files at $(/bin/pwd) will be ignored."
                 echo
 
 
                 for INI in "${MESSAGE_IGNORED_ROOT_INI_ARRAY[@]}" ; do
-                    echo "WARNING! $(pwd)/${INI} will be ignored."
+                    echo "WARNING! $(/bin/pwd)/${INI} will be ignored."
                     if [ -f "/media/fat/Scripts/${INI}" ] ; then
                         echo "         /media/fat/Scripts/${INI} will be used instead."
                     else
