@@ -41,6 +41,7 @@ set_default_options() {
     LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
 
     ARCADE_OFFSET_DOWNLOADER="false"
+    TTY2OLED_FILES_DOWNLOADER="false"
 
     BIOS_GETTER="true"
     BIOS_GETTER_INI="update_bios-getter.ini"
@@ -714,6 +715,9 @@ sequence() {
         if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
             echo "- Names TXT"
         fi
+        if [[ "${TTY2OLED_FILES_DOWNLOADER}" == "true" ]] ; then
+            echo "- tty2oled Files"
+        fi
     else
         if [[ "${MAIN_UPDATER}" == "true" ]] ; then
             echo "- Main Updater: $([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8' || echo 'MiSTer-devel')"
@@ -894,6 +898,10 @@ run_update_all() {
         RUNNING_DOWNLOADER="true"
     fi
 
+    if [[ "${TTY2OLED_FILES_DOWNLOADER}" == "true" ]] && [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+        RUNNING_DOWNLOADER="true"
+    fi
+
     if [[ "${RUNNING_DOWNLOADER}" == "true" ]] ; then
         if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
             if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
@@ -905,6 +913,7 @@ run_update_all() {
             export DOWNLOAD_BETA_CORES="${DOWNLOAD_BETA_CORES:-false}"
             export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
             export LLAPI_UPDATER="${LLAPI_UPDATER}"
+            export TTY2OLED_FILES_DOWNLOADER="${TTY2OLED_FILES_DOWNLOADER}"
             if [ -f "${NAMES_TXT_UPDATER_INI}" ] ; then
                 load_vars_from_ini "${NAMES_TXT_UPDATER_INI}" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
             fi
@@ -2911,6 +2920,7 @@ settings_menu_misc() {
     SETTINGS_OPTIONS_COUNTDOWN_TIME=("15" "4" "60")
     SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE=("false", "true")
     SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER=("false" "true")
+    SETTINGS_OPTIONS_TTY2OLED_FILES_DOWNLOADER=("false" "true")
 
     while true ; do
         (
@@ -2919,8 +2929,9 @@ settings_menu_misc() {
             local COUNTDOWN_TIME="${SETTINGS_OPTIONS_COUNTDOWN_TIME[0]}"
             local DOWNLOADER_WHEN_POSSIBLE="${SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE[0]}"
             local ARCADE_OFFSET_DOWNLOADER="${SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER[0]}"
+            local TTY2OLED_FILES_DOWNLOADER="${SETTINGS_OPTIONS_TTY2OLED_FILES_DOWNLOADER[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER" "TTY2OLED_FILES_DOWNLOADER"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -2929,30 +2940,49 @@ settings_menu_misc() {
                 DEFAULT_SELECTION="1 Autoreboot (if needed)"
             fi
 
-            set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
-                --menu "" 13 75 25 \
-                "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
-                "2 Arcade Offset Downloader" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
-                "3 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
-                "4 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
-                "5 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
-                "6 Clear All Cores" "Removes all CORES and MRA folders." \
-                "BACK"  "" 2> ${TMP}
-            DEFAULT_SELECTION="$?"
-            set -e
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
+                    --menu "" 13 75 25 \
+                    "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
+                    "2 Arcade Offset" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
+                    "3 tty2oled Files" "$(settings_menu_yesno_bool_text ${TTY2OLED_FILES_DOWNLOADER})" \
+                    "4 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
+                    "5 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                    "6 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                    "7 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            else
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
+                    --menu "" 13 75 25 \
+                    "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
+                    "2 Arcade Offset Downloader" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
+                    "" "" \
+                    "4 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
+                    "5 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                    "6 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                    "7 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            fi
 
             if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
             fi
 
             case "${DEFAULT_SELECTION}" in
+                "") ;;
                 "1 Use new Downloader") settings_change_var "DOWNLOADER_WHEN_POSSIBLE" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "2 Arcade Offset Downloader") settings_change_var "ARCADE_OFFSET_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "3 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "4 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "5 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "6 Clear All Cores")
+                "3 tty2oled Files") settings_change_var "TTY2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "4 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "5 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "6 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "7 Clear All Cores")
                     local FILES_FOLDERS=("_Arcade" "_Computer" "_Console" "_Other" "_Utility" "_LLAPI" "_Jotego" "_CPS1" "_Unofficial")
 
                     local TO_DELETE=()
