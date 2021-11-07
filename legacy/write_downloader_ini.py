@@ -39,7 +39,9 @@ def main():
     db_url_arcade_offset_folder = 'https://raw.githubusercontent.com/atrac17/Arcade_Offset/db/arcadeoffsetdb.json.zip'
     db_id_arcade_offset_folder = 'arcade_offset_folder'
     
-    db_url_names_txt = os.environ.get('DB_URL_NAMES_TXT', None)
+    names_region = os.environ.get('NAMES_REGION', 'JP')
+    names_char_code = os.environ.get('NAMES_CHAR_CODE', 'CHAR18')
+    names_sort_code = os.environ.get('NAMES_SORT_CODE', 'Common')
     db_id_names_txt = 'names_txt'
 
     db_ids = [db_id_distribution_mister, db_id_jtcores, db_id_llapi_folder, db_id_theypsilon_unofficial_distribution, db_id_arcade_offset_folder, db_id_names_txt]
@@ -110,8 +112,61 @@ def main():
         ini.pop(db_id_arcade_offset_folder)
         
     if names_txt_updater:
-        if db_url_names_txt is None:
-            db_url_names_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_JP.json'
+        db_url_names_CHAR54_Manufacturer_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR54_Manufacturer_EU.json'
+        db_url_names_CHAR28_Manufacturer_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Manufacturer_EU.json'
+        db_url_names_CHAR28_Manufacturer_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Manufacturer_US.json'
+        db_url_names_CHAR28_Manufacturer_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Manufacturer_JP.json'
+        db_url_names_CHAR28_Common_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Common_EU.json'
+        db_url_names_CHAR28_Common_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Common_US.json'
+        db_url_names_CHAR28_Common_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Common_JP.json'
+        db_url_names_CHAR18_Manufacturer_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Manufacturer_EU.json'
+        db_url_names_CHAR18_Manufacturer_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Manufacturer_US.json'
+        db_url_names_CHAR18_Manufacturer_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Manufacturer_JP.json'
+        db_url_names_CHAR18_Common_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_EU.json'
+        db_url_names_CHAR18_Common_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_US.json'
+        db_url_names_CHAR18_Common_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_JP.json'
+        
+        names_region = os.environ.get('NAMES_REGION', 'JP')
+        names_char_code = os.environ.get('NAMES_CHAR_CODE', 'CHAR18')
+        names_sort_code = os.environ.get('NAMES_SORT_CODE', 'Common')
+
+        names_dict = {
+            'JP': {
+                'CHAR18': {
+                    'Common': db_url_names_CHAR18_Common_JP_txt,
+                    'Manufacturer': db_url_names_CHAR18_Manufacturer_JP_txt
+                },
+                'CHAR28': {
+                    'Common': db_url_names_CHAR28_Common_JP_txt,
+                    'Manufacturer': db_url_names_CHAR28_Manufacturer_JP_txt
+                }
+            },
+            'US': {
+                'CHAR18': {
+                    'Common': db_url_names_CHAR18_Common_US_txt,
+                    'Manufacturer': db_url_names_CHAR18_Manufacturer_US_txt
+                },
+                'CHAR28': {
+                    'Common': db_url_names_CHAR28_Common_US_txt,
+                    'Manufacturer': db_url_names_CHAR28_Manufacturer_US_txt
+                }
+            },
+            'EU': {
+                'CHAR18': {
+                    'Common': db_url_names_CHAR18_Common_EU_txt,
+                    'Manufacturer': db_url_names_CHAR18_Manufacturer_EU_txt
+                },
+                'CHAR28': {
+                    'Common': db_url_names_CHAR28_Common_EU_txt,
+                    'Manufacturer': db_url_names_CHAR28_Manufacturer_EU_txt
+                },
+                'CHAR54': {
+                    'Manufacturer': db_url_names_CHAR54_Manufacturer_EU_txt
+                }
+            }
+        }
+
+        db_url_names_txt = names_dict.get(names_region, {}).get(names_char_code, {}).get(names_sort_code, db_url_names_CHAR18_Common_JP_txt)
 
         section(db_id_names_txt)[key_db_url] = db_url_names_txt
     elif db_id_names_txt in ini:

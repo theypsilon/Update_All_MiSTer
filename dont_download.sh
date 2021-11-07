@@ -874,7 +874,14 @@ run_update_all() {
             export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
             export LLAPI_UPDATER="${LLAPI_UPDATER}"
         fi
+        if [ -f "${NAMES_TXT_UPDATER_INI}" ] ; then
+            load_vars_from_ini "${NAMES_TXT_UPDATER_INI}" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
+        fi
         export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
+        export NAMES_TXT_UPDATER="${NAMES_TXT_UPDATER}"
+        export NAMES_REGION="${NAMES_REGION}"
+        export NAMES_CHAR_CODE="${NAMES_CHAR_CODE}"
+        export NAMES_SORT_CODE="${NAMES_SORT_CODE}"
 
         if [ ! -f "${WORK_PATH}/downloader_initial_write" ] ; then
             touch "${WORK_PATH}/downloader_initial_write"
