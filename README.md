@@ -55,7 +55,7 @@ Useful if you can't connect your MiSTer to internet.
 
 In case you would like to configure Update All so it downloads exactly what you need, you can do it through the Settings screen.
 
-![settings screen](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/f66d6ba9-91e1-4581-82a2-c51f7f5424d5.jpeg "Settings Screen")
+![settings screen](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/menu-1-4.jpeg "Settings Screen")
 
 The Settings screen will show up if you press UP in your controller or keyboard during the countdown showing up right after starting `update_all.sh` in your MiSTer. Please, don't forget to select `SAVE` to keep all the changes you have done before leaving.
 
