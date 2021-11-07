@@ -1158,7 +1158,7 @@ settings_menu_update_all() {
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 OPT1_MAIN="1 Main Distribution"
                 OPT2_JOTEGO="2 JTCORES for MiSTer"
-                OPT3_UNOFFICIAL="3 theypsilon Unofficials"
+                OPT3_UNOFFICIAL="3 theypsilon Unofficial"
                 OPT4_LLAPI="4 LLAPI Folder"
                 OPT8_NAMES="8 Names TXT"
             else
