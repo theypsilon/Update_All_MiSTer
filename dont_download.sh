@@ -933,7 +933,8 @@ run_update_all() {
             "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}"
         fi
 
-        if [ ! -f "${DOWNLOADER_INI_STANDARD_PATH}" ] ; then
+#        if [ ! -f "${DOWNLOADER_INI_STANDARD_PATH}" ] ; then
+        if true ; then
             "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}"
             cp "${DOWNLOADER_INI_STANDARD_PATH}" "${DOWNLOADER_INI_TEMP_PATH}"
         else
