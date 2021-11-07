@@ -38,8 +38,11 @@ def main():
 
     db_url_arcade_offset_folder = 'https://raw.githubusercontent.com/atrac17/Arcade_Offset/db/arcadeoffsetdb.json.zip'
     db_id_arcade_offset_folder = 'arcade_offset_folder'
+    
+    db_url_names_txt = os.environ.get('DB_URL_NAMES_TXT', None)
+    db_id_names_txt = 'names_txt'
 
-    db_ids = [db_id_distribution_mister, db_id_jtcores, db_id_llapi_folder, db_id_theypsilon_unofficial_distribution, db_id_arcade_offset_folder]
+    db_ids = [db_id_distribution_mister, db_id_jtcores, db_id_llapi_folder, db_id_theypsilon_unofficial_distribution, db_id_arcade_offset_folder, db_id_names_txt]
 
     def env(name):
         return os.environ.get(name, 'false') == 'true'
@@ -55,7 +58,7 @@ def main():
     unofficial_updater = env('UNOFFICIAL_UPDATER')
     llapi_updater = env('LLAPI_UPDATER')
     arcade_offset_downloader = env('ARCADE_OFFSET_DOWNLOADER')
-
+    names_txt_updater = env('NAMES_TXT_UPDATER')
 
     ini_path = sys.argv[1]
 
@@ -105,6 +108,14 @@ def main():
         section(db_id_arcade_offset_folder)[key_db_url] = db_url_arcade_offset_folder
     elif db_id_arcade_offset_folder in ini:
         ini.pop(db_id_arcade_offset_folder)
+        
+    if names_txt_updater:
+        if db_url_names_txt is None:
+            db_url_names_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_JP.json'
+
+        section(db_id_names_txt)[key_db_url] = db_url_names_txt
+    elif db_id_names_txt in ini:
+        ini.pop(db_id_names_txt)
 
     after = json.dumps(ini)
 
