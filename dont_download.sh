@@ -2942,7 +2942,7 @@ settings_menu_misc() {
 
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
-                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
                     --menu "" 14 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
                     "2 Arcade Offset" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
@@ -2956,7 +2956,7 @@ settings_menu_misc() {
                 set -e
             else
                 set +e
-                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
                     --menu "" 14 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
                     "2 Arcade Offset" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
