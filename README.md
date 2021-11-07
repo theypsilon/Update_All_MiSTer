@@ -15,7 +15,7 @@ This script runs the [__MiSTer Downloader__](https://github.com/MiSTer-devel/Dow
 Additionally, this script also chains the following scripts:
 1. [BIOS Getter](https://github.com/theypsilon/MiSTer_BIOS_SCRIPTS) download bios for your installed systems from https://archive.org/
 2. [MAME and HBMAME Getter](https://github.com/atrac17/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
-3. [Names TXT Updater](https://github.com/theypsilon/Names_TXT_Updater_MiSTer). Downloads a community curated names.txt file that enables better core names in the menus.
+3. [Names TXT Updater](https://github.com/theypsilon/Names_TXT_Updater_MiSTer). Downloads a community curated names.txt file that enables better core names in the menus. **[Disabled by default]**
 4. [Arcade Organizer](https://github.com/theypsilon/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
 Special thanks to [Locutus73](https://github.com/Locutus73) for all his great work on the older [__Updater script__](https://github.com/MiSTer-devel/Updater_script_MiSTer). That __Updater script__ is no longer used by __Update All__ by default.
