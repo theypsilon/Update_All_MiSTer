@@ -16,7 +16,7 @@ Additionally, this script also chains the following scripts:
 3. [Names TXT Updater](https://github.com/theypsilon/Names_TXT_Updater_MiSTer). Downloads a community curated names.txt file that enables better core names in the menus.
 4. [Arcade Organizer](https://github.com/theypsilon/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
-Special thanks to [Locutus73](https://github.com/Locutus73) for all his work on the older [__Updater script__](https://github.com/MiSTer-devel/Updater_script_MiSTer). This __Updater script__ is no longer used by __Update All__ by default.
+Special thanks to [Locutus73](https://github.com/Locutus73) for all his great work on the older [__Updater script__](https://github.com/MiSTer-devel/Updater_script_MiSTer). That __Updater script__ is no longer used by __Update All__ by default.
 
 
 ## Setup
