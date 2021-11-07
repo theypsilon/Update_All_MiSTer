@@ -691,27 +691,51 @@ install_scripts() {
 
 sequence() {
     echo "Sequence:"
-    local UPDATER_KIND="Updater"
+
     if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-        UPDATER_KIND="Downloader"
-    fi
-    if [[ "${MAIN_UPDATER}" == "true" ]] ; then
-        echo "- Main ${UPDATER_KIND}: $([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8' || echo 'MiSTer-devel')"
-    fi
-    if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
-        if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
-            load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+        if [[ "${MAIN_UPDATER}" == "true" ]] ; then
+            echo "- Main Distribution: $([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8' || echo 'MiSTer-devel')"
         fi
-        echo "- Jotego ${UPDATER_KIND} ($([[ ${DOWNLOAD_BETA_CORES:-false} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))"
-    fi
-    if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
-        echo "- Unofficial ${UPDATER_KIND}"
-    fi
-    if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
-        echo "- LLAPI ${UPDATER_KIND}"
-    fi
-    if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
-        echo "- Arcade Offset Downloader"
+        if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
+            if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
+                load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+            fi
+            echo "- JTCORES for MiSTer ($([[ ${DOWNLOAD_BETA_CORES:-false} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))"
+        fi
+        if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
+            echo "- theypsilon Unofficial Distribution"
+        fi
+        if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
+            echo "- LLAPI Folder"
+        fi
+        if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
+            echo "- Arcade Offset"
+        fi
+        if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
+            echo "- Names TXT"
+        fi
+    else
+        if [[ "${MAIN_UPDATER}" == "true" ]] ; then
+            echo "- Main Updater: $([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8' || echo 'MiSTer-devel')"
+        fi
+        if [[ "${JOTEGO_UPDATER}" == "true" ]] ; then
+            if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
+                load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
+            fi
+            echo "- Jotego Updater ($([[ ${DOWNLOAD_BETA_CORES:-false} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))"
+        fi
+        if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
+            echo "- Unofficial Updater"
+        fi
+        if [[ "${LLAPI_UPDATER}" == "true" ]] ; then
+            echo "- LLAPI Updater"
+        fi
+        if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
+            echo "- Arcade Offset"
+        fi
+        if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
+            echo "- Names TXT Updater"
+        fi
     fi
     if [[ "${BIOS_GETTER}" == "true" ]] ; then
         echo "- BIOS Getter"
@@ -721,9 +745,6 @@ sequence() {
     fi
     if [[ "${HBMAME_GETTER}" == "true" ]] ; then
         echo "- HBMAME Getter"
-    fi
-    if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
-        echo "- Names TXT Updater"
     fi
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
         echo "- Arcade Organizer"
@@ -858,6 +879,17 @@ run_update_all() {
         fi
     fi
 
+    if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+            RUNNING_DOWNLOADER="true"
+        else
+            run_updater_script "${NAMES_TXT_UPDATER_URL}" "${NAMES_TXT_UPDATER_INI}"
+            if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
+                FAILING_UPDATERS+=("Names.txt_Updater")
+            fi
+        fi
+    fi
+
     if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
         RUNNING_DOWNLOADER="true"
     fi
@@ -873,15 +905,15 @@ run_update_all() {
             export DOWNLOAD_BETA_CORES="${DOWNLOAD_BETA_CORES:-false}"
             export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
             export LLAPI_UPDATER="${LLAPI_UPDATER}"
-        fi
-        if [ -f "${NAMES_TXT_UPDATER_INI}" ] ; then
-            load_vars_from_ini "${NAMES_TXT_UPDATER_INI}" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
+            if [ -f "${NAMES_TXT_UPDATER_INI}" ] ; then
+                load_vars_from_ini "${NAMES_TXT_UPDATER_INI}" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
+            fi
+            export NAMES_TXT_UPDATER="${NAMES_TXT_UPDATER}"
+            export NAMES_REGION="${NAMES_REGION}"
+            export NAMES_CHAR_CODE="${NAMES_CHAR_CODE}"
+            export NAMES_SORT_CODE="${NAMES_SORT_CODE}"
         fi
         export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
-        export NAMES_TXT_UPDATER="${NAMES_TXT_UPDATER}"
-        export NAMES_REGION="${NAMES_REGION}"
-        export NAMES_CHAR_CODE="${NAMES_CHAR_CODE}"
-        export NAMES_SORT_CODE="${NAMES_SORT_CODE}"
 
         if [ ! -f "${WORK_PATH}/downloader_initial_write" ] ; then
             touch "${WORK_PATH}/downloader_initial_write"
@@ -922,13 +954,6 @@ run_update_all() {
 
     if [[ "${HBMAME_GETTER}" == "true" ]] ; then
         run_mame_getter_script "HBMAME-GETTER" "${HBMAME_GETTER_URL}" "${HBMAME_GETTER_INI}"
-    fi
-
-    if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
-        run_updater_script "${NAMES_TXT_UPDATER_URL}" "${NAMES_TXT_UPDATER_INI}"
-        if [ $RUN_UPDATER_SCRIPT_RET -ne 0 ]; then
-            FAILING_UPDATERS+=("Names.txt_Updater")
-        fi
     fi
 
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
