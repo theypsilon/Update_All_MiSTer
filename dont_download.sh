@@ -2959,7 +2959,7 @@ settings_menu_misc() {
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Other Settings" \
                     --menu "" 14 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
-                    "2 Arcade Offset Downloader" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
+                    "2 Arcade Offset" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
                     "" "" \
                     "4 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
                     "5 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
@@ -2977,7 +2977,7 @@ settings_menu_misc() {
             case "${DEFAULT_SELECTION}" in
                 "") ;;
                 "1 Use new Downloader") settings_change_var "DOWNLOADER_WHEN_POSSIBLE" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "2 Arcade Offset Downloader") settings_change_var "ARCADE_OFFSET_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "2 Arcade Offset") settings_change_var "ARCADE_OFFSET_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "3 tty2oled Files") settings_change_var "TTY2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "4 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "5 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
