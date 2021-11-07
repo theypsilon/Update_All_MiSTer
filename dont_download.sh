@@ -1150,18 +1150,30 @@ settings_menu_update_all() {
                 ARCADE_ORGANIZER="false"
             fi
 
-            local SCRIPT_TYPE=
+            local OPT1_MAIN=
+            local OPT2_JOTEGO=
+            local OPT3_UNOFFICIAL=
+            local OPT4_LLAPI=
+            local OPT8_NAMES=
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
-                SCRIPT_TYPE="Downloader"
+                OPT1_MAIN="1 Main Distribution"
+                OPT2_JOTEGO="2 JTCORES for MiSTer"
+                OPT3_UNOFFICIAL="3 theypsilon Unofficials"
+                OPT4_LLAPI="4 LLAPI Folder"
+                OPT8_NAMES="8 Names TXT"
             else
-                SCRIPT_TYPE="Updater"
+                OPT1_MAIN="1 Main Updater"
+                OPT2_JOTEGO="2 Jotego Updater"
+                OPT3_UNOFFICIAL="3 Unofficial Updater"
+                OPT4_LLAPI="4 LLAPI Updater"
+                OPT8_NAMES="8 Names TXT Updater"
             fi
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
             else
-                DEFAULT_SELECTION="1 Main ${SCRIPT_TYPE}"
+                DEFAULT_SELECTION="${OPT1_MAIN}"
             fi
 
             set +e
@@ -1170,14 +1182,14 @@ settings_menu_update_all() {
                 --cancel-label "Abort" --ok-label "Select" --extra-button --extra-label "Toggle" \
                 --title "Update All ${UPDATE_ALL_VERSION} Settings" \
                 --menu "Settings loaded from '$(settings_normalize_ini_file ${EXPORTED_INI_PATH})'" 19 75 25 \
-                "1 Main ${SCRIPT_TYPE}"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores from $([[ ${ENCC_FORKS} == 'true' ]] && echo 'MiSTer-DB9' || echo 'MiSTer-devel')" \
-                "2 Jotego ${SCRIPT_TYPE}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego ($([[ ${DOWNLOAD_BETA_CORES} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))" \
-                "3 Unofficial ${SCRIPT_TYPE}"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
-                "4 LLAPI ${SCRIPT_TYPE}" "$(settings_active_tag ${LLAPI_UPDATER}) Forks adapted to LLAPI" \
+                "${OPT1_MAIN}"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores from $([[ ${ENCC_FORKS} == 'true' ]] && echo 'MiSTer-DB9' || echo 'MiSTer-devel')" \
+                "${OPT2_JOTEGO}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego ($([[ ${DOWNLOAD_BETA_CORES} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))" \
+                "${OPT3_UNOFFICIAL}"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
+                "${OPT4_LLAPI}" "$(settings_active_tag ${LLAPI_UPDATER}) Forks adapted to LLAPI" \
                 "5 BIOS Getter" "$(settings_active_tag ${BIOS_GETTER}) BIOS files for your systems" \
                 "6 MAME Getter" "$(settings_active_tag ${MAME_GETTER}) MAME ROMs for arcades" \
                 "7 HBMAME Getter" "$(settings_active_tag ${HBMAME_GETTER}) HBMAME ROMs for arcades" \
-                "8 Names TXT Updater" "$(settings_active_tag ${NAMES_TXT_UPDATER}) Better core names in the menus" \
+                "${OPT8_NAMES}" "$(settings_active_tag ${NAMES_TXT_UPDATER}) Better core names in the menus" \
                 "9 Arcade Organizer" "$(settings_active_tag ${ARCADE_ORGANIZER}) Creates folder for easy navigation" \
                 "0 Misc" "" \
                 "SAVE" "Writes all changes to the INI file/s" \
@@ -1188,14 +1200,14 @@ settings_menu_update_all() {
             case "${DEFAULT_SELECTION}" in
                 "0")
                     case "$(cat ${TMP})" in
-                        "1 Main ${SCRIPT_TYPE}") settings_menu_main_updater ;;
-                        "2 Jotego ${SCRIPT_TYPE}") settings_menu_jotego_updater ;;
-                        "3 Unofficial ${SCRIPT_TYPE}") settings_menu_unofficial_updater ;;
-                        "4 LLAPI ${SCRIPT_TYPE}") settings_menu_llapi_updater ;;
+                        "${OPT1_MAIN}") settings_menu_main_updater ;;
+                        "${OPT2_JOTEGO}") settings_menu_jotego_updater ;;
+                        "${OPT3_UNOFFICIAL}") settings_menu_unofficial_updater ;;
+                        "${OPT4_LLAPI}") settings_menu_llapi_updater ;;
                         "5 BIOS Getter") settings_menu_bios_getter ;;
                         "6 MAME Getter") settings_menu_mame_getter ;;
                         "7 HBMAME Getter") settings_menu_hbmame_getter ;;
-                        "8 Names TXT Updater") settings_menu_names_txt ;;
+                        "${OPT8_NAMES}") settings_menu_names_txt ;;
                         "9 Arcade Organizer") settings_menu_2beta_arcade_organizer ;;
                         "0 Misc") settings_menu_misc ;;
                         "SAVE") settings_menu_save ;;
@@ -1205,14 +1217,14 @@ settings_menu_update_all() {
                     ;;
                 "3")
                     case "$(cat ${TMP})" in
-                        "1 Main ${SCRIPT_TYPE}") settings_change_var "MAIN_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                        "2 Jotego ${SCRIPT_TYPE}") settings_change_var "JOTEGO_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                        "3 Unofficial ${SCRIPT_TYPE}") settings_change_var "UNOFFICIAL_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                        "4 LLAPI ${SCRIPT_TYPE}") settings_change_var "LLAPI_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "${OPT1_MAIN}") settings_change_var "MAIN_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "${OPT2_JOTEGO}") settings_change_var "JOTEGO_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "${OPT3_UNOFFICIAL}") settings_change_var "UNOFFICIAL_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "${OPT4_LLAPI}") settings_change_var "LLAPI_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "5 BIOS Getter") settings_change_var "BIOS_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "6 MAME Getter") settings_change_var "MAME_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "7 HBMAME Getter") settings_change_var "HBMAME_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                        "8 Names TXT Updater") settings_change_var "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "${OPT8_NAMES}") settings_change_var "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "9 Arcade Organizer") settings_change_var "ARCADE_ORGANIZER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "0 Misc") ;;
                         "SAVE") ;;
