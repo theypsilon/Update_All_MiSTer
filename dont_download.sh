@@ -1279,7 +1279,7 @@ settings_menu_main_updater() {
 
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
-                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Main Downloader Settings" \
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Main Distribution Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${EXPORTED_INI_PATH})" 10 75 25 \
                     "${ACTIVATE}" "Activated: ${MAIN_UPDATER}" \
                     "2 Cores versions" "$([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8 forks with ENCC' || echo 'Official Cores from MiSTer-devel')" \
@@ -1450,7 +1450,7 @@ settings_menu_jotego_updater() {
             local ACTIVATE="1 $(settings_active_action ${JOTEGO_UPDATER})"
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
-                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Jotego Downloader Settings" \
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "JTCORES for MiSTer Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 10 75 25 \
                     "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
                     "3 Install Beta Cores" "${DOWNLOAD_BETA_CORES}" \
@@ -1580,7 +1580,7 @@ settings_menu_unofficial_updater() {
 
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
-                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Unofficial Downloader Settings" \
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "theypsilon Unofficial Distribution Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${EXPORTED_INI_PATH})" 9 75 25 \
                     "${ACTIVATE}" "Activated: ${UNOFFICIAL_UPDATER}" \
                     "BACK"  "" 2> ${TMP}
@@ -1671,7 +1671,7 @@ settings_menu_llapi_updater() {
 
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
-                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "LLAPI Downloader Settings" \
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "LLAPI Folder Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${EXPORTED_INI_PATH})" 9 75 25 \
                     "${ACTIVATE}" "Activated: ${LLAPI_UPDATER}" \
                     "BACK"  "" 2> ${TMP}
@@ -1697,6 +1697,130 @@ settings_menu_llapi_updater() {
                 "${ACTIVATE}") settings_change_var "LLAPI_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "2 INI file") settings_change_var "LLAPI_UPDATER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "3 Install new Cores") settings_change_var "DOWNLOAD_NEW_CORES" "$(settings_domain_ini_file ${LLAPI_UPDATER_INI})" ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_names_txt() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_NAMES_TXT_UPDATER_INI=("update_names-txt.ini" "$(settings_normalize_ini_file ${EXPORTED_INI_PATH})")
+    settings_try_add_ini_option 'SETTINGS_OPTIONS_NAMES_TXT_UPDATER_INI' "${NAMES_TXT_UPDATER_INI}"
+    SETTINGS_OPTIONS_NAMES_REGION=("US" "EU" "JP")
+    SETTINGS_OPTIONS_NAMES_CHAR_CODE=("CHAR18" "CHAR28")
+    SETTINGS_OPTIONS_NAMES_SORT_CODE=("Common" "Manufacturer")
+
+    while true ; do
+        (
+            local NAMES_TXT_UPDATER="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER[0]}"
+            local NAMES_TXT_UPDATER_INI="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER_INI[0]}"
+            local NAMES_REGION="${SETTINGS_OPTIONS_NAMES_REGION[0]}"
+            local NAMES_CHAR_CODE="${SETTINGS_OPTIONS_NAMES_CHAR_CODE[0]}"
+            local NAMES_SORT_CODE="${SETTINGS_OPTIONS_NAMES_SORT_CODE[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "NAMES_TXT_UPDATER" "NAMES_TXT_UPDATER_INI" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
+            load_ini_file "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 $(settings_active_action ${NAMES_TXT_UPDATER})"
+            fi
+
+            local ACTIVATE="1 $(settings_active_action ${NAMES_TXT_UPDATER})"
+
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Names TXT Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${NAMES_TXT_UPDATER_INI})
+    "$'\n'"Installs name.txt file containing curated names for your cores.
+    You can also contribute to the naming of the cores at:
+    https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
+                    "${ACTIVATE}" "Activated: ${NAMES_TXT_UPDATER}" \
+                    "" "" \
+                    "3 Region" "${NAMES_REGION}" \
+                    "4 Char Code" "${NAMES_CHAR_CODE}" \
+                    "5 Sort Code" "${NAMES_SORT_CODE}" \
+                    "6 Remove \"names.txt\"" "Back to standard core names based on RBF files" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            else
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Names TXT Updater Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${NAMES_TXT_UPDATER_INI})
+    "$'\n'"Installs name.txt file containing curated names for your cores.
+    You can also contribute to the naming of the cores at:
+    https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
+                    "${ACTIVATE}" "Activated: ${NAMES_TXT_UPDATER}" \
+                    "2 INI file"  "$(settings_normalize_ini_file ${NAMES_TXT_UPDATER_INI})" \
+                    "3 Region" "${NAMES_REGION}" \
+                    "4 Char Code" "${NAMES_CHAR_CODE}" \
+                    "5 Sort Code" "${NAMES_SORT_CODE}" \
+                    "6 Remove \"names.txt\"" "Back to standard core names based on RBF files" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            fi
+        
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "") ;;
+                "${ACTIVATE}")
+                    settings_change_var "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+                    local NEW_NAMES_TXT_UPDATER=$(load_single_var_from_ini "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})")
+                    if [[ "${NEW_NAMES_TXT_UPDATER}" == "true" ]] && [ ! -f "${ARCADE_ORGANIZER_INSTALLED_NAMES_TXT}" ] && [ -f "${NAMES_TXT_PATH}" ] ; then
+                        set +e
+                        DIALOGRC="${SETTINGS_TMP_BLACK_DIALOGRC}" dialog --keep-window --msgbox "WARNING! Your current names.txt file will be overwritten after updating" 5 76
+                        set -e
+                    fi
+                    ;;
+                "2 INI file") settings_change_var "NAMES_TXT_UPDATER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "3 Region") settings_change_var "NAMES_REGION" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})" ;;
+                "4 Char Code") settings_change_var "NAMES_CHAR_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})"
+                    local NEW_NAMES_CHAR_CODE=$(load_single_var_from_ini "NAMES_CHAR_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})")
+                    if [[ "${NEW_NAMES_CHAR_CODE}" == "CHAR28" ]] && ! grep -q "rbf_hide_datecode=1" "${MISTER_INI_PATH}" 2> /dev/null ; then
+                        set +e
+                        dialog --keep-window --msgbox "It's recommended to set rbf_hide_datecode=1 on MiSTer.ini when using CHAR28" 5 80
+                        set -e
+                    fi
+                    ;;
+                "5 Sort Code")  settings_change_var "NAMES_SORT_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})" ;;
+                "6 Remove \"names.txt\"")
+                    if [ -f "${NAMES_TXT_PATH}" ] ; then
+                        set +e
+                        dialog --keep-window --title "Are you sure?" --defaultno \
+                            --yesno "If you have done changes to names.txt, they will be lost" \
+                            5 62
+                        local SURE_RET=$?
+                        set -e
+                        if [[ "${SURE_RET}" == "0" ]] ; then
+                            rm "${NAMES_TXT_PATH}"
+                            set +e
+                            dialog --keep-window --msgbox "names.txt Removed" 5 22
+                            set -e
+                        else
+                            set +e
+                            dialog --keep-window --msgbox "Operaton Canceled" 5 22
+                            set -e
+                        fi
+                    else
+                        set +e
+                        dialog --keep-window --msgbox "names.txt doesn't exist" 5 29
+                        set -e
+                    fi
+                    ;;
                 *) echo > "${SETTINGS_TMP_BREAK}" ;;
             esac
         )
@@ -1968,111 +2092,6 @@ settings_menu_hbmame_getter() {
                     else
                         set +e
                         dialog --keep-window --msgbox "File doesn't exist:\n${HBMAME_GETTER_LASTRUN_PATH}" 6 75
-                        set -e
-                    fi
-                    ;;
-                *) echo > "${SETTINGS_TMP_BREAK}" ;;
-            esac
-        )
-        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
-            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
-            break
-        fi
-    done
-    rm ${TMP}
-}
-
-settings_menu_names_txt() {
-    local TMP=$(mktemp)
-
-    SETTINGS_OPTIONS_NAMES_TXT_UPDATER_INI=("update_names-txt.ini" "$(settings_normalize_ini_file ${EXPORTED_INI_PATH})")
-    settings_try_add_ini_option 'SETTINGS_OPTIONS_NAMES_TXT_UPDATER_INI' "${NAMES_TXT_UPDATER_INI}"
-    SETTINGS_OPTIONS_NAMES_REGION=("US" "EU" "JP")
-    SETTINGS_OPTIONS_NAMES_CHAR_CODE=("CHAR18" "CHAR28")
-    SETTINGS_OPTIONS_NAMES_SORT_CODE=("Common" "Manufacturer")
-
-    while true ; do
-        (
-            local NAMES_TXT_UPDATER="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER[0]}"
-            local NAMES_TXT_UPDATER_INI="${SETTINGS_OPTIONS_NAMES_TXT_UPDATER_INI[0]}"
-            local NAMES_REGION="${SETTINGS_OPTIONS_NAMES_REGION[0]}"
-            local NAMES_CHAR_CODE="${SETTINGS_OPTIONS_NAMES_CHAR_CODE[0]}"
-            local NAMES_SORT_CODE="${SETTINGS_OPTIONS_NAMES_SORT_CODE[0]}"
-
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "NAMES_TXT_UPDATER" "NAMES_TXT_UPDATER_INI" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
-            load_ini_file "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})"
-
-            local DEFAULT_SELECTION=
-            if [ -s ${TMP} ] ; then
-                DEFAULT_SELECTION="$(cat ${TMP})"
-            else
-                DEFAULT_SELECTION="1 $(settings_active_action ${NAMES_TXT_UPDATER})"
-            fi
-
-            local ACTIVATE="1 $(settings_active_action ${NAMES_TXT_UPDATER})"
-
-            set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Names TXT Updater Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${NAMES_TXT_UPDATER_INI})
-"$'\n'"Installs name.txt file containing curated names for your cores.
-You can also contribute to the naming of the cores at:
-https://github.com/ThreepwoodLeBrush/Names_MiSTer" 18 75 25 \
-                "${ACTIVATE}" "Activated: ${NAMES_TXT_UPDATER}" \
-                "2 INI file"  "$(settings_normalize_ini_file ${NAMES_TXT_UPDATER_INI})" \
-                "3 Region" "${NAMES_REGION}" \
-                "4 Char Code" "${NAMES_CHAR_CODE}" \
-                "5 Sort Code" "${NAMES_SORT_CODE}" \
-                "6 Remove \"names.txt\"" "Back to standard core names based on RBF files" \
-                "BACK"  "" 2> ${TMP}
-            DEFAULT_SELECTION="$?"
-            set -e
-
-            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
-                DEFAULT_SELECTION="$(cat ${TMP})"
-            fi
-
-            case "${DEFAULT_SELECTION}" in
-                "${ACTIVATE}")
-                    settings_change_var "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
-                    local NEW_NAMES_TXT_UPDATER=$(load_single_var_from_ini "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})")
-                    if [[ "${NEW_NAMES_TXT_UPDATER}" == "true" ]] && [ ! -f "${ARCADE_ORGANIZER_INSTALLED_NAMES_TXT}" ] && [ -f "${NAMES_TXT_PATH}" ] ; then
-                        set +e
-                        DIALOGRC="${SETTINGS_TMP_BLACK_DIALOGRC}" dialog --keep-window --msgbox "WARNING! Your current names.txt file will be overwritten after updating" 5 76
-                        set -e
-                    fi
-                    ;;
-                "2 INI file") settings_change_var "NAMES_TXT_UPDATER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "3 Region") settings_change_var "NAMES_REGION" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})" ;;
-                "4 Char Code") settings_change_var "NAMES_CHAR_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})"
-                    local NEW_NAMES_CHAR_CODE=$(load_single_var_from_ini "NAMES_CHAR_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})")
-                    if [[ "${NEW_NAMES_CHAR_CODE}" == "CHAR28" ]] && ! grep -q "rbf_hide_datecode=1" "${MISTER_INI_PATH}" 2> /dev/null ; then
-                        set +e
-                        dialog --keep-window --msgbox "It's recommended to set rbf_hide_datecode=1 on MiSTer.ini when using CHAR28" 5 80
-                        set -e
-                    fi
-                    ;;
-                "5 Sort Code")  settings_change_var "NAMES_SORT_CODE" "$(settings_domain_ini_file ${NAMES_TXT_UPDATER_INI})" ;;
-                "6 Remove \"names.txt\"")
-                    if [ -f "${NAMES_TXT_PATH}" ] ; then
-                        set +e
-                        dialog --keep-window --title "Are you sure?" --defaultno \
-                            --yesno "If you have done changes to names.txt, they will be lost" \
-                            5 62
-                        local SURE_RET=$?
-                        set -e
-                        if [[ "${SURE_RET}" == "0" ]] ; then
-                            rm "${NAMES_TXT_PATH}"
-                            set +e
-                            dialog --keep-window --msgbox "names.txt Removed" 5 22
-                            set -e
-                        else
-                            set +e
-                            dialog --keep-window --msgbox "Operaton Canceled" 5 22
-                            set -e
-                        fi
-                    else
-                        set +e
-                        dialog --keep-window --msgbox "names.txt doesn't exist" 5 29
                         set -e
                     fi
                     ;;
