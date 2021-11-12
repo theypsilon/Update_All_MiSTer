@@ -2959,7 +2959,7 @@ settings_menu_misc() {
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
-                    --menu "" 14 75 25 \
+                    --menu "" 15 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
                     "2 Arcade Offset folder" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
                     "3 tty2oled files" "$(settings_menu_yesno_bool_text ${TTY2OLED_FILES_DOWNLOADER})" \
@@ -2974,11 +2974,11 @@ settings_menu_misc() {
             else
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
-                    --menu "" 14 75 25 \
+                    --menu "" 15 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
                     "2 Arcade Offset folder" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
-                    "" "" \
-                    "" "" \
+                    "" "Option only available with Downloader" \
+                    "" "Option only available with Downloader" \
                     "5 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
                     "6 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
                     "7 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
