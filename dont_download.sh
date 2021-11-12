@@ -2935,6 +2935,7 @@ settings_menu_misc() {
     SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE=("false", "true")
     SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER=("false" "true")
     SETTINGS_OPTIONS_TTY2OLED_FILES_DOWNLOADER=("false" "true")
+    SETTINGS_OPTIONS_MISTERSAM_FILES_DOWNLOADER=("false" "true")
 
     while true ; do
         (
