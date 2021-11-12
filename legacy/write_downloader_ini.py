@@ -44,7 +44,10 @@ def main():
     db_url_tty2oled_files = 'https://raw.githubusercontent.com/venice1200/MiSTer_tty2oled/main/tty2oleddb.json'
     db_id_tty2oled_files = 'tty2oled_files'
 
-    db_ids = [db_id_distribution_mister, db_id_jtcores, db_id_llapi_folder, db_id_theypsilon_unofficial_distribution, db_id_arcade_offset_folder, db_id_names_txt, db_id_tty2oled_files]
+    db_url_mistersam_files = 'https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/main/MiSTer_SAMdb.json'
+    db_id_mistersam_files = 'MiSTer_SAM_files'
+
+    db_ids = [db_id_distribution_mister, db_id_jtcores, db_id_llapi_folder, db_id_theypsilon_unofficial_distribution, db_id_arcade_offset_folder, db_id_names_txt, db_id_tty2oled_files, db_id_mistersam_files]
 
     def env(name):
         return os.environ.get(name, 'false') == 'true'
@@ -62,6 +65,7 @@ def main():
     arcade_offset_downloader = env('ARCADE_OFFSET_DOWNLOADER')
     names_txt_updater = env('NAMES_TXT_UPDATER')
     tty2oled_files_downloader = env('TTY2OLED_FILES_DOWNLOADER')
+    mistersam_files_downloader = env('MISTERSAM_FILES_DOWNLOADER')
 
     ini_path = sys.argv[1]
 
@@ -121,6 +125,11 @@ def main():
         section(db_id_tty2oled_files)[key_db_url] = db_url_tty2oled_files
     elif db_id_tty2oled_files in ini:
         ini.pop(db_id_tty2oled_files)
+
+    if mistersam_files_downloader:
+        section(db_id_mistersam_files)[key_db_url] = db_url_mistersam_files
+    elif db_id_mistersam_files in ini:
+        ini.pop(db_id_mistersam_files)
 
     after = json.dumps(ini)
 
