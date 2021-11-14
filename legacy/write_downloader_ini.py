@@ -85,8 +85,11 @@ def main():
         print(e)
 
     def section(id):
-        if id not in ini:
-            ini[id] = {}
+        for k, v in ini.items():
+            if k.lower() == id.lower():
+                return v
+
+        ini[id] = {}
         return ini[id]
 
     key_db_url = 'db_url'
