@@ -73,9 +73,9 @@ Check also other core developers that you might want to support:
 * [Ace](https://ko-fi.com/ace9921)
 * [Blackwine](https://www.patreon.com/blackwine)
 
-And finally, if you would like to support my work, you may tip me here:
+And finally, if you would like to support my work, you may also subscribe to my patreon here:
 
-<a href='https://ko-fi.com/theypsilon' target='_blank'><img height='35' style='border:0px;height:46px;' src='https://az743702.vo.msecnd.net/cdn/kofi3.png?v=0' border='0' alt='Buy Me a Coffee at ko-fi.com' />
+<a href="https://www.patreon.com/bePatron?u=37499475" data-patreon-widget-type="become-patron-button">Become a Patron!</a><script async src="https://c6.patreon.com/becomePatronButton.bundle.js"></script>
 
 ## License
 
