@@ -75,7 +75,7 @@ Check also other core developers that you might want to support:
 
 And finally, if you would like to support my work, you may also subscribe to my patreon here:
 
-<a href="https://www.patreon.com/bePatron?u=37499475" data-patreon-widget-type="become-patron-button">Become a Patron!</a><script async src="https://c6.patreon.com/becomePatronButton.bundle.js"></script>
+<a href="https://www.patreon.com/bePatron?u=37499475"><img src="https://camo.githubusercontent.com/2b7105015397da52617ce6775a339b0b99d689d6f644c2ce911c5d472362bcbd/68747470733a2f2f63352e70617472656f6e2e636f6d2f65787465726e616c2f6c6f676f2f6265636f6d655f615f706174726f6e5f627574746f6e2e706e67"></img></a>
 
 ## License
 
