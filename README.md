@@ -59,6 +59,8 @@ In case you would like to configure Update All so it downloads exactly what you 
 
 The Settings screen will show up if you press UP in your controller or keyboard during the countdown showing up right after starting `update_all.sh` in your MiSTer. Please, don't forget to select `SAVE` to keep all the changes you have done before leaving.
 
+
+
 ## Funding
 
 Consider funding [Alexey Melnikov "Sorgelig"](https://www.patreon.com/FPGAMiSTer) for his invaluable work on the [MiSTer project](https://github.com/MiSTer-devel/Main_MiSTer/wiki).
@@ -76,6 +78,16 @@ Check also other core developers that you might want to support:
 And finally, if you would like to support my work, you may also subscribe to my patreon here:
 
 <a href="https://www.patreon.com/bePatron?u=37499475"><img src="https://camo.githubusercontent.com/2b7105015397da52617ce6775a339b0b99d689d6f644c2ce911c5d472362bcbd/68747470733a2f2f63352e70617472656f6e2e636f6d2f65787465726e616c2f6c6f676f2f6265636f6d655f615f706174726f6e5f627574746f6e2e706e67"></img></a>
+
+
+
+## Supporters+ shout-out!
+
+Antonio Villena
+
+Thank you so much for supporting this project on [Patreon](https://www.patreon.com/bePatron?u=37499475)! You'll show up here if you become a **Supporter+**!
+
+
 
 ## License
 

@@ -1488,7 +1488,7 @@ settings_menu_jotego_updater() {
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "JTCORES for MiSTer Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 10 75 25 \
                     "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
-                    "3 Install Beta Cores" "${DOWNLOAD_BETA_CORES}" \
+                    "3 Install Premium Cores" "${DOWNLOAD_BETA_CORES}" \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
@@ -1498,7 +1498,7 @@ settings_menu_jotego_updater() {
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 13 75 25 \
                     "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
                     "2 INI file"  "$(settings_normalize_ini_file ${JOTEGO_UPDATER_INI})" \
-                    "3 Install Beta Cores" "${DOWNLOAD_BETA_CORES}" \
+                    "3 Install Premium Cores" "${DOWNLOAD_BETA_CORES}" \
                     "4 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
                     "5 Force full resync" "Clears \"last_successful_run\" file et al" \
                     "BACK"  "" 2> ${TMP}
@@ -1513,7 +1513,7 @@ settings_menu_jotego_updater() {
             case "${DEFAULT_SELECTION}" in
                 "${ACTIVATE}") settings_change_var "JOTEGO_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "2 INI file") settings_change_var "JOTEGO_UPDATER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "3 Install Beta Cores") settings_change_var "DOWNLOAD_BETA_CORES" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
+                "3 Install Premium Cores") settings_change_var "DOWNLOAD_BETA_CORES" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
                 "4 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
                 "5 Force full resync")
                     local SOMETHING="false"
