@@ -130,8 +130,6 @@ INI_REFERENCES=( \
 )
 
 DOWNLOADER_DB9_DB_URL="https://raw.githubusercontent.com/MiSTer-DB9/Distribution_MiSTer/main/dbencc.json.zip"
-DOWNLOADER_JT_BETAS_DB_URL="https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip"
-DOWNLOADER_JT_STABLE_DB_URL="https://raw.githubusercontent.com/theypsilon/JT_Cores_MiSTer/jtstable/jtstabledb.json.zip"
 DOWNLOADER_JT_DB_ID="jtcores"
 DOWNLOADER_LLAPI_DB_URL="https://raw.githubusercontent.com/MiSTer-LLAPI/LLAPI_folder_MiSTer/main/llapidb.json.zip"
 DOWNLOADER_LLAPI_DB_ID="llapi_folder"
@@ -706,7 +704,7 @@ sequence() {
             if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
                 load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
             fi
-            echo "- JTCORES for MiSTer ($([[ ${DOWNLOAD_BETA_CORES:-false} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))"
+            echo "- JTCORES for MiSTer ($([[ ${DOWNLOAD_BETA_CORES:-false} == 'true' ]] && echo 'jtpremium' || echo 'jtcores'))"
         fi
         if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
             echo "- theypsilon Unofficial Distribution"
@@ -734,7 +732,7 @@ sequence() {
             if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
                 load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
             fi
-            echo "- Jotego Updater ($([[ ${DOWNLOAD_BETA_CORES:-false} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))"
+            echo "- Jotego Updater ($([[ ${DOWNLOAD_BETA_CORES:-false} == 'true' ]] && echo 'jtpremium' || echo 'jtcores'))"
         fi
         if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
             echo "- Unofficial Updater"
@@ -1206,7 +1204,7 @@ settings_menu_update_all() {
                 --title "Update All ${UPDATE_ALL_VERSION} Settings" \
                 --menu "Settings loaded from '$(settings_normalize_ini_file ${EXPORTED_INI_PATH})'" 19 75 25 \
                 "${OPT1_MAIN}"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores from $([[ ${ENCC_FORKS} == 'true' ]] && echo 'MiSTer-DB9' || echo 'MiSTer-devel')" \
-                "${OPT2_JOTEGO}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego ($([[ ${DOWNLOAD_BETA_CORES} == 'true' ]] && echo 'jtbin' || echo 'JTSTABLE'))" \
+                "${OPT2_JOTEGO}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego ($([[ ${DOWNLOAD_BETA_CORES} == 'true' ]] && echo 'jtpremium' || echo 'jtcores'))" \
                 "${OPT3_UNOFFICIAL}"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
                 "${OPT4_LLAPI}" "$(settings_active_tag ${LLAPI_UPDATER}) Forks adapted to LLAPI" \
                 "5 BIOS Getter" "$(settings_active_tag ${BIOS_GETTER}) BIOS files for your systems" \
