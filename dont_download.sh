@@ -732,7 +732,7 @@ sequence() {
             if [ -f "${JOTEGO_UPDATER_INI}" ] ; then
                 load_vars_from_ini "${JOTEGO_UPDATER_INI}" "DOWNLOAD_BETA_CORES"
             fi
-            echo "- Jotego Updater ($([[ ${DOWNLOAD_BETA_CORES:-false} == 'true' ]] && echo 'jtpremium' || echo 'jtcores'))"
+            echo "- Jotego Updater"
         fi
         if [[ "${UNOFFICIAL_UPDATER}" == "true" ]] ; then
             echo "- Unofficial Updater"
@@ -1179,12 +1179,14 @@ settings_menu_update_all() {
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 OPT1_MAIN="1 Main Distribution"
                 OPT2_JOTEGO="2 JTCORES for MiSTer"
+                OPT2_JOTEGO_PAREN="($([[ ${DOWNLOAD_BETA_CORES} == 'true' ]] && echo 'jtpremium' || echo 'jtcores'))"
                 OPT3_UNOFFICIAL="3 theypsilon Unofficial"
                 OPT4_LLAPI="4 LLAPI Folder"
                 OPT8_NAMES="8 Names TXT"
             else
                 OPT1_MAIN="1 Main Updater"
                 OPT2_JOTEGO="2 Jotego Updater"
+                OPT2_JOTEGO_PAREN=""
                 OPT3_UNOFFICIAL="3 Unofficial Updater"
                 OPT4_LLAPI="4 LLAPI Updater"
                 OPT8_NAMES="8 Names TXT Updater"
@@ -1204,7 +1206,7 @@ settings_menu_update_all() {
                 --title "Update All ${UPDATE_ALL_VERSION} Settings" \
                 --menu "Settings loaded from '$(settings_normalize_ini_file ${EXPORTED_INI_PATH})'" 19 75 25 \
                 "${OPT1_MAIN}"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores from $([[ ${ENCC_FORKS} == 'true' ]] && echo 'MiSTer-DB9' || echo 'MiSTer-devel')" \
-                "${OPT2_JOTEGO}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego ($([[ ${DOWNLOAD_BETA_CORES} == 'true' ]] && echo 'jtpremium' || echo 'jtcores'))" \
+                "${OPT2_JOTEGO}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego ${OPT2_JOTEGO_PAREN}" \
                 "${OPT3_UNOFFICIAL}"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
                 "${OPT4_LLAPI}" "$(settings_active_tag ${LLAPI_UPDATER}) Forks adapted to LLAPI" \
                 "5 BIOS Getter" "$(settings_active_tag ${BIOS_GETTER}) BIOS files for your systems" \
@@ -1486,19 +1488,18 @@ settings_menu_jotego_updater() {
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "JTCORES for MiSTer Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 10 75 25 \
                     "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
-                    "3 Install Premium Cores" "${DOWNLOAD_BETA_CORES}" \
+                    "2 Install Premium Cores" "${DOWNLOAD_BETA_CORES}" \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
             else
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Jotego Updater Settings" \
-                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 13 75 25 \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 12 75 25 \
                     "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
                     "2 INI file"  "$(settings_normalize_ini_file ${JOTEGO_UPDATER_INI})" \
-                    "3 Install Premium Cores" "${DOWNLOAD_BETA_CORES}" \
-                    "4 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
-                    "5 Force full resync" "Clears \"last_successful_run\" file et al" \
+                    "3 Install MRA-Alternatives" "${MAME_ALT_ROMS}" \
+                    "4 Force full resync" "Clears \"last_successful_run\" file et al" \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
@@ -1511,9 +1512,9 @@ settings_menu_jotego_updater() {
             case "${DEFAULT_SELECTION}" in
                 "${ACTIVATE}") settings_change_var "JOTEGO_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "2 INI file") settings_change_var "JOTEGO_UPDATER_INI" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "3 Install Premium Cores") settings_change_var "DOWNLOAD_BETA_CORES" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
-                "4 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
-                "5 Force full resync")
+                "2 Install Premium Cores") settings_change_var "DOWNLOAD_BETA_CORES" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
+                "3 Install MRA-Alternatives") settings_change_var "MAME_ALT_ROMS" "$(settings_domain_ini_file ${JOTEGO_UPDATER_INI})" ;;
+                "4 Force full resync")
                     local SOMETHING="false"
                     if [ -f "${JOTEGO_UPDATER_WORK_FOLDER}/$(basename ${EXPORTED_INI_PATH%.*}).last_successful_run" ] ; then
                         SOMETHING="true"
