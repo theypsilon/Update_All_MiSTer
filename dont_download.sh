@@ -41,8 +41,11 @@ set_default_options() {
     LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
 
     ARCADE_OFFSET_DOWNLOADER="false"
+    BIOS_DB_DOWNLOADER="false"
     TTY2OLED_FILES_DOWNLOADER="false"
+    I2C2OLED_FILES_DOWNLOADER="false"
     MISTERSAM_FILES_DOWNLOADER="false"
+    DOWNLOADER_FILTERS_BETA="false"
 
     BIOS_GETTER="true"
     BIOS_GETTER_INI="update_bios-getter.ini"
@@ -77,6 +80,9 @@ UPDATE_ALL_VERSION="1.4"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
 UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
 UPDATE_ALL_LAUNCHER_MD5="ac10fbada40e3e5f133bc0eee0dd53d5"
+UPDATE_ALL_PATREON_KEY_PATH="/media/fat/Scripts/update_all.patreonkey"
+UPDATE_ALL_PATREON_KEY_SIZE="16384"
+UPDATE_ALL_PATREON_KEY_MD5Q0="00e9f6acaec74650ddd38a14334ebaef"
 AUTO_UPDATE_LAUNCHER="${AUTO_UPDATE_LAUNCHER:-true}"
 ORIGINAL_SCRIPT_PATH="${0}"
 ORIGINAL_INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
@@ -128,15 +134,6 @@ INI_REFERENCES=( \
     "NAMES_TXT_UPDATER_INI" \
     "ARCADE_ORGANIZER_INI" \
 )
-
-DOWNLOADER_DB9_DB_URL="https://raw.githubusercontent.com/MiSTer-DB9/Distribution_MiSTer/main/dbencc.json.zip"
-DOWNLOADER_JT_DB_ID="jtcores"
-DOWNLOADER_LLAPI_DB_URL="https://raw.githubusercontent.com/MiSTer-LLAPI/LLAPI_folder_MiSTer/main/llapidb.json.zip"
-DOWNLOADER_LLAPI_DB_ID="llapi_folder"
-DOWNLOADER_UNOFFICIALS_DB_URL="https://raw.githubusercontent.com/theypsilon/Distribution_Unofficial_MiSTer/main/unofficialdb.json.zip"
-DOWNLOADER_UNOFFICIALS_DB_ID="theypsilon_unofficial_distribution"
-DOWNLOADER_ARCADE_OFFSET_DB_URL="https://raw.githubusercontent.com/atrac17/Arcade_Offset/db/arcadeoffsetdb.json.zip"
-DOWNLOADER_ARCADE_OFFSET_DB_ID="arcade_offset_folder"
 
 WRITE_DOWNLOADER_INI_SCRIPT_URL="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/legacy/write_downloader_ini.py"
 WRITE_DOWNLOADER_INI_SCRIPT_PATH="/tmp/write_downloader_ini.py"
@@ -401,6 +398,18 @@ initialize() {
     fi
 }
 
+has_patreon_key() {
+    if [ ! -f "${UPDATE_ALL_PATREON_KEY_PATH}" ] ; then
+        return 1
+    fi
+    if [[ "$(du -b ${UPDATE_ALL_PATREON_KEY_PATH} | awk '{print $1}')" != "${UPDATE_ALL_PATREON_KEY_SIZE}" ]] ; then
+        return 1
+    fi
+    if [[ "$(md5sum ${UPDATE_ALL_PATREON_KEY_PATH} | awk '{print $1}')" != "${UPDATE_ALL_PATREON_KEY_MD5Q0}" ]] ; then
+        return 1
+    fi
+    return 0
+}
 
 MESSAGE_IGNORED_ROOT_INI_ARRAY=()
 message_ignored_root_ini() {
@@ -721,6 +730,9 @@ sequence() {
         if [[ "${TTY2OLED_FILES_DOWNLOADER}" == "true" ]] ; then
             echo "- tty2oled files"
         fi
+        if [[ "${I2C2OLED_FILES_DOWNLOADER}" == "true" ]] ; then
+            echo "- i2c2oled files"
+        fi
         if [[ "${MISTERSAM_FILES_DOWNLOADER}" == "true" ]] ; then
             echo "- MiSTer SAM files"
         fi
@@ -747,7 +759,9 @@ sequence() {
             echo "- Names TXT Updater"
         fi
     fi
-    if [[ "${BIOS_GETTER}" == "true" ]] ; then
+    if [[ "${BIOS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
+        echo "- BIOS Database"
+    elif [[ "${BIOS_GETTER}" == "true" ]] ; then
         echo "- BIOS Getter"
     fi
     if [[ "${MAME_GETTER}" == "true" ]] ; then
@@ -904,7 +918,16 @@ run_update_all() {
         RUNNING_DOWNLOADER="true"
     fi
 
+    if [[ "${BIOS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
+        RUNNING_DOWNLOADER="true"
+    fi
+
     if [[ "${TTY2OLED_FILES_DOWNLOADER}" == "true" ]] && [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+        RUNNING_DOWNLOADER="true"
+    fi
+
+
+    if [[ "${I2C2OLED_FILES_DOWNLOADER}" == "true" ]] && [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
         RUNNING_DOWNLOADER="true"
     fi
 
@@ -924,6 +947,7 @@ run_update_all() {
             export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
             export LLAPI_UPDATER="${LLAPI_UPDATER}"
             export TTY2OLED_FILES_DOWNLOADER="${TTY2OLED_FILES_DOWNLOADER}"
+            export I2C2OLED_FILES_DOWNLOADER="${I2C2OLED_FILES_DOWNLOADER}"
             export MISTERSAM_FILES_DOWNLOADER="${MISTERSAM_FILES_DOWNLOADER}"
             if [ -f "${NAMES_TXT_UPDATER_INI}" ] ; then
                 load_vars_from_ini "${NAMES_TXT_UPDATER_INI}" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
@@ -934,6 +958,11 @@ run_update_all() {
             export NAMES_SORT_CODE="${NAMES_SORT_CODE}"
         fi
         export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
+        if has_patreon_key ; then
+            export BIOS_DB_DOWNLOADER="${BIOS_DB_DOWNLOADER}"
+        else
+            export BIOS_DB_DOWNLOADER="false"
+        fi
 
         if [ ! -f "${WORK_PATH}/downloader_initial_write" ] ; then
             touch "${WORK_PATH}/downloader_initial_write"
@@ -956,9 +985,13 @@ run_update_all() {
         fi
 
         export UPDATE_LINUX="false"
-        run_downloader_script "${DOWNLOADER_URL}" "MiSTer Downloader"
+        if has_patreon_key && [[ "${DOWNLOADER_FILTERS_BETA}" == "true" ]] ; then
+            run_downloader_script "https://github.com/theypsilon/Downloader_MiSTer/releases/download/latest/dont_download.sh" "MiSTer Downloader"
+        else
+            run_downloader_script "${DOWNLOADER_URL}" "MiSTer Downloader"
+        fi
+        mv "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log" "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader1.log"
         if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
-            mv "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log" "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader1.log"
             FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader1.log")
         fi
     fi
@@ -1008,8 +1041,8 @@ run_update_all() {
             unset DEFAULT_DB_URL
             unset DEFAULT_DB_ID
             run_downloader_script "${DOWNLOADER_URL}" "Linux Update"
+            mv "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log" "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader2.log"
             if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
-                mv "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log" "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader2.log"
                 FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader2.log")
             fi
         else
@@ -1089,6 +1122,29 @@ run_update_all() {
     exit ${EXIT_CODE:-1}
 }
 
+support_mister() {
+    local TEXT="Consider supporting Alexey Melnikov 'Sorgelig' for his invaluable work as the main maintainer of the MiSTer Project: \Zu\Z4patreon.com/FPGAMiSTer\Z7\Zn"
+    TEXT="${TEXT}\n"
+    TEXT="${TEXT}\nOther key contributors:"
+    TEXT="${TEXT}\n·Ace \Zu\Z4ko-fi.com/ace9921\Z7\Zn - Arcade cores"
+    TEXT="${TEXT}\n·Blackwine \Zu\Z4patreon.com/blackwine\Z7\Zn - Arcade cores"
+    TEXT="${TEXT}\n·FPGAZumSpass \Zu\Z4patreon.com/FPGAZumSpass\Z7\Zn - Console & Computer cores"
+    TEXT="${TEXT}\n·Furrtek \Zu\Z4patreon.com/furrtek\Z7\Zn - NeoGeo core & multiple chip decaps"
+    TEXT="${TEXT}\n·Jotego \Zu\Z4patreon.com/topapate\Z7\Zn - Arcade & Console cores"
+    TEXT="${TEXT}\n·MiSTer-X \Zu\Z4patreon.com/MrX_8B\Z7\Zn - Arcade cores"
+    TEXT="${TEXT}\n·Nullobject \Zu\Z4patreon.com/nullobject\Z7\Zn - Arcade cores"
+    TEXT="${TEXT}\n·Srg320 \Zu\Z4patreon.com/srg320\Z7\Zn - Console cores"
+    TEXT="${TEXT}\n·Theypsilon \Zu\Z4patreon.com/theypsilon\Z7\Zn - Downloader, Update All & Other Tools"
+    TEXT="${TEXT}\n·Atrac17 \Zu\Z4patreon.com/atrac17\Z7\Zn - MRAs & Modelines"
+    TEXT="${TEXT}\n·d0pefish \Zu\Z4ko-fi.com/d0pefish\Z7\Zn - mt32pi author"
+    TEXT="${TEXT}\n·Artemio \Zu\Z4patreon.com/aurbina\Z7\Zn Pinobatch \Zu\Z4patreon.com/pineight\Z7\Zn - Testing tools"
+    TEXT="${TEXT}\n"
+    TEXT="${TEXT}\nYour favorite open-source projects require your support to keep evolving!"
+
+    set +e
+    dialog --no-lines --no-shadow --colors --title "Support MiSTer" --msgbox "${TEXT}" 27 81
+    set -e
+}
 # # #      S E T T I N G S     S C R E E N      # # #
 
 ### SETTINGS GLOBAL TMP VARS ##
@@ -1204,7 +1260,7 @@ settings_menu_update_all() {
                 --default-item "${DEFAULT_SELECTION}" \
                 --cancel-label "Abort" --ok-label "Select" --extra-button --extra-label "Toggle" \
                 --title "Update All ${UPDATE_ALL_VERSION} Settings" \
-                --menu "Settings loaded from '$(settings_normalize_ini_file ${EXPORTED_INI_PATH})'" 19 75 25 \
+                --menu "Settings loaded from '$(settings_normalize_ini_file ${EXPORTED_INI_PATH})'" 20 75 25 \
                 "${OPT1_MAIN}"  "$(settings_active_tag ${MAIN_UPDATER}) Main MiSTer cores from $([[ ${ENCC_FORKS} == 'true' ]] && echo 'MiSTer-DB9' || echo 'MiSTer-devel')" \
                 "${OPT2_JOTEGO}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego ${OPT2_JOTEGO_PAREN}" \
                 "${OPT3_UNOFFICIAL}"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
@@ -1215,6 +1271,7 @@ settings_menu_update_all() {
                 "${OPT8_NAMES}" "$(settings_active_tag ${NAMES_TXT_UPDATER}) Better core names in the menus" \
                 "9 Arcade Organizer" "$(settings_active_tag ${ARCADE_ORGANIZER}) Creates folder for easy navigation" \
                 "0 Misc" "" \
+                "Patrons Menu" "" \
                 "SAVE" "Writes all changes to the INI file/s" \
                 "EXIT and RUN UPDATE ALL" "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
@@ -1233,6 +1290,16 @@ settings_menu_update_all() {
                         "${OPT8_NAMES}") settings_menu_names_txt ;;
                         "9 Arcade Organizer") settings_menu_2beta_arcade_organizer ;;
                         "0 Misc") settings_menu_misc ;;
+                        "Patrons Menu")
+                            if has_patreon_key ; then
+                                settings_menu_patrons
+                            else
+                                set +e
+                                dialog --keep-window --colors --title "Patreon Key not found!" --msgbox "This menu contains exclusive content for patrons only.\n\nGet your 'Patreon Key' at \Zu\Z4patreon.com/theypsilon\Z7\Zn and put it on the \Zb/Scripts\Zn folder to unlock early access and experimental options.\n\nThank you so much for your support!" 10 75
+                                set -e
+                                support_mister
+                            fi
+                            ;;
                         "SAVE") settings_menu_save ;;
                         "EXIT and RUN UPDATE ALL") settings_menu_exit_and_run ;;
                         *) settings_menu_cancel ;;
@@ -1250,6 +1317,7 @@ settings_menu_update_all() {
                         "${OPT8_NAMES}") settings_change_var "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "9 Arcade Organizer") settings_change_var "ARCADE_ORGANIZER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "0 Misc") ;;
+                        "Patrons") ;;
                         "SAVE") ;;
                         "EXIT and RUN UPDATE ALL") ;;
                         *) settings_menu_cancel ;;
@@ -1488,7 +1556,7 @@ settings_menu_jotego_updater() {
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "JTCORES for MiSTer Settings" \
                     --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${JOTEGO_UPDATER_INI})" 10 75 25 \
                     "${ACTIVATE}" "Activated: ${JOTEGO_UPDATER}" \
-                    "2 Install Premium Cores" "${DOWNLOAD_BETA_CORES}" \
+                    "2 Install Premium Cores" "$(settings_menu_yesno_bool_text ${DOWNLOAD_BETA_CORES})" \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
@@ -2934,6 +3002,7 @@ settings_menu_misc() {
     SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE=("false", "true")
     SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER=("false" "true")
     SETTINGS_OPTIONS_TTY2OLED_FILES_DOWNLOADER=("false" "true")
+    SETTINGS_OPTIONS_I2C2OLED_FILES_DOWNLOADER=("false" "true")
     SETTINGS_OPTIONS_MISTERSAM_FILES_DOWNLOADER=("false" "true")
 
     while true ; do
@@ -2944,9 +3013,10 @@ settings_menu_misc() {
             local DOWNLOADER_WHEN_POSSIBLE="${SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE[0]}"
             local ARCADE_OFFSET_DOWNLOADER="${SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER[0]}"
             local TTY2OLED_FILES_DOWNLOADER="${SETTINGS_OPTIONS_TTY2OLED_FILES_DOWNLOADER[0]}"
+            local I2C2OLED_FILES_DOWNLOADER="${SETTINGS_OPTIONS_I2C2OLED_FILES_DOWNLOADER[0]}"
             local MISTERSAM_FILES_DOWNLOADER="${SETTINGS_OPTIONS_MISTERSAM_FILES_DOWNLOADER[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER" "TTY2OLED_FILES_DOWNLOADER" "MISTERSAM_FILES_DOWNLOADER"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER" "TTY2OLED_FILES_DOWNLOADER" "I2C2OLED_FILES_DOWNLOADER" "MISTERSAM_FILES_DOWNLOADER"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -2958,30 +3028,32 @@ settings_menu_misc() {
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
-                    --menu "" 15 75 25 \
+                    --menu "" 16 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
                     "2 Arcade Offset folder" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
                     "3 tty2oled files" "$(settings_menu_yesno_bool_text ${TTY2OLED_FILES_DOWNLOADER})" \
-                    "4 MiSTer SAM files" "$(settings_menu_yesno_bool_text ${MISTERSAM_FILES_DOWNLOADER})" \
-                    "5 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
-                    "6 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
-                    "7 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
-                    "8 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "4 i2c2oled files" "$(settings_menu_yesno_bool_text ${I2C2OLED_FILES_DOWNLOADER})" \
+                    "5 MiSTer SAM files" "$(settings_menu_yesno_bool_text ${MISTERSAM_FILES_DOWNLOADER})" \
+                    "6 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
+                    "7 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                    "8 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                    "9 Clear All Cores" "Removes all CORES and MRA folders." \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
             else
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
-                    --menu "" 15 75 25 \
+                    --menu "" 16 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
                     "2 Arcade Offset folder" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
                     "" "Option only available with Downloader" \
                     "" "Option only available with Downloader" \
-                    "5 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
-                    "6 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
-                    "7 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
-                    "8 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "" "Option only available with Downloader" \
+                    "6 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
+                    "7 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                    "8 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                    "9 Clear All Cores" "Removes all CORES and MRA folders." \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
@@ -2996,11 +3068,12 @@ settings_menu_misc() {
                 "1 Use new Downloader") settings_change_var "DOWNLOADER_WHEN_POSSIBLE" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "2 Arcade Offset folder") settings_change_var "ARCADE_OFFSET_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                 "3 tty2oled files") settings_change_var "TTY2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "4 MiSTer SAM files") settings_change_var "MISTERSAM_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "5 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "6 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "7 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "8 Clear All Cores")
+                "4 i2c2oled files") settings_change_var "I2C2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "5 MiSTer SAM files") settings_change_var "MISTERSAM_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "6 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "7 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "8 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "9 Clear All Cores")
                     local FILES_FOLDERS=("_Arcade" "_Computer" "_Console" "_Other" "_Utility" "_LLAPI" "_Jotego" "_CPS1" "_Unofficial")
 
                     local TO_DELETE=()
@@ -3062,6 +3135,75 @@ settings_menu_misc() {
                         dialog --keep-window --msgbox "No folders or files to clear" 5 35
                         set -e
                     fi
+                    ;;
+                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+            esac
+        )
+        if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
+            rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
+            break
+        fi
+    done
+    rm ${TMP}
+}
+
+settings_menu_patrons() {
+    local TMP=$(mktemp)
+
+    SETTINGS_OPTIONS_BIOS_DB_DOWNLOADER=("false" "true")
+    SETTINGS_OPTIONS_DOWNLOADER_FILTERS_BETA=("false" "true")
+
+    while true ; do
+        (
+            local BIOS_DB_DOWNLOADER="${SETTINGS_OPTIONS_BIOS_DB_DOWNLOADER[0]}"
+            local DOWNLOADER_FILTERS_BETA="${SETTINGS_OPTIONS_DOWNLOADER_FILTERS_BETA[0]}"
+
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "BIOS_DB_DOWNLOADER" "DOWNLOADER_FILTERS_BETA"
+
+            local DEFAULT_SELECTION=
+            if [ -s ${TMP} ] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            else
+                DEFAULT_SELECTION="1 Experimental BIOS Database"
+            fi
+
+            set +e
+            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Patrons Menu" \
+                --menu "" 10 50 25 \
+                "1 Experimental BIOS Database" "$(settings_menu_yesno_bool_text ${BIOS_DB_DOWNLOADER})" \
+                "2 Downloader Filters Preview" "$(settings_menu_yesno_bool_text ${DOWNLOADER_FILTERS_BETA})" \
+                "3 Play Bad Apple Database" "" \
+                "BACK"  "" 2> ${TMP}
+            DEFAULT_SELECTION="$?"
+            set -e
+
+            if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
+                DEFAULT_SELECTION="$(cat ${TMP})"
+            fi
+
+            case "${DEFAULT_SELECTION}" in
+                "") ;;
+                "1 Experimental BIOS Database")
+                    if [[ "${BIOS_DB_DOWNLOADER}" == "false" ]] ; then
+                        set +e
+                        dialog --keep-window --colors --title "BIOS Database Activated" --msgbox "The BIOS Database replaces the funcionality of the BIOS Getter.\n\nWhile the BIOS Database is ACTIVE, the BIOS Getter will not run." 7 70
+                        set -e
+                    fi
+                    settings_change_var "BIOS_DB_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+                    ;;
+                "2 Downloader Filters Preview") settings_change_var "DOWNLOADER_FILTERS_BETA" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "3 Play Bad Apple Database")
+                    export DEFAULT_DB_ID="bad_apple_db"
+                    export DOWNLOADER_INI_PATH="/tmp/downloader_bad_apple.ini"
+                    if grep -q "fb_size=2" "${MISTER_INI_PATH}" 2> /dev/null || grep -q "fb_terminal=0" "${MISTER_INI_PATH}" 2> /dev/null ; then
+                        export DEFAULT_DB_URL="https://github.com/theypsilon/BadAppleDB_MiSTer/releases/download/v1/bad_apple_half_res_db.json.zip"
+                    else
+                        export DEFAULT_DB_URL="https://github.com/theypsilon/BadAppleDB_MiSTer/releases/download/v1/bad_apple_full_res_db.json.zip"
+                    fi
+                    run_downloader_script "${DOWNLOADER_URL}" "Bad Apple DB!"
+                    export -n DOWNLOADER_INI_PATH
+                    export -n DEFAULT_DB_ID
+                    export -n DEFAULT_DB_URL
                     ;;
                 *) echo > "${SETTINGS_TMP_BREAK}" ;;
             esac
@@ -3187,6 +3329,12 @@ settings_menu_save() {
                     export LLAPI_UPDATER="${LLAPI_UPDATER}"
                 fi
                 export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
+                if has_patreon_key ; then
+                    export BIOS_DB_DOWNLOADER="${BIOS_DB_DOWNLOADER}"
+                else
+                    export BIOS_DB_DOWNLOADER="false"
+                fi
+
                 "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}"
             fi
             set +e
