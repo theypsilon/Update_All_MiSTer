@@ -83,7 +83,7 @@ And finally, if you would like to support my work, you may also subscribe to my 
 
 ## Supporters+ shout-out!
 
-Antonio Villena, birdybro, J-f Gourin and Matt Hargett
+Antonio Villena, birdybro, J-f Gourin, Matt Hargett and Visa-Valtteri Pimiä
 
 Thank you so much for supporting this project on [Patreon](https://www.patreon.com/bePatron?u=37499475)! You'll show up here if you become a **Supporter+**!
 
