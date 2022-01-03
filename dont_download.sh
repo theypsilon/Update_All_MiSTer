@@ -42,6 +42,7 @@ set_default_options() {
 
     ARCADE_OFFSET_DOWNLOADER="false"
     BIOS_DB_DOWNLOADER="false"
+    ARCADE_ROMS_DB_DOWNLOADER="false"
     TTY2OLED_FILES_DOWNLOADER="false"
     I2C2OLED_FILES_DOWNLOADER="false"
     MISTERSAM_FILES_DOWNLOADER="false"
@@ -764,11 +765,15 @@ sequence() {
     elif [[ "${BIOS_GETTER}" == "true" ]] ; then
         echo "- BIOS Getter"
     fi
-    if [[ "${MAME_GETTER}" == "true" ]] ; then
-        echo "- MAME Getter"
-    fi
-    if [[ "${HBMAME_GETTER}" == "true" ]] ; then
-        echo "- HBMAME Getter"
+    if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
+        echo "- Arcade Roms Database"
+    else
+        if [[ "${MAME_GETTER}" == "true" ]] ; then
+            echo "- MAME Getter"
+        fi
+        if [[ "${HBMAME_GETTER}" == "true" ]] ; then
+            echo "- HBMAME Getter"
+        fi
     fi
     if [[ "${ARCADE_ORGANIZER}" == "true" ]] ; then
         echo "- Arcade Organizer"
@@ -922,6 +927,10 @@ run_update_all() {
         RUNNING_DOWNLOADER="true"
     fi
 
+    if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
+        RUNNING_DOWNLOADER="true"
+    fi
+
     if [[ "${TTY2OLED_FILES_DOWNLOADER}" == "true" ]] && [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
         RUNNING_DOWNLOADER="true"
     fi
@@ -960,8 +969,10 @@ run_update_all() {
         export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
         if has_patreon_key ; then
             export BIOS_DB_DOWNLOADER="${BIOS_DB_DOWNLOADER}"
+            export ARCADE_ROMS_DB_DOWNLOADER="${ARCADE_ROMS_DB_DOWNLOADER}"
         else
             export BIOS_DB_DOWNLOADER="false"
+            export ARCADE_ROMS_DB_DOWNLOADER="false"
         fi
 
         if [ ! -f "${WORK_PATH}/downloader_initial_write" ] ; then
@@ -3151,14 +3162,16 @@ settings_menu_patrons() {
     local TMP=$(mktemp)
 
     SETTINGS_OPTIONS_BIOS_DB_DOWNLOADER=("false" "true")
+    SETTINGS_OPTIONS_ARCADE_ROMS_DB_DOWNLOADER=("false" "true")
     SETTINGS_OPTIONS_DOWNLOADER_FILTERS_BETA=("false" "true")
 
     while true ; do
         (
             local BIOS_DB_DOWNLOADER="${SETTINGS_OPTIONS_BIOS_DB_DOWNLOADER[0]}"
+            local ARCADE_ROMS_DB_DOWNLOADER="${SETTINGS_OPTIONS_ARCADE_ROMS_DB_DOWNLOADER[0]}"
             local DOWNLOADER_FILTERS_BETA="${SETTINGS_OPTIONS_DOWNLOADER_FILTERS_BETA[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "BIOS_DB_DOWNLOADER" "DOWNLOADER_FILTERS_BETA"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "BIOS_DB_DOWNLOADER" "ARCADE_ROMS_DB_DOWNLOADER" "DOWNLOADER_FILTERS_BETA"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -3171,8 +3184,9 @@ settings_menu_patrons() {
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Patrons Menu" \
                 --menu "" 10 50 25 \
                 "1 Experimental BIOS Database" "$(settings_menu_yesno_bool_text ${BIOS_DB_DOWNLOADER})" \
-                "2 Downloader Filters Preview" "$(settings_menu_yesno_bool_text ${DOWNLOADER_FILTERS_BETA})" \
-                "3 Play Bad Apple Database" "" \
+                "2 Experimental Arcade Roms Database" "$(settings_menu_yesno_bool_text ${ARCADE_ROMS_DB_DOWNLOADER})" \
+                "3 Downloader Filters Preview" "$(settings_menu_yesno_bool_text ${DOWNLOADER_FILTERS_BETA})" \
+                "4 Play Bad Apple Database" "" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -3191,8 +3205,16 @@ settings_menu_patrons() {
                     fi
                     settings_change_var "BIOS_DB_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
                     ;;
-                "2 Downloader Filters Preview") settings_change_var "DOWNLOADER_FILTERS_BETA" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "3 Play Bad Apple Database")
+                "2 Experimental Arcade Roms Database")
+                    if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "false" ]] ; then
+                        set +e
+                        dialog --keep-window --colors --title "Arcade Roms Database Activated" --msgbox "The Arcade Roms Database replaces the funcionality of the Mame/HBMame Getters.\n\nWhile the Arcade Roms Database is ACTIVE, they will not run." 7 70
+                        set -e
+                    fi
+                    settings_change_var "ARCADE_ROMS_DB_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+                    ;;
+                "3 Downloader Filters Preview") settings_change_var "DOWNLOADER_FILTERS_BETA" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "4 Play Bad Apple Database")
                     export DEFAULT_DB_ID="bad_apple_db"
                     export DOWNLOADER_INI_PATH="/tmp/downloader_bad_apple.ini"
                     if grep -q "fb_size=2" "${MISTER_INI_PATH}" 2> /dev/null || grep -q "fb_terminal=0" "${MISTER_INI_PATH}" 2> /dev/null ; then
@@ -3331,8 +3353,10 @@ settings_menu_save() {
                 export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
                 if has_patreon_key ; then
                     export BIOS_DB_DOWNLOADER="${BIOS_DB_DOWNLOADER}"
+                    export ARCADE_ROMS_DB_DOWNLOADER="${ARCADE_ROMS_DB_DOWNLOADER}"
                 else
                     export BIOS_DB_DOWNLOADER="false"
+                    export ARCADE_ROMS_DB_DOWNLOADER="false"
                 fi
 
                 "${WRITE_DOWNLOADER_INI_SCRIPT_PATH}" "${DOWNLOADER_INI_STANDARD_PATH}"

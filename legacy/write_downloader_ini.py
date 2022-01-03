@@ -53,7 +53,10 @@ def main():
     db_url_bios_db = 'https://raw.githubusercontent.com/theypsilon/BiosDB_MiSTer/main/bios_db.json'
     db_id_bios_db = 'bios_db'
 
-    db_ids = [db_id_distribution_mister, db_id_jtcores, db_id_llapi_folder, db_id_theypsilon_unofficial_distribution, db_id_arcade_offset_folder, db_id_names_txt, db_id_tty2oled_files, db_id_i2c2oled_files, db_id_mistersam_files, db_id_bios_db]
+    db_url_arcade_roms_db = 'https://github.com/theypsilon/ArcadeROMsDB_MiSTer/releases/download/first-version/arcade_roms_db.json.zip'
+    db_id_arcade_roms_db = 'arcade_roms_db'
+
+    db_ids = [db_id_distribution_mister, db_id_jtcores, db_id_llapi_folder, db_id_theypsilon_unofficial_distribution, db_id_arcade_offset_folder, db_id_names_txt, db_id_tty2oled_files, db_id_i2c2oled_files, db_id_mistersam_files, db_id_bios_db, db_id_arcade_roms_db]
 
     def env(name):
         return os.environ.get(name, 'false') == 'true'
@@ -74,6 +77,7 @@ def main():
     i2c2oled_files_downloader = env('I2C2OLED_FILES_DOWNLOADER')
     mistersam_files_downloader = env('MISTERSAM_FILES_DOWNLOADER')
     bios_db_downloader = env('BIOS_DB_DOWNLOADER')
+    arcade_roms_db_downloader = env('ARCADE_ROMS_DB_DOWNLOADER')
 
     ini_path = sys.argv[1]
 
@@ -151,6 +155,11 @@ def main():
         section(db_id_bios_db)[key_db_url] = db_url_bios_db
     elif db_id_bios_db in ini:
         ini.pop(db_id_bios_db)
+
+    if arcade_roms_db_downloader:
+        section(db_id_arcade_roms_db)[key_db_url] = db_url_arcade_roms_db
+    elif db_id_arcade_roms_db in ini:
+        ini.pop(db_id_arcade_roms_db)
 
     after = json.dumps(ini)
 
