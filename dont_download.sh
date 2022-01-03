@@ -925,10 +925,13 @@ run_update_all() {
 
     if [[ "${BIOS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
         RUNNING_DOWNLOADER="true"
+        BIOS_GETTER="false"
     fi
 
     if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
         RUNNING_DOWNLOADER="true"
+        MAME_GETTER="false"
+        HBMAME_GETTER="false"
     fi
 
     if [[ "${TTY2OLED_FILES_DOWNLOADER}" == "true" ]] && [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
