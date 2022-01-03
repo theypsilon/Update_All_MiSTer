@@ -3182,7 +3182,7 @@ settings_menu_patrons() {
 
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Patrons Menu" \
-                --menu "" 10 50 25 \
+                --menu "" 11 50 25 \
                 "1 Experimental BIOS Database" "$(settings_menu_yesno_bool_text ${BIOS_DB_DOWNLOADER})" \
                 "2 Experimental Arcade Roms Database" "$(settings_menu_yesno_bool_text ${ARCADE_ROMS_DB_DOWNLOADER})" \
                 "3 Downloader Filters Preview" "$(settings_menu_yesno_bool_text ${DOWNLOADER_FILTERS_BETA})" \
