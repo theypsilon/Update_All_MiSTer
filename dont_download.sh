@@ -3208,7 +3208,7 @@ settings_menu_patrons() {
                 "2 Experimental Arcade ROMs Database")
                     if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "false" ]] ; then
                         set +e
-                        dialog --keep-window --colors --title "Arcade ROMs Database Activated" --msgbox "The Arcade ROMs Database replaces the funcionality of the Mame/HBMame Getters.\n\nWhile the Arcade ROMs Database is ACTIVE, they will not run." 7 70
+                        dialog --keep-window --colors --title "Arcade ROMs Database Activated" --msgbox "The Arcade ROMs Database replaces the funcionality of the Mame/HBMame Getters.\n\nWhile the Arcade ROMs Database is ACTIVE, they will not run." 8 70
                         set -e
                     fi
                     settings_change_var "ARCADE_ROMS_DB_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
