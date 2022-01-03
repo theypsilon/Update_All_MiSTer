@@ -1000,7 +1000,7 @@ run_update_all() {
 
         export UPDATE_LINUX="false"
         if has_patreon_key && [[ "${DOWNLOADER_FILTERS_BETA}" == "true" ]] ; then
-            run_downloader_script "https://github.com/theypsilon/Downloader_MiSTer/releases/download/latest/dont_download.sh" "MiSTer Downloader"
+            run_downloader_script "https://github.com/theypsilon/Downloader_MiSTer/releases/download/latest/dont_download2.sh" "MiSTer Downloader"
         else
             run_downloader_script "${DOWNLOADER_URL}" "MiSTer Downloader"
         fi
