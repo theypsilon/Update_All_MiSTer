@@ -766,7 +766,7 @@ sequence() {
         echo "- BIOS Getter"
     fi
     if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
-        echo "- Arcade Roms Database"
+        echo "- Arcade ROMs Database"
     else
         if [[ "${MAME_GETTER}" == "true" ]] ; then
             echo "- MAME Getter"
@@ -3184,7 +3184,7 @@ settings_menu_patrons() {
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Patrons Menu" \
                 --menu "" 11 50 25 \
                 "1 Experimental BIOS Database" "$(settings_menu_yesno_bool_text ${BIOS_DB_DOWNLOADER})" \
-                "2 Experimental Arcade Roms Database" "$(settings_menu_yesno_bool_text ${ARCADE_ROMS_DB_DOWNLOADER})" \
+                "2 Experimental Arcade ROMs Database" "$(settings_menu_yesno_bool_text ${ARCADE_ROMS_DB_DOWNLOADER})" \
                 "3 Downloader Filters Preview" "$(settings_menu_yesno_bool_text ${DOWNLOADER_FILTERS_BETA})" \
                 "4 Play Bad Apple Database" "" \
                 "BACK"  "" 2> ${TMP}
@@ -3205,10 +3205,10 @@ settings_menu_patrons() {
                     fi
                     settings_change_var "BIOS_DB_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
                     ;;
-                "2 Experimental Arcade Roms Database")
+                "2 Experimental Arcade ROMs Database")
                     if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "false" ]] ; then
                         set +e
-                        dialog --keep-window --colors --title "Arcade Roms Database Activated" --msgbox "The Arcade Roms Database replaces the funcionality of the Mame/HBMame Getters.\n\nWhile the Arcade Roms Database is ACTIVE, they will not run." 7 70
+                        dialog --keep-window --colors --title "Arcade ROMs Database Activated" --msgbox "The Arcade ROMs Database replaces the funcionality of the Mame/HBMame Getters.\n\nWhile the Arcade ROMs Database is ACTIVE, they will not run." 7 70
                         set -e
                     fi
                     settings_change_var "ARCADE_ROMS_DB_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
