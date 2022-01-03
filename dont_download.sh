@@ -1285,7 +1285,7 @@ settings_menu_update_all() {
                 "${OPT8_NAMES}" "$(settings_active_tag ${NAMES_TXT_UPDATER}) Better core names in the menus" \
                 "9 Arcade Organizer" "$(settings_active_tag ${ARCADE_ORGANIZER}) Creates folder for easy navigation" \
                 "0 Misc" "" \
-                "Patrons Menu" "" \
+                "Patrons Menu" "Last updated: 2022.01.03" \
                 "SAVE" "Writes all changes to the INI file/s" \
                 "EXIT and RUN UPDATE ALL" "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
