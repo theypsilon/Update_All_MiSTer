@@ -53,7 +53,7 @@ def main():
     db_url_bios_db = 'https://raw.githubusercontent.com/theypsilon/BiosDB_MiSTer/main/bios_db.json'
     db_id_bios_db = 'bios_db'
 
-    db_url_arcade_roms_db = 'https://github.com/theypsilon/ArcadeROMsDB_MiSTer/releases/download/first-version/arcade_roms_db.json.zip'
+    db_url_arcade_roms_db = 'https://github.com/theypsilon/ArcadeROMsDB_MiSTer/releases/latest/download/arcade_roms_db.json.zip'
     db_id_arcade_roms_db = 'arcade_roms_db'
 
     db_ids = [db_id_distribution_mister, db_id_jtcores, db_id_llapi_folder, db_id_theypsilon_unofficial_distribution, db_id_arcade_offset_folder, db_id_names_txt, db_id_tty2oled_files, db_id_i2c2oled_files, db_id_mistersam_files, db_id_bios_db, db_id_arcade_roms_db]
