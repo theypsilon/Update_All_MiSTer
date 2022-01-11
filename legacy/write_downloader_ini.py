@@ -50,7 +50,7 @@ def main():
     db_url_mistersam_files = 'https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/main/MiSTer_SAMdb.json'
     db_id_mistersam_files = 'MiSTer_SAM_files'
 
-    db_url_bios_db = 'https://raw.githubusercontent.com/theypsilon/BiosDB_MiSTer/main/bios_db.json'
+    db_url_bios_db = 'https://raw.githubusercontent.com/theypsilon/BiosDB_MiSTer/db/bios_db.json'
     db_id_bios_db = 'bios_db'
 
     db_url_arcade_roms_db = 'https://raw.githubusercontent.com/theypsilon/ArcadeROMsDB_MiSTer/db/arcade_roms_db.json.zip'
