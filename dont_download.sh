@@ -399,6 +399,14 @@ initialize() {
     fi
 }
 
+check_system_clock() {
+    if [ "$(date +%Y)" -eq "1970" ];
+    then
+        echo "System clock does not appear to be set correctly: $(date)"
+        exit 1
+    fi
+}
+
 has_patreon_key() {
     if [ ! -f "${UPDATE_ALL_PATREON_KEY_PATH}" ] ; then
         return 1
@@ -826,6 +834,9 @@ countdown() {
 run_update_all() {
 
     initialize
+    echo
+
+    check_system_clock
     echo
 
     sequence
