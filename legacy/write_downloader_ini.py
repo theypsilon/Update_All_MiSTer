@@ -1,5 +1,5 @@
 #!/bin/python3
-# Copyright (c) 2020-2021 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2020-2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ def main():
     db_url_mistersam_files = 'https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/main/MiSTer_SAMdb.json'
     db_id_mistersam_files = 'MiSTer_SAM_files'
 
-    db_url_bios_db = 'https://raw.githubusercontent.com/theypsilon/BiosDB_MiSTer/db/bios_db.json'
+    db_url_bios_db = 'https://raw.githubusercontent.com/theypsilon/BiosDB_MiSTer/main/bios_db.json'
     db_id_bios_db = 'bios_db'
 
     db_url_arcade_roms_db = 'https://raw.githubusercontent.com/theypsilon/ArcadeROMsDB_MiSTer/db/arcade_roms_db.json.zip'
@@ -108,47 +108,47 @@ def main():
 
     if main_updater:
         section(db_id_distribution_mister)[key_db_url] = db_url_mister_db9_distribution_mister if encc_forks else db_url_mister_devel_distribution_mister
-    elif db_id_distribution_mister in ini:
+    elif db_id_distribution_mister in ini and section(db_id_distribution_mister)[key_db_url] in [db_url_mister_db9_distribution_mister, db_url_mister_devel_distribution_mister]:
         ini.pop(db_id_distribution_mister)
 
     if jotego_updater:
         section(db_id_jtcores)[key_db_url] = db_url_jtbin_jtcores if download_beta_cores else db_url_jtstable_jtcores
-    elif db_id_jtcores in ini:
+    elif db_id_jtcores in ini and section(db_id_jtcores)[key_db_url] in [db_url_jtbin_jtcores, db_url_jtstable_jtcores]:
         ini.pop(db_id_jtcores)
 
     if unofficial_updater:
         section(db_id_theypsilon_unofficial_distribution)[key_db_url] = db_url_theypsilon_unofficial_distribution
-    elif db_id_theypsilon_unofficial_distribution in ini:
+    elif db_id_theypsilon_unofficial_distribution in ini and section(db_id_theypsilon_unofficial_distribution)[key_db_url] in [db_url_theypsilon_unofficial_distribution]:
         ini.pop(db_id_theypsilon_unofficial_distribution)
 
     if llapi_updater:
         section(db_id_llapi_folder)[key_db_url] = db_url_llapi_folder
-    elif db_id_llapi_folder in ini:
+    elif db_id_llapi_folder in ini and section(db_id_llapi_folder)[key_db_url] in [db_url_llapi_folder]:
         ini.pop(db_id_llapi_folder)
 
     if arcade_offset_downloader:
         section(db_id_arcade_offset_folder)[key_db_url] = db_url_arcade_offset_folder
-    elif db_id_arcade_offset_folder in ini:
+    elif db_id_arcade_offset_folder in ini and section(db_id_arcade_offset_folder)[key_db_url] in [db_url_arcade_offset_folder]:
         ini.pop(db_id_arcade_offset_folder)
         
     if names_txt_updater:
         section(db_id_names_txt)[key_db_url] = get_db_url_names_txt()
-    elif db_id_names_txt in ini:
+    elif db_id_names_txt in ini and section(db_id_names_txt)[key_db_url] in get_all_names_txt_urls():
         ini.pop(db_id_names_txt)
 
     if tty2oled_files_downloader:
         section(db_id_tty2oled_files)[key_db_url] = db_url_tty2oled_files
-    elif db_id_tty2oled_files in ini:
+    elif db_id_tty2oled_files in ini and section(db_id_tty2oled_files)[key_db_url] in [db_url_tty2oled_files]:
         ini.pop(db_id_tty2oled_files)
     
     if i2c2oled_files_downloader:
         section(db_id_i2c2oled_files)[key_db_url] = db_url_i2c2oled_files
-    elif db_id_i2c2oled_files in ini:
+    elif db_id_i2c2oled_files in ini and section(db_id_i2c2oled_files)[key_db_url] in [db_url_i2c2oled_files]:
         ini.pop(db_id_i2c2oled_files)
 
     if mistersam_files_downloader:
         section(db_id_mistersam_files)[key_db_url] = db_url_mistersam_files
-    elif db_id_mistersam_files in ini:
+    elif db_id_mistersam_files in ini and section(db_id_mistersam_files)[key_db_url] in [db_url_mistersam_files]:
         ini.pop(db_id_mistersam_files)
     
     if bios_db_downloader:
@@ -221,21 +221,38 @@ def main():
         
         log('Written changes on ' + ini_path)
 
+db_url_names_CHAR54_Manufacturer_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR54_Manufacturer_EU.json'
+db_url_names_CHAR28_Manufacturer_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Manufacturer_EU.json'
+db_url_names_CHAR28_Manufacturer_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Manufacturer_US.json'
+db_url_names_CHAR28_Manufacturer_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Manufacturer_JP.json'
+db_url_names_CHAR28_Common_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Common_EU.json'
+db_url_names_CHAR28_Common_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Common_US.json'
+db_url_names_CHAR28_Common_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Common_JP.json'
+db_url_names_CHAR18_Manufacturer_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Manufacturer_EU.json'
+db_url_names_CHAR18_Manufacturer_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Manufacturer_US.json'
+db_url_names_CHAR18_Manufacturer_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Manufacturer_JP.json'
+db_url_names_CHAR18_Common_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_EU.json'
+db_url_names_CHAR18_Common_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_US.json'
+db_url_names_CHAR18_Common_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_JP.json'
+
+def get_all_names_txt_urls():
+    return [
+        db_url_names_CHAR54_Manufacturer_EU_txt,
+        db_url_names_CHAR28_Manufacturer_EU_txt,
+        db_url_names_CHAR28_Manufacturer_US_txt,
+        db_url_names_CHAR28_Manufacturer_JP_txt,
+        db_url_names_CHAR28_Common_EU_txt,
+        db_url_names_CHAR28_Common_US_txt,
+        db_url_names_CHAR28_Common_JP_txt,
+        db_url_names_CHAR18_Manufacturer_EU_txt,
+        db_url_names_CHAR18_Manufacturer_US_txt,
+        db_url_names_CHAR18_Manufacturer_JP_txt,
+        db_url_names_CHAR18_Common_EU_txt,
+        db_url_names_CHAR18_Common_US_txt,
+        db_url_names_CHAR18_Common_JP_txt,
+    ]
+
 def get_db_url_names_txt():
-    db_url_names_CHAR54_Manufacturer_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR54_Manufacturer_EU.json'
-    db_url_names_CHAR28_Manufacturer_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Manufacturer_EU.json'
-    db_url_names_CHAR28_Manufacturer_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Manufacturer_US.json'
-    db_url_names_CHAR28_Manufacturer_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Manufacturer_JP.json'
-    db_url_names_CHAR28_Common_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Common_EU.json'
-    db_url_names_CHAR28_Common_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Common_US.json'
-    db_url_names_CHAR28_Common_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR28_Common_JP.json'
-    db_url_names_CHAR18_Manufacturer_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Manufacturer_EU.json'
-    db_url_names_CHAR18_Manufacturer_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Manufacturer_US.json'
-    db_url_names_CHAR18_Manufacturer_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Manufacturer_JP.json'
-    db_url_names_CHAR18_Common_EU_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_EU.json'
-    db_url_names_CHAR18_Common_US_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_US.json'
-    db_url_names_CHAR18_Common_JP_txt = 'https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_JP.json'
-    
     names_region = os.environ.get('NAMES_REGION', 'JP')
     names_char_code = os.environ.get('NAMES_CHAR_CODE', 'CHAR18')
     names_sort_code = os.environ.get('NAMES_SORT_CODE', 'Common')
