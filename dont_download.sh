@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2020-2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,7 +46,6 @@ set_default_options() {
     TTY2OLED_FILES_DOWNLOADER="false"
     I2C2OLED_FILES_DOWNLOADER="false"
     MISTERSAM_FILES_DOWNLOADER="false"
-    DOWNLOADER_FILTERS_BETA="false"
 
     BIOS_GETTER="true"
     BIOS_GETTER_INI="update_bios-getter.ini"
@@ -396,14 +395,6 @@ initialize() {
 
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then
         export TERMINFO="terminfo"
-    fi
-}
-
-check_system_clock() {
-    if [ "$(date +%Y)" -eq "1970" ];
-    then
-        echo "System clock does not appear to be set correctly: $(date)"
-        exit 1
     fi
 }
 
@@ -789,6 +780,18 @@ sequence() {
     if [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
         echo "- Install update_all.sh && arcade_organizer.sh at /Scripts"
     fi
+
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "false" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+        local BOLD_IN="$(tput bold)"
+        local BOLD_OUT="$(tput sgr0)"
+        echo
+        echo "IMPORTANT NOTE [2022-01-20]:"
+        echo "The old updater will no longer be supported as of 2022-12-31."
+        echo "It can be unsafe, unreliable, and causes the infamous 'black screen' problem that requires a manual fix for the SD Card."
+        echo
+        echo "It's recommended that you activate the new Downloader in the SETTINGS screen as soon as possible to avoid further issues."
+        echo "Access the SETTINGS screen by pressing <${BOLD_IN}UP${BOLD_OUT}> during the initial countdown."
+    fi
 }
 
 countdown() {
@@ -801,6 +804,9 @@ countdown() {
     if [ -f "${SETTINGS_ON_FILENAME}" ] ; then
         COUNTDOWN_TIME=-1
         COUNTDOWN_SELECTION="menu"
+    fi
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "false" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+        COUNTDOWN_TIME=120
     fi
     set +e
     echo -e '\e[3A\e[K'
@@ -836,9 +842,6 @@ run_update_all() {
     initialize
     echo
 
-    check_system_clock
-    echo
-
     sequence
     echo
 
@@ -860,6 +863,12 @@ run_update_all() {
             sleep ${WAIT_TIME_FOR_READING}
             sleep ${WAIT_TIME_FOR_READING}
         fi
+        echo
+    fi
+
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "false" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+        echo "Running Update All with the old Updater in 20 secs..."
+        sleep 20
         echo
     fi
 
@@ -1010,11 +1019,7 @@ run_update_all() {
         fi
 
         export UPDATE_LINUX="false"
-        if [[ "${DOWNLOADER_FILTERS_BETA}" == "true" ]] ; then
-            run_downloader_script "https://github.com/theypsilon/Downloader_MiSTer/releases/download/latest/dont_download3.sh" "MiSTer Downloader"
-        else
-            run_downloader_script "${DOWNLOADER_URL}" "MiSTer Downloader"
-        fi
+        run_downloader_script "${DOWNLOADER_URL}" "MiSTer Downloader"
         mv "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader.log" "${MISTER_DOWNLOADER_WORK_FOLDER}/downloader1.log"
         if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
             FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader1.log")
@@ -1230,6 +1235,33 @@ settings_menu_update_all() {
             s/BLUE/RED/g" "${SETTINGS_TMP_RED_DIALOGRC}"
 
     local TMP=$(mktemp)
+
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "false" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+        SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE=("false", "true")
+        while true ; do
+            set +e
+            dialog --keep-window --title "Switch to Downloader" --defaultno \
+                --yesno "MiSTer & Update All work better with the new Downloader. But you are currently using the old updater.\n\nThe old updater will no longer be supported as of 2022-12-31.\nIt can be unsafe, unreliable, and causes the infamous 'black screen' problem that requires a manual fix for the SD Card.\n\nDo you want to activate Downloader now?" \
+                12 75
+            local SURE_RET=$?
+            set -e
+            if [[ "${SURE_RET}" == "0" ]] ; then
+                settings_change_var "DOWNLOADER_WHEN_POSSIBLE" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+                break
+            else
+                set +e
+                DIALOGRC="${SETTINGS_TMP_BLACK_DIALOGRC}" dialog --keep-window --title "Are you sure?" --defaultno \
+                    --yesno "It's recommended that you activate Downloader as soon as possible.\n\nDo you really want to use the old Updater instead?" \
+                    7 75
+                local SURE_RET=$?
+                set -e
+                if [[ "${SURE_RET}" == "0" ]] ; then
+                    break
+                fi
+            fi
+        done
+    fi
+
     while true ; do
         (
             local MAIN_UPDATER="${SETTINGS_OPTIONS_MAIN_UPDATER[0]}"
@@ -3029,7 +3061,6 @@ settings_menu_misc() {
     SETTINGS_OPTIONS_TTY2OLED_FILES_DOWNLOADER=("false" "true")
     SETTINGS_OPTIONS_I2C2OLED_FILES_DOWNLOADER=("false" "true")
     SETTINGS_OPTIONS_MISTERSAM_FILES_DOWNLOADER=("false" "true")
-    SETTINGS_OPTIONS_DOWNLOADER_FILTERS_BETA=("false" "true")
 
     while true ; do
         (
@@ -3041,9 +3072,8 @@ settings_menu_misc() {
             local TTY2OLED_FILES_DOWNLOADER="${SETTINGS_OPTIONS_TTY2OLED_FILES_DOWNLOADER[0]}"
             local I2C2OLED_FILES_DOWNLOADER="${SETTINGS_OPTIONS_I2C2OLED_FILES_DOWNLOADER[0]}"
             local MISTERSAM_FILES_DOWNLOADER="${SETTINGS_OPTIONS_MISTERSAM_FILES_DOWNLOADER[0]}"
-            local DOWNLOADER_FILTERS_BETA="${SETTINGS_OPTIONS_DOWNLOADER_FILTERS_BETA[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER" "TTY2OLED_FILES_DOWNLOADER" "I2C2OLED_FILES_DOWNLOADER" "MISTERSAM_FILES_DOWNLOADER" "DOWNLOADER_FILTERS_BETA"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER" "TTY2OLED_FILES_DOWNLOADER" "I2C2OLED_FILES_DOWNLOADER" "MISTERSAM_FILES_DOWNLOADER"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -3055,51 +3085,48 @@ settings_menu_misc() {
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
-                    --menu "" 17 75 25 \
+                    --menu "" 16 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
-                    "2 Downloader Filters RC" "$(settings_menu_yesno_bool_text ${DOWNLOADER_FILTERS_BETA})" \
-                    "3 Arcade Offset folder" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
-                    "4 tty2oled files" "$(settings_menu_yesno_bool_text ${TTY2OLED_FILES_DOWNLOADER})" \
-                    "5 i2c2oled files" "$(settings_menu_yesno_bool_text ${I2C2OLED_FILES_DOWNLOADER})" \
-                    "6 MiSTer SAM files" "$(settings_menu_yesno_bool_text ${MISTERSAM_FILES_DOWNLOADER})" \
-                    "7 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
-                    "8 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
-                    "9 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
-                    "0 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "2 Arcade Offset folder" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
+                    "3 tty2oled files" "$(settings_menu_yesno_bool_text ${TTY2OLED_FILES_DOWNLOADER})" \
+                    "4 i2c2oled files" "$(settings_menu_yesno_bool_text ${I2C2OLED_FILES_DOWNLOADER})" \
+                    "5 MiSTer SAM files" "$(settings_menu_yesno_bool_text ${MISTERSAM_FILES_DOWNLOADER})" \
+                    "6 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
+                    "7 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                    "8 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                    "9 Clear All Cores" "Removes all CORES and MRA folders." \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
             elif [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
-                    --menu "" 17 75 25 \
+                    --menu "" 16 75 25 \
                     "" "Option only available in MiSTer" \
                     "" "Option only available in MiSTer" \
                     "" "Option only available in MiSTer" \
                     "" "Option only available in MiSTer" \
                     "" "Option only available in MiSTer" \
                     "" "Option only available in MiSTer" \
-                    "" "Option only available in MiSTer" \
-                    "8 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
-                    "9 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
-                    "0 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "7 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                    "8 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                    "9 Clear All Cores" "Removes all CORES and MRA folders." \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
             else
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
-                    --menu "" 17 75 25 \
+                    --menu "" 16 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
                     "" "Option only available with Downloader" \
                     "" "Option only available with Downloader" \
                     "" "Option only available with Downloader" \
                     "" "Option only available with Downloader" \
+                    "6 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
+                    "7 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
                     "" "Option only available with Downloader" \
-                    "7 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
-                    "8 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
-                    "9 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
-                    "0 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "9 Clear All Cores" "Removes all CORES and MRA folders." \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
@@ -3111,16 +3138,29 @@ settings_menu_misc() {
 
             case "${DEFAULT_SELECTION}" in
                 "") ;;
-                "1 Use new Downloader") settings_change_var "DOWNLOADER_WHEN_POSSIBLE" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "2 Downloader Filters RC") settings_change_var "DOWNLOADER_FILTERS_BETA" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "3 Arcade Offset folder") settings_change_var "ARCADE_OFFSET_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "4 tty2oled files") settings_change_var "TTY2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "5 i2c2oled files") settings_change_var "I2C2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "6 MiSTer SAM files") settings_change_var "MISTERSAM_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "7 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "8 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "9 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "0 Clear All Cores")
+                "1 Use new Downloader")
+                    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] ; then
+                        set +e
+                        DIALOGRC="${SETTINGS_TMP_BLACK_DIALOGRC}" dialog --keep-window --title "Are you sure?" --defaultno \
+                            --yesno "It's highly recommended that you keep Downloader active. Otherwise the old updater will be used instead.\n\nThe old updater will no longer be supported as of 2022-12-31.\nIt can be unsafe, unreliable, and causes the infamous 'black screen' problem that requires a manual fix for the SD Card.\n\nDo you really want to deactivate Downloader?" \
+                            12 75
+                        local SURE_RET=$?
+                        set -e
+                        if [[ "${SURE_RET}" == "0" ]] ; then
+                            settings_change_var "DOWNLOADER_WHEN_POSSIBLE" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+                        fi
+                    else
+                        settings_change_var "DOWNLOADER_WHEN_POSSIBLE" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
+                    fi
+                    ;;
+                "2 Arcade Offset folder") settings_change_var "ARCADE_OFFSET_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "3 tty2oled files") settings_change_var "TTY2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "4 i2c2oled files") settings_change_var "I2C2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "5 MiSTer SAM files") settings_change_var "MISTERSAM_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "6 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "7 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "8 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "9 Clear All Cores")
                     local FILES_FOLDERS=("_Arcade" "_Computer" "_Console" "_Other" "_Utility" "_LLAPI" "_Jotego" "_CPS1" "_Unofficial")
 
                     local TO_DELETE=()
