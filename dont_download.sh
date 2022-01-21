@@ -785,7 +785,7 @@ sequence() {
         local BOLD_IN="$(tput bold)"
         local BOLD_OUT="$(tput sgr0)"
         echo
-        echo "IMPORTANT NOTE [2022-01-20]:"
+        echo "IMPORTANT NOTE [2022-01-21]:"
         echo "The old updater will no longer be supported as of 2022-12-31."
         echo "It can be unsafe, unreliable, and causes the infamous 'black screen' problem that requires a manual fix for the SD Card."
         echo
