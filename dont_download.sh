@@ -516,6 +516,7 @@ run_downloader_script() {
     chmod +x ${SCRIPT_PATH}
 
     export DOWNLOADER_LAUNCHER_PATH="downloader.ini"
+    export CURL_SSL="${SSL_SECURITY_OPTION}"
     export ALLOW_REBOOT="0"
 
     set +e
