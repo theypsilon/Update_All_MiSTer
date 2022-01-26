@@ -516,7 +516,9 @@ run_downloader_script() {
     chmod +x ${SCRIPT_PATH}
 
     export DOWNLOADER_LAUNCHER_PATH="downloader.ini"
-    export CURL_SSL="${SSL_SECURITY_OPTION}"
+    if [[ "${SSL_SECURITY_OPTION}" == "--insecure" ]] && [ ! -f /etc/ssl/certs/cacert.pem ] ; then
+        export CURL_SSL="${SSL_SECURITY_OPTION}"
+    fi
     export ALLOW_REBOOT="0"
 
     set +e
