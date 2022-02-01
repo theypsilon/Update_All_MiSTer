@@ -33,7 +33,7 @@ else
     ORIGINAL_SCRIPT_PATH="${0}"
 fi
 
-INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
+INI_PATH="$(realpath ${ORIGINAL_SCRIPT_PATH%.*}.ini)"
 if [[ -f "${INI_PATH}" ]] ; then
     TMP=$(mktemp)
     dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
