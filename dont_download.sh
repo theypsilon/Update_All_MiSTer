@@ -343,6 +343,9 @@ initialize() {
                 echo "UNOFFICIAL_UPDATER_INI=\"update_unofficials.ini\"" >> "${EXPORTED_INI_PATH}"
                 echo "LLAPI_UPDATER_INI=\"update_llapi.ini\"" >> "${EXPORTED_INI_PATH}"
                 echo "DOWNLOADER_WHEN_POSSIBLE=\"true\"" >> "${EXPORTED_INI_PATH}"
+                echo "BIOS_GETTER=\"false\"" >> "${EXPORTED_INI_PATH}"
+                echo "MAME_GETTER=\"false\"" >> "${EXPORTED_INI_PATH}"
+                echo "HBMAME_GETTER=\"false\"" >> "${EXPORTED_INI_PATH}"
             fi
         fi
     fi
