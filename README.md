@@ -6,8 +6,8 @@ This script runs the [__MiSTer Downloader__](https://github.com/MiSTer-devel/Dow
     * The [official MiSTer Distribution](https://github.com/MiSTer-devel/Distribution_MiSTer) in the [MiSTer-devel](https://github.com/MiSTer-devel) organization. **[Default option]**
     * The [DB9 Fork MiSTer Distribution](https://github.com/MiSTer-DB9/Distribution_MiSTer) with [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers. *Requires [SNAC8](https://github.com/theypsilon/Update_All_MiSTer/wiki#snac8) compatible adapter.*
 2. __JTCORES for MiSTer__. Downloads many cores made by [Jotego](https://github.com/jotego). You may select between two versions:
-    * [JTSTABLE](https://github.com/JTFPGA/JTSTABLE). Stable cores only. **[Default option]**
-    * [jtbin](https://github.com/jotego/jtcores_mister). Stable + Beta cores in their latest versions.
+    * [jtcores](https://github.com/jotego/jtcores_mister). Public cores only. **[Default option]**
+    * [jtpremium](https://github.com/jotego/jtpremium). Public + patreon-only cores in their latest versions.
 4. [theypsilon Unofficial Distribution](https://github.com/theypsilon/Unofficial_Distribution_MiSTer/tree/main). Downloads [some cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) that are not yet released but are fairly stable. **[Disabled by default]**
 5. [LLAPI Folder](https://github.com/MiSTer-LLAPI/LLAPI_folder_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). **[Disabled by default]**
 6. [Arcade Offset](https://github.com/atrac17/Arcade_Offset). Downloads patched arcade games curated by [atrac17](https://github.com/atrac17). **[Disabled by default]**
