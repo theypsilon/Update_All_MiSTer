@@ -41,7 +41,6 @@ set_default_options() {
     LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
 
     ARCADE_OFFSET_DOWNLOADER="false"
-    BIOS_DB_DOWNLOADER="false"
     ARCADE_ROMS_DB_DOWNLOADER="false"
     TTY2OLED_FILES_DOWNLOADER="false"
     I2C2OLED_FILES_DOWNLOADER="false"
@@ -139,6 +138,7 @@ WRITE_DOWNLOADER_INI_SCRIPT_URL="https://raw.githubusercontent.com/theypsilon/Up
 WRITE_DOWNLOADER_INI_SCRIPT_PATH="/tmp/write_downloader_ini.py"
 DOWNLOADER_INI_STANDARD_PATH="/media/fat/downloader.ini"
 DOWNLOADER_INI_TEMP_PATH="/tmp/downloader.ini"
+TEST_UNSTABLE_SPINNER_FIRMWARE_MD5="cc0518143d90f5662d27f140f3f3d697"
 
 enable_global_log() {
     if [[ "${UPDATE_ALL_OS}" == "WINDOWS" ]] ; then return ; fi
@@ -742,6 +742,9 @@ sequence() {
         if [[ "${MISTERSAM_FILES_DOWNLOADER}" == "true" ]] ; then
             echo "- MiSTer SAM files"
         fi
+        if [[ "${BIOS_GETTER}" == "true" ]] ; then
+            echo "- BIOS Database"
+        fi
     else
         if [[ "${MAIN_UPDATER}" == "true" ]] ; then
             echo "- Main Updater: $([[ ${ENCC_FORKS} == 'true' ]] && echo 'DB9 / SNAC8' || echo 'MiSTer-devel')"
@@ -764,11 +767,9 @@ sequence() {
         if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
             echo "- Names TXT Updater"
         fi
-    fi
-    if [[ "${BIOS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
-        echo "- BIOS Database"
-    elif [[ "${BIOS_GETTER}" == "true" ]] ; then
-        echo "- BIOS Getter"
+        if [[ "${BIOS_GETTER}" == "true" ]] ; then
+            echo "- BIOS Getter"
+        fi
     fi
     if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
         echo "- Arcade ROMs Database"
@@ -945,13 +946,16 @@ run_update_all() {
         fi
     fi
 
-    if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
-        RUNNING_DOWNLOADER="true"
+    if [[ "${BIOS_GETTER}" == "true" ]] ; then
+        if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+            RUNNING_DOWNLOADER="true"
+        else
+            run_mame_getter_script "BIOS-GETTER" "${BIOS_GETTER_URL}" "${BIOS_GETTER_INI}"
+        fi
     fi
 
-    if [[ "${BIOS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
+    if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
         RUNNING_DOWNLOADER="true"
-        BIOS_GETTER="false"
     fi
 
     if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
@@ -997,10 +1001,8 @@ run_update_all() {
         fi
         export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
         if has_patreon_key ; then
-            export BIOS_DB_DOWNLOADER="${BIOS_DB_DOWNLOADER}"
             export ARCADE_ROMS_DB_DOWNLOADER="${ARCADE_ROMS_DB_DOWNLOADER}"
         else
-            export BIOS_DB_DOWNLOADER="false"
             export ARCADE_ROMS_DB_DOWNLOADER="false"
         fi
 
@@ -1030,12 +1032,6 @@ run_update_all() {
         if [ $RUN_DOWNLOADER_SCRIPT_RET -ne 0 ]; then
             FAILING_UPDATERS+=("${MISTER_DOWNLOADER_WORK_FOLDER}/downloader1.log")
         fi
-    fi
-
-    if [[ "${BIOS_GETTER}" == "true" ]] ; then
-        run_mame_getter_script "BIOS-GETTER" "${BIOS_GETTER_URL}" "${BIOS_GETTER_INI}"
-        sleep ${WAIT_TIME_FOR_READING}
-        sleep ${WAIT_TIME_FOR_READING}
     fi
 
     if [[ "${MAME_GETTER}" == "true" ]] ; then
@@ -1188,6 +1184,7 @@ SETTINGS_TMP_BREAK="/tmp/ua_break"
 SETTINGS_TMP_CONTINUE="/tmp/ua_continue"
 SETTINGS_TMP_BLACK_DIALOGRC="/tmp/ua_black_dialog"
 SETTINGS_TMP_RED_DIALOGRC="/tmp/ua_red_dialog"
+SETTINGS_TMP_CURRENT_FIRMWARE="/tmp/ua_current_firmware"
 
 settings_menu_update_all() {
     rm "${SETTINGS_TMP_BREAK}" 2> /dev/null || true
@@ -1301,6 +1298,7 @@ settings_menu_update_all() {
                 OPT2_JOTEGO_PAREN="($([[ ${DOWNLOAD_BETA_CORES} == 'true' ]] && echo 'jtpremium' || echo 'jtcores'))"
                 OPT3_UNOFFICIAL="3 theypsilon Unofficial"
                 OPT4_LLAPI="4 LLAPI Folder"
+                OPT5_BIOS="5 BIOS Database"
                 OPT8_NAMES="8 Names TXT"
             else
                 OPT1_MAIN="1 Main Updater"
@@ -1308,6 +1306,7 @@ settings_menu_update_all() {
                 OPT2_JOTEGO_PAREN=""
                 OPT3_UNOFFICIAL="3 Unofficial Updater"
                 OPT4_LLAPI="4 LLAPI Updater"
+                OPT5_BIOS="5 BIOS Getter"
                 OPT8_NAMES="8 Names TXT Updater"
             fi
 
@@ -1328,13 +1327,13 @@ settings_menu_update_all() {
                 "${OPT2_JOTEGO}" "$(settings_active_tag ${JOTEGO_UPDATER}) Cores made by Jotego ${OPT2_JOTEGO_PAREN}" \
                 "${OPT3_UNOFFICIAL}"  "$(settings_active_tag ${UNOFFICIAL_UPDATER}) Some unofficial cores" \
                 "${OPT4_LLAPI}" "$(settings_active_tag ${LLAPI_UPDATER}) Forks adapted to LLAPI" \
-                "5 BIOS Getter" "$(settings_active_tag ${BIOS_GETTER}) BIOS files for your systems" \
+                "${OPT5_BIOS}" "$(settings_active_tag ${BIOS_GETTER}) BIOS files for your systems" \
                 "6 MAME Getter" "$(settings_active_tag ${MAME_GETTER}) MAME ROMs for arcades" \
                 "7 HBMAME Getter" "$(settings_active_tag ${HBMAME_GETTER}) HBMAME ROMs for arcades" \
                 "${OPT8_NAMES}" "$(settings_active_tag ${NAMES_TXT_UPDATER}) Better core names in the menus" \
                 "9 Arcade Organizer" "$(settings_active_tag ${ARCADE_ORGANIZER}) Creates folder for easy navigation" \
                 "0 Misc" "" \
-                "Patrons Menu" "Last updated: 2022.01.03" \
+                "Patrons Menu" "Last updated: 2022.06.24" \
                 "SAVE" "Writes all changes to the INI file/s" \
                 "EXIT and RUN UPDATE ALL" "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
@@ -1347,7 +1346,7 @@ settings_menu_update_all() {
                         "${OPT2_JOTEGO}") settings_menu_jotego_updater ;;
                         "${OPT3_UNOFFICIAL}") settings_menu_unofficial_updater ;;
                         "${OPT4_LLAPI}") settings_menu_llapi_updater ;;
-                        "5 BIOS Getter") settings_menu_bios_getter ;;
+                        "${OPT5_BIOS}") settings_menu_bios_getter ;;
                         "6 MAME Getter") settings_menu_mame_getter ;;
                         "7 HBMAME Getter") settings_menu_hbmame_getter ;;
                         "${OPT8_NAMES}") settings_menu_names_txt ;;
@@ -1374,7 +1373,7 @@ settings_menu_update_all() {
                         "${OPT2_JOTEGO}") settings_change_var "JOTEGO_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "${OPT3_UNOFFICIAL}") settings_change_var "UNOFFICIAL_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "${OPT4_LLAPI}") settings_change_var "LLAPI_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                        "5 BIOS Getter") settings_change_var "BIOS_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                        "${OPT5_BIOS}") settings_change_var "BIOS_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "6 MAME Getter") settings_change_var "MAME_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "7 HBMAME Getter") settings_change_var "HBMAME_GETTER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
                         "${OPT8_NAMES}") settings_change_var "NAMES_TXT_UPDATER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
@@ -2020,14 +2019,24 @@ settings_menu_bios_getter() {
 
             local ACTIVATE="1 $(settings_active_action ${BIOS_GETTER})"
 
-            set +e
-            dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "BIOS-Getter Settings" \
-                --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${BIOS_GETTER_INI})" 10 75 25 \
-                "${ACTIVATE}" "Activated: ${BIOS_GETTER}" \
-                "2 INI file"  "$(settings_normalize_ini_file ${BIOS_GETTER_INI})" \
-                "BACK"  "" 2> ${TMP}
-            DEFAULT_SELECTION="$?"
-            set -e
+            if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "BIOS Database Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${BIOS_GETTER_INI})" 9 75 25 \
+                    "${ACTIVATE}" "Activated: ${BIOS_GETTER}" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            else
+                set +e
+                dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "BIOS-Getter Settings" \
+                    --menu "$(settings_menu_descr_text ${EXPORTED_INI_PATH} ${BIOS_GETTER_INI})" 10 75 25 \
+                    "${ACTIVATE}" "Activated: ${BIOS_GETTER}" \
+                    "2 INI file"  "$(settings_normalize_ini_file ${BIOS_GETTER_INI})" \
+                    "BACK"  "" 2> ${TMP}
+                DEFAULT_SELECTION="$?"
+                set -e
+            fi
 
             if [[ "${DEFAULT_SELECTION}" == "0" ]] ; then
                 DEFAULT_SELECTION="$(cat ${TMP})"
@@ -3243,15 +3252,18 @@ settings_menu_misc() {
 settings_menu_patrons() {
     local TMP=$(mktemp)
 
-    SETTINGS_OPTIONS_BIOS_DB_DOWNLOADER=("false" "true")
     SETTINGS_OPTIONS_ARCADE_ROMS_DB_DOWNLOADER=("false" "true")
+    ORIGINAL_FIRMWARE_MD5=""
+    if [ -f /media/fat/MiSTer ] ; then
+        ORIGINAL_FIRMWARE_MD5="$(md5sum /media/fat/MiSTer | awk '{print $1}')"
+    fi
+    echo "${ORIGINAL_FIRMWARE_MD5}" > "${SETTINGS_TMP_CURRENT_FIRMWARE}"
 
     while true ; do
         (
-            local BIOS_DB_DOWNLOADER="${SETTINGS_OPTIONS_BIOS_DB_DOWNLOADER[0]}"
             local ARCADE_ROMS_DB_DOWNLOADER="${SETTINGS_OPTIONS_ARCADE_ROMS_DB_DOWNLOADER[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "BIOS_DB_DOWNLOADER" "ARCADE_ROMS_DB_DOWNLOADER"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "ARCADE_ROMS_DB_DOWNLOADER"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -3260,12 +3272,24 @@ settings_menu_patrons() {
                 DEFAULT_SELECTION="1 Experimental BIOS Database"
             fi
 
+
+            if [ ! -f /media/fat/MiSTer ] ; then
+                OPT_TEST_UNSTABLE_SPINNER=""
+                DESC_TEST_UNSTABLE_SPINNER=""
+            elif [[ "$(md5sum /media/fat/MiSTer | awk '{print $1}')" == "${TEST_UNSTABLE_SPINNER_FIRMWARE_MD5}" ]] ; then
+                OPT_TEST_UNSTABLE_SPINNER="3 Revert Unstable Spinner Firmware"
+                DESC_TEST_UNSTABLE_SPINNER="Restore the original MiSTer binary"
+            else
+                OPT_TEST_UNSTABLE_SPINNER="3 Test Unstable Spinner Firmware"
+                DESC_TEST_UNSTABLE_SPINNER="For the Taito EGRET II Mini"
+            fi
+
             set +e
             dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Patrons Menu" \
-                --menu "" 10 50 25 \
-                "1 Experimental BIOS Database" "$(settings_menu_yesno_bool_text ${BIOS_DB_DOWNLOADER})" \
-                "2 Experimental Arcade ROMs Database" "$(settings_menu_yesno_bool_text ${ARCADE_ROMS_DB_DOWNLOADER})" \
-                "3 Play Bad Apple Database" "" \
+                --menu "" 10 75 25 \
+                "1 Experimental Arcade ROMs Database" "$(settings_menu_yesno_bool_text ${ARCADE_ROMS_DB_DOWNLOADER})" \
+                "2 Play Bad Apple Database" "" \
+                "${OPT_TEST_UNSTABLE_SPINNER}" "${DESC_TEST_UNSTABLE_SPINNER}" \
                 "BACK"  "" 2> ${TMP}
             DEFAULT_SELECTION="$?"
             set -e
@@ -3276,15 +3300,7 @@ settings_menu_patrons() {
 
             case "${DEFAULT_SELECTION}" in
                 "") ;;
-                "1 Experimental BIOS Database")
-                    if [[ "${BIOS_DB_DOWNLOADER}" == "false" ]] ; then
-                        set +e
-                        dialog --keep-window --colors --title "BIOS Database Activated" --msgbox "The BIOS Database replaces the funcionality of the BIOS Getter.\n\nWhile the BIOS Database is ACTIVE, the BIOS Getter will not run." 7 70
-                        set -e
-                    fi
-                    settings_change_var "BIOS_DB_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
-                    ;;
-                "2 Experimental Arcade ROMs Database")
+                "1 Experimental Arcade ROMs Database")
                     if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "false" ]] ; then
                         set +e
                         dialog --keep-window --colors --title "Arcade ROMs Database Activated" --msgbox "The Arcade ROMs Database replaces the funcionality of the Mame/HBMame Getters.\n\nWhile the Arcade ROMs Database is ACTIVE, they will not run." 8 70
@@ -3292,7 +3308,7 @@ settings_menu_patrons() {
                     fi
                     settings_change_var "ARCADE_ROMS_DB_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})"
                     ;;
-                "3 Play Bad Apple Database")
+                "2 Play Bad Apple Database")
                     export DEFAULT_DB_ID="bad_apple_db"
                     export DOWNLOADER_INI_PATH="/tmp/downloader_bad_apple.ini"
                     if grep -q "fb_size=2" "${MISTER_INI_PATH}" 2> /dev/null || grep -q "fb_terminal=0" "${MISTER_INI_PATH}" 2> /dev/null ; then
@@ -3305,12 +3321,79 @@ settings_menu_patrons() {
                     export -n DEFAULT_DB_ID
                     export -n DEFAULT_DB_URL
                     ;;
-                *) echo > "${SETTINGS_TMP_BREAK}" ;;
+                "3 Test Unstable Spinner Firmware")
+                    set +e
+                    DIALOGRC="${SETTINGS_TMP_RED_DIALOGRC}" dialog --keep-window --title "WARNING" --defaultno \
+                        --yesno "This will replace the original firmware with an unstable test version which only works with Arkanoid. All other cores using the mouse WILL work erratically.\n\nYou have to revert to the original firmware after you are done testing Arkanoid.\n\nDON'T REPORT ISSUES IN ANY CORE WHILE USING THIS FIRMWARE!" \
+                        12 75
+                    local SURE_RET=$?
+                    set -e
+
+                    if [[ "${SURE_RET}" == "0" ]] ; then
+                        curl \
+                            ${CURL_RETRY} --silent --show-error \
+                            ${SSL_SECURITY_OPTION} \
+                            --fail \
+                            --location \
+                            -o /media/fat/MiSTer.new \
+                            "https://raw.githubusercontent.com/theypsilon/Main_MiSTer/test-unstable-taito-spinner-firmware/bin"
+
+                        if [ -f /media/fat/MiSTer.new ] && [[ "$(md5sum /media/fat/MiSTer.new | awk '{print $1}')" == "${TEST_UNSTABLE_SPINNER_FIRMWARE_MD5}" ]] ; then
+                            mv /media/fat/MiSTer.new /media/fat/MiSTer
+                            md5sum /media/fat/MiSTer | awk '{print $1}' > "${SETTINGS_TMP_CURRENT_FIRMWARE}"
+
+                            if [[ "${ORIGINAL_FIRMWARE_MD5}" != "$(cat ${SETTINGS_TMP_CURRENT_FIRMWARE})" ]] ; then
+                                set +e
+                                dialog --keep-window --colors --title "Test firmware installed" --msgbox "DON'T REPORT ISSUES IN ANY CORE WHILE USING THIS FIRMWARE!\n\nPlease reboot now to execute it." 8 50
+                                set -e
+                            fi
+                        else
+                            set +e
+                            dialog --keep-window --colors --title "Network error" --msgbox "Please try again later." 5 40
+                            set -e
+                        fi
+                    fi
+                    ;;
+
+                "3 Revert Unstable Spinner Firmware")
+                    curl \
+                        ${CURL_RETRY} --silent --show-error \
+                        ${SSL_SECURITY_OPTION} \
+                        --fail \
+                        --location \
+                        -o /media/fat/MiSTer.new \
+                        "https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/MiSTer"
+
+                    if [ -f /media/fat/MiSTer.new ] ; then
+                        mv /media/fat/MiSTer.new /media/fat/MiSTer
+                        md5sum /media/fat/MiSTer | awk '{print $1}' > "${SETTINGS_TMP_CURRENT_FIRMWARE}"
+
+                        if [[ "${ORIGINAL_FIRMWARE_MD5}" != "$(cat ${SETTINGS_TMP_CURRENT_FIRMWARE})" ]] ; then
+                            set +e
+                            dialog --keep-window --colors --title "Original firmware restored" --msgbox "Please reboot now to execute it." 5 40
+                            set -e
+                        fi
+                    else
+                        set +e
+                        dialog --keep-window --colors --title "Network error" --msgbox "Please try again later." 5 40
+                        set -e
+                    fi
+                    ;;
+
+                *)
+                    echo > "${SETTINGS_TMP_BREAK}"
+                    ;;
             esac
         )
         if [ -f "${SETTINGS_TMP_BREAK}" ] ; then
             rm "${SETTINGS_TMP_BREAK}" 2> /dev/null
-            break
+            if [[ "${ORIGINAL_FIRMWARE_MD5}" != "$(cat ${SETTINGS_TMP_CURRENT_FIRMWARE})" ]] ; then
+                set +e
+                dialog --keep-window --colors --title "The Firmware has been changed" --msgbox "Please reboot NOW to execute it!" 5 40
+                set -e
+            else
+                break
+            fi
         fi
     done
     rm ${TMP}
@@ -3427,13 +3510,12 @@ settings_menu_save() {
                     export DOWNLOAD_BETA_CORES="${DOWNLOAD_BETA_CORES:-false}"
                     export UNOFFICIAL_UPDATER="${UNOFFICIAL_UPDATER}"
                     export LLAPI_UPDATER="${LLAPI_UPDATER}"
+                    export BIOS_DB_DOWNLOADER="${BIOS_GETTER}"
                 fi
                 export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
                 if has_patreon_key ; then
-                    export BIOS_DB_DOWNLOADER="${BIOS_DB_DOWNLOADER}"
                     export ARCADE_ROMS_DB_DOWNLOADER="${ARCADE_ROMS_DB_DOWNLOADER}"
                 else
-                    export BIOS_DB_DOWNLOADER="false"
                     export ARCADE_ROMS_DB_DOWNLOADER="false"
                 fi
 
