@@ -990,6 +990,7 @@ run_update_all() {
             export LLAPI_UPDATER="${LLAPI_UPDATER}"
             export TTY2OLED_FILES_DOWNLOADER="${TTY2OLED_FILES_DOWNLOADER}"
             export I2C2OLED_FILES_DOWNLOADER="${I2C2OLED_FILES_DOWNLOADER}"
+            export BIOS_DB_DOWNLOADER="${BIOS_GETTER}"
             export MISTERSAM_FILES_DOWNLOADER="${MISTERSAM_FILES_DOWNLOADER}"
             if [ -f "${NAMES_TXT_UPDATER_INI}" ] ; then
                 load_vars_from_ini "${NAMES_TXT_UPDATER_INI}" "NAMES_REGION" "NAMES_CHAR_CODE" "NAMES_SORT_CODE"
