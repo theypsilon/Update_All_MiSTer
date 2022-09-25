@@ -39,6 +39,9 @@ def main():
     db_url_arcade_offset_folder = 'https://raw.githubusercontent.com/atrac17/Arcade_Offset/db/arcadeoffsetdb.json.zip'
     db_id_arcade_offset_folder = 'arcade_offset_folder'
     
+    db_url_coin_op_collection = 'https://raw.githubusercontent.com/atrac17/Coin-Op_Collection/db/db.json.zip'
+    db_id_coin_op_collection = 'atrac17/Coin-Op_Collection'
+
     db_id_names_txt = 'names_txt'
 
     db_url_tty2oled_files = 'https://raw.githubusercontent.com/venice1200/MiSTer_tty2oled/main/tty2oleddb.json'
@@ -72,6 +75,7 @@ def main():
     unofficial_updater = env('UNOFFICIAL_UPDATER')
     llapi_updater = env('LLAPI_UPDATER')
     arcade_offset_downloader = env('ARCADE_OFFSET_DOWNLOADER')
+    coin_op_collection_downloader = env('COIN_OP_COLLECTION_DOWNLOADER')
     names_txt_updater = env('NAMES_TXT_UPDATER')
     tty2oled_files_downloader = env('TTY2OLED_FILES_DOWNLOADER')
     i2c2oled_files_downloader = env('I2C2OLED_FILES_DOWNLOADER')
@@ -130,6 +134,11 @@ def main():
         section(db_id_arcade_offset_folder)[key_db_url] = db_url_arcade_offset_folder
     elif db_id_arcade_offset_folder in ini and section(db_id_arcade_offset_folder)[key_db_url] in [db_url_arcade_offset_folder]:
         ini.pop(db_id_arcade_offset_folder)
+
+    if coin_op_collection_downloader:
+        section(db_id_coin_op_collection)[key_db_url] = db_url_coin_op_collection
+    elif db_id_coin_op_collection in ini and section(db_id_coin_op_collection)[key_db_url] in [db_url_coin_op_collection]:
+        ini.pop(db_id_coin_op_collection)
         
     if names_txt_updater:
         section(db_id_names_txt)[key_db_url] = get_db_url_names_txt()

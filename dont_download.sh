@@ -41,6 +41,7 @@ set_default_options() {
     LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
 
     ARCADE_OFFSET_DOWNLOADER="false"
+    COIN_OP_COLLECTION_DOWNLOADER="false"
     ARCADE_ROMS_DB_DOWNLOADER="false"
     TTY2OLED_FILES_DOWNLOADER="false"
     I2C2OLED_FILES_DOWNLOADER="false"
@@ -728,7 +729,10 @@ sequence() {
             echo "- LLAPI Folder"
         fi
         if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
-            echo "- Arcade Offset folder"
+            echo "- Arcade Offset folder by atrac17"
+        fi
+        if [[ "${COIN_OP_COLLECTION_DOWNLOADER}" == "true" ]] ; then
+            echo "- Coin-Op Collection by atrac17"
         fi
         if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
             echo "- Names TXT"
@@ -762,7 +766,10 @@ sequence() {
             echo "- LLAPI Updater"
         fi
         if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
-            echo "- Arcade Offset folder"
+            echo "- Arcade Offset folder by atrac17"
+        fi
+        if [[ "${COIN_OP_COLLECTION_DOWNLOADER}" == "true" ]] ; then
+            echo "- Coin-Op Collection by atrac17"
         fi
         if [[ "${NAMES_TXT_UPDATER}" == "true" ]] ; then
             echo "- Names TXT Updater"
@@ -957,6 +964,9 @@ run_update_all() {
     if [[ "${ARCADE_OFFSET_DOWNLOADER}" == "true" ]] ; then
         RUNNING_DOWNLOADER="true"
     fi
+    if [[ "${COIN_OP_COLLECTION_DOWNLOADER}" == "true" ]] ; then
+        RUNNING_DOWNLOADER="true"
+    fi
 
     if [[ "${ARCADE_ROMS_DB_DOWNLOADER}" == "true" ]] && has_patreon_key ; then
         RUNNING_DOWNLOADER="true"
@@ -1001,6 +1011,7 @@ run_update_all() {
             export NAMES_SORT_CODE="${NAMES_SORT_CODE}"
         fi
         export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
+        export COIN_OP_COLLECTION_DOWNLOADER="${COIN_OP_COLLECTION_DOWNLOADER}"
         if has_patreon_key ; then
             export ARCADE_ROMS_DB_DOWNLOADER="${ARCADE_ROMS_DB_DOWNLOADER}"
         else
@@ -3074,6 +3085,7 @@ settings_menu_misc() {
     SETTINGS_OPTIONS_COUNTDOWN_TIME=("15" "4" "60")
     SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE=("false", "true")
     SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER=("false" "true")
+    SETTINGS_OPTIONS_COIN_OP_COLLECTION_DOWNLOADER=("false" "true")
     SETTINGS_OPTIONS_TTY2OLED_FILES_DOWNLOADER=("false" "true")
     SETTINGS_OPTIONS_I2C2OLED_FILES_DOWNLOADER=("false" "true")
     SETTINGS_OPTIONS_MISTERSAM_FILES_DOWNLOADER=("false" "true")
@@ -3085,11 +3097,12 @@ settings_menu_misc() {
             local COUNTDOWN_TIME="${SETTINGS_OPTIONS_COUNTDOWN_TIME[0]}"
             local DOWNLOADER_WHEN_POSSIBLE="${SETTINGS_OPTIONS_DOWNLOADER_WHEN_POSSIBLE[0]}"
             local ARCADE_OFFSET_DOWNLOADER="${SETTINGS_OPTIONS_ARCADE_OFFSET_DOWNLOADER[0]}"
+            local COIN_OP_COLLECTION_DOWNLOADER="${SETTINGS_OPTIONS_COIN_OP_COLLECTION_DOWNLOADER[0]}"
             local TTY2OLED_FILES_DOWNLOADER="${SETTINGS_OPTIONS_TTY2OLED_FILES_DOWNLOADER[0]}"
             local I2C2OLED_FILES_DOWNLOADER="${SETTINGS_OPTIONS_I2C2OLED_FILES_DOWNLOADER[0]}"
             local MISTERSAM_FILES_DOWNLOADER="${SETTINGS_OPTIONS_MISTERSAM_FILES_DOWNLOADER[0]}"
 
-            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER" "TTY2OLED_FILES_DOWNLOADER" "I2C2OLED_FILES_DOWNLOADER" "MISTERSAM_FILES_DOWNLOADER"
+            load_vars_from_ini "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" "AUTOREBOOT" "WAIT_TIME_FOR_READING" "COUNTDOWN_TIME" "DOWNLOADER_WHEN_POSSIBLE" "ARCADE_OFFSET_DOWNLOADER" "COIN_OP_COLLECTION_DOWNLOADER" "TTY2OLED_FILES_DOWNLOADER" "I2C2OLED_FILES_DOWNLOADER" "MISTERSAM_FILES_DOWNLOADER"
 
             local DEFAULT_SELECTION=
             if [ -s ${TMP} ] ; then
@@ -3101,48 +3114,51 @@ settings_menu_misc() {
             if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
-                    --menu "" 16 75 25 \
+                    --menu "" 17 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
                     "2 Arcade Offset folder" "$(settings_menu_yesno_bool_text ${ARCADE_OFFSET_DOWNLOADER})" \
-                    "3 tty2oled files" "$(settings_menu_yesno_bool_text ${TTY2OLED_FILES_DOWNLOADER})" \
-                    "4 i2c2oled files" "$(settings_menu_yesno_bool_text ${I2C2OLED_FILES_DOWNLOADER})" \
-                    "5 MiSTer SAM files" "$(settings_menu_yesno_bool_text ${MISTERSAM_FILES_DOWNLOADER})" \
-                    "6 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
-                    "7 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
-                    "8 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
-                    "9 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "3 Coin-Op Collection" "$(settings_menu_yesno_bool_text ${COIN_OP_COLLECTION_DOWNLOADER})" \
+                    "4 tty2oled files" "$(settings_menu_yesno_bool_text ${TTY2OLED_FILES_DOWNLOADER})" \
+                    "5 i2c2oled files" "$(settings_menu_yesno_bool_text ${I2C2OLED_FILES_DOWNLOADER})" \
+                    "6 MiSTer SAM files" "$(settings_menu_yesno_bool_text ${MISTERSAM_FILES_DOWNLOADER})" \
+                    "7 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
+                    "8 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                    "9 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                    "0 Clear All Cores" "Removes all CORES and MRA folders." \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
             elif [[ "${UPDATE_ALL_PC_UPDATER}" == "true" ]] ; then
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
-                    --menu "" 16 75 25 \
+                    --menu "" 17 75 25 \
                     "" "Option only available in MiSTer" \
                     "" "Option only available in MiSTer" \
                     "" "Option only available in MiSTer" \
                     "" "Option only available in MiSTer" \
                     "" "Option only available in MiSTer" \
                     "" "Option only available in MiSTer" \
-                    "7 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
-                    "8 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
-                    "9 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "" "Option only available in MiSTer" \
+                    "8 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                    "9 Countdown Timer" "${COUNTDOWN_TIME} seconds" \
+                    "0 Clear All Cores" "Removes all CORES and MRA folders." \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
             else
                 set +e
                 dialog --keep-window --default-item "${DEFAULT_SELECTION}" --cancel-label "Back" --ok-label "Select" --title "Misc | Other Settings" \
-                    --menu "" 16 75 25 \
+                    --menu "" 17 75 25 \
                     "1 Use new Downloader" "$(settings_menu_yesno_bool_text ${DOWNLOADER_WHEN_POSSIBLE})" \
                     "" "Option only available with Downloader" \
                     "" "Option only available with Downloader" \
                     "" "Option only available with Downloader" \
                     "" "Option only available with Downloader" \
-                    "6 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
-                    "7 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
                     "" "Option only available with Downloader" \
-                    "9 Clear All Cores" "Removes all CORES and MRA folders." \
+                    "7 Autoreboot (if needed)" "$(settings_menu_yesno_bool_text ${AUTOREBOOT})" \
+                    "8 Pause (between updaters)" "${WAIT_TIME_FOR_READING} seconds" \
+                    "" "Option only available with Downloader" \
+                    "0 Clear All Cores" "Removes all CORES and MRA folders." \
                     "BACK"  "" 2> ${TMP}
                 DEFAULT_SELECTION="$?"
                 set -e
@@ -3170,13 +3186,14 @@ settings_menu_misc() {
                     fi
                     ;;
                 "2 Arcade Offset folder") settings_change_var "ARCADE_OFFSET_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "3 tty2oled files") settings_change_var "TTY2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "4 i2c2oled files") settings_change_var "I2C2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "5 MiSTer SAM files") settings_change_var "MISTERSAM_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "6 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "7 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "8 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
-                "9 Clear All Cores")
+                "3 Coin-Op Collection") settings_change_var "COIN_OP_COLLECTION_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "4 tty2oled files") settings_change_var "TTY2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "5 i2c2oled files") settings_change_var "I2C2OLED_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "6 MiSTer SAM files") settings_change_var "MISTERSAM_FILES_DOWNLOADER" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "7 Autoreboot (if needed)") settings_change_var "AUTOREBOOT" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "8 Pause (between updaters)") settings_change_var "WAIT_TIME_FOR_READING" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "9 Countdown Timer") settings_change_var "COUNTDOWN_TIME" "$(settings_domain_ini_file ${EXPORTED_INI_PATH})" ;;
+                "0 Clear All Cores")
                     local FILES_FOLDERS=("_Arcade" "_Computer" "_Console" "_Other" "_Utility" "_LLAPI" "_Jotego" "_CPS1" "_Unofficial")
 
                     local TO_DELETE=()
@@ -3514,6 +3531,7 @@ settings_menu_save() {
                     export BIOS_DB_DOWNLOADER="${BIOS_GETTER}"
                 fi
                 export ARCADE_OFFSET_DOWNLOADER="${ARCADE_OFFSET_DOWNLOADER}"
+                export COIN_OP_COLLECTION_DOWNLOADER="${COIN_OP_COLLECTION_DOWNLOADER}"
                 if has_patreon_key ; then
                     export ARCADE_ROMS_DB_DOWNLOADER="${ARCADE_ROMS_DB_DOWNLOADER}"
                 else
