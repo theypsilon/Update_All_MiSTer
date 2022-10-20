@@ -291,25 +291,6 @@ initialize() {
         fi
     fi
 
-    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] && [ -d "${BASE_PATH}/Scripts/" ] ; then
-        local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
-        if [ ! -f "${OLD_SCRIPT_PATH}" ] || [[ "$(md5sum ${OLD_SCRIPT_PATH} | awk '{print $1}')" != "${UPDATE_ALL_LAUNCHER_MD5}" ]] ; then
-            local MAYBE_NEW_LAUNCHER="/tmp/ua_maybe_new_launcher.sh"
-            rm "${MAYBE_NEW_LAUNCHER}" 2> /dev/null || true
-            fetch_or_continue "${MAYBE_NEW_LAUNCHER}" "${UPDATE_ALL_URL}" > /dev/null 2>&1 || true
-            if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [[ "$(md5sum ${MAYBE_NEW_LAUNCHER} | awk '{print $1}')" == "${UPDATE_ALL_LAUNCHER_MD5}" ]] ; then
-                rm "${OLD_SCRIPT_PATH}" 2> /dev/null || true
-                cp "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" || true
-                
-                echo "Update All's launcher script has just been upgraded."
-                echo "Please execute this again to run the new version."
-                echo "This is a one-time only process."
-                echo
-                exit 0
-            fi
-        fi
-    fi
-
     initialize_global_log
 
     echo "Executing 'Update All' script"
@@ -368,6 +349,27 @@ initialize() {
         echo "OK."
     else
         echo "Not found."
+    fi
+
+
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] && [ -d "${BASE_PATH}/Scripts/" ] ; then
+        local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
+        if [ ! -f "${OLD_SCRIPT_PATH}" ] || [[ "$(md5sum ${OLD_SCRIPT_PATH} | awk '{print $1}')" != "${UPDATE_ALL_LAUNCHER_MD5}" ]] ; then
+            local MAYBE_NEW_LAUNCHER="/tmp/ua_maybe_new_launcher.sh"
+            rm "${MAYBE_NEW_LAUNCHER}" 2> /dev/null || true
+            fetch_or_continue "${MAYBE_NEW_LAUNCHER}" "${UPDATE_ALL_URL}" > /dev/null 2>&1 || true
+            if [ -f "${MAYBE_NEW_LAUNCHER}" ] && [[ "$(md5sum ${MAYBE_NEW_LAUNCHER} | awk '{print $1}')" == "${UPDATE_ALL_LAUNCHER_MD5}" ]] ; then
+                rm "${OLD_SCRIPT_PATH}" 2> /dev/null || true
+                cp "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" || true
+                
+                #echo
+                #echo "Update All's launcher script has just been upgraded."
+                #echo "Please execute this again to run the new version."
+                #echo "This is a one-time only process."
+                #echo
+                #exit 0
+            fi
+        fi
     fi
 
     if [ ! -d "${WORK_PATH}" ] ; then
