@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Install sharutils
+      run: sudo apt-get install sharutils
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - uses: actions/checkout@v2
+
+    - name: Unit Tests
+      run: cd src && python3 -m unittest discover -s test/unit
+
+    - name: Integration Tests
+      run: cd src && python3 -m unittest discover -s test/integration
+
+    - name: System Tests
+      run: cd src && python3 -m unittest discover -s test/system
+
+    - name: Build
+      run: ./src/build.sh > dont_download2.sh
+
+    - name: Release
+      id: release
+      run: |
+        git config --global user.email "theypsilon@gmail.com"
+        git config --global user.name "The CI/CD Bot"
+        ./.github/release.sh

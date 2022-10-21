@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,91 +14,103 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# You can download the latest version of this script from:
-# https://github.com/theypsilon/Updater_All_MiSTer
-
-# Version 1.0 - 2020-06-07 - First commit
+# You can download the latest version of this tool from:
+# https://github.com/theypsilon/Update_All_MiSTer
 
 set -euo pipefail
 
-
-# ========= OPTIONS ==================
-CURL_RETRY="--connect-timeout 15 --max-time 600 --retry 3 --retry-delay 5"
-ALLOW_INSECURE_SSL="true"
-
-# ========= CODE STARTS HERE =========
-if [[ "${0}" == "bash" ]] ; then
-    ORIGINAL_SCRIPT_PATH="$(ps -o comm,pid | awk -v PPID=${PPID} '$2 == PPID {print $1}')"
-else
-    ORIGINAL_SCRIPT_PATH="${0}"
-fi
-
-INI_PATH="${ORIGINAL_SCRIPT_PATH%.*}.ini"
-if [[ -f "${INI_PATH}" ]] ; then
-    TMP=$(mktemp)
-    dos2unix < "${INI_PATH}" 2> /dev/null | grep -v "^exit" > ${TMP} || true
-    set +u
-    source ${TMP}
-    set -u
-    rm -f ${TMP}
-fi
-
-set +e
-
-SSL_SECURITY_OPTION=""
-curl ${CURL_RETRY} --silent --show-error "https://github.com" > /dev/null 2>&1
-case $? in
-    0)
-        ;;
-    60)
-        if [[ "${ALLOW_INSECURE_SSL}" == "true" ]]
-        then
-            SSL_SECURITY_OPTION="--insecure"
-        else
-            echo "CA certificates need"
-            echo "to be fixed for"
-            echo "using SSL certificate"
-            echo "verification."
-            echo "Please fix them i.e."
-            echo "using security_fixes.sh"
-            exit 2
+download_file() {
+    local DOWNLOAD_PATH="${1}"
+    local DOWNLOAD_URL="${2}"
+    for (( COUNTER=0; COUNTER<=60; COUNTER+=1 )); do
+        if [ ${COUNTER} -ge 1 ] ; then
+            sleep 1s
         fi
-        ;;
-    *)
-        echo "No Internet connection"
-        exit 1
-        ;;
-esac
-set -e
+        set +e
+        curl ${CURL_SSL:-} --fail --location -o "${DOWNLOAD_PATH}" "${DOWNLOAD_URL}" &> /dev/null
+        local CMD_RET=$?
+        set -e
 
-SCRIPT_PATH="/tmp/${ORIGINAL_SCRIPT_PATH/*\//}"
+        case ${CMD_RET} in
+            0)
+                export CURL_SSL="${CURL_SSL:-}"
+                return
+                ;;
+            60)
+                if [ -f /etc/ssl/certs/cacert.pem ] ; then
+                    export CURL_SSL="--cacert /etc/ssl/certs/cacert.pem"
+                    continue
+                fi
+
+                set +e
+                dialog --keep-window --title "Bad Certificates" --defaultno \
+                    --yesno "CA certificates need to be fixed, do you want me to fix them?\n\nNOTE: This operation will delete files at /etc/ssl/certs" \
+                    7 65
+                local DIALOG_RET=$?
+                set -e
+
+                if [[ "${DIALOG_RET}" == "0" ]] ; then
+                    local RO_ROOT="false"
+                    if mount | grep "on / .*[(,]ro[,$]" -q ; then
+                        RO_ROOT="true"
+                    fi
+                    [ "${RO_ROOT}" == "true" ] && mount / -o remount,rw
+                    rm /etc/ssl/certs/* 2> /dev/null || true
+                    echo
+                    echo "Installing cacert.pem from https://curl.se"
+                    curl --insecure --location -o /etc/ssl/certs/cacert.pem "https://curl.se/ca/cacert.pem"
+                    sync
+                    [ "${RO_ROOT}" == "true" ] && mount / -o remount,ro
+                    echo
+                    export CURL_SSL="--cacert /etc/ssl/certs/cacert.pem"
+                    continue
+                fi
+
+                set +e
+                dialog --keep-window --title "Insecure Connection" --defaultno \
+                    --yesno "Would you like to run this tool using an insecure connection?\n\nNOTE: You should fix the certificates instead." \
+                    7 67
+                DIALOG_RET=$?
+                set -e
+
+                if [[ "${DIALOG_RET}" == "0" ]] ; then
+                    echo
+                    echo "WARNING! Connection is insecure."
+                    export CURL_SSL="--insecure"
+                    sleep 5s
+                    echo
+                    continue
+                fi
+
+                echo "No secure connection is possible without fixing the certificates."
+                exit 1
+                ;;
+            *)
+                echo "No Internet connection, please try again later."
+                exit 1
+                ;;
+        esac
+    done
+
+    echo "Internet connection failed, please try again later."
+    exit 1
+}
+
+echo "Launching Update All"
+echo
+
+SCRIPT_PATH="/tmp/update_all.sh"
+
 rm ${SCRIPT_PATH} 2> /dev/null || true
 
-if [[ "${DEBUG_UPDATER:-false}" != "true" ]] || [ ! -f dont_download.sh ] ; then
-    REPOSITORY_URL="https://github.com/theypsilon/Update_All_MiSTer"
-    echo "Downloading"
-    echo "${REPOSITORY_URL}"
-    echo ""
+download_file "${SCRIPT_PATH}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
 
-    curl \
-        ${CURL_RETRY} --silent --show-error \
-        ${SSL_SECURITY_OPTION} \
-        --fail \
-        --location \
-        -o "${SCRIPT_PATH}" \
-        "${REPOSITORY_URL}/blob/master/dont_download.sh?raw=true"
-else
-    cp dont_download.sh ${SCRIPT_PATH}
-    export AUTO_UPDATE_LAUNCHER="false"
-    export DEBUG_UPDATER
+chmod +x "${SCRIPT_PATH}"
+
+if ! "${SCRIPT_PATH}" ; then
+    echo -e "Update All failed!\n"
+    exit 1
 fi
-
-export CURL_RETRY
-export ALLOW_INSECURE_SSL
-export SSL_SECURITY_OPTION
-export EXPORTED_INI_PATH="${INI_PATH}"
-
-bash "${SCRIPT_PATH}" || echo -e "Script ${ORIGINAL_SCRIPT_PATH} failed!\n"
 
 rm ${SCRIPT_PATH} 2> /dev/null || true
 
