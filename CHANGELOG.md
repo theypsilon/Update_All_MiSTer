@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.0 - 2022-10-21
+
+### Added
+- Full python rewrite.
+- Proper automated test suite with > 50% code coverage.
+- New databases: Arcade ROMs DB, Coin-Op Collection, MiSTer SAM, MiSTer Extensions (wizzo), and 2oled DBs.
+- New UI engine.
+- New Settings Screen structure with friendlier texts.
+- Color themes support for the Settings Screen.
+
+### Changed
+- More stylized CLI output.
+
+### Removed
+- MAME Getter & HBMAME Getter, which are now replaced by the Arcade ROMs DB.
+- Following INI files: update_all.ini, update_jtcores.ini, and update_names-txt.ini
+- Toggle for coming back to the old updater.
+- Option for deleting all cores, as Downloader validation mechanisms makes this unnecessary.
+- Support for KEEP_USBMOUNT_CONF option as it's no longer necessary.
+
 ## Version 1.4 - 2021-09-17
 
 ### Added
