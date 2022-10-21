@@ -451,7 +451,15 @@ class _Drawer(UiDialogDrawer):
     def _write_line(self, y, x, text, mode):
         if x + len(text) > curses.COLS:
             text = text[0:(curses.COLS - x)]
-        self._window.addstr(y, x, text, mode)
+        try:
+            self._window.addstr(y, x, text, mode)
+        except curses.error as e:
+            print(f'y: {str(y)}')
+            print(f'x: {str(x)}')
+            print(f'lines: {str(curses.LINES)}')
+            print(f'cols: {str(curses.COLS)}')
+            print('please report this error to theypsilon and share Scripts/.config/update_all/update_all.log with him')
+            raise e
 
 
 def parse_effects(chunk):
