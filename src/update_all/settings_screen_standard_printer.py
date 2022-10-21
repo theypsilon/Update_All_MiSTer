@@ -288,6 +288,8 @@ class _Layout(SettingsScreenThemeManager):
 
     def _paint_box(self, h: int, w: int, y: int, x: int, has_header: bool) -> None:
         screen = curses.initscr()
+        if curses.LINES <= 15:  # This is to move the texts a bit up in tiny resolutions.
+            y -= 1
         try:
             box1 = screen.subwin(h, w, y, x)
             box1.clear()
