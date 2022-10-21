@@ -12,7 +12,7 @@ This script runs the [__MiSTer Downloader__](https://github.com/MiSTer-devel/Dow
 4. [BIOS Database](https://github.com/theypsilon/BiosDB_MiSTer). Downloads bios from https://archive.org/ for your installed systems. **[Disabled by default]**
 5. [Arcade ROMs Database](https://github.com/theypsilon/ArcadeROMsDB_MiSTer). Downloads arcade roms from https://archive.org/ that are compatible with MRAs. **[Disabled by default]**
 6. **Unofficial Cores**. A selection of curated databases that provide unofficial cores, including:
-   1. [Coin-Op Collection](https://github.com/atrac17/Coin-Op_Collection). Downloads cores developed by [Darren](https://github.com/va7deo) and [atrac17](https://github.com/atrac17). **[Disabled by default]**
+   1. [Coin-Op Collection](https://github.com/atrac17/Coin-Op_Collection). Downloads cores developed by [Darren](https://github.com/va7deo) and [atrac17](https://github.com/atrac17). **[Default option]**
    2. [Arcade Offset](https://github.com/atrac17/Arcade_Offset). Downloads patched arcade games curated by [atrac17](https://github.com/atrac17). **[Disabled by default]**
    3. [LLAPI Forks Folder](https://github.com/MiSTer-LLAPI/LLAPI_folder_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). **[Disabled by default]**
 8. **Unofficial Scripts**. A selection of curated databases that provide unofficial scripts.  **[Disabled by default]**
