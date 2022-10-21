@@ -455,8 +455,11 @@ class _Drawer(UiDialogDrawer):
             y -= 1
         if y < 0 or y >= curses.LINES:
             return
-        if x + len(text) > curses.COLS:
-            text = text[0:(curses.COLS - x)]
+        if x < 0:
+            text = text[-x:]
+            x = 0
+        if x + len(text) >= curses.COLS:
+            text = text[0:(curses.COLS - x - 1)]
         self._window.addstr(y, x, text, mode)
 
 
