@@ -1,0 +1,31 @@
+name: All Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Install sharutils
+      run: sudo apt-get install sharutils
+      
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - uses: actions/checkout@v2
+
+    - name: Unit Tests
+      run: cd src && python3 -m unittest discover -s test/unit
+
+    - name: Integration Tests
+      run: cd src && python3 -m unittest discover -s test/integration
+
+    - name: System Quick Tests
+      run: cd src && python3 -m unittest discover -s test/system/quick
+
+    - name: System Slow Tests
+      run: cd src && python3 -m unittest discover -s test/system/slow

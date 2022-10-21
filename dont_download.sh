@@ -79,7 +79,7 @@ set_default_options
 UPDATE_ALL_VERSION="1.4"
 UPDATE_ALL_PC_UPDATER="${UPDATE_ALL_PC_UPDATER:-false}"
 UPDATE_ALL_OS="${UPDATE_ALL_OS:-MiSTer_Linux}"
-UPDATE_ALL_LAUNCHER_MD5="ac10fbada40e3e5f133bc0eee0dd53d5"
+UPDATE_ALL_LAUNCHER_MD5="9c44e188d397cd2d3fd3130bc3456bff"
 UPDATE_ALL_PATREON_KEY_PATH="/media/fat/Scripts/update_all.patreonkey"
 UPDATE_ALL_PATREON_KEY_SIZE="16384"
 UPDATE_ALL_PATREON_KEY_MD5Q0="00e9f6acaec74650ddd38a14334ebaef"
@@ -362,12 +362,12 @@ initialize() {
                 rm "${OLD_SCRIPT_PATH}" 2> /dev/null || true
                 cp "${MAYBE_NEW_LAUNCHER}" "${OLD_SCRIPT_PATH}" || true
                 
-                #echo
-                #echo "Update All's launcher script has just been upgraded."
-                #echo "Please execute this again to run the new version."
-                #echo "This is a one-time only process."
-                #echo
-                #exit 0
+                echo
+                echo "Update All's launcher script has just been upgraded."
+                echo "Please execute this again to run the new version."
+                echo "This is a one-time only process."
+                echo
+                exit 0
             fi
         fi
     fi

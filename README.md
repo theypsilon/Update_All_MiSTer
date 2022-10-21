@@ -8,17 +8,17 @@ This script runs the [__MiSTer Downloader__](https://github.com/MiSTer-devel/Dow
 2. __JTCORES for MiSTer__. Downloads many cores made by [Jotego](https://github.com/jotego). You may select between two versions:
     * [jtcores](https://github.com/jotego/jtcores_mister). Public cores only. **[Default option]**
     * [jtpremium](https://github.com/jotego/jtpremium). Public + patreon-only cores in their latest versions.
-4. [theypsilon Unofficial Distribution](https://github.com/theypsilon/Unofficial_Distribution_MiSTer/tree/main). Downloads [some cores](https://github.com/theypsilon/Updater_script_MiSTer_Unofficial/wiki) that are not yet released but are fairly stable. **[Disabled by default]**
-5. [LLAPI Folder](https://github.com/MiSTer-LLAPI/LLAPI_folder_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). **[Disabled by default]**
-6. [Arcade Offset](https://github.com/atrac17/Arcade_Offset). Downloads patched arcade games curated by [atrac17](https://github.com/atrac17). **[Disabled by default]**
-7. [Names TXT](https://github.com/ThreepwoodLeBrush/Names_MiSTer). Downloads a complete names.txt file curated by [Threepwood](https://github.com/ThreepwoodLeBrush) that enables better core names in the menus. **[Disabled by default]**
+3. [Names TXT](https://github.com/ThreepwoodLeBrush/Names_MiSTer). Downloads a complete names.txt file curated by [Threepwood](https://github.com/ThreepwoodLeBrush) that enables better core names in the menus. **[Disabled by default]**
+4. [BIOS Database](https://github.com/theypsilon/BiosDB_MiSTer). Downloads bios from https://archive.org/ for your installed systems. **[Disabled by default]**
+5. [Arcade ROMs Database](https://github.com/theypsilon/ArcadeROMsDB_MiSTer). Downloads arcade roms from https://archive.org/ that are compatible with MRAs. **[Disabled by default]**
+6. **Unofficial Cores**. A selection of curated databases that provide unofficial cores, including:
+   1. [Coin-Op Collection](https://github.com/atrac17/Coin-Op_Collection). Downloads cores developed by [Darren](https://github.com/va7deo) and [atrac17](https://github.com/atrac17). **[Disabled by default]**
+   2. [Arcade Offset](https://github.com/atrac17/Arcade_Offset). Downloads patched arcade games curated by [atrac17](https://github.com/atrac17). **[Disabled by default]**
+   3. [LLAPI Forks Folder](https://github.com/MiSTer-LLAPI/LLAPI_folder_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). **[Disabled by default]**
+8. **Unofficial Scripts**. A selection of curated databases that provide unofficial scripts.  **[Disabled by default]**
 
-Additionally, this script also chains the following scripts:
-1. [BIOS Getter](https://github.com/theypsilon/MiSTer_BIOS_SCRIPTS) download bios for your installed systems from https://archive.org/
-2. [MAME and HBMAME Getter](https://github.com/atrac17/MiSTer_MAME_SCRIPTS) download roms from https://archive.org/
-3. [Arcade Organizer](https://github.com/theypsilon/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
-Special thanks to [Locutus73](https://github.com/Locutus73) for all his great work on the older [__Updater script__](https://github.com/MiSTer-devel/Updater_script_MiSTer). That __Updater script__ is no longer used by __Update All__ by default.
+Additionally, this script also runs the [Arcade Organizer](https://github.com/theypsilon/_arcade-organizer). Which creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
 
 
 ## Setup
@@ -30,35 +30,20 @@ Then turn on your __MiSTer__, go to the _Scripts_ menu and run this script from 
 It will take around 30 minutes the first time you run it, but later runs should take much less time.
 
 
+## Further Configuration
 
-## Alternative Setups
+In case you would like to configure Update All so it downloads exactly what you need, you can do it through the Settings screen.
 
-Other setups that might be useful for you:
-- [JTBIN ZIP](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all_jtbin.zip): Users that would like to download @jotego betas by default, can use this setup instead. You may also enable this option from the `Settings Screen` in the "Jotego Updater" submenu.
-- [usb0 ZIP](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all_usb0.zip): For people using USB as primary storage. You will be able to run this script from there and install all cores, roms, and MRAs on `/media/usb0`.
-- [DB9/SNAC8 ZIP](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all_db9_snac8.zip): Enables [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers.
+![settings screen](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/menu-2-0.jpeg "Settings Screen")
 
-
-NOTE: You should extract also all the INI files contained in these.
+The Settings screen will show up if you press UP in your controller or keyboard during the countdown showing up right after starting `update_all.sh` in your MiSTer. Please, don't forget to select `SAVE` to keep all the changes you have done before leaving.
 
 
 
 ## MiSTer Offline Setup
 
 Check [updater-pc](./updater-pc) to download all the MiSTer files from your PC.
-
 Useful if you can't connect your MiSTer to internet.
-
-
-
-## Further Configuration
-
-In case you would like to configure Update All so it downloads exactly what you need, you can do it through the Settings screen.
-
-![settings screen](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/menu-1-4.jpeg "Settings Screen")
-
-The Settings screen will show up if you press UP in your controller or keyboard during the countdown showing up right after starting `update_all.sh` in your MiSTer. Please, don't forget to select `SAVE` to keep all the changes you have done before leaving.
-
 
 
 ## Funding
@@ -74,6 +59,8 @@ Check also other core developers that you might want to support:
 * [furrtek](https://www.patreon.com/furrtek)
 * [Ace](https://ko-fi.com/ace9921)
 * [Blackwine](https://www.patreon.com/blackwine)
+* [atrac17](https://www.patreon.com/atrac17)
+* [Darren](https://ko-fi.com/darreno)
 
 And finally, if you would like to support my work, you may also subscribe to my patreon here:
 
@@ -83,27 +70,19 @@ And finally, if you would like to support my work, you may also subscribe to my 
 
 ## Supporters+ shout-out!
 
-Antonio Villena, atrac17, birdybro, Hard Rich and MiSTerFPGA.co.uk
+atrac17, birdybro, Hard Rich, MiSTerFPGA.co.uk and Tony Escobar
 
 Thank you so much for supporting this project on [Patreon](https://www.patreon.com/bePatron?u=37499475)! You'll show up here if you become a **Supporter+**!
 
-
+Special thanks to [Locutus73](https://github.com/Locutus73) for all his great work on the older [__Updater script__](https://github.com/MiSTer-devel/Updater_script_MiSTer). That __Updater script__ is no longer used by __Update All__ but it was an amazing source of inspiration.
 
 ## License
 
-Copyright © 2020-2021, [José Manuel Barroso Galindo](https://twitter.com/josembarroso). 
+Copyright © 2020-2022, [José Manuel Barroso Galindo](https://twitter.com/josembarroso). 
 Released under the [GPL v3 License](LICENSE).
 
 
 
 ## Warning
 
-I take no responsibility for any data loss or any damage you may incur because of the usage of this script.
-
-Please check the README.md of the scripts being called by Update All:
-
-https://github.com/MiSTer-devel/Downloader_MiSTer/<br>
-https://github.com/theypsilon/Names_TXT_Updater_MiSTer<br>
-https://github.com/atrac17/MiSTer_MAME_SCRIPTS<br>
-https://github.com/theypsilon/_arcade-organizer<br>
-https://github.com/theypsilon/MiSTer_BIOS_SCRIPTS<br>
+MiSTer Scripts are run with root access in a pretty powerful device that has internet access. Be careful and do proper research before running any script on your device.
