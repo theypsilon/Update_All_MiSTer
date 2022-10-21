@@ -449,17 +449,13 @@ class _Drawer(UiDialogDrawer):
         self._layout.reset()
 
     def _write_line(self, y, x, text, mode):
+        if curses.LINES <= 15:  # This is to move the texts a bit up in tiny resolutions.
+            y -= 1
+        if y < 0 or y >= curses.LINES:
+            return
         if x + len(text) > curses.COLS:
             text = text[0:(curses.COLS - x)]
-        try:
-            self._window.addstr(y, x, text, mode)
-        except curses.error as e:
-            print(f'y: {str(y)}')
-            print(f'x: {str(x)}')
-            print(f'lines: {str(curses.LINES)}')
-            print(f'cols: {str(curses.COLS)}')
-            print('please report this error to theypsilon and share Scripts/.config/update_all/update_all.log with him')
-            raise e
+        self._window.addstr(y, x, text, mode)
 
 
 def parse_effects(chunk):

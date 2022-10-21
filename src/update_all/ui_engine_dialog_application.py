@@ -203,6 +203,8 @@ class _Menu(UiSection):
             entries.append(entry)
 
         self._data['entries'] = entries
+        if curses.LINES <= 15: # This is to avoid text being cutoff off the screen in tiny resolutions.
+            self._separators = {}
 
     def process_key(self) -> Optional[ProcessKeyResult]:
         self._drawer.start(self._data)
