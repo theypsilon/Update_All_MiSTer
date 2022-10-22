@@ -288,7 +288,7 @@ class _Layout(SettingsScreenThemeManager):
 
     def _paint_box(self, h: int, w: int, y: int, x: int, has_header: bool) -> None:
         screen = curses.initscr()
-        if curses.LINES <= 15:  # This is to move the texts a bit up in tiny resolutions.
+        if curses.LINES <= 15:  # @resolution: This is to move the texts a bit up in tiny resolutions.
             y -= 1
         try:
             box1 = screen.subwin(h, w, y, x)
@@ -357,6 +357,8 @@ class _Drawer(UiDialogDrawer):
                 self._text_lines.append(chunk)
 
     def add_menu_entry(self, option, info, is_selected=False):
+        if curses.LINES <= 15 and option == '' and info == '' and not is_selected:
+            return  # @resolution: This is to avoid text being cutoff off the screen in tiny resolutions.
         self._menu_entries.append((self._interpolator.interpolate(option), self._interpolator.interpolate(info), is_selected))
 
     def add_action(self, action, is_selected=False):
@@ -451,7 +453,7 @@ class _Drawer(UiDialogDrawer):
         self._layout.reset()
 
     def _write_line(self, y, x, text, mode):
-        if curses.LINES <= 15:  # This is to move the texts a bit up in tiny resolutions.
+        if curses.LINES <= 15:  #  @resolution: This is to move the texts a bit up in tiny resolutions.
             y -= 1
         if y < 0 or y >= curses.LINES:
             return

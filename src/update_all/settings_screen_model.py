@@ -112,7 +112,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "5 Arcade ROMs Database",
-                    "description": "{arcade_roms_db_downloader:enabled} ROMs for Arcades Cores",
+                    "description": "{arcade_roms_db_downloader:enabled} ROMs for Arcade Cores",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "arcade_roms_database_menu"}],
                         "toggle": [{"type": "rotate_variable", "target": "arcade_roms_db_downloader"}],

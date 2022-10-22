@@ -77,6 +77,9 @@ class _Drawer(UiDialogDrawer):
         self._window.addstr(self._index_vertical, 1 + 30 * self._index_horizontal, self._interpolator.interpolate(action), mode)
         self._index_horizontal += 1
 
+    def add_inactive_action(self, length: int, is_selected=False):
+        self._index_horizontal += 1
+
     def paint(self) -> int:
         return self._window.getch()
 

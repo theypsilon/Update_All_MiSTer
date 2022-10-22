@@ -352,7 +352,7 @@ initialize() {
     fi
 
 
-    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] && [ -d "${BASE_PATH}/Scripts/" ] ; then
+    if [[ "${DOWNLOADER_WHEN_POSSIBLE}" == "true" ]] && [[ "${UPDATE_ALL_PC_UPDATER}" != "true" ]] && [[ "${AUTO_UPDATE_LAUNCHER}" == "true" ]] ; then
         local OLD_SCRIPT_PATH="${EXPORTED_INI_PATH%.*}.sh"
         if [ ! -f "${OLD_SCRIPT_PATH}" ] || [[ "$(md5sum ${OLD_SCRIPT_PATH} | awk '{print $1}')" != "${UPDATE_ALL_LAUNCHER_MD5}" ]] ; then
             local MAYBE_NEW_LAUNCHER="/tmp/ua_maybe_new_launcher.sh"

@@ -203,8 +203,6 @@ class _Menu(UiSection):
             entries.append(entry)
 
         self._data['entries'] = entries
-        if curses.LINES <= 15: # This is to avoid text being cutoff off the screen in tiny resolutions.
-            self._separators = {}
 
     def process_key(self) -> Optional[ProcessKeyResult]:
         self._drawer.start(self._data)
@@ -220,7 +218,7 @@ class _Menu(UiSection):
         entry_index = 0
         for index, entry in enumerate(self._data['entries']):
             for _ in range(self._separators.get(index, 0)):
-                self._drawer.add_menu_entry(' ', '', False)
+                self._drawer.add_menu_entry('', '', False)
 
             self._drawer.add_menu_entry(entry['title'], entry.get('description', ''), entry_index == self._state.position())
             entry_index += 1
