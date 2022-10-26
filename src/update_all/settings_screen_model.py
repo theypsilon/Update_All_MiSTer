@@ -53,7 +53,7 @@ def settings_screen_model(): return {
         "dialog_sub_menu": {
             "type": "ui",
             "ui": "menu",
-            "hotkeys": [{"keys": [27], "action": [{"type": "navigate", "target": "back"}]}],
+            "hotkeys": [{"keys": [27, 260], "action": [{"type": "navigate", "target": "back"}]}],
             "actions": [
                 {"title": "Select", "type": "symbol", "symbol": "ok"},
                 {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
@@ -71,7 +71,7 @@ def settings_screen_model(): return {
         "main_menu": {
             "ui": "menu",
             "header": "Update All {update_all_version} Settings",
-            "hotkeys": [{"keys": [27], "action": _try_abort()}],
+            "hotkeys": [{"keys": [27, 260], "action": _try_abort()}],
             "actions": [
                 {"title": "Select", "type": "symbol", "symbol": "ok"},
                 {"title": "Toggle",  "type": "symbol", "symbol": "toggle"},
@@ -506,7 +506,7 @@ def settings_screen_model(): return {
             "header": "Patrons Menu",
             "hotkeys": [
                 {
-                    "keys": [27],
+                    "keys": [27, 260],
                     "action": [{
                         "type": "condition",
                         "variable": "firmware_needs_reboot",

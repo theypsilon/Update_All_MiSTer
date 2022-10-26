@@ -104,7 +104,7 @@ class _Message(UiSection):
         self._drawer.add_action(self._data.get('action_name', 'Ok'), is_selected=True)
 
         key = self._drawer.paint()
-        if key in [curses.KEY_ENTER, ord("\n")]:
+        if key in [curses.KEY_ENTER, ord("\n"), ord(" ")]:
             return EffectChain(self._data['effects'])
 
         return key
@@ -136,7 +136,7 @@ class _Confirm(UiSection):
             self._state.navigate_left()
         elif key == curses.KEY_RIGHT:
             self._state.navigate_right()
-        elif key in [curses.KEY_ENTER, ord("\n")]:
+        elif key in [curses.KEY_ENTER, ord("\n"), ord(" ")]:
             return _make_action_effect_chain(self._data, self._state)
 
         return key
@@ -240,7 +240,7 @@ class _Menu(UiSection):
             self._state.navigate_left()
         elif key == curses.KEY_RIGHT:
             self._state.navigate_right()
-        elif key in [curses.KEY_ENTER, ord("\n")]:
+        elif key in [curses.KEY_ENTER, ord("\n"), ord(" ")]:
             return _make_action_effect_chain(self._data, self._state)
         elif key in self._hotkeys:
             self._state.reset_position(self._hotkeys[key])
