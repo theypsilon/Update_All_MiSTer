@@ -102,7 +102,7 @@ class PathType(Enum):
 
 # Update All old constants
 UPDATE_ALL_VERSION = "2.0"
-MISTER_DOWNLOADER_VERSION = "1.5"
+MISTER_DOWNLOADER_VERSION = "1.6"
 UPDATE_ALL_PC_UPDATER = "false"
 UPDATE_ALL_OS = "MiSTer_Linux"
 UPDATE_ALL_LAUNCHER_MD5 = "ac10fbada40e3e5f133bc0eee0dd53d5"
