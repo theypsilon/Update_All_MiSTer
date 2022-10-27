@@ -59,28 +59,8 @@ class LinuxOsUtils(OsUtils):
         subprocess.run(['reboot', 'now'], shell=False, stderr=subprocess.STDOUT)
 
     def execute_process(self, launcher, env) -> int:
-        proc = subprocess.Popen(['python3', launcher], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-        return_code = proc.poll()
-        while return_code is None:
-            if proc.stdout is not None:
-                outline = proc.stdout.readline().decode()
-                if len(outline):
-                    self._logger.print(f'{outline}', end='')
-
-            time.sleep(1.0 / 120.0)
-            return_code = proc.poll()
-
-        if proc.stdout is not None:
-            while True:
-                line = proc.stdout.readline()
-                if not line:
-                    break
-                outline = line.decode()
-                if len(outline):
-                    self._logger.print(f'{outline}', end='')
-
-        return return_code
+        proc = subprocess.run(['python3', launcher], env=env)
+        return proc.returncode
 
     def read_command_output(self, cmd, env) -> [int, str]:
         proc = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
