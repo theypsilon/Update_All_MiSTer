@@ -52,7 +52,7 @@ Consider funding [Alexey Melnikov "Sorgelig"](https://www.patreon.com/FPGAMiSTer
 
 Check also other core developers that you might want to support:
 * [Sergey Dvodnenko "srg320"](https://www.patreon.com/srg320)
-* [José Tejada "jotego"](https://www.patreon.com/topapate)
+* [José Tejada "jotego"](https://www.patreon.com/jotego)
 * [Robert Peip "FPGAzumSpass"](https://www.patreon.com/FPGAzumSpass)
 * [Josh Bassett "nullobject"](https://www.patreon.com/nullobject)
 * [MiSTer-X](https://www.patreon.com/MrX_8B)
