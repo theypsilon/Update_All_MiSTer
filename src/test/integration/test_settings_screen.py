@@ -185,11 +185,11 @@ def tester(files=None, config=None, store=None) -> Tuple[SettingsScreen, UiConte
     ui = UiContextStub()
     state = FileSystemState(files=files)
     config_provider = GenericProvider[Config]()
-    config_provider.initialize_runtime(config or Config())
+    config_provider.initialize(config or Config())
     store_provider = GenericProvider[LocalStore]()
-    store_provider.initialize_runtime(store or local_store())
+    store_provider.initialize(store or local_store())
     settings_screen = SettingsScreenTester(config_provider=config_provider, store_provider=store_provider, file_system=FileSystemFactory(state=state).create_for_system_scope())
-    settings_screen.initialize_ui(ui, screen=MagicMock())
+    settings_screen.initialize_ui(ui)
 
     return settings_screen, ui, state
 

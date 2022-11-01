@@ -112,7 +112,7 @@ class SettingsScreenPrinterStub(SettingsScreenPrinter):
         self._factory = factory or MagicMock()
         self._theme_manager = theme_manager or MagicMock()
 
-    def initialize_screen(self, screen) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
+    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
         return self._factory, self._theme_manager
 
 
