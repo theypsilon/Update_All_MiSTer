@@ -16,19 +16,21 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import curses
-from typing import Tuple
+from typing import Tuple, Union
 
 from update_all.settings_screen_printer import SettingsScreenPrinter, SettingsScreenThemeManager
 from update_all.ui_engine import Interpolator
+from update_all.ui_engine_curses_runtime import CursesRuntime, read_key
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory, UiDialogDrawer
+from update_all.ui_model_utilities import Key
 
 
-class SettingsScreenTrivialPrinter(SettingsScreenPrinter, SettingsScreenThemeManager):
-    def initialize_screen(self, screen: curses.window) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
+class SettingsScreenTrivialCursesPrinter(CursesRuntime, SettingsScreenPrinter, SettingsScreenThemeManager):
+    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
         curses.start_color()
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
-        window = screen.subwin(0, 0)
+        window = self.screen.subwin(0, 0)
         window.keypad(True)
         window.clear()
         window.bkgd(' ', curses.color_pair(1) | curses.A_BOLD)
@@ -80,8 +82,8 @@ class _Drawer(UiDialogDrawer):
     def add_inactive_action(self, length: int, is_selected=False):
         self._index_horizontal += 1
 
-    def paint(self) -> int:
-        return self._window.getch()
+    def paint(self) -> Union[Key, int]:
+        return read_key(self._window)
 
     def clear(self) -> None:
         pass

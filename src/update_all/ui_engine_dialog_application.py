@@ -16,10 +16,10 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import abc
-import curses
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, Union
 
 from update_all.ui_engine import EffectChain, ProcessKeyResult, UiSection, Interpolator, UiSectionFactory
+from update_all.ui_model_utilities import Key
 
 
 class UiDialogDrawer(abc.ABC):
@@ -38,7 +38,7 @@ class UiDialogDrawer(abc.ABC):
     def add_inactive_action(self, length: int, is_selected=False):
         """"Adds action"""
 
-    def paint(self) -> int:
+    def paint(self) -> Union[Key, int]:
         """"Paints all screen UI and returns char"""
 
     def clear(self) -> None:
@@ -104,7 +104,7 @@ class _Message(UiSection):
         self._drawer.add_action(self._data.get('action_name', 'Ok'), is_selected=True)
 
         key = self._drawer.paint()
-        if key in [curses.KEY_ENTER, ord("\n"), ord(" ")]:
+        if key == Key.ENTER:
             return EffectChain(self._data['effects'])
 
         return key
@@ -132,11 +132,11 @@ class _Confirm(UiSection):
             self._drawer.add_action(action['title'], index == self._state.lateral_position())
 
         key = self._drawer.paint()
-        if key == curses.KEY_LEFT:
+        if key == Key.LEFT:
             self._state.navigate_left()
-        elif key == curses.KEY_RIGHT:
+        elif key == Key.RIGHT:
             self._state.navigate_right()
-        elif key in [curses.KEY_ENTER, ord("\n"), ord(" ")]:
+        elif key == Key.ENTER:
             return _make_action_effect_chain(self._data, self._state)
 
         return key
@@ -232,15 +232,15 @@ class _Menu(UiSection):
                 self._drawer.add_action(title, is_selected)
 
         key = self._drawer.paint()
-        if key == curses.KEY_UP:
+        if key == Key.UP:
             self._state.navigate_up()
-        elif key == curses.KEY_DOWN:
+        elif key == Key.DOWN:
             self._state.navigate_down()
-        elif key == curses.KEY_LEFT:
+        elif key == Key.LEFT:
             self._state.navigate_left()
-        elif key == curses.KEY_RIGHT:
+        elif key == Key.RIGHT:
             self._state.navigate_right()
-        elif key in [curses.KEY_ENTER, ord("\n"), ord(" ")]:
+        elif key == Key.ENTER:
             return _make_action_effect_chain(self._data, self._state)
         elif key in self._hotkeys:
             self._state.reset_position(self._hotkeys[key])

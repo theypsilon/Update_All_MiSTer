@@ -15,7 +15,19 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+from enum import Enum
 from typing import Callable, Any, TypeVar, Dict
+
+
+class Key(Enum):
+    # Directions
+    UP = 1
+    DOWN = 2
+    LEFT = 3
+    RIGHT = 4
+
+    # Special
+    ENTER = 5
 
 
 def expand_type(data, base_types):

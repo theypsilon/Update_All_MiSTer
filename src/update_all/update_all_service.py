@@ -31,8 +31,8 @@ from update_all.other import Checker, GenericProvider
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils, LinuxOsUtils
 from update_all.settings_screen import SettingsScreen
-from update_all.settings_screen_standard_printer import SettingsScreenStandardPrinter
-from update_all.settings_screen_trivial_printer import SettingsScreenTrivialPrinter
+from update_all.settings_screen_standard_curses_printer import SettingsScreenStandardCursesPrinter
+from update_all.settings_screen_trivial_curses_printer import SettingsScreenTrivialCursesPrinter
 from update_all.store_migrator import StoreMigrator
 from update_all.migrations import migrations
 from update_all.local_repository import LocalRepository
@@ -58,16 +58,18 @@ class UpdateAllServiceFactory:
         self._local_repository_provider.initialize(local_repository)
         checker = Checker(file_system=file_system)
         transition_service = TransitionService(logger=self._logger, file_system=file_system, os_utils=os_utils, ini_repository=ini_repository)
+        printer = SettingsScreenStandardCursesPrinter()
         settings_screen = SettingsScreen(
             logger=self._logger,
             config_provider=config_provider,
             file_system=file_system,
             ini_repository=ini_repository,
             os_utils=os_utils,
-            settings_screen_printer=SettingsScreenStandardPrinter(),
+            settings_screen_printer=printer,
             checker=checker,
             local_repository=local_repository,
-            store_provider=store_provider
+            store_provider=store_provider,
+            ui_runtime=printer
         )
         return UpdateAllService(
             config_reader,

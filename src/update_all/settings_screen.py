@@ -15,7 +15,6 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
-import curses
 import hashlib
 from functools import cached_property
 
@@ -33,14 +32,16 @@ from update_all.logger import Logger
 from update_all.os_utils import OsUtils
 from update_all.settings_screen_model import settings_screen_model
 from update_all.settings_screen_printer import SettingsScreenPrinter
-from update_all.ui_engine import run_ui_engine, Ui, UiApplication, UiSectionFactory
+from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
 from update_all.ui_engine_dialog_application import DialogSectionFactory
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string
 
 
 class SettingsScreen(UiApplication):
     def __init__(self, logger: Logger, config_provider: GenericProvider[Config], file_system: FileSystem,
-                 ini_repository: IniRepository, os_utils: OsUtils, settings_screen_printer: SettingsScreenPrinter, checker: Checker, local_repository: LocalRepository, store_provider: GenericProvider[LocalStore]):
+                 ini_repository: IniRepository, os_utils: OsUtils, settings_screen_printer: SettingsScreenPrinter,
+                 checker: Checker, local_repository: LocalRepository, store_provider: GenericProvider[LocalStore],
+                 ui_runtime: UiRuntime):
         self._logger = logger
         self._config_provider = config_provider
         self._file_system = file_system
@@ -50,13 +51,18 @@ class SettingsScreen(UiApplication):
         self._checker = checker
         self._local_repository = local_repository
         self._store_provider = store_provider
+        self._ui_runtime = ui_runtime
         self._original_firmware = None
         self._theme_manager = None
 
     def load_main_menu(self) -> None:
-        run_ui_engine('main_menu', settings_screen_model(), self)
+        def loader():
+            execute_ui_engine('main_menu', settings_screen_model(), self, self._ui_runtime)
 
-    def initialize_ui(self, ui: Ui, screen: curses.window) -> UiSectionFactory:
+        self._ui_runtime.initialize_runtime(loader)
+
+
+    def initialize_ui(self, ui: UiContext) -> UiSectionFactory:
         ui.set_value('needs_save', 'false')
 
         db_ids = db_ids_by_model_variables()
@@ -99,7 +105,7 @@ class SettingsScreen(UiApplication):
             ui.set_value('names_char_code', local_store.get_names_char_code())
             ui.set_value('names_sort_code', local_store.get_names_sort_code())
 
-        drawer_factory, theme_manager = self._settings_screen_printer.initialize_screen(screen)
+        drawer_factory, theme_manager = self._settings_screen_printer.initialize_screen()
         theme_manager.set_theme(ui_theme)
 
         ui.add_custom_effects({
@@ -127,7 +133,7 @@ class SettingsScreen(UiApplication):
     def remove_file(self, ui, effect) -> None:
         ui.set_value('file_exists', self._file_system.unlink(effect['target']))
 
-    def calculate_has_right_available_code(self, ui: Ui) -> None:
+    def calculate_has_right_available_code(self, ui: UiContext) -> None:
         is_test_firmware, firmware_md5 = self._is_test_firmware()
         if firmware_md5 is not None:
             self._original_firmware = firmware_md5
@@ -144,11 +150,11 @@ class SettingsScreen(UiApplication):
 
         return is_test_firmware, firmware_md5
 
-    def calculate_is_test_spinner_firmware_applied(self, ui: Ui) -> None:
+    def calculate_is_test_spinner_firmware_applied(self, ui: UiContext) -> None:
         is_test_firmware, _ = self._is_test_firmware()
         ui.set_value('is_test_spinner_firmware_applied', 'true' if is_test_firmware else 'false')
 
-    def test_unstable_spinner_firmware(self, ui: Ui) -> None:
+    def test_unstable_spinner_firmware(self, ui: UiContext) -> None:
         is_test_firmware, firmware_md5 = self._is_test_firmware()
         if is_test_firmware:
             url = "https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/MiSTer"
@@ -160,7 +166,7 @@ class SettingsScreen(UiApplication):
         self._file_system.move(FILE_MiSTer_delme, FILE_MiSTer)
         self._set_spinner_options(ui)
 
-    def _set_spinner_options(self, ui: Ui):
+    def _set_spinner_options(self, ui: UiContext):
         is_test_firmware, firmware_md5 = self._is_test_firmware()
 
         ui.set_value('is_test_spinner_firmware_applied', 'true' if is_test_firmware else 'false')
@@ -187,13 +193,13 @@ class SettingsScreen(UiApplication):
             'LOGFILE': "/tmp/downloader_bad_apple.log",
         }
 
-        curses.endwin()
+        self._ui_runtime.interrupt()
 
         self._os_utils.execute_process(temp_file.name, env)
 
-        curses.initscr()
+        self._ui_runtime.resume()
 
-    def calculate_needs_save(self, ui: Ui) -> None:
+    def calculate_needs_save(self, ui: UiContext) -> None:
         needs_save_file_set = set()
 
         temp_config = Config()
@@ -221,7 +227,7 @@ class SettingsScreen(UiApplication):
         ui.set_value('needs_save', str(len(needs_save_file_set) > 0).lower())
         ui.set_value('needs_save_file_list', needs_save_file_list)
 
-    def save(self, ui: Ui) -> None:
+    def save(self, ui: UiContext) -> None:
         self._copy_ui_options_to_current_config(ui)
 
         config = self._config_provider.get()
@@ -255,7 +261,7 @@ class SettingsScreen(UiApplication):
         if local_store.needs_save():
             self._local_repository.save_store(local_store)
 
-    def _does_arcade_oganizer_need_save(self, ui: Ui):
+    def _does_arcade_oganizer_need_save(self, ui: UiContext):
         arcade_organizer_ini = self._ini_repository.get_arcade_organizer_ini()
 
         for variable, description in gather_variable_declarations(settings_screen_model()).items():
@@ -269,10 +275,10 @@ class SettingsScreen(UiApplication):
 
         return False
 
-    def _copy_ui_options_to_current_config(self, ui: Ui) -> None:
+    def _copy_ui_options_to_current_config(self, ui: UiContext) -> None:
         self._copy_temp_save_to_config(ui, self._config_provider.get())
 
-    def _copy_temp_save_to_config(self, ui: Ui, config: Config) -> None:
+    def _copy_temp_save_to_config(self, ui: UiContext, config: Config) -> None:
         db_ids = db_ids_by_model_variables()
         config.databases.clear()
         for variable in self._all_config_variables:
@@ -299,7 +305,7 @@ class SettingsScreen(UiApplication):
             *gather_variable_declarations(settings_screen_model(), "arcade_roms"),
         ]
 
-    def calculate_names_char_code_warning(self, ui: Ui) -> None:
+    def calculate_names_char_code_warning(self, ui: UiContext) -> None:
 
         names_char_code = ui.get_value('names_char_code').lower()
 
@@ -311,7 +317,7 @@ class SettingsScreen(UiApplication):
 
         ui.set_value('names_char_code_warning', 'true' if names_char_code == 'char28' and not has_date_code_1 else 'false')
 
-    def calculate_names_txt_file_warning(self, ui: Ui):
+    def calculate_names_txt_file_warning(self, ui: UiContext):
         if not self._file_system.is_file('names.txt'):
             ui.set_value('names_txt_file_warning', 'false')
             return
@@ -325,7 +331,7 @@ class SettingsScreen(UiApplication):
         else:
             return ''
 
-    def calculate_arcade_organizer_folders(self, ui: Ui) -> None:
+    def calculate_arcade_organizer_folders(self, ui: UiContext) -> None:
         content = self._os_utils.download(ARCADE_ORGANIZER_URL)
         temp_file = self._file_system.temp_file_by_id('arcade_organizer.sh')
         self._file_system.write_file_bytes(temp_file.name, content)
@@ -339,14 +345,14 @@ class SettingsScreen(UiApplication):
         ui.set_value('has_arcade_organizer_folders', 'true' if return_code == 0 and len(output.strip()) > 0 else 'false')
         ui.set_value('arcade_organizer_folders_list', output if return_code == 0 else '')
 
-    def clean_arcade_organizer_folders(self, ui: Ui) -> None:
+    def clean_arcade_organizer_folders(self, ui: UiContext) -> None:
         for line in ui.get_value('arcade_organizer_folders_list').splitlines():
             self._file_system.remove_non_empty_folder(line.strip())
 
         ui.set_value('has_arcade_organizer_folders', 'false')
         ui.set_value('arcade_organizer_folders_list', '')
 
-    def apply_theme(self, ui: Ui):
+    def apply_theme(self, ui: UiContext):
         self._theme_manager.set_theme(ui.get_value('ui_theme'))
 
     def prepare_exit_dont_save_and_run(self, ui):

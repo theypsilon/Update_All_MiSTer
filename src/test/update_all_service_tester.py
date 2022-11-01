@@ -37,7 +37,7 @@ from update_all.settings_screen import SettingsScreen
 from update_all.settings_screen_printer import SettingsScreenPrinter, SettingsScreenThemeManager
 from update_all.store_migrator import StoreMigrator, make_new_local_store
 from update_all.transition_service import TransitionService
-from update_all.ui_engine import Ui
+from update_all.ui_engine import UiContext, UiRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllService
 
@@ -116,6 +116,13 @@ class SettingsScreenPrinterStub(SettingsScreenPrinter):
         return self._factory, self._theme_manager
 
 
+class UiRuntimeStub(UiRuntime):
+    def initialize_runtime(self, cb: Callable[[], None]) -> None: pass
+    def update(self) -> None: pass
+    def interrupt(self) -> None: pass
+    def resume(self) -> None: pass
+
+
 class CheckerTester(Checker):
     def __init__(self, file_system: FileSystem = None):
         super().__init__(file_system or FileSystemFactory().create_for_system_scope())
@@ -127,6 +134,7 @@ class SettingsScreenTester(SettingsScreen):
                  ini_repository: IniRepository = None,
                  os_utils: OsUtils = None,
                  settings_screen_printer: SettingsScreenPrinter = None,
+                 ui_runtime: UiRuntime = None,
                  checker: Checker = None,
                  local_repository: LocalRepository = None,
                  store_provider: GenericProvider[LocalStore] = None):
@@ -140,13 +148,14 @@ class SettingsScreenTester(SettingsScreen):
             ini_repository=ini_repository or IniRepositoryTester(file_system=file_system),
             os_utils=os_utils or SpyOsUtils(),
             settings_screen_printer=settings_screen_printer or SettingsScreenPrinterStub(),
+            ui_runtime=ui_runtime or UiRuntimeStub(),
             checker=checker or CheckerTester(file_system=file_system),
             local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system),
             store_provider=store_provider or GenericProvider[LocalStore]()
         )
 
 
-class UiStub(Ui):
+class UiContextStub(UiContext):
     def __init__(self):
         self.variables = {}
         self.effects = {}

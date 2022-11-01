@@ -21,6 +21,7 @@ from typing import Tuple
 
 from update_all.settings_screen_printer import SettingsScreenPrinter, SettingsScreenThemeManager
 from update_all.ui_engine import Interpolator
+from update_all.ui_engine_curses_runtime import CursesRuntime, read_key
 from update_all.ui_engine_dialog_application import UiDialogDrawer, UiDialogDrawerFactory
 
 COLOR_PAIR_RED_OVER_BLUE = 1
@@ -64,8 +65,8 @@ class ColorConfiguration:
 colors = ColorConfiguration()
 
 
-class SettingsScreenStandardPrinter(SettingsScreenPrinter):
-    def initialize_screen(self, screen: curses.window) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
+class SettingsScreenStandardCursesPrinter(CursesRuntime, SettingsScreenPrinter):
+    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
         curses.start_color()
 
         color_white = curses.COLOR_WHITE
@@ -97,7 +98,7 @@ class SettingsScreenStandardPrinter(SettingsScreenPrinter):
         curses.init_pair(COLOR_PAIR_BLACK_OVER_RED, color_black, color_red)
         curses.init_pair(COLOR_PAIR_WHITE_OVER_RED, color_white, color_red)
 
-        window = screen.subwin(0, 0)
+        window = self.screen.subwin(0, 0)
         window.keypad(True)
         layout = _Layout(window)
         return _DrawerFactory(window, layout), layout
@@ -447,7 +448,7 @@ class _Drawer(UiDialogDrawer):
                 self._write_line(line_index, offset_actions, action, curses.A_NORMAL | curses.color_pair(colors.UNSELECTED_ACTION_COLOR))
             offset_actions += action_width
 
-        return self._window.getch()
+        return read_key(self._window)
 
     def clear(self) -> None:
         self._layout.reset()

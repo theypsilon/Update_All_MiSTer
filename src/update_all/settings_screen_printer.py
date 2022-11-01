@@ -16,7 +16,6 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import abc
-import curses
 from typing import Tuple
 
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
@@ -28,5 +27,5 @@ class SettingsScreenThemeManager(abc.ABC):
 
 
 class SettingsScreenPrinter(abc.ABC):
-    def initialize_screen(self, screen: curses.window) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
+    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
         """Creates instances of DialogDrawerFactory"""

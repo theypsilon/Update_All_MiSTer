@@ -24,7 +24,7 @@ from test.file_system_tester_state import FileSystemState
 from test.testing_objects import downloader_ini, update_arcade_organizer_ini, default_downloader_ini_content, \
     store_json_zip
 from test.ui_model_test_utils import gather_used_effects
-from test.update_all_service_tester import SettingsScreenTester, UiStub, default_databases, local_store
+from test.update_all_service_tester import SettingsScreenTester, UiContextStub, default_databases, local_store
 from update_all.config import Config
 from update_all.ini_repository import read_ini_contents
 from update_all.local_store import LocalStore
@@ -181,13 +181,13 @@ class TestSettingsScreen(unittest.TestCase):
         self.assertEqual('Cyan Night', fs.files[store_json_zip.lower()]['unzipped_json']['theme'])
 
 
-def tester(files=None, config=None, store=None) -> Tuple[SettingsScreen, UiStub, FileSystemState]:
-    ui = UiStub()
+def tester(files=None, config=None, store=None) -> Tuple[SettingsScreen, UiContextStub, FileSystemState]:
+    ui = UiContextStub()
     state = FileSystemState(files=files)
     config_provider = GenericProvider[Config]()
-    config_provider.initialize(config or Config())
+    config_provider.initialize_runtime(config or Config())
     store_provider = GenericProvider[LocalStore]()
-    store_provider.initialize(store or local_store())
+    store_provider.initialize_runtime(store or local_store())
     settings_screen = SettingsScreenTester(config_provider=config_provider, store_provider=store_provider, file_system=FileSystemFactory(state=state).create_for_system_scope())
     settings_screen.initialize_ui(ui, screen=MagicMock())
 

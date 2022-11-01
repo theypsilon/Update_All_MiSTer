@@ -16,13 +16,12 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import abc
-import curses
 from typing import Dict, Callable, Any, Union, Optional, List
 
-from update_all.ui_model_utilities import gather_variable_declarations, expand_type
+from update_all.ui_model_utilities import gather_variable_declarations, expand_type, Key
 
 
-class Ui(abc.ABC):
+class UiContext(abc.ABC):
     def get_value(self, key: str) -> str:
         """Gets value for variable on the given key"""
 
@@ -34,6 +33,21 @@ class Ui(abc.ABC):
 
     def add_custom_formatters(self, formatters: Dict[str, Callable[[str], str]]):
         """Add callable formatters during initialization"""
+
+
+
+class UiRuntime(abc.ABC):
+    def initialize_runtime(self, cb: Callable[[], None]) -> None:
+        """Initializes UI runtime and when ready calls cb"""
+
+    def update(self) -> None:
+        """Updates internal UI state according to the latest inputs"""
+
+    def interrupt(self) -> None:
+        """Closes the UI temporarily"""
+
+    def resume(self) -> None:
+        """Resumes the UI that was previously interrupted"""
 
 
 class Interpolator(abc.ABC):
@@ -64,24 +78,21 @@ class UiSectionFactory(abc.ABC):
 
 
 class UiApplication(abc.ABC):
-    def initialize_ui(self, ui: Ui, screen: curses.window) -> UiSectionFactory:
+    def initialize_ui(self, ui: UiContext) -> UiSectionFactory:
         """Initializes the theme at the start"""
 
 
-def run_ui_engine(entrypoint: str, model: Dict[str, Any], ui_application: UiApplication):
-    def loader(screen):
-        ui = _UiSystem(screen, entrypoint, model, ui_application)
-        ui.execute()
-
-    curses.wrapper(loader)
+def execute_ui_engine(entrypoint: str, model: Dict[str, Any], ui_application: UiApplication, ui_runtime: UiRuntime):
+    ui = _UiSystem(entrypoint, model, ui_application, ui_runtime)
+    ui.execute()
 
 
-class _UiSystem(Ui):
-    def __init__(self, screen, entrypoint, model, ui_application: UiApplication):
-        self._screen = screen
+class _UiSystem(UiContext):
+    def __init__(self, entrypoint, model, ui_application: UiApplication, ui_runtime: UiRuntime):
         self._entrypoint = entrypoint
         self._model = model
         self._ui_application = ui_application
+        self._ui_runtime = ui_runtime
         self._values = {}
         self._custom_effects = {}
         self._custom_formatters = {}
@@ -98,12 +109,12 @@ class _UiSystem(Ui):
 
         self._is_initializing = True
 
-        ui_section_factory = self._ui_application.initialize_ui(self, self._screen)
+        ui_section_factory = self._ui_application.initialize_ui(self)
 
         self._is_initializing = False
 
-        runtime = _UiRuntime(self._model, self._entrypoint, self, ui_section_factory)
-        runtime.run()
+        runtime = _UiMainLoop(self._model, self._entrypoint, self, ui_section_factory, self._ui_runtime)
+        runtime.execute()
 
     def add_custom_effects(self, effects: Dict[str, Callable[[], None]]):
         self._ensure_is_initializing('add_custom_effects')
@@ -128,8 +139,8 @@ class _UiSystem(Ui):
         raise Exception(f'{topic} should only be used within the execution of UiApplication.initialize_ui.')
 
 
-class _UiRuntime:
-    def __init__(self, model, entrypoint, ui_system: _UiSystem, ui_section_factory: UiSectionFactory):
+class _UiMainLoop:
+    def __init__(self, model, entrypoint, ui_system: _UiSystem, ui_section_factory: UiSectionFactory, ui_runtime: UiRuntime):
         self._model = model
         self._section = entrypoint
         self._items = self._model['items']
@@ -137,14 +148,15 @@ class _UiRuntime:
         self._history = []
         self._ui_system = ui_system
         self._ui_section_factory = ui_section_factory
+        self._ui_runtime = ui_runtime
 
-    def run(self):
+    def execute(self):
         self._current_section_state().reset()
 
         while True:
             new_section = self._current_section_state().process()
 
-            curses.doupdate()
+            self._ui_runtime.update()
 
             if new_section is None:
                 continue
@@ -221,6 +233,8 @@ class _UiSectionProcessor:
             return None
         elif isinstance(key_result, EffectChain):
             return self._effect_resolver.resolve_effect_chain(key_result.chain)
+        elif isinstance(key_result, Key):
+            pass
         elif key_result in self._hotkeys:
             return self._effect_resolver.resolve_effect_chain(self._hotkeys[key_result])
         elif chr(key_result) in self._hotkeys:
@@ -236,7 +250,7 @@ class _UiSectionProcessor:
 
 
 class _Interpolator(Interpolator):
-    def __init__(self, formatters: Dict[str, Union[Dict[str, str], Callable[[str], str]]], ui: Ui):
+    def __init__(self, formatters: Dict[str, Union[Dict[str, str], Callable[[str], str]]], ui: UiContext):
         self._formatters = formatters
         self._ui = ui
 
