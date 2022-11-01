@@ -40,10 +40,12 @@ The Settings screen will show up if you press UP in your controller or keyboard 
 
 
 
-## MiSTer Offline Setup
+## PC Launcher (for Windows, Mac, and Linux)
 
-Check [updater-pc](./updater-pc) to download all the MiSTer files from your PC.
-Useful if you can't connect your MiSTer to internet.
+Check [MiSTer Downloader's PC Launcher](https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/pc-launcher.md) to download all MiSTer files on your PC.
+Useful if you can't connect your MiSTer to the internet.
+
+To install the same files that you get with Update All, use the same `downloader.ini` file that you have in your MiSTer at the root of the SD card. Keep in mind that Update All writes into that file every time you change something in the Settings Screen.
 
 
 ## Funding
