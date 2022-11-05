@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-MAJOR_PYTHON_VERSION="$(python --version | awk '{print $2}' | cut -c 3)"
+MAJOR_PYTHON_VERSION="$(python3 --version | awk '{print $2}' | cut -c 3)"
 if [[ "${MAJOR_PYTHON_VERSION}" != "9" ]] ; then
   echo "Need Python 3.9!"
   if [ ! -d .venv ] ; then

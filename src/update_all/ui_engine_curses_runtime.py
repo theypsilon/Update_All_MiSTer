@@ -16,14 +16,21 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import curses
+import os
+import time
 from typing import Callable, Union
 
 from update_all.ui_engine import UiRuntime
 from update_all.ui_model_utilities import Key
 
 
+KEY_IGNORE_TIME = float(os.getenv('KEY_IGNORE_TIME', '0.1'))
+
+
 class CursesRuntime(UiRuntime):
-    _screen: curses.window
+    _screen = None
+    _window = None
+    _last_key_pressed = -1
 
     @property
     def screen(self) -> curses.window:
@@ -31,6 +38,39 @@ class CursesRuntime(UiRuntime):
             raise RuntimeError("CursesRuntime has not been initialised")
 
         return self._screen
+
+    @property
+    def window(self) -> curses.window:
+        if self._window is None:
+            self._window = self.screen.subwin(0, 0)
+            self._window.keypad(True)
+            curses.cbreak()
+
+        return self._window
+
+    def read_key(self) -> Union[Key, int]:
+        time_before_read = time.time()
+        key = self.window.getch()
+        time_after_read = time.time()
+
+        wait_time = time_after_read - time_before_read
+        if wait_time < KEY_IGNORE_TIME and self._last_key_pressed == key:
+            return Key.NONE
+
+        self._last_key_pressed = key
+
+        if key == curses.KEY_UP:
+            return Key.UP
+        elif key == curses.KEY_DOWN:
+            return Key.DOWN
+        elif key == curses.KEY_LEFT:
+            return Key.LEFT
+        elif key == curses.KEY_RIGHT:
+            return Key.RIGHT
+        elif key in [curses.KEY_ENTER, ord("\n"), ord(" ")]:
+            return Key.ENTER
+
+        return key
 
     def initialize_runtime(self, cb: Callable[[], None]) -> None:
         def loader(screen):
@@ -47,19 +87,3 @@ class CursesRuntime(UiRuntime):
 
     def resume(self) -> None:
         curses.initscr()
-
-
-def read_key(window: curses.window) -> Union[Key, int]:
-    key = window.getch()
-    if key == curses.KEY_UP:
-        return Key.UP
-    elif key == curses.KEY_DOWN:
-        return Key.DOWN
-    elif key == curses.KEY_LEFT:
-        return Key.LEFT
-    elif key == curses.KEY_RIGHT:
-        return Key.RIGHT
-    elif key in [curses.KEY_ENTER, ord("\n"), ord(" ")]:
-        return Key.ENTER
-
-    return key

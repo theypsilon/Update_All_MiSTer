@@ -21,7 +21,7 @@ from typing import Tuple
 
 from update_all.settings_screen_printer import SettingsScreenPrinter, SettingsScreenThemeManager
 from update_all.ui_engine import Interpolator
-from update_all.ui_engine_curses_runtime import CursesRuntime, read_key
+from update_all.ui_engine_curses_runtime import CursesRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawer, UiDialogDrawerFactory
 
 COLOR_PAIR_RED_OVER_BLUE = 1
@@ -98,10 +98,8 @@ class SettingsScreenStandardCursesPrinter(CursesRuntime, SettingsScreenPrinter):
         curses.init_pair(COLOR_PAIR_BLACK_OVER_RED, color_black, color_red)
         curses.init_pair(COLOR_PAIR_WHITE_OVER_RED, color_white, color_red)
 
-        window = self.screen.subwin(0, 0)
-        window.keypad(True)
-        layout = _Layout(window)
-        return _DrawerFactory(window, layout), layout
+        layout = _Layout(self)
+        return _DrawerFactory(self, layout), layout
 
 
 class ColorTheme(abc.ABC):
@@ -238,8 +236,8 @@ class CyanNightColorTheme(ColorTheme):
 
 
 class _Layout(SettingsScreenThemeManager):
-    def __init__(self, window: curses.window):
-        self._window = window
+    def __init__(self, runtime: CursesRuntime):
+        self._runtime = runtime
         self._painted = False
         self._box_id = None
         self._current_theme = None
@@ -282,8 +280,8 @@ class _Layout(SettingsScreenThemeManager):
 
         self._painted = True
         self._box_id = box_id
-        self._window.clear()
-        self._window.bkgd(' ', curses.color_pair(colors.WINDOW_BACKGROUND_COLOR))
+        self._runtime.window.clear()
+        self._runtime.window.bkgd(' ', curses.color_pair(colors.WINDOW_BACKGROUND_COLOR))
         if box_id == self._box_id:
             self._paint_box(h, w, y, x, has_header)
 
@@ -313,17 +311,17 @@ class _Layout(SettingsScreenThemeManager):
 
 
 class _DrawerFactory(UiDialogDrawerFactory):
-    def __init__(self, window: curses.window, layout: _Layout):
-        self._window = window
+    def __init__(self, runtime: CursesRuntime, layout: _Layout):
+        self._runtime = runtime
         self._layout = layout
 
     def create_ui_dialog_drawer(self, interpolator: Interpolator) -> UiDialogDrawer:
-        return _Drawer(self._window, self._layout, interpolator)
+        return _Drawer(self._runtime, self._layout, interpolator)
 
 
 class _Drawer(UiDialogDrawer):
-    def __init__(self, window, layout: _Layout, interpolator: Interpolator):
-        self._window = window
+    def __init__(self, runtime: CursesRuntime, layout: _Layout, interpolator: Interpolator):
+        self._runtime = runtime
         self._layout = layout
         self._interpolator = interpolator
         self._text_lines = []
@@ -448,7 +446,7 @@ class _Drawer(UiDialogDrawer):
                 self._write_line(line_index, offset_actions, action, curses.A_NORMAL | curses.color_pair(colors.UNSELECTED_ACTION_COLOR))
             offset_actions += action_width
 
-        return read_key(self._window)
+        return self._runtime.read_key()
 
     def clear(self) -> None:
         self._layout.reset()
@@ -463,7 +461,7 @@ class _Drawer(UiDialogDrawer):
             x = 0
         if x + len(text) >= curses.COLS:
             text = text[0:(curses.COLS - x - 1)]
-        self._window.addstr(y, x, text, mode)
+        self._runtime.window.addstr(y, x, text, mode)
 
 
 def parse_effects(chunk):

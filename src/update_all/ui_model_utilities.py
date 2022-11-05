@@ -20,6 +20,8 @@ from typing import Callable, Any, TypeVar, Dict
 
 
 class Key(Enum):
+    NONE = 0
+
     # Directions
     UP = 1
     DOWN = 2

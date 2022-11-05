@@ -20,70 +20,62 @@ from typing import Tuple, Union
 
 from update_all.settings_screen_printer import SettingsScreenPrinter, SettingsScreenThemeManager
 from update_all.ui_engine import Interpolator
-from update_all.ui_engine_curses_runtime import CursesRuntime, read_key
+from update_all.ui_engine_curses_runtime import CursesRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory, UiDialogDrawer
 from update_all.ui_model_utilities import Key
 
 
-class SettingsScreenTrivialCursesPrinter(CursesRuntime, SettingsScreenPrinter, SettingsScreenThemeManager):
+class SettingsScreenTrivialCursesPrinter(CursesRuntime, SettingsScreenPrinter, SettingsScreenThemeManager, UiDialogDrawerFactory, UiDialogDrawer):
+    _interpolator: Interpolator
+    _index_horizontal = 0
+    _index_vertical = 0
+
     def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
         curses.start_color()
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
-        window = self.screen.subwin(0, 0)
-        window.keypad(True)
-        window.clear()
-        window.bkgd(' ', curses.color_pair(1) | curses.A_BOLD)
+        self.window.clear()
+        self.window.bkgd(' ', curses.color_pair(1) | curses.A_BOLD)
 
-        return _DrawerFactory(window), self
+        return self, self
 
     def set_theme(self, new_theme):
         pass
 
-
-class _DrawerFactory(UiDialogDrawerFactory):
-    def __init__(self, window: curses.window):
-        self._window = window
-
     def create_ui_dialog_drawer(self, interpolator: Interpolator) -> UiDialogDrawer:
-        return _Drawer(self._window, interpolator)
-
-
-class _Drawer(UiDialogDrawer):
-    def __init__(self, window, interpolator: Interpolator):
-        self._window = window
         self._interpolator = interpolator
         self._index_vertical = 0
         self._index_horizontal = 0
+        return self
 
     def start(self, data):
-        self._window.clear()
+        self.window.clear()
         self._index_vertical = 0
         self._index_horizontal = 0
         if 'header' in data:
-            self._window.addstr(0, 1, self._interpolator.interpolate(data['header']), curses.A_NORMAL)
+            self.window.addstr(0, 1, self._interpolator.interpolate(data['header']), curses.A_NORMAL)
             self._index_vertical += 1
 
     def add_text_line(self, text):
-        self._window.addstr(self._index_vertical, 1, self._interpolator.interpolate(text), curses.A_NORMAL)
+        self.window.addstr(self._index_vertical, 1, self._interpolator.interpolate(text), curses.A_NORMAL)
         self._index_vertical += 1
 
     def add_menu_entry(self, option, info, is_selected=False):
         mode = curses.A_REVERSE if is_selected else curses.A_NORMAL
-        self._window.addstr(self._index_vertical, 1, self._interpolator.interpolate(option), mode)
-        self._window.addstr(self._index_vertical, 30, self._interpolator.interpolate(info), mode)
+        self.window.addstr(self._index_vertical, 1, self._interpolator.interpolate(option), mode)
+        self.window.addstr(self._index_vertical, 30, self._interpolator.interpolate(info), mode)
         self._index_vertical += 1
 
     def add_action(self, action, is_selected=False):
         mode = curses.A_REVERSE if is_selected else curses.A_NORMAL
-        self._window.addstr(self._index_vertical, 1 + 30 * self._index_horizontal, self._interpolator.interpolate(action), mode)
+        self.window.addstr(self._index_vertical, 1 + 30 * self._index_horizontal, self._interpolator.interpolate(action), mode)
         self._index_horizontal += 1
 
     def add_inactive_action(self, length: int, is_selected=False):
         self._index_horizontal += 1
 
     def paint(self) -> Union[Key, int]:
-        return read_key(self._window)
+        return self.read_key()
 
     def clear(self) -> None:
         pass
