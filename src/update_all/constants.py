@@ -77,7 +77,6 @@ K_OPTIONS = 'options'
 K_DEBUG = 'debug'
 K_FAIL_ON_FILE_ERROR = 'fail_on_file_error'
 K_COMMIT = 'commit'
-K_UPDATE_LINUX_ENVIRONMENT = 'update_linux_environment'
 K_DEFAULT_DB_ID = 'default_db_id'
 K_START_TIME = 'start_time'
 
