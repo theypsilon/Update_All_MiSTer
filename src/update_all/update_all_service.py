@@ -204,21 +204,19 @@ class UpdateAllService:
 
         self._logger.print()
 
-        update_linux = self._config_provider.get().update_linux
-        arcade_organizer = self._config_provider.get().arcade_organizer
+        update_linux = config.update_linux
+        arcade_organizer = config.arcade_organizer
 
         if update_linux and arcade_organizer:
             update_linux = False
 
         env = {
-            'DOWNLOADER_INI_PATH': self._ini_repository.downloader_ini_path_tweaked_by_config(self._config_provider.get()),
+            'DOWNLOADER_INI_PATH': self._ini_repository.downloader_ini_path_tweaked_by_config(config),
             'ALLOW_REBOOT': '0',
-            'CURL_SSL': self._config_provider.get().curl_ssl,
+            'CURL_SSL': config.curl_ssl,
             'UPDATE_LINUX': 'true' if update_linux else 'false',
-            'LOGFILE': f'{self._config_provider.get().base_system_path}/Scripts/.config/downloader/downloader1.log'
         }
 
-        config = self._config_provider.get()
         if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
             env['DEFAULT_BASE_PATH'] = config.base_path
 
@@ -232,7 +230,8 @@ class UpdateAllService:
             self._error_reports.append('Scripts/.config/downloader/downloader1.log')
 
     def _run_arcade_organizer(self) -> None:
-        if not self._config_provider.get().arcade_organizer:
+        config = self._config_provider.get()
+        if not config.arcade_organizer:
             return
 
         self._draw_separator()
@@ -244,8 +243,8 @@ class UpdateAllService:
         self._file_system.write_file_bytes(temp_file.name, content)
 
         return_code = self._os_utils.execute_process(temp_file.name, {
-            'SSL_SECURITY_OPTION': self._config_provider.get().curl_ssl,
-            'INI_FILE': f'{self._config_provider.get().base_path}/{ARCADE_ORGANIZER_INI}'
+            'SSL_SECURITY_OPTION': config.curl_ssl,
+            'INI_FILE': f'{config.base_path}/{ARCADE_ORGANIZER_INI}'
         })
 
         if return_code != 0:
@@ -268,11 +267,12 @@ class UpdateAllService:
         self._logger.print()
 
         env = {
-            'DOWNLOADER_INI_PATH': self._ini_repository.downloader_ini_path_tweaked_by_config(self._config_provider.get()),
+            'DOWNLOADER_INI_PATH': '/tmp/linux_update.ini',
             'ALLOW_REBOOT': '0',
             'CURL_SSL': config.curl_ssl,
-            'UPDATE_LINUX': 'only',
-            'LOGFILE': f'{config.base_system_path}/Scripts/.config/downloader/downloader2.log'
+            'DEFAULT_DB_ID': 'theypsilon/LinuxDB',
+            'DEFAULT_DB_URL': 'https://raw.githubusercontent.com/theypsilon/LinuxDB_MiSTer/db/linuxdb.json',
+            'LOGFILE': f'{config.base_system_path}/Scripts/.config/downloader/update_linux.log'
         }
 
         if config.not_mister:
