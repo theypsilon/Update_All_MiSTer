@@ -19,6 +19,8 @@ import abc
 import curses
 from typing import Tuple
 
+from update_all.config import Config
+from update_all.other import GenericProvider
 from update_all.settings_screen_printer import SettingsScreenPrinter, SettingsScreenThemeManager
 from update_all.ui_engine import Interpolator
 from update_all.ui_engine_curses_runtime import CursesRuntime

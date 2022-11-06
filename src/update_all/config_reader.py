@@ -21,7 +21,8 @@ from distutils.util import strtobool
 from pathlib import Path
 
 from update_all.config import Config
-from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, KENV_DEBUG
+from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, \
+    KENV_DEBUG, KENV_KEY_IGNORE_TIME
 from update_all.databases import DB_ID_JTCORES, DB_ID_NAMES_TXT, names_locale_by_db_url, model_variables_by_db_id, \
     AllDBs, DB_ID_DISTRIBUTION_MISTER
 from update_all.ini_repository import IniRepository
@@ -55,6 +56,7 @@ class ConfigReader:
         config.curl_ssl = valid_max_length(KENV_CURL_SSL, self._env[KENV_CURL_SSL], 50)
         config.commit = valid_max_length(KENV_COMMIT, self._env[KENV_COMMIT], 50)
         config.start_time = time.time()
+        config.key_ignore_time = float(self._env[KENV_KEY_IGNORE_TIME])
 
         self._logger.configure(config)
 

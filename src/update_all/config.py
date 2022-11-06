@@ -31,6 +31,7 @@ class Config:
     # From the environment
     curl_ssl: str = DEFAULT_CURL_SSL_OPTIONS
     commit: str = DEFAULT_COMMIT
+    key_ignore_time: float = 0.1
 
     # General options
     base_path: str = MEDIA_FAT
