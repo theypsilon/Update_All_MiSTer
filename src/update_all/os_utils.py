@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
-
+import ssl
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -70,5 +70,19 @@ class LinuxOsUtils(OsUtils):
         time.sleep(seconds)
 
     def download(self, url) -> bytes:
-        with urlopen(url) as webpage:
+        config = self._config_provider.get()
+        with urlopen(url, context=context_from_curl_ssl(config.curl_ssl)) as webpage:
             return webpage.read()
+
+
+def context_from_curl_ssl(curl_ssl):
+    context = ssl.create_default_context()
+
+    if curl_ssl.startswith('--cacert '):
+        cacert_file = curl_ssl[len('--cacert '):]
+        context.load_verify_locations(cacert_file)
+    elif curl_ssl == '--insecure':
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+
+    return context

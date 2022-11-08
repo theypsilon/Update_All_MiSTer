@@ -102,7 +102,7 @@ class ConfigReader:
         self._logger.debug('store: ' + json.dumps(store.unwrap_props(), indent=4))
 
 
-def valid_max_length( key: str, value: str, max_limit: int) -> str:
+def valid_max_length(key: str, value: str, max_limit: int) -> str:
     if len(value) <= max_limit:
         return value
 
