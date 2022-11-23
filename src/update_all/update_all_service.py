@@ -227,7 +227,7 @@ class UpdateAllService:
 
         if return_code != 0:
             self._exit_code = 1
-            self._error_reports.append('Scripts/.config/downloader/downloader1.log')
+            self._error_reports.append('Scripts/.config/downloader/downloader.log')
 
     def _run_arcade_organizer(self) -> None:
         config = self._config_provider.get()
