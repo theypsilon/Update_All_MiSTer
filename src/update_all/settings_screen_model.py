@@ -459,7 +459,7 @@ def settings_screen_model(): return {
                                 "Do you have a modified cable compatible with the YC Builds?",
                             ],
                             "actions": [
-                                {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": "MikeS11/YC_Builds-MiSTer"}]},
+                                {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": "MikeS11/YC_Builds-MiSTer"}, {"type": "navigate", "target": "back"}]},
                                 {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
                             ],
                         }]
