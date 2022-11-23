@@ -443,7 +443,7 @@ def settings_screen_model(): return {
                     "actions": {"ok": [{"type": "rotate_variable", "target": "unofficial_updater"}]}
                 },
                 {
-                    "title": "5 YC Builds from MikeS11",
+                    "title": "5 Y/C Builds from MikeS11",
                     "description": "{MikeS11/YC_Builds-MiSTer:yesno}",
                     "actions": {"ok": [{
                         "type": "condition",
@@ -454,9 +454,9 @@ def settings_screen_model(): return {
                             "header": "You need a compatible cable!",
                             "preselected_action": "No",
                             "text": [
-                                "The YC Builds need a modified VGA cable. And if you don't have it, the cores won't display correctly.",
+                                "The Y/C Builds need a modified VGA cable. And if you don't have it, the cores won't display correctly.",
                                 " ",
-                                "Do you have a modified cable compatible with the YC Builds?",
+                                "Do you have a modified cable compatible with the Y/C Builds?",
                             ],
                             "actions": [
                                 {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": "MikeS11/YC_Builds-MiSTer"}, {"type": "navigate", "target": "back"}]},
