@@ -419,6 +419,7 @@ def settings_screen_model(): return {
                 "arcade_offset_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "llapi_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "unofficial_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
+                "MikeS11/YC_Builds-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
@@ -440,6 +441,29 @@ def settings_screen_model(): return {
                     "title": "4 theypsilon Unofficial Distribution",
                     "description": "{unofficial_updater:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "unofficial_updater"}]}
+                },
+                {
+                    "title": "5 YC Builds from MikeS11",
+                    "description": "{MikeS11/YC_Builds-MiSTer:yesno}",
+                    "actions": {"ok": [{
+                        "type": "condition",
+                        "variable": "MikeS11/YC_Builds-MiSTer",
+                        "true": [{"type": "rotate_variable", "target": "MikeS11/YC_Builds-MiSTer"}],
+                        "false": [{
+                            "ui": "confirm",
+                            "header": "You need a compatible cable!",
+                            "preselected_action": "No",
+                            "text": [
+                                "The YC Builds need a modified VGA cable. And if you don't have it, the cores won't display correctly.",
+                                " ",
+                                "Do you have a modified cable compatible with the YC Builds?",
+                            ],
+                            "actions": [
+                                {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": "MikeS11/YC_Builds-MiSTer"}]},
+                                {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
+                            ],
+                        }]
+                    }]}
                 },
             ]
         },
