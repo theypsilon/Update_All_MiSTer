@@ -27,7 +27,7 @@ Download this [ZIP file](https://github.com/theypsilon/Update_All_MiSTer/release
 
 Then turn on your __MiSTer__, go to the _Scripts_ menu and run this script from there.
 
-It will take around 30 minutes the first time you run it, but later runs should take much less time.
+It will take around 15 minutes the first time you run it, but later runs should take much less time.
 
 
 ## Further Configuration
