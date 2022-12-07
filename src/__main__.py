@@ -30,6 +30,7 @@ except (ImportError, SyntaxError) as e:
     print('Warning! Your OS version seems to be older than September 2021!')
     print('Please upgrade your OS before running Update All')
     print('More info at https://github.com/MiSTer-devel/mr-fusion')
+    print()
     exit(1)
 
 if __name__ == '__main__':
