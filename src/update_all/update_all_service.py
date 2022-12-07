@@ -16,6 +16,7 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import datetime
+import os
 import sys
 import time
 from typing import List
@@ -121,6 +122,7 @@ class UpdateAllService:
 
     def full_run(self) -> int:
         self._read_config()
+        self._test_routine()
         self._show_intro()
         self._countdown_for_settings_screen()
         self._pre_run_tweaks()
@@ -141,6 +143,13 @@ class UpdateAllService:
         self._transition_service.transition_from_update_all_1(config, local_store)
         self._config_reader.fill_config_with_ini_files(config)
         self._config_reader.fill_config_with_local_store(config, local_store)
+
+    def _test_routine(self) -> None:
+        if os.environ.get('TEST_SETTINGS_SCREEN', 'false') != 'true':
+            return
+
+        self._settings_screen.load_test_menu()
+        exit(0)
 
     def _show_intro(self) -> None:
         self._logger.print()

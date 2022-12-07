@@ -237,10 +237,17 @@ class _UiSectionProcessor:
             pass
         elif key_result in self._hotkeys:
             return self._effect_resolver.resolve_effect_chain(self._hotkeys[key_result])
-        elif chr(key_result) in self._hotkeys:
-            return self._effect_resolver.resolve_effect_chain(self._hotkeys[chr(key_result)])
+        elif self._chr(key_result) in self._hotkeys:
+            return self._effect_resolver.resolve_effect_chain(self._hotkeys[self._chr(key_result)])
         elif not isinstance(key_result, int):
             raise TypeError(f'Result with type {str(type(key_result))} can not be processed by the effect resolver')
+
+    @staticmethod
+    def _chr(key_result):
+        try:
+            return chr(key_result)
+        except ValueError:
+            return 1000000
 
     def reset(self):
         self._ui_section.reset()

@@ -68,6 +68,77 @@ def settings_screen_model(): return {
         },
     },
     "items": {
+        "test_menu": {
+            "type": "dialog_sub_menu",
+            "header": "Test Menu",
+            "text": [
+                "This is @Test Text@ aka @'DEBUG'@ to see how ~themes~ look",
+                " ",
+                "Other key contributors:",
+                " ·@TEST@ ~test.com/test~ - Test cores",
+                " ·@my bigger test@ ~patreon.com/test~ - Test software",
+                " ·@theypsilon@ ~myurl.com/theypsilon~ - The test menu itself!",
+                " ",
+                "Test out!"
+            ],
+            "entries": [
+                {
+                    "title": "1 BLACK",
+                    "description": "yesno ~formatter~: {main_updater:yesno}",
+                    "actions": {"ok": [
+                        {
+                            "ui": "menu",
+                            "header": "Testing black screen!",
+                            "text": [
+                                "No need to change any of this. This is not meant to be updated",
+                                " ",
+                                " ·@theypsilon@ ~myurl.com/theypsilon~ - That's black sub theme",
+                            ],
+                            "alert_level": "black",
+                            "preselected_action": "Yes",
+                            "entries": [
+                                {"title": "1 FIRST", "description": "First", "actions": {"ok": []}},
+                                {"title": "2 SECOND", "description": "Second", "actions": {"ok": []}},
+                            ],
+                            "actions": [
+                                {"title": "Yes", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                                {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                            ],
+                        },
+                    ]}
+                },
+                {
+                    "title": "2 RED",
+                    "description": "enabled @formatter@: {main_updater:enabled}",
+                    "actions": {"ok": [
+                        {
+                            "ui": "menu",
+                            "header": "Testing red screen!",
+                            "text": [
+                                "No need to change any of this. This is not meant to be updated",
+                                " ",
+                                " ·@theypsilon@ ~myurl.com/theypsilon~ - That's red sub theme",
+                            ],
+                            "alert_level": "red",
+                            "preselected_action": "Yes",
+                            "entries": [
+                                {"title": "1 FIRST", "description": "First", "actions": {"ok": []}},
+                                {"title": "2 SECOND", "description": "Second", "actions": {"ok": []}},
+                            ],
+                            "actions": [
+                                {"title": "Yes", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                                {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                            ],
+                        },
+                    ]}
+                },
+                {
+                    "title": "Go to MAIN MENU!",
+                    "description": "yesno_reverse formatter: {main_updater:yesno_reverse}",
+                    "actions": {"ok": [{"type": "navigate", "target": "main_menu"}]}
+                },
+            ]
+        },
         "main_menu": {
             "ui": "menu",
             "header": "Update All {update_all_version} Settings",
@@ -144,7 +215,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "0 Patrons Menu",
-                    "description": "Taito Spinner, Themes, etc... [2022.10.21]",
+                    "description": "Taito Spinner, Themes, etc... [2022.12.07]",
                     "actions": {"ok": [
                         {"type": "calculate_has_right_available_code"},
                         {
@@ -570,7 +641,7 @@ def settings_screen_model(): return {
             },
             "variables": {
                 "is_test_spinner_firmware_applied": {"default": "false", "values": ["false", "true"]},
-                "ui_theme": {"group": "store", "default": "Blue Installer", "values": ["Blue Installer", "Cyan Night"]},
+                "ui_theme": {"group": "store", "default": "Blue Installer", "values": ["Blue Installer", "Cyan Night", "Japan", "Aquamarine", "Clean Wall"]},
                 "firmware_needs_reboot": {"default": "false", "values": ["false", "true"]},
             },
             "entries": [

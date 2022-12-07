@@ -19,32 +19,10 @@ import abc
 import curses
 from typing import Tuple
 
-from update_all.config import Config
-from update_all.other import GenericProvider
 from update_all.settings_screen_printer import SettingsScreenPrinter, SettingsScreenThemeManager
 from update_all.ui_engine import Interpolator
 from update_all.ui_engine_curses_runtime import CursesRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawer, UiDialogDrawerFactory
-
-COLOR_PAIR_RED_OVER_BLUE = 1
-COLOR_PAIR_WHITE_OVER_BLUE = 2
-COLOR_PAIR_CYAN_OVER_BLUE = 3
-COLOR_PAIR_RED_OVER_WHITE = 4
-COLOR_PAIR_BLUE_OVER_WHITE = 5
-COLOR_PAIR_CYAN_OVER_WHITE = 6
-COLOR_PAIR_BLACK_OVER_WHITE = 7
-COLOR_PAIR_CYAN_OVER_BLACK = 8
-COLOR_PAIR_WHITE_OVER_BLACK = 9
-COLOR_PAIR_RED_OVER_BLACK = 10
-COLOR_PAIR_YELLOW_OVER_BLACK = 11
-COLOR_PAIR_GREEN_OVER_BLACK = 12
-COLOR_PAIR_MAGENTA_OVER_BLACK = 13
-COLOR_PAIR_RED_OVER_CYAN = 14
-COLOR_PAIR_BLACK_OVER_CYAN = 15
-COLOR_PAIR_WHITE_OVER_CYAN = 16
-COLOR_PAIR_BLACK_OVER_YELLOW = 17
-COLOR_PAIR_BLACK_OVER_RED = 18
-COLOR_PAIR_WHITE_OVER_RED = 19
 
 
 class ColorConfiguration:
@@ -60,45 +38,38 @@ class ColorConfiguration:
     SELECTED_OPTION_TEXT_COLOR = 0
     SYMBOL_AT_COLOR = 0
     BOX_BACKGROUND_COLOR = 0
+    HEADER_LINE_COLOR = 0
     COMMON_TEXT_COLOR = 0
     UNSELECTED_ACTION_COLOR = 0
 
 
 colors = ColorConfiguration()
 
+white = curses.COLOR_WHITE
+red = curses.COLOR_RED
+blue = curses.COLOR_BLUE
+cyan = curses.COLOR_CYAN
+black = curses.COLOR_BLACK
+yellow = curses.COLOR_YELLOW
+green = curses.COLOR_GREEN
+magenta = curses.COLOR_MAGENTA
+
+color_pair = {}
+
 
 class SettingsScreenStandardCursesPrinter(CursesRuntime, SettingsScreenPrinter):
     def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
         curses.start_color()
 
-        color_white = curses.COLOR_WHITE
-        color_red = curses.COLOR_RED
-        color_blue = curses.COLOR_BLUE
-        color_cyan = curses.COLOR_CYAN
-        color_black = curses.COLOR_BLACK
-        color_yellow = curses.COLOR_YELLOW
-        color_green = curses.COLOR_GREEN
-        color_magenta = curses.COLOR_MAGENTA
+        all_colors = [white, red, blue, cyan, black, yellow, green, magenta]
 
-        curses.init_pair(COLOR_PAIR_RED_OVER_WHITE, color_red, color_white)
-        curses.init_pair(COLOR_PAIR_RED_OVER_BLUE, color_red, color_blue)
-        curses.init_pair(COLOR_PAIR_WHITE_OVER_BLUE, color_white, color_blue)
-        curses.init_pair(COLOR_PAIR_BLUE_OVER_WHITE, color_blue, color_white)
-        curses.init_pair(COLOR_PAIR_CYAN_OVER_BLUE, color_cyan, color_blue)
-        curses.init_pair(COLOR_PAIR_CYAN_OVER_WHITE, color_cyan, color_white)
-        curses.init_pair(COLOR_PAIR_BLACK_OVER_WHITE, color_black, color_white)
-        curses.init_pair(COLOR_PAIR_CYAN_OVER_BLACK, color_cyan, color_black)
-        curses.init_pair(COLOR_PAIR_WHITE_OVER_BLACK, color_white, color_black)
-        curses.init_pair(COLOR_PAIR_RED_OVER_BLACK, color_red, color_black)
-        curses.init_pair(COLOR_PAIR_YELLOW_OVER_BLACK, color_yellow, color_black)
-        curses.init_pair(COLOR_PAIR_GREEN_OVER_BLACK, color_green, color_black)
-        curses.init_pair(COLOR_PAIR_MAGENTA_OVER_BLACK, color_magenta, color_black)
-        curses.init_pair(COLOR_PAIR_RED_OVER_CYAN, color_red, color_cyan)
-        curses.init_pair(COLOR_PAIR_BLACK_OVER_CYAN, color_black, color_cyan)
-        curses.init_pair(COLOR_PAIR_WHITE_OVER_CYAN, color_white, color_cyan)
-        curses.init_pair(COLOR_PAIR_BLACK_OVER_YELLOW, color_black, color_yellow)
-        curses.init_pair(COLOR_PAIR_BLACK_OVER_RED, color_black, color_red)
-        curses.init_pair(COLOR_PAIR_WHITE_OVER_RED, color_white, color_red)
+        i = 1
+        for color_left in all_colors:
+            color_pair[color_left] = {}
+            for color_right in all_colors:
+                color_pair[color_left][color_right] = i
+                curses.init_pair(i, color_left, color_right)
+                i += 1
 
         layout = _Layout(self)
         return _DrawerFactory(self, layout), layout
@@ -112,129 +83,344 @@ class ColorTheme(abc.ABC):
 
 class BlueInstallerColorTheme(ColorTheme):
     def standard(self):
-        colors.WINDOW_BACKGROUND_COLOR = COLOR_PAIR_WHITE_OVER_BLUE
-        colors.BOX_BACKGROUND_COLOR = COLOR_PAIR_BLACK_OVER_WHITE
-        colors.HEADER_COLOR = COLOR_PAIR_BLUE_OVER_WHITE
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[white][blue]
+        colors.BOX_BACKGROUND_COLOR = color_pair[black][white]
+        colors.HEADER_LINE_COLOR = color_pair[black][white]
+        colors.HEADER_COLOR = color_pair[blue][white]
 
-        colors.SELECTED_OPTION_INFO_COLOR = COLOR_PAIR_WHITE_OVER_BLUE
-        colors.SELECTED_OPTION_TEXT_COLOR = COLOR_PAIR_CYAN_OVER_BLUE
-        colors.OPTION_UNSELECTED_COLOR = COLOR_PAIR_BLUE_OVER_WHITE
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[white][blue]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[cyan][blue]
+        colors.OPTION_UNSELECTED_COLOR = color_pair[blue][white]
 
-        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = COLOR_PAIR_RED_OVER_WHITE
-        colors.FIRST_OPTION_KEY_SELECTED_COLOR = COLOR_PAIR_RED_OVER_BLUE
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[red][white]
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[red][blue]
 
-        colors.SELECTED_ACTION_BORDER_COLOR = COLOR_PAIR_WHITE_OVER_BLUE
-        colors.SELECTED_ACTION_INTERIOR_COLOR = COLOR_PAIR_CYAN_OVER_BLUE
-        colors.UNSELECTED_ACTION_COLOR = COLOR_PAIR_BLACK_OVER_WHITE
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[white][blue]
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[cyan][blue]
+        colors.UNSELECTED_ACTION_COLOR = color_pair[black][white]
 
-        colors.SYMBOL_AT_COLOR = COLOR_PAIR_RED_OVER_WHITE
-        colors.SYMBOL_TILDE_COLOR = COLOR_PAIR_BLUE_OVER_WHITE
-        colors.COMMON_TEXT_COLOR = COLOR_PAIR_BLACK_OVER_WHITE
+        colors.SYMBOL_AT_COLOR = color_pair[red][white]
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
+        colors.COMMON_TEXT_COLOR = color_pair[black][white]
 
     def black(self):
-        colors.WINDOW_BACKGROUND_COLOR = COLOR_PAIR_WHITE_OVER_BLACK
-        colors.BOX_BACKGROUND_COLOR = COLOR_PAIR_BLACK_OVER_WHITE
-        colors.HEADER_COLOR = COLOR_PAIR_BLACK_OVER_WHITE
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[white][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[black][white]
+        colors.HEADER_LINE_COLOR = color_pair[black][white]
+        colors.HEADER_COLOR = color_pair[black][white]
 
-        colors.SELECTED_OPTION_INFO_COLOR = COLOR_PAIR_WHITE_OVER_BLACK
-        colors.SELECTED_OPTION_TEXT_COLOR = COLOR_PAIR_CYAN_OVER_BLUE
-        colors.OPTION_UNSELECTED_COLOR = COLOR_PAIR_BLUE_OVER_WHITE
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[white][black]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[cyan][blue]
+        colors.OPTION_UNSELECTED_COLOR = color_pair[blue][white]
 
-        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = COLOR_PAIR_RED_OVER_WHITE
-        colors.FIRST_OPTION_KEY_SELECTED_COLOR = COLOR_PAIR_RED_OVER_BLUE
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[red][white]
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[red][blue]
 
-        colors.SELECTED_ACTION_BORDER_COLOR = COLOR_PAIR_WHITE_OVER_BLACK
-        colors.SELECTED_ACTION_INTERIOR_COLOR = COLOR_PAIR_WHITE_OVER_BLACK
-        colors.UNSELECTED_ACTION_COLOR = COLOR_PAIR_BLACK_OVER_WHITE
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[white][black]
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[white][black]
+        colors.UNSELECTED_ACTION_COLOR = color_pair[black][white]
 
-        colors.SYMBOL_AT_COLOR = COLOR_PAIR_CYAN_OVER_WHITE
-        colors.SYMBOL_TILDE_COLOR = COLOR_PAIR_BLUE_OVER_WHITE
-        colors.COMMON_TEXT_COLOR = COLOR_PAIR_BLACK_OVER_WHITE
+        colors.SYMBOL_AT_COLOR = color_pair[cyan][white]
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
+        colors.COMMON_TEXT_COLOR = color_pair[black][white]
 
     def red(self):
-        colors.WINDOW_BACKGROUND_COLOR = COLOR_PAIR_WHITE_OVER_RED
-        colors.BOX_BACKGROUND_COLOR = COLOR_PAIR_BLACK_OVER_WHITE
-        colors.HEADER_COLOR = COLOR_PAIR_RED_OVER_WHITE
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[white][red]
+        colors.BOX_BACKGROUND_COLOR = color_pair[black][white]
+        colors.HEADER_LINE_COLOR = color_pair[black][white]
+        colors.HEADER_COLOR = color_pair[red][white]
 
-        colors.SELECTED_OPTION_INFO_COLOR = COLOR_PAIR_WHITE_OVER_RED
-        colors.SELECTED_OPTION_TEXT_COLOR = COLOR_PAIR_WHITE_OVER_RED
-        colors.OPTION_UNSELECTED_COLOR = COLOR_PAIR_BLACK_OVER_WHITE
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[white][red]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[white][red]
+        colors.OPTION_UNSELECTED_COLOR = color_pair[black][white]
 
-        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = COLOR_PAIR_RED_OVER_WHITE
-        colors.FIRST_OPTION_KEY_SELECTED_COLOR = COLOR_PAIR_WHITE_OVER_RED
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[red][white]
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[white][red]
 
-        colors.SELECTED_ACTION_BORDER_COLOR = COLOR_PAIR_WHITE_OVER_RED
-        colors.SELECTED_ACTION_INTERIOR_COLOR = COLOR_PAIR_WHITE_OVER_RED
-        colors.UNSELECTED_ACTION_COLOR = COLOR_PAIR_RED_OVER_WHITE
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[white][red]
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[white][red]
+        colors.UNSELECTED_ACTION_COLOR = color_pair[red][white]
 
-        colors.SYMBOL_AT_COLOR = COLOR_PAIR_RED_OVER_WHITE
-        colors.SYMBOL_TILDE_COLOR = COLOR_PAIR_BLUE_OVER_WHITE
-        colors.COMMON_TEXT_COLOR = COLOR_PAIR_BLACK_OVER_WHITE
+        colors.SYMBOL_AT_COLOR = color_pair[red][white]
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
+        colors.COMMON_TEXT_COLOR = color_pair[black][white]
 
 
 class CyanNightColorTheme(ColorTheme):
     def standard(self):
-        colors.WINDOW_BACKGROUND_COLOR = COLOR_PAIR_CYAN_OVER_BLACK
-        colors.BOX_BACKGROUND_COLOR = COLOR_PAIR_CYAN_OVER_BLACK
-        colors.HEADER_COLOR = COLOR_PAIR_CYAN_OVER_BLACK
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[cyan][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[cyan][black]
+        colors.HEADER_LINE_COLOR = color_pair[cyan][black]
+        colors.HEADER_COLOR = color_pair[cyan][black]
 
-        colors.FIRST_OPTION_KEY_SELECTED_COLOR = COLOR_PAIR_BLACK_OVER_CYAN
-        colors.SELECTED_OPTION_INFO_COLOR = COLOR_PAIR_BLACK_OVER_CYAN
-        colors.SELECTED_OPTION_TEXT_COLOR = COLOR_PAIR_BLACK_OVER_CYAN
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][cyan]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][cyan]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][cyan]
 
-        colors.OPTION_UNSELECTED_COLOR = COLOR_PAIR_CYAN_OVER_BLACK
-        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = COLOR_PAIR_WHITE_OVER_BLACK
+        colors.OPTION_UNSELECTED_COLOR = color_pair[cyan][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[white][black]
 
-        colors.SELECTED_ACTION_INTERIOR_COLOR = COLOR_PAIR_BLACK_OVER_CYAN
-        colors.SELECTED_ACTION_BORDER_COLOR = COLOR_PAIR_BLACK_OVER_CYAN
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][cyan]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][cyan]
 
-        colors.UNSELECTED_ACTION_COLOR = COLOR_PAIR_CYAN_OVER_BLACK
+        colors.UNSELECTED_ACTION_COLOR = color_pair[cyan][black]
 
-        colors.SYMBOL_TILDE_COLOR = COLOR_PAIR_YELLOW_OVER_BLACK
-        colors.SYMBOL_AT_COLOR = COLOR_PAIR_WHITE_OVER_BLACK
-        colors.COMMON_TEXT_COLOR = COLOR_PAIR_CYAN_OVER_BLACK
+        colors.SYMBOL_TILDE_COLOR = color_pair[yellow][black]
+        colors.SYMBOL_AT_COLOR = color_pair[white][black]
+        colors.COMMON_TEXT_COLOR = color_pair[cyan][black]
 
     def black(self):
-        colors.WINDOW_BACKGROUND_COLOR = COLOR_PAIR_YELLOW_OVER_BLACK
-        colors.BOX_BACKGROUND_COLOR = COLOR_PAIR_YELLOW_OVER_BLACK
-        colors.HEADER_COLOR = COLOR_PAIR_YELLOW_OVER_BLACK
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.HEADER_LINE_COLOR = color_pair[yellow][black]
+        colors.HEADER_COLOR = color_pair[yellow][black]
 
-        colors.FIRST_OPTION_KEY_SELECTED_COLOR = COLOR_PAIR_BLACK_OVER_YELLOW
-        colors.SELECTED_OPTION_INFO_COLOR = COLOR_PAIR_BLACK_OVER_YELLOW
-        colors.SELECTED_OPTION_TEXT_COLOR = COLOR_PAIR_BLACK_OVER_YELLOW
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][yellow]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][yellow]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][yellow]
 
-        colors.OPTION_UNSELECTED_COLOR = COLOR_PAIR_YELLOW_OVER_BLACK
-        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = COLOR_PAIR_WHITE_OVER_BLACK
+        colors.OPTION_UNSELECTED_COLOR = color_pair[yellow][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[white][black]
 
-        colors.SELECTED_ACTION_INTERIOR_COLOR = COLOR_PAIR_BLACK_OVER_YELLOW
-        colors.SELECTED_ACTION_BORDER_COLOR = COLOR_PAIR_BLACK_OVER_YELLOW
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][yellow]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][yellow]
 
-        colors.UNSELECTED_ACTION_COLOR = COLOR_PAIR_YELLOW_OVER_BLACK
+        colors.UNSELECTED_ACTION_COLOR = color_pair[yellow][black]
 
-        colors.SYMBOL_TILDE_COLOR = COLOR_PAIR_CYAN_OVER_BLACK
-        colors.SYMBOL_AT_COLOR = COLOR_PAIR_WHITE_OVER_BLACK
-        colors.COMMON_TEXT_COLOR = COLOR_PAIR_YELLOW_OVER_BLACK
+        colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
+        colors.SYMBOL_AT_COLOR = color_pair[white][black]
+        colors.COMMON_TEXT_COLOR = color_pair[yellow][black]
 
     def red(self):
-        colors.WINDOW_BACKGROUND_COLOR = COLOR_PAIR_RED_OVER_BLACK
-        colors.BOX_BACKGROUND_COLOR = COLOR_PAIR_RED_OVER_BLACK
-        colors.HEADER_COLOR = COLOR_PAIR_RED_OVER_BLACK
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[red][black]
+        colors.HEADER_LINE_COLOR = color_pair[red][black]
+        colors.HEADER_COLOR = color_pair[red][black]
 
-        colors.FIRST_OPTION_KEY_SELECTED_COLOR = COLOR_PAIR_BLACK_OVER_RED
-        colors.SELECTED_OPTION_INFO_COLOR = COLOR_PAIR_BLACK_OVER_RED
-        colors.SELECTED_OPTION_TEXT_COLOR = COLOR_PAIR_BLACK_OVER_RED
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][red]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][red]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][red]
 
-        colors.OPTION_UNSELECTED_COLOR = COLOR_PAIR_RED_OVER_BLACK
-        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = COLOR_PAIR_WHITE_OVER_BLACK
+        colors.OPTION_UNSELECTED_COLOR = color_pair[red][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[white][black]
 
-        colors.SELECTED_ACTION_INTERIOR_COLOR = COLOR_PAIR_BLACK_OVER_RED
-        colors.SELECTED_ACTION_BORDER_COLOR = COLOR_PAIR_BLACK_OVER_RED
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][red]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][red]
 
-        colors.UNSELECTED_ACTION_COLOR = COLOR_PAIR_RED_OVER_BLACK
+        colors.UNSELECTED_ACTION_COLOR = color_pair[red][black]
 
-        colors.SYMBOL_TILDE_COLOR = COLOR_PAIR_CYAN_OVER_BLACK
-        colors.SYMBOL_AT_COLOR = COLOR_PAIR_WHITE_OVER_BLACK
-        colors.COMMON_TEXT_COLOR = COLOR_PAIR_RED_OVER_BLACK
+        colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
+        colors.SYMBOL_AT_COLOR = color_pair[white][black]
+        colors.COMMON_TEXT_COLOR = color_pair[red][black]
+
+
+class AquamarineColorTheme(ColorTheme):
+    def standard(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[black][cyan]
+        colors.BOX_BACKGROUND_COLOR = color_pair[black][cyan]
+        colors.HEADER_LINE_COLOR = color_pair[cyan][cyan]
+        colors.HEADER_COLOR = color_pair[black][cyan]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][cyan]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[cyan][black]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[cyan][black]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[black][cyan]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[cyan][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[cyan][black]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[cyan][black]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[black][cyan]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue][cyan]
+        colors.SYMBOL_AT_COLOR = color_pair[magenta][cyan]
+        colors.COMMON_TEXT_COLOR = color_pair[black][cyan]
+
+    def black(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[red][cyan]
+        colors.BOX_BACKGROUND_COLOR = color_pair[red][cyan]
+        colors.HEADER_LINE_COLOR = color_pair[red][cyan]
+        colors.HEADER_COLOR = color_pair[red][cyan]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[cyan][red]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[cyan][red]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[cyan][red]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[red][cyan]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[cyan][red]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[cyan][red]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[cyan][red]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[red][cyan]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue][cyan]
+        colors.SYMBOL_AT_COLOR = color_pair[magenta][cyan]
+        colors.COMMON_TEXT_COLOR = color_pair[red][cyan]
+
+    def red(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[cyan][red]
+        colors.BOX_BACKGROUND_COLOR = color_pair[cyan][red]
+        colors.HEADER_LINE_COLOR = color_pair[cyan][red]
+        colors.HEADER_COLOR = color_pair[cyan][red]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[red][cyan]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[red][cyan]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[red][cyan]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[cyan][red]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[red][cyan]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[red][cyan]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[red][cyan]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[cyan][red]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[green][red]
+        colors.SYMBOL_AT_COLOR = color_pair[yellow][red]
+        colors.COMMON_TEXT_COLOR = color_pair[cyan][red]
+
+
+class CleanWallColorTheme(ColorTheme):
+    def standard(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[white][white]
+        colors.BOX_BACKGROUND_COLOR = color_pair[white][white]
+        colors.HEADER_LINE_COLOR = color_pair[black][white]
+        colors.HEADER_COLOR = color_pair[black][white]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[white][black]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[white][black]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[white][black]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[black][white]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[black][white]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[white][black]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[white][black]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[black][white]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
+        colors.SYMBOL_AT_COLOR = color_pair[magenta][white]
+        colors.COMMON_TEXT_COLOR = color_pair[black][white]
+
+    def black(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[white][white]
+        colors.HEADER_LINE_COLOR = color_pair[black][white]
+        colors.HEADER_COLOR = color_pair[black][white]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[white][black]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[white][black]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[white][black]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[black][white]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[black][white]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[white][black]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[white][black]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[black][white]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
+        colors.SYMBOL_AT_COLOR = color_pair[magenta][white]
+        colors.COMMON_TEXT_COLOR = color_pair[black][white]
+
+    def red(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[red][red]
+        colors.BOX_BACKGROUND_COLOR = color_pair[white][white]
+        colors.HEADER_LINE_COLOR = color_pair[black][white]
+        colors.HEADER_COLOR = color_pair[black][white]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[white][black]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[white][black]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[white][black]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[black][white]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[black][white]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[white][black]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[white][black]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[black][white]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
+        colors.SYMBOL_AT_COLOR = color_pair[magenta][white]
+        colors.COMMON_TEXT_COLOR = color_pair[black][white]
+
+
+class Custom3ColorTheme(ColorTheme):
+    def __init__(self, background, box, text):
+        self._background = background
+        self._box = box
+        self._text = text
+
+    def standard(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[self._box][self._background]
+        colors.BOX_BACKGROUND_COLOR = color_pair[self._box][self._box]
+        colors.HEADER_LINE_COLOR = color_pair[self._box][self._box]
+        colors.HEADER_COLOR = color_pair[self._text][self._box]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[self._text][self._box]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[self._box][self._text]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[self._box][self._text]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[self._text][self._box]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[self._text][self._box]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[self._box][self._text]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[self._text][self._box]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[self._text][self._box]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue if self._box is not blue else black][self._box]
+        colors.SYMBOL_AT_COLOR = color_pair[red if self._box is not red else black][self._box]
+        colors.COMMON_TEXT_COLOR = color_pair[self._text][self._box]
+
+    def black(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[black][black]
+        colors.HEADER_LINE_COLOR = color_pair[black][black]
+        colors.HEADER_COLOR = color_pair[white][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[white][black]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][white]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][white]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[white][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[white][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][white]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[white][black]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[white][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
+        colors.SYMBOL_AT_COLOR = color_pair[red][black]
+        colors.COMMON_TEXT_COLOR = color_pair[white][black]
+
+    def red(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[black][black]
+        colors.HEADER_LINE_COLOR = color_pair[black][black]
+        colors.HEADER_COLOR = color_pair[red][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[red][black]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][red]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][red]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[red][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[red][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][red]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[red][black]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[red][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
+        colors.SYMBOL_AT_COLOR = color_pair[red][black]
+        colors.COMMON_TEXT_COLOR = color_pair[red][black]
 
 
 class _Layout(SettingsScreenThemeManager):
@@ -270,8 +456,10 @@ class _Layout(SettingsScreenThemeManager):
             color_theme.standard()
 
     def _get_color_theme(self) -> ColorTheme:
-        if self._current_theme == 'Cyan Night':
-            return CyanNightColorTheme()
+        if self._current_theme == 'Cyan Night': return CyanNightColorTheme()
+        elif self._current_theme == 'Japan': return Custom3ColorTheme(white, red, white)
+        elif self._current_theme == 'Aquamarine': return AquamarineColorTheme()
+        elif self._current_theme == 'Clean Wall': return CleanWallColorTheme()
         else:
             return BlueInstallerColorTheme()
 
@@ -299,7 +487,7 @@ class _Layout(SettingsScreenThemeManager):
             box1.box()
 
             if has_header:
-                screen.hline(y + 2, x + 1, curses.ACS_HLINE | curses.color_pair(colors.BOX_BACKGROUND_COLOR), w - 2)
+                screen.hline(y + 2, x + 1, curses.ACS_HLINE | curses.color_pair(colors.HEADER_LINE_COLOR), w - 2)
 
         except curses.error as _:
             box1 = screen.subwin(curses.LINES, curses.COLS, 0, 0)

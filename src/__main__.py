@@ -18,10 +18,19 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 import os
-from update_all.main import main
 from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, \
-    DEFAULT_COMMIT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, DEFAULT_LOCATION_STR, KENV_DEBUG, DEFAULT_DEBUG, \
-    KENV_KEY_IGNORE_TIME, DEFAULT_KEY_IGNORE_TIME
+    DEFAULT_COMMIT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, DEFAULT_LOCATION_STR, KENV_DEBUG, \
+    DEFAULT_DEBUG, KENV_KEY_IGNORE_TIME, DEFAULT_KEY_IGNORE_TIME
+
+try:
+    from update_all.main import main
+except (ImportError, SyntaxError) as e:
+    print(e)
+    print('\n')
+    print('Warning! Your OS version seems to be older than September 2021!')
+    print('Please upgrade your OS before running Update All')
+    print('More info at https://github.com/MiSTer-devel/mr-fusion')
+    exit(1)
 
 if __name__ == '__main__':
     exit_code = main({

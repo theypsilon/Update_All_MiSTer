@@ -56,11 +56,16 @@ class SettingsScreen(UiApplication):
         self._theme_manager = None
 
     def load_main_menu(self) -> None:
+        self._load_menu_entry('main_menu')
+
+    def load_test_menu(self) -> None:
+        self._load_menu_entry('test_menu')
+
+    def _load_menu_entry(self, menu_entry) -> None:
         def loader():
-            execute_ui_engine('main_menu', settings_screen_model(), self, self._ui_runtime)
+            execute_ui_engine(menu_entry, settings_screen_model(), self, self._ui_runtime)
 
         self._ui_runtime.initialize_runtime(loader)
-
 
     def initialize_ui(self, ui: UiContext) -> UiSectionFactory:
         ui.set_value('needs_save', 'false')
