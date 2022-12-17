@@ -302,8 +302,8 @@ class UpdateAllService:
         config = self._config_provider.get()
 
         run_time = str(datetime.timedelta(seconds=time.time() - config.start_time))[0:-4]
-        self._logger.print(f"Update All {UPDATE_ALL_VERSION} ({config.commit}) by theypsilon. Run time: {run_time}s")
-        self._logger.debug(f"Date: {datetime.datetime.utcnow()}")
+        self._logger.print(f"Update All {UPDATE_ALL_VERSION} ({config.commit[0:3]}) by theypsilon. {run_time}s at {datetime.datetime.now()}")
+        self._logger.debug(f"Commit: {config.commit}")
         self._logger.print()
 
         if len(self._error_reports):
