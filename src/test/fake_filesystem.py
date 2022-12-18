@@ -125,7 +125,7 @@ class _FileSystem(ProductionFileSystem):
         self._write_records.append(_Record('unique_temp_filename', name))
         return ClosableValue(name, lambda: True)
 
-    def hash(self, path):
+    def hash(self, path: str) -> str:
         return self._state.files[self._path(path)]['hash']
 
     def resolve(self, path):

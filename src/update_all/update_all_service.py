@@ -24,7 +24,8 @@ from typing import List
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
 from update_all.constants import UPDATE_ALL_VERSION, DOWNLOADER_URL, ARCADE_ORGANIZER_URL, FILE_update_all_log, \
-    FILE_mister_downloader_needs_reboot, MEDIA_FAT, ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION
+    FILE_mister_downloader_needs_reboot, MEDIA_FAT, ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, \
+    UPDATE_ALL_LAUNCHER_PATH, UPDATE_ALL_LAUNCHER_MD5, UPDATE_ALL_URL
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
@@ -126,6 +127,7 @@ class UpdateAllService:
         self._show_intro()
         self._countdown_for_settings_screen()
         self._pre_run_tweaks()
+        self._run_launcher_update()
         self._run_downloader()
         self._run_arcade_organizer()
         self._run_linux_update()
@@ -198,6 +200,28 @@ class UpdateAllService:
             config.arcade_organizer = False
             config.update_linux = False
             config.autoreboot = False
+
+    def _run_launcher_update(self) -> None:
+        if not self._file_system.is_file(UPDATE_ALL_LAUNCHER_PATH):
+            return
+
+        hash = self._file_system.hash(UPDATE_ALL_LAUNCHER_PATH)
+        if len(hash) == 0:
+            return
+
+        if hash == UPDATE_ALL_LAUNCHER_MD5:
+            return
+
+        self._draw_separator()
+        self._logger.print('Installing new Update All launcher')
+        self._logger.print()
+        try:
+            content = self._os_utils.download(UPDATE_ALL_URL)
+            self._file_system.write_file_bytes(UPDATE_ALL_LAUNCHER_PATH, content)
+            self._logger.print('Launcher updated successfully.')
+        except Exception as e:
+            self._logger.debug(e)
+            self._logger.print('Launcher update ignored.')
 
     def _run_downloader(self) -> None:
         config = self._config_provider.get()
@@ -292,7 +316,7 @@ class UpdateAllService:
 
         if return_code != 0:
             self._exit_code = 1
-            self._error_reports.append('Scripts/.config/downloader/downloader2.log')
+            self._error_reports.append('Scripts/.config/downloader/update_linux.log')
 
     def _cleanup(self) -> None:
         self._file_system.clean_temp_files_with_ids()

@@ -107,7 +107,7 @@ class FileSystem(ABC):
     def copy_fast(self, source, target):
         """interface"""
 
-    def hash(self, path):
+    def hash(self, path: str) -> str:
         """interface"""
 
     @abstractmethod
@@ -232,7 +232,7 @@ class _FileSystem(FileSystem):
             with open(self._path(target), 'wb') as ftarget:
                 shutil.copyfileobj(fsource, ftarget, length=1024 * 1024 * 4)
 
-    def hash(self, path):
+    def hash(self, path: str) -> str:
         return hash_file(self._path(path))
 
     def make_dirs(self, path):
@@ -390,7 +390,7 @@ class InvalidFileResolution(Exception):
     pass
 
 
-def hash_file(path):
+def hash_file(path: str) -> str:
     with open(path, "rb") as f:
         file_hash = hashlib.md5()
         chunk = f.read(8192)
