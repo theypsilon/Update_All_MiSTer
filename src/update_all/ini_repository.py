@@ -30,7 +30,6 @@ from update_all.ini_parser import IniParser
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils
 
-
 class IniRepository:
 
     def __init__(self, logger: Logger, file_system: FileSystem, os_utils: OsUtils):
@@ -168,23 +167,32 @@ class IniRepository:
             if db_id not in config.databases:
                 continue
 
+            lower_id = db_id.lower()
+
             if filter_active:
-                arcade_roms_filter = ini[db_id]['filter'].strip().lower() if 'filter' in ini[db_id] else ''
+                arcade_roms_filter = ini[lower_id]['filter'].strip().lower() if 'filter' in ini[lower_id] else ''
 
                 if len(arcade_roms_filter) == 0:
                     filter_result = f'{mister_filter} {filter_addition}'
                 else:
                     filter_result = f'{arcade_roms_filter.replace(filter_addition, "")} {filter_addition}'
 
-                ini[db_id]['filter'] = ' '.join(filter_result.split()).strip()
+                ini[lower_id]['filter'] = ' '.join(filter_result.split()).strip()
 
-            elif 'filter' in ini[db_id]:
-                filter_result = ini[db_id]['filter'].replace(filter_addition, "").replace(mister_filter, "")
+            elif 'filter' in ini[lower_id]:
+                filter_result = ini[lower_id]['filter'].replace(filter_addition, "").replace(mister_filter, "")
 
-                ini[db_id]['filter'] = ' '.join(filter_result.split()).strip()
+                ini[lower_id]['filter'] = ' '.join(filter_result.split()).strip()
 
-                if len(ini[db_id]['filter']) == 0:
-                    del ini[db_id]['filter']
+                if len(ini[lower_id]['filter']) == 0:
+                    del ini[lower_id]['filter']
+
+        for db_id, filter_addition in [(AllDBs.RANNYSNICE_WALLPAPERS.db_id, config.rannysnice_wallpapers_filter)]:
+            if db_id not in config.databases:
+                continue
+
+            lower_id = db_id.lower()
+            ini[lower_id]['filter'] = filter_addition
 
     def _build_new_downloader_ini_contents(self, config: Config) -> Optional[str]:
         ini: dict[str, Dict[str, str]] = self.get_downloader_ini(cached=False)

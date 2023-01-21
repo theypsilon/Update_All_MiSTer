@@ -210,7 +210,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "9 Misc Menu",
-                    "description": "Other Settings",
+                    "description": "Extra Content (Wallpapers) & Other Settings",
                     "actions": {"ok": [{"type": "navigate", "target": "misc_menu"}]}
                 },
                 {
@@ -484,7 +484,7 @@ def settings_screen_model(): return {
         },
         "unofficial_cores_menu": {
             "type": "dialog_sub_menu",
-            "header": "Unofficial Cores Settings",
+            "header": "Unofficial Cores",
             "variables": {
                 "coin_op_collection_downloader": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
                 "arcade_offset_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
@@ -540,7 +540,7 @@ def settings_screen_model(): return {
         },
         "unofficial_scripts_menu": {
             "type": "dialog_sub_menu",
-            "header": "Unofficial Scripts Settings",
+            "header": "Unofficial Scripts",
             "variables": {
                 "mistersam_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "mrext/all": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -572,27 +572,57 @@ def settings_screen_model(): return {
         },
         "misc_menu": {
             "type": "dialog_sub_menu",
-            "header": "Misc Menu | Other Settings",
+            "header": "Misc Menu",
+            "formatters": {
+                "rannysnice_wallpapers_filter": {"ar16-9": "16x9", "ar4-3": "4x3", "all": "Both"},
+            },
             "variables": {
+                "Ranny-Snice/Ranny-Snice-Wallpapers": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "rannysnice_wallpapers_filter": {"group": "rannysnice_wallpapers", "default": "ar16-9", "values": ["ar16-9", "ar4-3", "all"]},
                 "autoreboot": {"group": ["ua_ini", "store"], "default": "true", "values": ["false", "true"]},
                 "wait_time_for_reading": {"group": ["ua_ini", "store"], "default": "2", "values": ["2", "0", "30"]},
                 "countdown_time": {"group": ["ua_ini", "store"], "default": "15", "values": ["15", "4", "60"]},
             },
             "entries": [
                 {
-                    "title": "1 Autoreboot (if needed)",
+                    "title": "1 Ranny Snice Wallpapers",
+                    "description": "{Ranny-Snice/Ranny-Snice-Wallpapers:enabled}",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "rannysnice_wallpapers_menu"}],
+                        "toggle": [{"type": "rotate_variable", "target": "Ranny-Snice/Ranny-Snice-Wallpapers"}],
+                    }
+                },
+                {},
+                {
+                    "title": "2 Autoreboot (if needed)",
                     "description": "{autoreboot:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "autoreboot"}]}
                 },
                 {
-                    "title": "2 Pause (between updaters)",
+                    "title": "3 Pause (between updaters)",
                     "description": "{wait_time_for_reading}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "wait_time_for_reading"}]}
                 },
                 {
-                    "title": "3 Countdown Timer",
+                    "title": "4 Countdown Timer",
                     "description": "{countdown_time}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "countdown_time"}]}
+                },
+            ]
+        },
+        "rannysnice_wallpapers_menu": {
+            "type": "dialog_sub_menu",
+            "header": "Ranny Snice Wallpapers Settings",
+            "entries": [
+                {
+                    "title": "1 {Ranny-Snice/Ranny-Snice-Wallpapers:do_enable}",
+                    "description": "Activated: {Ranny-Snice/Ranny-Snice-Wallpapers:yesno}",
+                    "actions":  {"ok": [{"type": "rotate_variable", "target": "Ranny-Snice/Ranny-Snice-Wallpapers"}]}
+                },
+                {
+                    "title": "2 Aspect Ratio",
+                    "description": "{rannysnice_wallpapers_filter}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "rannysnice_wallpapers_filter"}]}
                 },
             ]
         },

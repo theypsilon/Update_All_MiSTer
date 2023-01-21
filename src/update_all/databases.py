@@ -73,6 +73,9 @@ class AllDBs:
     MISTERSAM_FILES = Database(db_id='MiSTer_SAM_files', db_url='https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/main/MiSTer_SAMdb.json', title='MiSTer SAM files')
     WIZZO_MREXT_FILES = Database(db_id='mrext/all', db_url='https://github.com/wizzomafizzo/mrext/raw/main/releases/all.json', title='MiSTer Extensions (wizzo)')
 
+    # WALLPAPERS
+    RANNYSNICE_WALLPAPERS = Database(db_id='Ranny-Snice/Ranny-Snice-Wallpapers', db_url='https://raw.githubusercontent.com/Ranny-Snice/Ranny-Snice-Wallpapers/db/db.json.zip', title='Ranny Snice Wallpapers')
+
 
 @cache
 def dbs_to_model_variables_pairs() -> List[Tuple[str, List[Database]]]:

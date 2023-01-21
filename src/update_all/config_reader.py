@@ -90,6 +90,11 @@ class ConfigReader:
             parser = IniParser(downloader_ini[AllDBs.ARCADE_ROMS.db_id])
             config.hbmame_filter = '!hbmame' in parser.get_string('filter', '')
 
+        if AllDBs.RANNYSNICE_WALLPAPERS.db_id.lower() in downloader_ini:
+            parser = IniParser(downloader_ini[AllDBs.RANNYSNICE_WALLPAPERS.db_id.lower()])
+            rannysnice_wallpapers_filter = parser.get_string('filter', '').lower()
+            config.rannysnice_wallpapers_filter = 'ar16-9' if 'ar16-9' in rannysnice_wallpapers_filter else 'ar4-3' if 'ar4-3' in rannysnice_wallpapers_filter else 'all'
+
         config.arcade_organizer = self._ini_repository.get_arcade_organizer_ini().get_bool('arcade_organizer', config.arcade_organizer)
 
         self._logger.debug('config: ' + json.dumps(config, default=lambda o: str(o) if isinstance(o, Path) or isinstance(o, set) else o.__dict__, indent=4))

@@ -308,6 +308,7 @@ class SettingsScreen(UiApplication):
             *gather_variable_declarations(settings_screen_model(), "jt_ini"),
             *gather_variable_declarations(settings_screen_model(), "names_ini"),
             *gather_variable_declarations(settings_screen_model(), "arcade_roms"),
+            *gather_variable_declarations(settings_screen_model(), "rannysnice_wallpapers"),
         ]
 
     def calculate_names_char_code_warning(self, ui: UiContext) -> None:

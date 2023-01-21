@@ -54,6 +54,7 @@ class Config:
     names_char_code: str = 'CHAR18'
     names_sort_code: str = 'Common'
     hbmame_filter: bool = False
+    rannysnice_wallpapers_filter: str = 'ar16-9'
 
     # Misc Options
     wait_time_for_reading: int = 2
