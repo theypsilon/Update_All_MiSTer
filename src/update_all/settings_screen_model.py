@@ -205,7 +205,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "8 Unofficial Scripts",
-                    "description": "MiSTerSAM, MiSTer Extensions (wizzo), *-2oled",
+                    "description": "Super Attract, MiSTer Extensions, *-2oled",
                     "actions": {"ok": [{"type": "navigate", "target": "unofficial_scripts_menu"}]}
                 },
                 {
