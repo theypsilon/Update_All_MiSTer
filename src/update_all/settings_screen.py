@@ -70,6 +70,16 @@ class SettingsScreen(UiApplication):
     def initialize_ui(self, ui: UiContext) -> UiSectionFactory:
         ui.set_value('needs_save', 'false')
 
+        arcade_organizer_ini = self._ini_repository.get_arcade_organizer_ini()
+
+        for variable, description in gather_variable_declarations(settings_screen_model(), "ao_ini").items():
+            value = arcade_organizer_ini.get_string(description['name'], description['default'])
+            for possible_value in description['values']:
+                if possible_value.lower() == value.lower():
+                    value = possible_value
+                    break
+            ui.set_value(variable, value)
+
         db_ids = db_ids_by_model_variables()
         config = self._config_provider.get()
         for variable in self._all_config_variables:
@@ -82,21 +92,8 @@ class SettingsScreen(UiApplication):
         for variable in gather_variable_declarations(settings_screen_model(), "db"):
             ui.set_value(variable, 'true' if db_ids[variable] in config.databases else 'false')
 
-        arcade_organizer_ini = self._ini_repository.get_arcade_organizer_ini()
-
-        ao_variables = gather_variable_declarations(settings_screen_model(), "ao_ini")
-
-        for variable, description in ao_variables.items():
-            rename = variable.replace('arcade_organizer_', '')
-            value = arcade_organizer_ini.get_string(rename, description['default'])
-            for possible_value in description['values']:
-                if possible_value.lower() == value.lower():
-                    value = possible_value
-                    break
-            ui.set_value(variable, value)
-
         local_store = self._store_provider.get()
-        ui_theme =  local_store.get_theme() if self._checker.available_code > 1 else STANDARD_UI_THEME
+        ui_theme = local_store.get_theme() if self._checker.available_code > 1 else STANDARD_UI_THEME
         ui.set_value('ui_theme', ui_theme)
         ui.set_value('wait_time_for_reading', str(local_store.get_wait_time_for_reading()))
         ui.set_value('countdown_time', str(local_store.get_countdown_time()))
@@ -239,14 +236,11 @@ class SettingsScreen(UiApplication):
 
         if self._does_arcade_oganizer_need_save(ui):
             new_ao_ini = {}
-            for variable, description in gather_variable_declarations(settings_screen_model()).items():
-                if not variable.startswith('arcade_organizer'):
-                    continue
-                rename = variable.replace('arcade_organizer_', '')
+            for variable, description in gather_variable_declarations(settings_screen_model(), "ao_ini").items():
                 value = ui.get_value(variable)
 
                 if value != description['default']:
-                    new_ao_ini[rename] = value
+                    new_ao_ini[description['name']] = value
 
             self._ini_repository.write_arcade_organizer(new_ao_ini)
         elif config.arcade_organizer != Config().arcade_organizer:
@@ -269,11 +263,8 @@ class SettingsScreen(UiApplication):
     def _does_arcade_oganizer_need_save(self, ui: UiContext):
         arcade_organizer_ini = self._ini_repository.get_arcade_organizer_ini()
 
-        for variable, description in gather_variable_declarations(settings_screen_model()).items():
-            if not variable.startswith('arcade_organizer'):
-                continue
-            rename = variable.replace('arcade_organizer_', '')
-            old_value = arcade_organizer_ini.get_string(rename, description['default']).lower()
+        for variable, description in gather_variable_declarations(settings_screen_model(), "ao_ini").items():
+            old_value = arcade_organizer_ini.get_string(description['name'], description['default']).lower()
             new_value = ui.get_value(variable).lower()
             if old_value != new_value:
                 return True

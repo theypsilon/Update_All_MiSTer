@@ -41,7 +41,7 @@ def settings_screen_model(): return {
         "bios_getter": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
         "arcade_roms_db_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
         "names_txt_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
-        "arcade_organizer": {"group": "ua_ini", "default": "true", "values": ["false", "true"]},
+        "arcade_organizer": {"group": ["ua_ini", "ao_ini"], "default": "true", "values": ["false", "true"]},
 
         # Internal variables
         "file_exists": {"default": "false", "values": ["false", "true"]},
@@ -861,11 +861,11 @@ def settings_screen_model(): return {
             "header": "Arcade Organizer 2.0 Region Options",
             "variables": {
                 "arcade_organizer_region_dir": {"rename": "region_dir", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
-                "arcade_organizer_region_main_description": {"rename": "region_main_description", "group": "ao_ini", "default": "DEV PREFERRED", "values": ["DEV PREFERRED", "Japan", "World", "USA", "Asia", "Europe", "Hispanic", "Spain", "Argentina", "Italy", "Brazil", "France", "Germany"]},
+                "arcade_organizer_region_main": {"rename": "region_main", "group": "ao_ini", "default": "DEV PREFERRED", "values": ["DEV PREFERRED", "Japan", "World", "USA", "Asia", "Europe", "Hispanic", "Spain", "Argentina", "Italy", "Brazil", "France", "Germany"]},
                 "arcade_organizer_region_others": {"rename": "region_others", "group": "ao_ini", "default": "1", "values": ["1", "0", "2"]},
             },
             "formatters": {
-                "arcade_organizer_region_main_description_formatter": {"DEV PREFERRED" : "Region chosen by the MRA maintainer"}
+                "arcade_organizer_region_main_formatter": {"DEV PREFERRED": "Region chosen by the MRA maintainer"}
             },
             "entries": [
                 {
@@ -875,8 +875,8 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "2 Main region",
-                    "description": "{arcade_organizer_region_main_description:arcade_organizer_region_main_description_formatter}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_region_main_description"}]}
+                    "description": "{arcade_organizer_region_main:arcade_organizer_region_main_formatter}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_region_main"}]}
                 },
                 {
                     "title": "3 MRAs with other regions",

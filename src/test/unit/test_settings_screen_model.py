@@ -47,10 +47,27 @@ class TestSettingsScreenModel(unittest.TestCase):
     def test_ao_variables___have_length_greater_than_5(self):
         self.assertGreater(len(gather_variable_declarations(self.model, "ao_ini")), 5)
 
-    def test_ao_variables___all_start_with_arcade_organizer_prefix(self):
-        prefix = "arcade_organizer_"
-        for variable in gather_variable_declarations(self.model, "ao_ini"):
-            self.assertEqual(prefix, variable[0:len(prefix)])
+    def test_ao_variables___all_start_with_arcade_organizer_prefix_except_ao_toggle(self):
+        ao_toggle = 'arcade_organizer'
+
+        ao_vars = gather_variable_declarations(self.model, "ao_ini")
+        with_prefix = [v for v in ao_vars if v.startswith("arcade_organizer_")]
+        non_prefix = [v for v in ao_vars if v not in with_prefix]
+
+        self.assertEqual(len(ao_vars) - 1, len(with_prefix))
+        self.assertEqual([ao_toggle], non_prefix)
+
+    def test_ao_variables_with_prefix___all_have_correct_rename_in_description(self):
+        assertions = 0
+
+        for variable, description in gather_variable_declarations(self.model, "ao_ini").items():
+            if variable == "arcade_organizer":
+                continue
+
+            self.assertEqual(variable.replace("arcade_organizer_", ''), description['rename'])
+            assertions += 1
+
+        self.assertGreaterEqual(assertions, 1)
 
     def test_config_default_values___match_main_variables_default_values(self):
         config = Config()

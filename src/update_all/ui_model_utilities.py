@@ -53,7 +53,7 @@ def expand_type(data, base_types):
                 raise ValueError(f'Can not inherit field {key} with content of type: {str(type(content))}')
 
 
-def gather_variable_declarations(model, group = None):
+def gather_variable_declarations(model, group=None):
     group = {} if group is None else {group}
     result = {}
     search_in_model(result, model.get('base_types', {}), model, lambda r, v: _add_variables_descriptions(r, v, group))
@@ -64,18 +64,23 @@ def _add_variables_descriptions(result, item, group):
     if 'variables' not in item:
         return
 
-    for variable, description in  item['variables'].items():
+    for variable, description in item['variables'].items():
         if len(group) > 0:
             if 'group' not in description:
                 continue
+
             description_group = description['group'] if isinstance(description['group'], list) else [description['group']]
             if group.isdisjoint(description_group):
                 continue
+
+            description['name'] = description['rename'] if 'rename' in description else variable
 
         result[variable] = description
 
 
 TResult = TypeVar('TResult')
+
+
 def search_in_model(result: TResult, base_types: Dict[str, Any], item, cb: Callable[[TResult, Any], None]) -> None:
     expand_type(item, base_types)
     cb(result, item)
