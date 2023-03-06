@@ -40,6 +40,7 @@ class TransitionService:
         self._os_utils = os_utils
         self._ini_repository = ini_repository
         self._file_checks: Dict[str, bool] = {}
+        self._created_downloader_ini = False
 
     def _file_exists(self, file: str) -> bool:
         if file not in self._file_checks:
@@ -66,7 +67,9 @@ class TransitionService:
         self._logger.print(f'  - Added DB with id [{DB_ID_JTCORES}]')
         self._logger.print(f'  - Added DB with id [{AllDBs.COIN_OP_COLLECTION.db_id}]')
         self._logger.print()
-        self._os_utils.sleep(4.0)
+        self._logger.print('Waiting 10 seconds...')
+        self._os_utils.sleep(10.0)
+        self._created_downloader_ini = True
 
     def from_update_all_1(self, config: Config, store: LocalStore):
         changes = []
@@ -101,6 +104,9 @@ class TransitionService:
 
         if len(changes) == 0:
             return
+
+        if self._created_downloader_ini:
+            self._logger.print()
 
         self._logger.print('Transitioning from Update All 1:')
         for change in changes:
