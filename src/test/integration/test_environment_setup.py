@@ -29,7 +29,7 @@ from test.update_all_service_tester import EnvironmentSetupTester, default_datab
 import unittest
 
 
-class TestConfigSetup(unittest.TestCase):
+class TestEnvironmentSetup(unittest.TestCase):
 
     def assertSetup(self, files: Dict[str, Any] = None, env: dict[str, str] = None, expected_files: Dict[str, str] = None, expected_config: Config = None) -> None:
         state = FileSystemState(files=None if files is None else {k: {'content': v} for k, v in files.items()})
