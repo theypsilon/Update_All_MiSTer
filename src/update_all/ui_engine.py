@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@ class UiContext(abc.ABC):
         """Add callable formatters during initialization"""
 
 
-
 class UiRuntime(abc.ABC):
     def initialize_runtime(self, cb: Callable[[], None]) -> None:
         """Initializes UI runtime and when ready calls cb"""
@@ -56,9 +55,13 @@ class Interpolator(abc.ABC):
 
 
 Effect = Dict[str, Any]
+
+
 class EffectChain:
     def __init__(self, chain: List[Effect]):
         self.chain = chain
+
+
 ProcessKeyResult = Union[int, EffectChain]
 
 
@@ -71,6 +74,7 @@ class UiSection(abc.ABC):
 
     def clear(self) -> None:
         """Clears the UI Section"""
+
 
 class UiSectionFactory(abc.ABC):
     def create_ui_section(self, ui_type: str, data: Dict[str, Any], interpolator: Interpolator) -> UiSection:
@@ -129,7 +133,7 @@ class _UiSystem(UiContext):
     def custom_effects(self) -> Dict[str, Callable[[], None]]:
         return self._custom_effects
 
-    def custom_formatters(self) ->  Dict[str, Callable[[str], str]]:
+    def custom_formatters(self) -> Dict[str, Callable[[str], str]]:
         return self._custom_formatters
 
     def _ensure_is_initializing(self, topic):

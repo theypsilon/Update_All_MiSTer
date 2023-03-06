@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@ import tempfile
 import sys
 import time
 from abc import ABC, abstractmethod
-
-from update_all.constants import K_VERBOSE, K_START_TIME
 
 
 class Logger(ABC):
@@ -72,7 +70,8 @@ class PrintLogger(Logger):
     def finalize(self):
         pass
 
-    def _do_print(self, *args, sep, end, file, flush):
+    @staticmethod
+    def _do_print(*args, sep, end, file, flush):
         try:
             print(*args, sep=sep, end=end, file=file, flush=flush)
         except UnicodeEncodeError:

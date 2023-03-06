@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,6 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
-import copy
 from typing import Dict, Any, List, Tuple, Set
 
 from update_all.ui_model_utilities import search_in_model
@@ -98,7 +97,7 @@ def _add_formatter_declarations(result, item):
     if 'formatters' not in item:
         return
 
-    for formatter in  item['formatters']:
+    for formatter in item['formatters']:
         result.add(formatter)
 
 
@@ -215,6 +214,5 @@ def expand_model_base_types(model):
     return result
 
 
-def _add_expanded_node(result, item):
+def _add_expanded_node(_result, _item):
     pass
-

@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 from typing import Dict
 
 # This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@ from typing import Dict
 # https://github.com/theypsilon/Update_All_MiSTer
 from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
-    FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh, FILE_update_jtcores_sh
+    FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
 from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_JTCORES, AllDBs
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
@@ -53,9 +53,20 @@ class TransitionService:
         if self._file_exists(FILE_update_all_ini):
             return
 
+        self._logger.print(f'File "{self._ini_repository.downloader_ini_standard_path()}" not found.')
+        self._logger.print()
+
         config.databases.add(DB_ID_DISTRIBUTION_MISTER)
         config.databases.add(AllDBs.COIN_OP_COLLECTION.db_id)
         config.databases.add(DB_ID_JTCORES)
+        self._ini_repository.write_downloader_ini(config)
+
+        self._logger.print('A new file "downloader.ini" has been created with default DBs:')
+        self._logger.print(f'  - Added DB with id [{DB_ID_DISTRIBUTION_MISTER}]')
+        self._logger.print(f'  - Added DB with id [{DB_ID_JTCORES}]')
+        self._logger.print(f'  - Added DB with id [{AllDBs.COIN_OP_COLLECTION.db_id}]')
+        self._logger.print()
+        self._os_utils.sleep(4.0)
 
     def from_update_all_1(self, config: Config, store: LocalStore):
         changes = []
@@ -66,15 +77,18 @@ class TransitionService:
         else:
             if self._file_exists(FILE_update_all_ini):
                 self._fill_config_with_update_all_ini(config, store)
+                changes.append('Adding "update_all.ini" values to "downloader.ini".')
 
             if self._file_exists(FILE_update_jtcores_ini):
                 self._fill_config_with_ini_file(config, FILE_update_jtcores_ini, "jt_ini")
+                changes.append('Adding "update_jtcores.ini" values to "downloader.ini".')
 
             if self._file_exists(FILE_update_names_txt_ini):
                 self._fill_config_with_ini_file(config, FILE_update_names_txt_ini, "names_ini")
+                changes.append('Adding "update_names-txt.ini" values to "downloader.ini".')
 
-            self._ini_repository.write_downloader_ini(config)
-            changes.append('A new file "downloader.ini" has been created.')
+            if len(changes) >= 1:
+                self._ini_repository.write_downloader_ini(config)
 
         if config.arcade_organizer != default_arcade_organizer_enabled:
             self._ini_repository.write_arcade_organizer_active_at_arcade_organizer_ini(config)
@@ -85,19 +99,15 @@ class TransitionService:
                 self._file_system.unlink(file, verbose=False)
                 changes.append(f'Obsolete file "{file}" removed.')
 
-        if len(changes) >= 1:
-            coming_from_update_all_1 = len(changes) >= 2 or 'downloader.ini' not in changes[0]
-            if coming_from_update_all_1:
-                self._logger.print('Transitioning from Update All 1:')
-            else:
-                self._logger.print('Setting default options:')
+        if len(changes) == 0:
+            return
 
-            for change in changes:
-                self._logger.print(f'  - {change}')
-            self._logger.print()
-            if coming_from_update_all_1:
-                self._logger.print('Waiting 10 seconds...')
-                self._os_utils.sleep(10.0)
+        self._logger.print('Transitioning from Update All 1:')
+        for change in changes:
+            self._logger.print(f'  - {change}')
+        self._logger.print()
+        self._logger.print('Waiting 10 seconds...')
+        self._os_utils.sleep(10.0)
 
     def _fill_arcade_organizer_enabled_model_variable_from_update_all_ini(self, config):
         ini_content = self._ini_repository.read_old_ini_file(FILE_update_all_ini)

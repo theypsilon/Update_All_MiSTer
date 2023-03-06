@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ update_names_txt_ini = f'{MEDIA_FAT}/{FILE_update_names_txt_ini}'
 update_jtcores_ini = f'{MEDIA_FAT}/{FILE_update_jtcores_ini}'
 update_arcade_organizer_ini = f'{MEDIA_FAT}/{ARCADE_ORGANIZER_INI}'
 store_json_zip = f'{MEDIA_FAT}/{FILE_update_all_storage}'
+
 
 def default_downloader_ini_content():
     return Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()

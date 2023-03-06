@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 import ssl
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

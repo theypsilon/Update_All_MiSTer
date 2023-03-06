@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -244,7 +244,8 @@ class _FileSystem(FileSystem):
     def _parent_folder(self, path):
         return absolute_parent_folder(self._path(path))
 
-    def _makedirs(self, target):
+    @staticmethod
+    def _makedirs(target):
         try:
             os.makedirs(target, exist_ok=True)
         except FileExistsError as e:

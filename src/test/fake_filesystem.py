@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@ import re
 from pathlib import Path
 
 from test.file_system_tester_state import FileSystemState
-from update_all.config import Config
-from update_all.constants import K_BASE_PATH, K_ALLOW_DELETE, FOLDER_scripts_config_lc
+from update_all.config import Config, AllowDelete
+from update_all.constants import K_ALLOW_DELETE, FOLDER_scripts_config_lc
 from update_all.file_system import FileSystemFactory as ProductionFileSystemFactory, FileSystem as ProductionFileSystem, \
     absolute_parent_folder
 from update_all.other import ClosableValue, UnreachableException
@@ -303,12 +303,13 @@ class _FileSystem(ProductionFileSystem):
         for file, description in contents['files'].items():
             self._state.files[self._path(file)] = {'hash': description['hash'], 'size': description['size']}
         for folder in contents['folders']:
-            if not self._is_folder_unziped(contained_files, folder):
+            if not self._is_folder_unzipped(contained_files, folder):
                 continue
 
             self._state.folders[self._path(folder)] = {}
 
-    def _is_folder_unziped(self, contained_files, folder):
+    @staticmethod
+    def _is_folder_unzipped(contained_files, folder):
         for file in contained_files:
             if folder in file:
                 return True

@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -174,7 +174,7 @@ class _LinuxContext(object):
         sys.stdin = self.fin
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, ty, value, traceback):
         self.fin.close()
 
 
@@ -199,5 +199,5 @@ class _WindowsContext(object):
     def __enter__(self):
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, ty, value, traceback):
         pass

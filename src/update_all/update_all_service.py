@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ from typing import List
 
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
-from update_all.config_setup import ConfigSetup
+from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import UPDATE_ALL_VERSION, DOWNLOADER_URL, ARCADE_ORGANIZER_URL, FILE_update_all_log, \
     FILE_mister_downloader_needs_reboot, MEDIA_FAT, ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, \
     UPDATE_ALL_LAUNCHER_PATH, UPDATE_ALL_LAUNCHER_MD5, UPDATE_ALL_URL
@@ -75,13 +75,12 @@ class UpdateAllServiceFactory:
             store_provider=store_provider,
             ui_runtime=printer
         )
-        config_setup = ConfigSetup(
-            config_reader,
-            config_provider,
-            transition_service,
-            local_repository,
-            store_provider=store_provider,
-            ini_repository=ini_repository
+        environment_setup = EnvironmentSetupImpl(
+            config_reader=config_reader,
+            config_provider=config_provider,
+            transition_service=transition_service,
+            local_repository=local_repository,
+            store_provider=store_provider
         )
         return UpdateAllService(
             config_provider,
@@ -93,7 +92,7 @@ class UpdateAllServiceFactory:
             checker=checker,
             store_provider=store_provider,
             ini_repository=ini_repository,
-            config_setup=config_setup
+            environment_setup=environment_setup
         )
 
 
@@ -107,7 +106,7 @@ class UpdateAllService:
                  checker: Checker,
                  store_provider: GenericProvider[LocalStore],
                  ini_repository: IniRepository,
-                 config_setup: ConfigSetup):
+                 environment_setup: EnvironmentSetup):
         self._config_provider = config_provider
         self._logger = logger
         self._file_system = file_system
@@ -117,12 +116,12 @@ class UpdateAllService:
         self._checker = checker
         self._store_provider = store_provider
         self._ini_repository = ini_repository
-        self._config_setup = config_setup
+        self._environment_setup = environment_setup
         self._exit_code = 0
         self._error_reports: List[str] = []
 
     def full_run(self) -> int:
-        self._setup_config()
+        self._environment_setup.setup_environment()
         self._test_routine()
         self._show_intro()
         self._countdown_for_settings_screen()
@@ -135,9 +134,6 @@ class UpdateAllService:
         self._show_outro()
         self._reboot_if_needed()
         return self._exit_code
-
-    def _setup_config(self) -> None:
-        self._config_setup.setup_once()
 
     def _test_routine(self) -> None:
         if os.environ.get('TEST_SETTINGS_SCREEN', 'false') != 'true':

@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,7 +66,8 @@ class FileSystemState:
         self.folders[path.lower()] = {}
         return self
 
-    def fix_description(self, file, description):
+    @staticmethod
+    def fix_description(file, description):
         fixed_description = {
             'hash': description['hash'] if 'hash' in description else file,
             'size': description['size'] if 'size' in description else 1

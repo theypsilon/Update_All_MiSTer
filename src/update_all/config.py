@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ from enum import unique, IntEnum
 from typing import Set
 
 from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, MEDIA_FAT
-from update_all.databases import DB_ID_DISTRIBUTION_MISTER, DB_ID_JTCORES, AllDBs
 
 
 @dataclass
@@ -67,4 +66,3 @@ class AllowDelete(IntEnum):
     NONE = 0
     ALL = 1
     OLD_RBF = 2
-

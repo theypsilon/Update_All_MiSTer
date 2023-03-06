@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ class AllDBs:
 @cache
 def dbs_to_model_variables_pairs() -> List[Tuple[str, List[Database]]]:
     mapping = databases_by_ids()
-    return [(variable, mapping[db_id]) for variable, db_id in db_ids_to_model_variable_pairs() ]
+    return [(variable, mapping[db_id]) for variable, db_id in db_ids_to_model_variable_pairs()]
 
 
 @cache

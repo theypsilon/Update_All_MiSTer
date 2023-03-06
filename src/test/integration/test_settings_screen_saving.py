@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ from test.file_system_tester_state import FileSystemState
 from test.testing_objects import downloader_ini, update_arcade_organizer_ini, default_downloader_ini_content, \
     store_json_zip
 from test.ui_model_test_utils import gather_used_effects
-from test.update_all_service_tester import SettingsScreenTester, UiContextStub, ConfigSetupTester
+from test.update_all_service_tester import SettingsScreenTester, UiContextStub, EnvironmentSetupTester
 from update_all.config import Config
 from update_all.ini_repository import read_ini_contents
 from update_all.local_store import LocalStore
@@ -35,7 +35,7 @@ from update_all.settings_screen_model import settings_screen_model
 from update_all.ui_model_utilities import gather_variable_declarations
 
 
-class TestSettingsScreen(unittest.TestCase):
+class TestSettingsScreenSaving(unittest.TestCase):
 
     def test_calculate_needs_save___on_no_files_setup___returns_no_downloader_ini_changes(self) -> None:
         sut, ui, state = tester()
@@ -91,26 +91,6 @@ class TestSettingsScreen(unittest.TestCase):
         sut.calculate_needs_save(ui)
         self.assertEqual('  - downloader.ini\n  - update_arcade-organizer.ini', ui.get_value('needs_save_file_list'))
         self.assertEqual('true', ui.get_value('needs_save'))
-
-    def test_initialize_ui___fills_variables_that_are_declared_in_the_model(self):
-        _, ui, _ = tester()
-
-        declared_variables = set(gather_variable_declarations(settings_screen_model()))
-        initialized_variables = set(ui.variables.keys())
-
-        intersection = declared_variables & initialized_variables
-
-        self.assertGreaterEqual(len(intersection), 5)
-        self.assertSetEqual(intersection, initialized_variables)
-
-    def test_initialize_ui___fills_effects_that_are_used_in_the_model(self):
-        _, ui, _ = tester()
-
-        used_effects = set(gather_used_effects(settings_screen_model()))
-        initialized_effects = set(ui.effects.keys())
-
-        self.assertGreaterEqual(len(initialized_effects), 5)
-        self.assertEqual(used_effects, initialized_effects)
 
     def test_calculate_needs_save___on_complete_ao_with_arcade_organizer_changes___returns_arcade_organizer_changes(self):
         sut, ui, fs = tester(files={
@@ -173,7 +153,6 @@ class TestSettingsScreen(unittest.TestCase):
         self.assertEqual(len(db_ids_to_model_variable_pairs()), ini_sections)
         self.assertGreaterEqual(ini_sections, 10)
 
-
     def test_save__when_selecting_theme___writes_changes_on_local_store(self):
         sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
 
@@ -193,9 +172,8 @@ def tester(files=None) -> Tuple[SettingsScreen, UiContextStub, FileSystemState]:
     config_provider = GenericProvider[Config]()
     store_provider = GenericProvider[LocalStore]()
     file_system = FileSystemFactory(state=state).create_for_system_scope()
-    ConfigSetupTester(file_system=file_system, config_provider=config_provider, store_provider=store_provider).setup_once()
+    EnvironmentSetupTester(file_system=file_system, config_provider=config_provider, store_provider=store_provider).setup_environment()
     settings_screen = SettingsScreenTester(config_provider=config_provider, store_provider=store_provider, file_system=file_system)
     settings_screen.initialize_ui(ui)
 
     return settings_screen, ui, state
-

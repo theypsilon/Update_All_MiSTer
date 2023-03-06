@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ def settings_screen_model(): return {
                 "Other key contributors:",
                 " ·@TEST@ ~test.com/test~ - Test cores",
                 " ·@my bigger test@ ~patreon.com/test~ - Test software",
-                " ·@theypsilon@ ~myurl.com/theypsilon~ - The test menu itself!",
+                " ·@theypsilon@ ~my_url.com/theypsilon~ - The test menu itself!",
                 " ",
                 "Test out!"
             ],
@@ -92,7 +92,7 @@ def settings_screen_model(): return {
                             "text": [
                                 "No need to change any of this. This is not meant to be updated",
                                 " ",
-                                " ·@theypsilon@ ~myurl.com/theypsilon~ - That's black sub theme",
+                                " ·@theypsilon@ ~my_url.com/theypsilon~ - That's black sub theme",
                             ],
                             "alert_level": "black",
                             "preselected_action": "Yes",
@@ -117,7 +117,7 @@ def settings_screen_model(): return {
                             "text": [
                                 "No need to change any of this. This is not meant to be updated",
                                 " ",
-                                " ·@theypsilon@ ~myurl.com/theypsilon~ - That's red sub theme",
+                                " ·@theypsilon@ ~my_url.com/theypsilon~ - That's red sub theme",
                             ],
                             "alert_level": "red",
                             "preselected_action": "Yes",
@@ -197,7 +197,7 @@ def settings_screen_model(): return {
                         "toggle": [{"type": "rotate_variable", "target": "arcade_organizer"}],
                     }
                 },
-                {}, # separator
+                {},  # separator
                 {
                     "title": "7 Unofficial Cores",
                     "description": "atrac17 Cores, LLAPI Forks, etc...",
@@ -241,7 +241,7 @@ def settings_screen_model(): return {
                                         "Other key contributors:",
                                         " ·@Ace@ ~ko-fi.com/ace9921~ - Arcade cores",
                                         " ·@Artemio@ ~patreon.com/aurbina~ - Testing tools",
-                                        " ·@atrac17@ ~patreon.com/atrac17~ - MRAs & Modelines",
+                                        " ·@atrac17@ ~patreon.com/atrac17~ - Arcade cores",
                                         " ·@Blackwine@ ~patreon.com/blackwine~ - Arcade cores",
                                         " ·@FPGAZumSpass@ ~patreon.com/FPGAZumSpass~ - Console & Computer cores",
                                         " ·@d0pefish@ ~ko-fi.com/d0pefish~ - mt32pi author",
@@ -997,7 +997,7 @@ def settings_screen_model(): return {
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_num_controllers"}]}
                 },
                 {
-                    "title": "7 Cockail folders",
+                    "title": "7 Cocktail folders",
                     "description": "{arcade_organizer_cocktail_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_cocktail_dir"}]}
                 },

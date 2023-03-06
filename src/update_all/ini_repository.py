@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ from update_all.file_system import FileSystem
 from update_all.ini_parser import IniParser
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils
+
 
 class IniRepository:
 
@@ -93,7 +94,7 @@ class IniRepository:
 
     def downloader_ini_standard_path(self) -> str:
         if self._base_path is None:
-            raise Exception("DownloaderIniRepository needs to be initialized.")
+            raise IniRepositoryInitializationError("DownloaderIniRepository needs to be initialized.")
 
         return f'{self._base_path}/{DOWNLOADER_INI_STANDARD_PATH}'
 
@@ -151,7 +152,8 @@ class IniRepository:
         current_ini_contents = self._file_system.read_file_contents(self.downloader_ini_standard_path()).strip().lower()
         return new_ini_contents != current_ini_contents
 
-    def _add_new_downloader_ini_changes(self, ini, config: Config) -> None:
+    @staticmethod
+    def _add_new_downloader_ini_changes(ini, config: Config) -> None:
         for _, db in candidate_databases(config):
             db_id = db.db_id.lower()
             if db in active_databases(config):
@@ -290,3 +292,7 @@ def read_ini_contents(contents: str):
     parser = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
     parser.read_string(contents)
     return parser
+
+
+class IniRepositoryInitializationError(Exception):
+    pass

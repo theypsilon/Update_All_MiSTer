@@ -1,4 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,8 +92,8 @@ class ConfigReader:
 
         if AllDBs.RANNYSNICE_WALLPAPERS.db_id.lower() in downloader_ini:
             parser = IniParser(downloader_ini[AllDBs.RANNYSNICE_WALLPAPERS.db_id.lower()])
-            rannysnice_wallpapers_filter = parser.get_string('filter', '').lower()
-            config.rannysnice_wallpapers_filter = 'ar16-9' if 'ar16-9' in rannysnice_wallpapers_filter else 'ar4-3' if 'ar4-3' in rannysnice_wallpapers_filter else 'all'
+            rannysnice_wallpapers_filter = parser.get_string('filter', '').replace('-', '').replace('_', '').lower()
+            config.rannysnice_wallpapers_filter = 'ar16-9' if 'ar169' in rannysnice_wallpapers_filter else 'ar4-3' if 'ar43' in rannysnice_wallpapers_filter else 'all'
 
         config.arcade_organizer = self._ini_repository.get_arcade_organizer_ini().get_bool('arcade_organizer', config.arcade_organizer)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,16 +67,18 @@ class ClosableValue:
 
 
 TObject = TypeVar('TObject')
+
+
 class GenericProvider(Generic[TObject]):
     _object: TObject
 
     def __init__(self):
         self._object = None
 
-    def initialize(self, object: TObject) -> None:
+    def initialize(self, o: TObject) -> None:
         if self._object is not None:
             raise Exception(f"{self.__orig_class__.__args__[0].__name__} must be initialized only once.")
-        self._object = object
+        self._object = o
 
     def get(self) -> TObject:
         if self._object is None:

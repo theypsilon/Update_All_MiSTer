@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -63,4 +63,3 @@ class LocalRepository:
     def save_log_from_tmp(self, path):
         self._file_system.make_dirs_parent(FILE_update_all_log)
         self._file_system.copy(path, FILE_update_all_log)
-

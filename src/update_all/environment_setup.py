@@ -1,5 +1,4 @@
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
-
+# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -15,10 +14,9 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
-from typing import List
+from abc import abstractmethod, ABC
 
 from update_all.config import Config
-from update_all.ini_repository import IniRepository
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
 from update_all.local_repository import LocalRepository
@@ -26,28 +24,25 @@ from update_all.config_reader import ConfigReader
 from update_all.transition_service import TransitionService
 
 
-class ConfigSetup:
+class EnvironmentSetup(ABC):
+    @abstractmethod
+    def setup_environment(self) -> None:
+        """Setups the application environment."""
+
+
+class EnvironmentSetupImpl(EnvironmentSetup):
     def __init__(self, config_reader: ConfigReader,
                  config_provider: GenericProvider[Config],
                  transition_service: TransitionService,
                  local_repository: LocalRepository,
-                 store_provider: GenericProvider[LocalStore],
-                 ini_repository: IniRepository):
+                 store_provider: GenericProvider[LocalStore]):
         self._config_reader = config_reader
         self._config_provider = config_provider
         self._transition_service = transition_service
         self._local_repository = local_repository
         self._store_provider = store_provider
-        self._ini_repository = ini_repository
-        self._exit_code = 0
-        self._error_reports: List[str] = []
-        self._setup_done = False
 
-    def setup_once(self) -> None:
-        if self._setup_done:
-            return
-
-        self._setup_done = True
+    def setup_environment(self) -> None:
         config = Config()
         self._config_reader.fill_config_with_environment_and_mister_section(config)
         self._config_provider.initialize(config)
