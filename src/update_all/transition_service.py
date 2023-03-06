@@ -1,4 +1,5 @@
 # Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+from typing import Dict
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +19,7 @@
 from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh, FILE_update_jtcores_sh
-from update_all.databases import db_ids_by_model_variables
+from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_JTCORES, AllDBs
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
@@ -38,21 +39,39 @@ class TransitionService:
         self._file_system = file_system
         self._os_utils = os_utils
         self._ini_repository = ini_repository
+        self._file_checks: Dict[str, bool] = {}
 
-    def transition_from_update_all_1(self, config: Config, store: LocalStore):
-        update_all_ini_exists = self._file_system.is_file(FILE_update_all_ini)
+    def _file_exists(self, file: str) -> bool:
+        if file not in self._file_checks:
+            self._file_checks[file] = self._file_system.is_file(file)
+        return self._file_checks[file]
+
+    def from_not_existing_downloader_ini(self, config: Config):
+        if self._file_exists(self._ini_repository.downloader_ini_standard_path()):
+            return
+
+        if self._file_exists(FILE_update_all_ini):
+            return
+
+        config.databases.add(DB_ID_DISTRIBUTION_MISTER)
+        config.databases.add(AllDBs.COIN_OP_COLLECTION.db_id)
+        config.databases.add(DB_ID_JTCORES)
+
+    def from_update_all_1(self, config: Config, store: LocalStore):
         changes = []
 
-        if self._file_system.is_file(self._ini_repository.downloader_ini_standard_path()):
-            if update_all_ini_exists:
+        if self._file_exists(self._ini_repository.downloader_ini_standard_path()):
+            if self._file_exists(FILE_update_all_ini):
                 self._fill_arcade_organizer_enabled_model_variable_from_update_all_ini(config)
         else:
-            if update_all_ini_exists:
+            if self._file_exists(FILE_update_all_ini):
                 self._fill_config_with_update_all_ini(config, store)
 
-            for ini_file, ini_group in [(FILE_update_jtcores_ini, "jt_ini"), (FILE_update_names_txt_ini, "names_ini")]:
-                if self._file_system.is_file(ini_file):
-                    self._fill_config_with_ini_file(config, ini_file, ini_group)
+            if self._file_exists(FILE_update_jtcores_ini):
+                self._fill_config_with_ini_file(config, FILE_update_jtcores_ini, "jt_ini")
+
+            if self._file_exists(FILE_update_names_txt_ini):
+                self._fill_config_with_ini_file(config, FILE_update_names_txt_ini, "names_ini")
 
             self._ini_repository.write_downloader_ini(config)
             changes.append('A new file "downloader.ini" has been created.')
@@ -62,7 +81,7 @@ class TransitionService:
             changes.append(f'File "{ARCADE_ORGANIZER_INI}" now includes variable "ARCADE_ORGANIZER" previously found in "{FILE_update_all_ini}". It indicates whether the Arcade Organizer is enabled in Update All.')
 
         for file in [FILE_update_all_ini, FILE_update_jtcores_ini, FILE_update_names_txt_ini, FILE_update_names_txt_sh]:
-            if self._file_system.is_file(file):
+            if self._file_exists(file):
                 self._file_system.unlink(file, verbose=False)
                 changes.append(f'Obsolete file "{file}" removed.')
 
@@ -86,6 +105,7 @@ class TransitionService:
 
     def _fill_config_with_update_all_ini(self, config: Config, store: LocalStore):
         update_all_ini = self._fill_config_with_ini_file(config, FILE_update_all_ini, "ua_ini")
+
         mame_getter = update_all_ini.get_bool('mame_getter', False)
         hbmame_getter = update_all_ini.get_bool('hbmame_getter', False)
         config.arcade_roms_db_downloader = config.arcade_roms_db_downloader or mame_getter or hbmame_getter
@@ -132,3 +152,51 @@ class TransitionService:
                 return pb
 
         raise ValueError(f'Value {string_value} is not among the possible values: {", ".join(possible_values)}')
+
+#
+# set_default_options:
+#
+# ENCC_FORKS="false" # Possible values: "true", "false"
+# DOWNLOADER_WHEN_POSSIBLE="false" # Possible values: "true", "false"
+#
+# MAIN_UPDATER="true"
+# MAIN_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
+#
+# JOTEGO_UPDATER="true"
+# JOTEGO_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
+#
+# UNOFFICIAL_UPDATER="false"
+# UNOFFICIAL_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
+#
+# LLAPI_UPDATER="false"
+# LLAPI_UPDATER_INI="${EXPORTED_INI_PATH}" # Probably update_all.ini
+#
+# ARCADE_OFFSET_DOWNLOADER="false"
+# COIN_OP_COLLECTION_DOWNLOADER="true"
+# ARCADE_ROMS_DB_DOWNLOADER="false"
+# TTY2OLED_FILES_DOWNLOADER="false"
+# I2C2OLED_FILES_DOWNLOADER="false"
+# MISTERSAM_FILES_DOWNLOADER="false"
+#
+# BIOS_GETTER="true"
+# BIOS_GETTER_INI="update_bios-getter.ini"
+#
+# MAME_GETTER="true"
+# MAME_GETTER_INI="update_mame-getter.ini"
+#
+# HBMAME_GETTER="true"
+# HBMAME_GETTER_INI="update_hbmame-getter.ini"
+#
+# NAMES_TXT_UPDATER="false"
+# NAMES_TXT_UPDATER_INI="update_names-txt.ini"
+# NAMES_REGION="US"
+# NAMES_CHAR_CODE="CHAR18"
+# NAMES_SORT_CODE="Common"
+#
+# ARCADE_ORGANIZER="true"
+# ARCADE_ORGANIZER_INI="update_arcade-organizer.ini"
+#
+# COUNTDOWN_TIME=15
+# WAIT_TIME_FOR_READING=2
+# AUTOREBOOT="true"
+# KEEP_USBMOUNT_CONF="false"

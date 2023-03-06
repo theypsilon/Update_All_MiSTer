@@ -20,6 +20,7 @@ import unittest
 from test.ui_model_test_utils import special_navigate_targets, gather_target_variables, \
     gather_formatter_declarations, gather_target_formatters, \
     gather_navigate_targets, gather_section_names, gather_all_nodes, ensure_node_is_correct
+from test.update_all_service_tester import default_databases
 from update_all.config_reader import Config
 from update_all.databases import model_variables_by_db_id, db_ids_by_model_variables
 from update_all.settings_screen_model import settings_screen_model
@@ -76,7 +77,7 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         default_config_values = {variable: getattr(config, variable) for variable in main_variables if hasattr(config, variable)}
         for db_id, variable in model_variables_by_db_id().items():
-            default_config_values[variable] = db_id in config.databases
+            default_config_values[variable] = db_id in default_databases()
 
         default_model_main_values = {variable: dynamic_convert_string(description['default']) for variable, description in main_variables.items()}
 

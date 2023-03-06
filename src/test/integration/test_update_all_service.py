@@ -20,18 +20,24 @@ from pathlib import Path
 from test.testing_objects import downloader_ini
 from update_all.config import Config
 from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT
+from update_all.local_store import LocalStore
+from update_all.other import GenericProvider
 from update_all.update_all_service import UpdateAllService
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
-from test.update_all_service_tester import UpdateAllServiceFactoryTester, UpdateAllServiceTester, ConfigReaderTester, \
-    default_env, default_databases
+from test.update_all_service_tester import UpdateAllServiceFactoryTester, UpdateAllServiceTester, \
+    default_env, default_databases, ConfigSetupTester
 import unittest
 
 
 def tester(files=None, folders=None, config: Config = None):
     state = FileSystemState(files=files, folders=folders)
-    config_reader_tester = ConfigReaderTester(config=config or Config())
-    return UpdateAllServiceTester(config_reader=config_reader_tester, file_system=FileSystemFactory(state=state).create_for_system_scope()), state
+    config_provider = GenericProvider[Config]()
+    store_provider = GenericProvider[LocalStore]()
+
+    file_system = FileSystemFactory(state=state, config_provider=config_provider).create_for_system_scope()
+    config_setup = ConfigSetupTester(config=config or Config(), file_system=file_system, config_provider=config_provider, store_provider=store_provider)
+    return UpdateAllServiceTester(config_setup=config_setup, file_system=file_system, config_provider=config_provider, store_provider=store_provider), state
 
 
 class TestUpdateAllService(unittest.TestCase):
@@ -111,10 +117,11 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(Path('test/fixtures/downloader_ini/arcade_roms_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___when_removing_arcade_roms_db_altogether___removes_the_db_from_downloader_ini(self):
+        config = Config(databases=default_databases())
         sut, fs = tester(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/filtered_hbmame_downloader.ini').read_text()}
         })
-        sut.ini_repository.write_downloader_ini(Config())
+        sut.ini_repository.write_downloader_ini(config)
         sut.full_run()
         self.assertEqual(Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
 

@@ -44,7 +44,7 @@ class Config:
     temporary_downloader_ini: bool = False
 
     # Global Updating Toggles
-    databases: Set[str] = field(default_factory=lambda: {DB_ID_DISTRIBUTION_MISTER, DB_ID_JTCORES, AllDBs.COIN_OP_COLLECTION.db_id})
+    databases: Set[str] = field(default_factory=lambda: set())
     arcade_organizer: bool = True
 
     # Specific Updating Toggles

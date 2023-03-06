@@ -23,6 +23,7 @@ from typing import List
 
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
+from update_all.config_setup import ConfigSetup
 from update_all.constants import UPDATE_ALL_VERSION, DOWNLOADER_URL, ARCADE_ORGANIZER_URL, FILE_update_all_log, \
     FILE_mister_downloader_needs_reboot, MEDIA_FAT, ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, \
     UPDATE_ALL_LAUNCHER_PATH, UPDATE_ALL_LAUNCHER_MD5, UPDATE_ALL_URL
@@ -74,43 +75,41 @@ class UpdateAllServiceFactory:
             store_provider=store_provider,
             ui_runtime=printer
         )
-        return UpdateAllService(
+        config_setup = ConfigSetup(
             config_reader,
             config_provider,
             transition_service,
-            self._logger,
             local_repository,
-            store_migrator,
+            store_provider=store_provider,
+            ini_repository=ini_repository
+        )
+        return UpdateAllService(
+            config_provider,
+            self._logger,
             file_system,
             os_utils,
             CountdownImpl(),
             settings_screen,
             checker=checker,
             store_provider=store_provider,
-            ini_repository=ini_repository
+            ini_repository=ini_repository,
+            config_setup=config_setup
         )
 
 
 class UpdateAllService:
-    def __init__(self, config_reader: ConfigReader,
-                 config_provider: GenericProvider[Config],
-                 transition_service: TransitionService,
+    def __init__(self, config_provider: GenericProvider[Config],
                  logger: Logger,
-                 local_repository: LocalRepository,
-                 store_migrator: StoreMigrator,
                  file_system: FileSystem,
                  os_utils: OsUtils,
                  countdown: Countdown,
                  settings_screen: SettingsScreen,
                  checker: Checker,
                  store_provider: GenericProvider[LocalStore],
-                 ini_repository: IniRepository):
-        self._config_reader = config_reader
+                 ini_repository: IniRepository,
+                 config_setup: ConfigSetup):
         self._config_provider = config_provider
-        self._transition_service = transition_service
         self._logger = logger
-        self._local_repository = local_repository
-        self._store_migrator = store_migrator
         self._file_system = file_system
         self._os_utils = os_utils
         self._countdown = countdown
@@ -118,11 +117,12 @@ class UpdateAllService:
         self._checker = checker
         self._store_provider = store_provider
         self._ini_repository = ini_repository
+        self._config_setup = config_setup
         self._exit_code = 0
         self._error_reports: List[str] = []
 
     def full_run(self) -> int:
-        self._read_config()
+        self._setup_config()
         self._test_routine()
         self._show_intro()
         self._countdown_for_settings_screen()
@@ -136,15 +136,8 @@ class UpdateAllService:
         self._reboot_if_needed()
         return self._exit_code
 
-    def _read_config(self) -> None:
-        config = Config()
-        self._config_reader.fill_config_with_environment_and_mister_section(config)
-        self._config_provider.initialize(config)
-        local_store = self._local_repository.load_store()
-        self._store_provider.initialize(local_store)
-        self._transition_service.transition_from_update_all_1(config, local_store)
-        self._config_reader.fill_config_with_ini_files(config)
-        self._config_reader.fill_config_with_local_store(config, local_store)
+    def _setup_config(self) -> None:
+        self._config_setup.setup_once()
 
     def _test_routine(self) -> None:
         if os.environ.get('TEST_SETTINGS_SCREEN', 'false') != 'true':
@@ -205,11 +198,11 @@ class UpdateAllService:
         if not self._file_system.is_file(UPDATE_ALL_LAUNCHER_PATH):
             return
 
-        hash = self._file_system.hash(UPDATE_ALL_LAUNCHER_PATH)
-        if len(hash) == 0:
+        launcher_hash = self._file_system.hash(UPDATE_ALL_LAUNCHER_PATH)
+        if len(launcher_hash) == 0:
             return
 
-        if hash == UPDATE_ALL_LAUNCHER_MD5:
+        if launcher_hash == UPDATE_ALL_LAUNCHER_MD5:
             return
 
         self._draw_separator()
@@ -375,11 +368,18 @@ class UpdateAllService:
 
     def _print_sequence(self) -> None:
         self._logger.print('Sequence:')
+        lines = 0
         config = self._config_provider.get()
         for db in active_databases(config):
+            lines += 1
             self._logger.print(f'- {db.title}')
         if config.arcade_organizer:
+            lines += 1
             self._logger.print('- Arcade Organizer')
+
+        if lines == 0:
+            self._logger.print('- Nothing to do!')
+
         self._logger.print()
 
     def _draw_separator(self) -> None:

@@ -26,44 +26,62 @@ from test.update_all_service_tester import TransitionServiceTester, local_store
 from update_all.config import Config
 
 
-def test_transition_from_update_all_1(files=None):
+def test_transitions(files=None):
     config = Config()
     fs = FileSystemState(config=config, files=None if files is None else {filename: {'content': Path(path).read_text()} for filename, path in files.items()})
     sut = TransitionServiceTester(file_system=FileSystemFactory(state=fs).create_for_system_scope())
-    sut.transition_from_update_all_1(config, local_store())
+    sut.from_not_existing_downloader_ini(config)
+    sut.from_update_all_1(config, local_store())
     return fs
+
 
 class TestTransitionService(unittest.TestCase):
     def test_on_empty_state___writes_default_downloader_ini(self):
-        fs = test_transition_from_update_all_1()
+        fs = test_transitions()
         self.assertEqual(Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
 
     def test_with_dirty_downloader_ini___writes_nothing(self):
-        fs = test_transition_from_update_all_1(files={downloader_ini: 'test/fixtures/downloader_ini/dirty_downloader.ini'})
+        fs = test_transitions(files={downloader_ini: 'test/fixtures/downloader_ini/dirty_downloader.ini'})
         self.assertEqual(Path('test/fixtures/downloader_ini/dirty_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
 
     def test_with_downloader_ini_and_other_inis___writes_ao_ini_and_keeps_downloader_ini(self):
-        fs = test_transition_from_update_all_1(files={
+        fs = test_transitions(files={
             downloader_ini: 'test/fixtures/downloader_ini/default_downloader.ini',
-            update_all_ini: 'test/fixtures/update_all_ini/complete_ua.ini',
+            update_all_ini: 'test/fixtures/update_all_ini/complete_ua_first.ini',
         })
         self.assertEqualFiles({
             downloader_ini: 'test/fixtures/downloader_ini/default_downloader.ini',
             update_arcade_organizer_ini: 'test/fixtures/update_arcade-organizer_ini/complete_ao.ini',
         }, fs.files)
 
-    def test_with_update_all_ini___keeps_downloader_ini(self):
-        fs = test_transition_from_update_all_1(files={
-            update_all_ini: 'test/fixtures/update_all_ini/complete_ua.ini',
+    def test_with_update_all_ini_with_names_and_encc___writes_corresponding_downloader_ini(self):
+        fs = test_transitions(files={
+            update_all_ini: 'test/fixtures/update_all_ini/complete_ua_first.ini',
             update_names_txt_ini: 'test/fixtures/update_names-txt_ini/complete_nt.ini',
             update_jtcores_ini: 'test/fixtures/update_jtcores_ini/complete_jt.ini',
         })
         self.assertEqualFiles({
-            downloader_ini: 'test/fixtures/downloader_ini/complete_downloader.ini',
+            downloader_ini: 'test/fixtures/downloader_ini/complete_downloader_first.ini',
             update_arcade_organizer_ini: 'test/fixtures/update_arcade-organizer_ini/complete_ao.ini'
         }, fs.files)
 
+    def test_with_just_update_all_ini_with_opposite_to_defaults___writes_corresponding_downloader_ini(self):
+        fs = test_transitions(files={
+            update_all_ini: 'test/fixtures/update_all_ini/complete_ua_second.ini',
+        })
+        self.assertEqualFiles({
+            downloader_ini: 'test/fixtures/downloader_ini/complete_downloader_second.ini',
+        }, fs.files)
+
+    def test_with_just_update_jtcores_ini___writes_corresponding_downloader_ini(self):
+        fs = test_transitions(files={
+            update_jtcores_ini: 'test/fixtures/update_jtcores_ini/complete_jt.ini',
+        })
+        self.assertEqualFiles({
+            downloader_ini: 'test/fixtures/downloader_ini/default_premium_downloader.ini',
+        }, fs.files)
+
     def assertEqualFiles(self, expected, actual):
-        actual = {filename.lower(): description['content'] for filename, description in actual.items()}
-        expected = {filename.lower(): Path(path).read_text() for filename, path in expected.items()}
+        actual = {filename.lower(): description['content'].strip() for filename, description in actual.items()}
+        expected = {filename.lower(): Path(path).read_text().strip() for filename, path in expected.items()}
         self.assertEqual(expected, actual)

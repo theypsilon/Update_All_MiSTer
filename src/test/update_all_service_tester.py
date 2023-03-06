@@ -24,9 +24,11 @@ from test.logger_tester import NoLogger
 from test.spy_os_utils import SpyOsUtils
 from update_all.config import Config
 from update_all.config_reader import ConfigReader
+from update_all.config_setup import ConfigSetup
 from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, \
-    KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH
+    KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, KENV_KEY_IGNORE_TIME, DEFAULT_KEY_IGNORE_TIME
 from update_all.countdown import Countdown
+from update_all.databases import DB_ID_DISTRIBUTION_MISTER, DB_ID_JTCORES, AllDBs
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
@@ -46,7 +48,9 @@ def default_env():
     return {
         KENV_CURL_SSL: DEFAULT_CURL_SSL_OPTIONS,
         KENV_COMMIT: DEFAULT_COMMIT,
-        KENV_LOCATION_STR: DEFAULT_LOCATION_STR
+        KENV_LOCATION_STR: DEFAULT_LOCATION_STR,
+        KENV_DEBUG: DEFAULT_DEBUG,
+        KENV_KEY_IGNORE_TIME: DEFAULT_KEY_IGNORE_TIME
     }
 
 def local_store():
@@ -59,22 +63,12 @@ class UpdateAllServiceFactoryTester(UpdateAllServiceFactory):
 
 
 class ConfigReaderTester(ConfigReader):
-    def __init__(self, config: Config = None, downloaer_ini_repository: IniRepository = None):
+    def __init__(self, config: Config = None, downloader_ini_repository: IniRepository = None, file_system: FileSystem = None, env: dict[str, str] = None):
         self._config = config
-        super().__init__(NoLogger(), default_env(), downloaer_ini_repository or IniRepositoryTester())
+        super().__init__(NoLogger(), env or default_env(), downloader_ini_repository or IniRepositoryTester(file_system=file_system))
 
     def _initialize_downloader_ini(self):
         pass
-
-    def fill_config_with_environment_and_mister_section(self, config) -> None:
-        if self._config is not None:
-            for k, v in self._config.__dict__.items():
-                if k.startswith('_'):
-                    continue
-                config.__setattr__(k, v)
-            return
-
-        super().fill_config_with_environment_and_mister_section(config)
 
 
 class StoreMigratorTester(StoreMigrator):
@@ -83,9 +77,9 @@ class StoreMigratorTester(StoreMigrator):
 
 
 class LocalRepositoryTester(LocalRepository):
-    def __init__(self, config_provider: GenericProvider[Config]  = None, file_system: FileSystem = None, store_migrator: StoreMigrator = None):
+    def __init__(self, config_provider: GenericProvider[Config] = None, file_system: FileSystem = None, store_migrator: StoreMigrator = None):
         super().__init__(
-            config_provider=config_provider or GenericProvider[Config] (),
+            config_provider=config_provider or GenericProvider[Config](),
             logger=NoLogger(),
             file_system=file_system or FileSystemFactory().create_for_system_scope(),
             store_migrator=store_migrator or StoreMigratorTester()
@@ -185,7 +179,7 @@ def ensure_str_lists(this: List[any]) -> List[str]:
 
 def default_databases(add: List[str] = None, sub: List[str] = None) -> Set[str]:
     sub = ensure_str_lists(sub or [])
-    return {value for value in Config().databases if value not in sub} | set(ensure_str_lists(add or []))
+    return {value for value in {DB_ID_DISTRIBUTION_MISTER, DB_ID_JTCORES, AllDBs.COIN_OP_COLLECTION.db_id} if value not in sub} | set(ensure_str_lists(add or []))
 
 
 class TransitionServiceTester(TransitionService):
@@ -194,40 +188,57 @@ class TransitionServiceTester(TransitionService):
         super().__init__(logger=NoLogger(), file_system=file_system, os_utils=os_utils or SpyOsUtils(), ini_repository=ini_repository or IniRepositoryTester(file_system=file_system))
 
 
-class UpdateAllServiceTester(UpdateAllService):
+class ConfigSetupTester(ConfigSetup):
     def __init__(self, config_reader: ConfigReader = None,
-                 config_provider: GenericProvider[Config]  = None,
+                 config_provider: GenericProvider[Config] = None,
+                 transition_service: TransitionService = None,
                  local_repository: LocalRepository = None,
-                 store_migrator: StoreMigrator = None,
+                 store_provider: GenericProvider[LocalStore] = None,
+                 ini_repository: IniRepository = None,
+                 file_system: FileSystem = None,
+                 os_utils: OsUtils = None,
+                 config: Config = None,
+                 env: dict[str, str] = None):
+
+        file_system = file_system or FileSystemFactory().create_for_system_scope()
+        os_utils = os_utils or SpyOsUtils()
+        config_reader = config_reader or ConfigReaderTester(file_system=file_system, config=config, env=env)
+        config_provider = config_provider or GenericProvider[Config]()
+        store_provider = store_provider or GenericProvider[LocalStore]()
+
+        ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
+        transition_service = transition_service or TransitionServiceTester(file_system=file_system, os_utils=os_utils, ini_repository=ini_repository)
+        local_repository = local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system)
+
+        super().__init__(config_reader, config_provider, transition_service, local_repository, store_provider, ini_repository)
+
+
+class UpdateAllServiceTester(UpdateAllService):
+    def __init__(self, config_setup: ConfigSetup = None,
+                 config_provider: GenericProvider[Config] = None,
                  file_system: FileSystem = None,
                  os_utils: OsUtils = None,
                  countdown: Countdown = None,
-                 transition_service: TransitionService = None,
                  settings_screen: SettingsScreen = None,
                  store_provider: GenericProvider[LocalStore] = None,
                  ini_repository: IniRepository = None):
 
-        config_provider = config_provider or GenericProvider[Config] ()
-        config_reader = config_reader or ConfigReaderTester()
-        store_migrator = store_migrator or StoreMigratorTester()
         file_system = file_system or FileSystemFactory().create_for_system_scope()
-        local_repository = local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system, store_migrator=store_migrator)
-        transition_service = transition_service or TransitionServiceTester(file_system=file_system)
         os_utils = os_utils or SpyOsUtils()
+        config_provider = config_provider or GenericProvider[Config]()
+
+        config_setup = config_setup or ConfigSetupTester(file_system=file_system, os_utils=os_utils, config_provider=config_provider)
         settings_screen = settings_screen or SettingsScreenTester(config_provider=config_provider, file_system=file_system, os_utils=os_utils)
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
 
         super().__init__(
-            config_reader=config_reader,
+            config_setup=config_setup,
             config_provider=config_provider,
             logger=NoLogger(),
-            local_repository=local_repository,
-            store_migrator=store_migrator,
             file_system=file_system,
             os_utils=os_utils,
             countdown=countdown or CountdownStub(),
             settings_screen=settings_screen,
-            transition_service=transition_service,
             checker=CheckerTester(),
             store_provider=store_provider or GenericProvider[LocalStore](),
             ini_repository=self.ini_repository
