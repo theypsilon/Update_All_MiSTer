@@ -87,7 +87,7 @@ class UpdateAllServiceFactory:
             self._logger,
             file_system,
             os_utils,
-            CountdownImpl(),
+            CountdownImpl(self._logger),
             settings_screen,
             checker=checker,
             store_provider=store_provider,
@@ -170,6 +170,7 @@ class UpdateAllService:
         self._print_sequence()
         outcome = self._countdown.execute_count(self._store_provider.get().get_countdown_time())
         if outcome == CountdownOutcome.SETTINGS_SCREEN:
+            self._logger.debug('Loading Settings Screen main menu.')
             self._settings_screen.load_main_menu()
             self._logger.print(CLEAR_SCREEN, end='')
             self._print_sequence()

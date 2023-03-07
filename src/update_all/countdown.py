@@ -24,6 +24,7 @@ from enum import unique, IntEnum, auto
 from multiprocessing import Process, Value
 
 from update_all.cli_output_formatting import bold
+from update_all.logger import Logger
 
 
 @unique
@@ -39,6 +40,9 @@ class Countdown(ABC):
 
 
 class CountdownImpl(Countdown):
+    def __init__(self, logger: Logger):
+        self._logger = logger
+
     def execute_count(self, count) -> CountdownOutcome:
         try:
             os_specifics = make_os_specifics()
@@ -49,11 +53,13 @@ class CountdownImpl(Countdown):
 
             child_process = Process(target=read_characters, args=(char, ends, os_specifics.context()), daemon=True)
 
-            print()
-            print(f" {bold('*')}Press <{bold('UP')}>, To enter the SETTINGS screen.")
-            print(f" {bold('*')}Press <{bold('DOWN')}>, To continue now.")
-            print()
-        except:
+            self._logger.print()
+            self._logger.print(f" {bold('*')}Press <{bold('UP')}>, To enter the SETTINGS screen.")
+            self._logger.print(f" {bold('*')}Press <{bold('DOWN')}>, To continue now.")
+            self._logger.print()
+        except Exception as e:
+            self._logger.debug(e)
+            self._logger.debug('Recovering error by suspending the countdown.')
             return CountdownOutcome.CONTINUE
 
         result = CountdownOutcome.CONTINUE
