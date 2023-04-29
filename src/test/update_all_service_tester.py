@@ -28,7 +28,7 @@ from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, \
     KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, KENV_KEY_IGNORE_TIME, DEFAULT_KEY_IGNORE_TIME
 from update_all.countdown import Countdown
-from update_all.databases import DB_ID_DISTRIBUTION_MISTER, DB_ID_JTCORES, AllDBs
+from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
@@ -175,7 +175,7 @@ def ensure_str_lists(this: List[any]) -> List[str]:
 
 def default_databases(add: List[str] = None, sub: List[str] = None) -> Set[str]:
     sub = ensure_str_lists(sub or [])
-    return {value for value in {DB_ID_DISTRIBUTION_MISTER, DB_ID_JTCORES, AllDBs.COIN_OP_COLLECTION.db_id} if value not in sub} | set(ensure_str_lists(add or []))
+    return {value for value in {DB_ID_DISTRIBUTION_MISTER, AllDBs.JTCORES.db_id, AllDBs.COIN_OP_COLLECTION.db_id} if value not in sub} | set(ensure_str_lists(add or []))
 
 
 class TransitionServiceTester(TransitionService):

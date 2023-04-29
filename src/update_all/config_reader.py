@@ -23,8 +23,8 @@ from pathlib import Path
 from update_all.config import Config
 from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, \
     KENV_DEBUG, KENV_KEY_IGNORE_TIME
-from update_all.databases import DB_ID_JTCORES, DB_ID_NAMES_TXT, names_locale_by_db_url, model_variables_by_db_id, \
-    AllDBs, DB_ID_DISTRIBUTION_MISTER
+from update_all.databases import DB_ID_NAMES_TXT, names_locale_by_db_url, model_variables_by_db_id, \
+    AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_URL_JTPREMIUM_DEPRECATED
 from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
 from update_all.local_store import LocalStore
@@ -78,9 +78,15 @@ class ConfigReader:
             parser = IniParser(downloader_ini[DB_ID_DISTRIBUTION_MISTER])
             config.encc_forks = parser.get_string('db_url', AllDBs.MISTER_DEVEL_DISTRIBUTION_MISTER.db_url) == AllDBs.MISTER_DB9_DISTRIBUTION_MISTER.db_url
 
-        if DB_ID_JTCORES in downloader_ini:
-            parser = IniParser(downloader_ini[DB_ID_JTCORES])
-            config.download_beta_cores = parser.get_string('db_url', AllDBs.JTREGULAR_JTCORES.db_url) == AllDBs.JTPREMIUM_JTCORES.db_url
+        if AllDBs.JTCORES.db_id in downloader_ini:
+            parser = IniParser(downloader_ini[AllDBs.JTCORES.db_id])
+            jt_db_url = parser.get_string('db_url', AllDBs.JTCORES.db_url)
+            jt_filter = parser.get_string('filter', None)
+            if jt_db_url == DB_URL_JTPREMIUM_DEPRECATED:
+                config.download_beta_cores = True
+                config.has_jtpremium = True
+            elif jt_filter is not None and '!jtbeta' not in jt_filter.replace(' ', '').lower():
+                config.download_beta_cores = True
 
         if DB_ID_NAMES_TXT in downloader_ini:
             parser = IniParser(downloader_ini[DB_ID_NAMES_TXT])

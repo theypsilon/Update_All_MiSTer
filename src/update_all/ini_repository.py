@@ -19,7 +19,7 @@ import configparser
 import io
 import json
 import re
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Any
 
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini
@@ -193,11 +193,21 @@ class IniRepository:
             if db_id not in config.databases:
                 continue
 
+            ini[db_id.lower()]['filter'] = filter_addition
+
+        for db_id, beta_cores_active in [(AllDBs.JTCORES.db_id, config.download_beta_cores)]:
+            if db_id not in config.databases or not beta_cores_active:
+                continue
+
             lower_id = db_id.lower()
-            ini[lower_id]['filter'] = filter_addition
+            filter_value = ini[lower_id].get('filter', '').strip().lower()
+            if filter_value == '':
+                ini[lower_id]['filter'] = '[MiSTer]'
+            elif '!jtbeta' in filter_value:
+                ini[lower_id]['filter'] = filter_value.replace('!jtbeta', '').strip()
 
     def _build_new_downloader_ini_contents(self, config: Config) -> Optional[str]:
-        ini: dict[str, Dict[str, str]] = self.get_downloader_ini(cached=False)
+        ini: Dict[str, Dict[str, str]] = self.get_downloader_ini(cached=False)
         before = json.dumps(ini)
         self._add_new_downloader_ini_changes(ini, config)
         after = json.dumps(ini)
@@ -207,45 +217,11 @@ class IniRepository:
 
         db_ids = {db.db_id.lower(): db.db_id for _, db in candidate_databases(config)}
 
-        mister_section = ''
-        nomister_section = ''
-        pre_section = ''
+        ini_ast = IniAst(ini, db_ids)
 
         if self._file_system.is_file(self.downloader_ini_standard_path()):
-            header_regex = re.compile('\s*\[([-_/a-zA-Z0-9]+)\].*', re.I)
             ini_contents = io.StringIO(self._file_system.read_file_contents(self.downloader_ini_standard_path()))
-
-            no_section = 0
-            other_section = 1
-            common_section = 2
-
-            state = no_section
-
-            for line in ini_contents.readlines():
-                match = header_regex.match(line)
-
-                section: str
-                if match is not None:
-                    section = match.group(1).lower()
-                    if section in db_ids:
-                        state = common_section
-                    else:
-                        state = other_section
-
-                if state == no_section:
-                    pre_section += line
-                elif state == common_section:
-                    pass
-                elif state == other_section:
-                    if section in ini:
-                        ini.pop(section)
-
-                    if section.lower() == 'mister':
-                        mister_section += line
-                    else:
-                        nomister_section += line
-                else:
-                    raise Exception("Wrong state: " + str(state))
+            ini_ast.process(ini_contents.readlines())
 
         parser = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
         for header, section_id in ini.items():
@@ -254,15 +230,86 @@ class IniRepository:
             parser[header] = section_id
 
         with io.StringIO() as ss:
-            if pre_section != '':
-                ss.write(pre_section.strip() + '\n\n')
-            if mister_section != '':
-                ss.write(mister_section.strip() + '\n\n')
+            if ini_ast.pre_section != '':
+                ss.write(ini_ast.pre_section.strip() + '\n\n')
+            if ini_ast.mister_section != '':
+                ss.write(ini_ast.mister_section.strip() + '\n\n')
             parser.write(ss)
-            if nomister_section != '':
-                ss.write(nomister_section.strip() + '\n\n')
+            if ini_ast.nomister_section != '':
+                ss.write(ini_ast.nomister_section.strip() + '\n\n')
             ss.seek(0)
             return ss.read()
+
+
+class IniAst:
+    no_section = 0
+    other_section = 1
+    common_section = 2
+
+    def __init__(self, ini: Dict[str, Any], db_ids: Dict[str, str]):
+        self._ini = ini
+        self._db_ids = db_ids
+        self._state = self.no_section
+        self.mister_section = ''
+        self.nomister_section = ''
+        self.pre_section = ''
+        self._current_section = ']['
+        self._section_order = ['][']
+        self._section_lines = {'][': []}
+
+    def _start_section(self, section: str):
+        if section.lower() in self._db_ids:
+            self._state = self.common_section
+            section = self._db_ids[section.lower()]
+        else:
+            self._state = self.other_section
+
+        self._current_section = section.lower()
+        self._section_order.append(section.lower())
+        self._section_lines[self._current_section] = self._section_lines.get(self._current_section, [])
+        self._section_lines[self._current_section].append(f'[{section}]')
+        self._add_line(f'[{section}]\n')
+
+    def process(self, lines: List[str]) -> None:
+        header_regex = re.compile('\s*\[([-_/a-zA-Z0-9]+)\].*', re.I)
+
+        for line in lines:
+            match = header_regex.match(line)
+            if match is not None:
+                self._start_section(match.group(1))
+            else:
+                self._add_line(line)
+                line = line.strip('" \n\'')
+                if line == '':
+                    continue
+                self._section_lines[self._current_section] = self._section_lines.get(self._current_section, [])
+                self._section_lines[self._current_section].append(line)
+
+    def print(self):
+        file_content = ''
+        for section in self._section_order:
+            for line in self._section_lines[section]:
+                file_content += line + '\n'
+            if len(self._section_lines[section]) > 0:
+                file_content += '\n'
+
+        return file_content
+
+    def _add_line(self, line: str):
+        if self._state == self.no_section:
+            self.pre_section += line
+        elif self._state == self.common_section:
+            pass
+        elif self._state == self.other_section:
+            if self._current_section in self._ini:
+                self._ini.pop(self._current_section)
+
+            if self._current_section.lower() == 'mister':
+                self.mister_section += line
+            else:
+                self.nomister_section += line
+        else:
+            raise Exception("Wrong state: " + str(self._state))
 
 
 def candidate_databases(config: Config) -> List[Tuple[str, Database]]:

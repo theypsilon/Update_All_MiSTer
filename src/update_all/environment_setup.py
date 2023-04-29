@@ -52,3 +52,4 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._transition_service.from_update_all_1(config, local_store)
         self._config_reader.fill_config_with_ini_files(config)
         self._config_reader.fill_config_with_local_store(config, local_store)
+        self._transition_service.from_jtpremium_to_jtcores(config)

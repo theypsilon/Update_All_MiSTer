@@ -26,10 +26,13 @@ class Database:
     db_url: str
     title: str
 
+    def with_title(self, title: str):
+        return Database(self.db_id, self.db_url, title)
+
 
 DB_ID_DISTRIBUTION_MISTER = 'distribution_mister'
-DB_ID_JTCORES = 'jtcores'
 DB_ID_NAMES_TXT = 'names_txt'
+DB_URL_JTPREMIUM_DEPRECATED = 'https://raw.githubusercontent.com/jotego/jtpremium/main/jtbindb.json.zip'
 
 
 class AllDBs:
@@ -37,9 +40,8 @@ class AllDBs:
     MISTER_DEVEL_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/db.json.zip', title='Main Distribution: MiSTer-devel')
     MISTER_DB9_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://raw.githubusercontent.com/MiSTer-DB9/Distribution_MiSTer/main/dbencc.json.zip', title='Main Distribution: DB9 / SNAC8')
 
-    # JTCORES
-    JTPREMIUM_JTCORES = Database(db_id=DB_ID_JTCORES, db_url='https://raw.githubusercontent.com/jotego/jtpremium/main/jtbindb.json.zip', title='JTCORES for MiSTer (jtpremium)')
-    JTREGULAR_JTCORES = Database(db_id=DB_ID_JTCORES, db_url='https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip', title='JTCORES for MiSTer')
+    # JT
+    JTCORES = Database(db_id='jtcores', db_url='https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip', title='JTCORES for MiSTer')
 
     # NAMES TXT
     NAMES_CHAR54_MANUFACTURER_EU_TXT = Database(db_id=DB_ID_NAMES_TXT, db_url='https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR54_Manufacturer_EU.json', title='Names TXT: CHAR54 Manufacturer EU')
@@ -133,7 +135,7 @@ def db_distribution_mister_by_encc_forks(encc_forks: bool) -> Database:
 
 
 def db_jtcores_by_download_beta_cores(download_beta_cores: bool) -> Database:
-    return AllDBs.JTPREMIUM_JTCORES if download_beta_cores else AllDBs.JTREGULAR_JTCORES
+    return AllDBs.JTCORES.with_title(AllDBs.JTCORES.title + ' (+betas)') if download_beta_cores else AllDBs.JTCORES
 
 
 def db_names_txt_by_locale(region: str, char_code: str, sort_code: str) -> Database:
@@ -192,7 +194,7 @@ _names_dict = {
 # Old INI variables mapped to DB IDs
 _old_ini_variables_to_db_ids = {
     DB_ID_DISTRIBUTION_MISTER: "main_updater",
-    DB_ID_JTCORES: "jotego_updater",
+    AllDBs.JTCORES.db_id: "jotego_updater",
     AllDBs.THEYPSILON_UNOFFICIAL_DISTRIBUTION.db_id: "unofficial_updater",
     AllDBs.LLAPI_FOLDER.db_id: "llapi_updater",
     AllDBs.COIN_OP_COLLECTION.db_id: "coin_op_collection_downloader",

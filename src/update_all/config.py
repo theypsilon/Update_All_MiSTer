@@ -26,6 +26,7 @@ from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, MEDIA
 class Config:
     # Not really a config
     start_time: float = 0.0
+    has_jtpremium: bool = False
 
     # From the environment
     curl_ssl: str = DEFAULT_CURL_SSL_OPTIONS

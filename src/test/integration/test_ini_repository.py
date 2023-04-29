@@ -136,9 +136,16 @@ class TestIniRepository(unittest.TestCase):
         }, config=config)
         self.assertEqual(Path('test/fixtures/downloader_ini/heavily_filtered_plus_hbmame_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
 
-    def test_write_downloader_ini__removes_hbmame_from_heavily_filtered_roms_db___restores_previous_filters(self):
+    def test_write_downloader_ini___removes_hbmame_from_heavily_filtered_roms_db___restores_previous_filters(self):
         config = Config(databases=default_databases(add=[AllDBs.ARCADE_ROMS.db_id]), hbmame_filter=False)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/heavily_filtered_plus_hbmame_downloader.ini').read_text()}
         }, config=config)
         self.assertEqual(Path('test/fixtures/downloader_ini/heavily_filtered_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+
+    def test_write_downloader_ini___with_negated_jtbeta_but_beta_cores_activated___writes_jtcores_without_negated_jtbeta(self):
+        config = Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=True)
+        fs = test_write_downloader_ini(files={
+            downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores_with_negated_jtbeta.ini').read_text()}
+        }, config=config)
+        self.assertEqual(Path('test/fixtures/downloader_ini/just_jtcores_with_filter_wtf.ini').read_text(), fs.files[downloader_ini]['content'])

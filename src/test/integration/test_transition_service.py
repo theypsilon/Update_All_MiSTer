@@ -17,6 +17,7 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 import unittest
 from pathlib import Path
+from typing import Dict
 
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
@@ -24,14 +25,16 @@ from test.testing_objects import downloader_ini, update_all_ini, update_arcade_o
     update_jtcores_ini
 from test.update_all_service_tester import TransitionServiceTester, local_store
 from update_all.config import Config
+from update_all.databases import AllDBs
 
 
-def test_transitions(files=None):
-    config = Config()
+def test_transitions(files: Dict[str, str] = None, config: Config = None):
+    config = config or Config()
     fs = FileSystemState(config=config, files=None if files is None else {filename: {'content': Path(path).read_text()} for filename, path in files.items()})
     sut = TransitionServiceTester(file_system=FileSystemFactory(state=fs).create_for_system_scope())
     sut.from_not_existing_downloader_ini(config)
     sut.from_update_all_1(config, local_store())
+    sut.from_jtpremium_to_jtcores(config)
     return fs
 
 
@@ -79,6 +82,24 @@ class TestTransitionService(unittest.TestCase):
         })
         self.assertEqualFiles({
             downloader_ini: 'test/fixtures/downloader_ini/default_premium_downloader.ini',
+        }, fs.files)
+
+    def test_with_just_jtpremium_in_downloader_ini___writes_downloader_ini_with_jtcores_with_mister_inheritance(self):
+        just_jtpremium_config = Config(has_jtpremium=True, download_beta_cores=True, databases={AllDBs.JTCORES.db_id})
+        fs = test_transitions(config=just_jtpremium_config, files={
+            downloader_ini: 'test/fixtures/downloader_ini/just_jtpremium.ini',
+        })
+        self.assertEqualFiles({
+            downloader_ini: 'test/fixtures/downloader_ini/just_jtcores_with_mister_inheritance.ini',
+        }, fs.files)
+
+    def test_with_just_jtpremium_with_filter_wtf_in_downloader_ini___writes_downloader_ini_with_jtcores_with_filter_wtf(self):
+        just_jtpremium_config = Config(has_jtpremium=True, download_beta_cores=True, databases={AllDBs.JTCORES.db_id})
+        fs = test_transitions(config=just_jtpremium_config, files={
+            downloader_ini: 'test/fixtures/downloader_ini/just_jtpremium_with_filter_wtf.ini',
+        })
+        self.assertEqualFiles({
+            downloader_ini: 'test/fixtures/downloader_ini/just_jtcores_with_filter_wtf.ini',
         }, fs.files)
 
     def assertEqualFiles(self, expected, actual):

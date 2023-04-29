@@ -43,13 +43,14 @@ class TestEnvironmentSetup(unittest.TestCase):
             store_provider=store_provider,
             env=None if env is None else {**default_env(), **env}
         )
-        expected_files = expected_files or {k: v['content'] for k, v in state.files.items()}
+        expected_files = expected_files or {k: v['content'].strip() for k, v in state.files.items()}
+        expected_files = {k: v.strip() for k, v in expected_files.items()}
 
         environment_setup.setup_environment()
 
         config = config_provider.get()
         config.start_time = 0.0
-        self.assertEqual(expected_files, {k: v['content'] for k, v in state.files.items()})
+        self.assertEqual(expected_files, {k: v['content'].strip() for k, v in state.files.items()})
         self.assertEqual(expected_config, config)
 
     def test_setup___with_empty_files___generates_default_downloader_ini_and_config_with_default_databases(self):
@@ -98,3 +99,25 @@ class TestEnvironmentSetup(unittest.TestCase):
         self.assertSetup(files={
             downloader_ini: Path('test/fixtures/downloader_ini/rannysnice_43_wallpapers_downloader.ini').read_text()
         }, expected_config=Config(databases=default_databases(add=[AllDBs.RANNYSNICE_WALLPAPERS.db_id]), rannysnice_wallpapers_filter='ar4-3'))
+
+    def test_setup___with_downloader_with_just_jtpremium_db___returns_config_has_jtpremium_and_beta_Cores(self):
+        self.assertSetup(
+            files={downloader_ini: Path('test/fixtures/downloader_ini/just_jtpremium.ini').read_text()},
+            expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=True, has_jtpremium=True),
+            expected_files={downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores_with_mister_inheritance.ini').read_text()}
+        )
+
+    def test_setup___with_downloader_with_just_jtcores_db___returns_config_has_not_jtpremium_neither_beta_cores(self):
+        self.assertSetup(files={
+            downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores.ini').read_text()
+        }, expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=False, has_jtpremium=False))
+
+    def test_setup___with_downloader_with_just_jtcores_with_mister_inheritance_filter_db___returns_config_has_not_jtpremium_but_has_beta_cores(self):
+        self.assertSetup(files={
+            downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores_with_mister_inheritance.ini').read_text()
+        }, expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=True, has_jtpremium=False))
+
+    def test_setup___with_downloader_with_just_jtcores_and_negated_jtbeta_db___returns_config_has_not_jtpremium_neither_beta_cores(self):
+        self.assertSetup(files={
+            downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores_with_negated_jtbeta.ini').read_text()
+        }, expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=False, has_jtpremium=False))

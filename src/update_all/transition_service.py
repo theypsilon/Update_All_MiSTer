@@ -1,5 +1,4 @@
 # Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
-from typing import Dict
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,10 +15,11 @@ from typing import Dict
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+from typing import Dict
 from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
-from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_JTCORES, AllDBs
+from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, AllDBs
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
@@ -47,6 +47,19 @@ class TransitionService:
             self._file_checks[file] = self._file_system.is_file(file)
         return self._file_checks[file]
 
+    def from_jtpremium_to_jtcores(self, config: Config):
+        if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
+            return
+
+        if not config.has_jtpremium:
+            return
+
+        self._logger.print('Transitioning from jtpremium to filtered jtcores:')
+        self._ini_repository.write_downloader_ini(config)
+        self._logger.print('Done.')
+        self._logger.print('Waiting 10 seconds...')
+        self._os_utils.sleep(10.0)
+
     def from_not_existing_downloader_ini(self, config: Config):
         if self._file_exists(self._ini_repository.downloader_ini_standard_path()):
             return
@@ -59,12 +72,12 @@ class TransitionService:
 
         config.databases.add(DB_ID_DISTRIBUTION_MISTER)
         config.databases.add(AllDBs.COIN_OP_COLLECTION.db_id)
-        config.databases.add(DB_ID_JTCORES)
+        config.databases.add(AllDBs.JTCORES.db_id)
         self._ini_repository.write_downloader_ini(config)
 
         self._logger.print('A new file "downloader.ini" has been created with default DBs:')
         self._logger.print(f'  - Added DB with id [{DB_ID_DISTRIBUTION_MISTER}]')
-        self._logger.print(f'  - Added DB with id [{DB_ID_JTCORES}]')
+        self._logger.print(f'  - Added DB with id [{AllDBs.JTCORES.db_id}]')
         self._logger.print(f'  - Added DB with id [{AllDBs.COIN_OP_COLLECTION.db_id}]')
         self._logger.print()
         self._logger.print('Waiting 10 seconds...')

@@ -22,7 +22,7 @@ from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, \
     TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, DOWNLOADER_URL, FILE_MiSTer_ini, ARCADE_ORGANIZER_URL, \
     ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, STANDARD_UI_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
-from update_all.databases import db_ids_by_model_variables, DB_ID_JTCORES, DB_ID_NAMES_TXT
+from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
@@ -99,7 +99,7 @@ class SettingsScreen(UiApplication):
         ui.set_value('countdown_time', str(local_store.get_countdown_time()))
         ui.set_value('autoreboot', str(local_store.get_autoreboot()).lower())
 
-        if DB_ID_JTCORES not in config.databases:
+        if AllDBs.JTCORES.db_id not in config.databases:
             ui.set_value('download_beta_cores', str(local_store.get_download_beta_cores()).lower())
 
         if DB_ID_NAMES_TXT not in config.databases:
@@ -249,7 +249,7 @@ class SettingsScreen(UiApplication):
         self._ini_repository.write_downloader_ini(config)
 
         local_store = self._store_provider.get()
-        if DB_ID_JTCORES in config.databases:
+        if AllDBs.JTCORES.db_id in config.databases:
             local_store.set_download_beta_cores(config.download_beta_cores)
 
         if DB_ID_NAMES_TXT in config.databases:
