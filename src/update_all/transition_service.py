@@ -57,6 +57,7 @@ class TransitionService:
         self._logger.print('Transitioning from jtpremium to filtered jtcores:')
         self._ini_repository.write_downloader_ini(config)
         self._logger.print('Done.')
+        self._logger.print()
         self._logger.print('Waiting 10 seconds...')
         self._os_utils.sleep(10.0)
 
