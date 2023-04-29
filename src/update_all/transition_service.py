@@ -54,7 +54,7 @@ class TransitionService:
         if not config.has_jtpremium:
             return
 
-        self._logger.print('Transitioning from jtpremium to filtered jtcores:')
+        self._logger.print('Transitioning from jtpremium to jtcores with premium filter:')
         self._ini_repository.write_downloader_ini(config)
         self._logger.print('Done.')
         self._logger.print()
