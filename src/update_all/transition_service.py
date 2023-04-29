@@ -58,8 +58,6 @@ class TransitionService:
         self._ini_repository.write_downloader_ini(config)
         self._logger.print('Done.')
         self._logger.print()
-        self._logger.print('Waiting 10 seconds...')
-        self._os_utils.sleep(10.0)
 
     def from_not_existing_downloader_ini(self, config: Config):
         if self._file_exists(self._ini_repository.downloader_ini_standard_path()):
