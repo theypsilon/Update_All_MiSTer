@@ -72,7 +72,7 @@ And finally, if you would like to support my work, you may also subscribe to my 
 
 ## Supporters+ shout-out!
 
-James D Eberhart, MiSTerFPGA.co.uk, Tony Escobar and turbochop3300
+James D Eberhart, Kristian Hall, MiSTerFPGA.co.uk, Tony Escobar and turbochop3300
 
 Thank you so much for supporting this project on [Patreon](https://www.patreon.com/bePatron?u=37499475)! You'll show up here if you become a **Supporter+**!
 
