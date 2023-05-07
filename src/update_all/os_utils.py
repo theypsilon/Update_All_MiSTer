@@ -73,8 +73,8 @@ class LinuxOsUtils(OsUtils):
             return subprocess.check_output(self._curl_command(url))
         except subprocess.CalledProcessError as e:
             self._logger.debug(e)
-            if e.returncode in curl_connection_error_codes:
-                self._logger.print(f"Connection error: {curl_connection_error_codes[e.returncode]}")
+            if e.returncode in _curl_connection_error_codes:
+                self._logger.print(f"Connection error: {_curl_connection_error_codes[e.returncode]}")
             else:
                 self._logger.print(f"An error occurred, please try again later.")
             return None
@@ -94,7 +94,7 @@ class LinuxOsUtils(OsUtils):
         return curl_command
 
 
-curl_connection_error_codes = {
+_curl_connection_error_codes = {
     5: "Couldn't resolve proxy",
     6: "Couldn't resolve host",
     7: "Failed to connect to host",
