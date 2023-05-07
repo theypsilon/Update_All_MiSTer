@@ -53,8 +53,8 @@ class ConfigReader:
         if is_debug_enabled(self._env):
             config.verbose = True
 
-        config.curl_ssl = valid_max_length(KENV_CURL_SSL, self._env[KENV_CURL_SSL], 50)
-        config.commit = valid_max_length(KENV_COMMIT, self._env[KENV_COMMIT], 50)
+        config.curl_ssl = valid_max_length(KENV_CURL_SSL, self._env[KENV_CURL_SSL], 50).strip()
+        config.commit = valid_max_length(KENV_COMMIT, self._env[KENV_COMMIT], 50).strip()
         config.start_time = time.time()
         config.key_ignore_time = float(self._env[KENV_KEY_IGNORE_TIME])
 

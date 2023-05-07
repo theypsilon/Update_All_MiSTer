@@ -70,7 +70,9 @@ class LinuxOsUtils(OsUtils):
 
     def download(self, url) -> Optional[bytes]:
         curl_ssl = self._config_provider.get().curl_ssl
-        curl_command = ["curl", *curl_ssl.split(), "-s", "-L"]
+        curl_command = ["curl", "-s", "-L"]
+        if curl_ssl != "":
+            curl_command.extend(curl_ssl.split())
         if '--retry' not in curl_ssl:
             curl_command.extend(["--retry", "3"])
         if '--connect-timeout' not in curl_ssl:
