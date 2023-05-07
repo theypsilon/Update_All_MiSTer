@@ -69,6 +69,17 @@ class LinuxOsUtils(OsUtils):
         time.sleep(seconds)
 
     def download(self, url) -> Optional[bytes]:
+        try:
+            return subprocess.check_output(self._curl_command(url))
+        except subprocess.CalledProcessError as e:
+            self._logger.debug(e)
+            if e.returncode in curl_connection_error_codes:
+                self._logger.print(f"Connection error: {curl_connection_error_codes[e.returncode]}")
+            else:
+                self._logger.print(f"An error occurred, please try again later.")
+            return None
+
+    def _curl_command(self, url):
         curl_ssl = self._config_provider.get().curl_ssl
         curl_command = ["curl", "-s", "-L"]
         if curl_ssl != "":
@@ -80,22 +91,15 @@ class LinuxOsUtils(OsUtils):
         if '--max-time' not in curl_ssl:
             curl_command.extend(["--max-time", "300"])
         curl_command.append(url)
-        try:
-            result = subprocess.check_output(curl_command)
-            return result
-        except subprocess.CalledProcessError as e:
-            connection_error_codes = {
-                5: "Couldn't resolve proxy",
-                6: "Couldn't resolve host",
-                7: "Failed to connect to host",
-                28: "Connection timeout",
-                35: "SSL connect error",
-                52: "Server didn't reply with any data",
-                56: "Failure with receiving network data",
-            }
-            self._logger.debug(e)
-            if e.returncode in connection_error_codes:
-                self._logger.print(f"Connection error: {connection_error_codes[e.returncode]}")
-            else:
-                self._logger.print(f"An error occurred, please try again later.")
-            return None
+        return curl_command
+
+
+curl_connection_error_codes = {
+    5: "Couldn't resolve proxy",
+    6: "Couldn't resolve host",
+    7: "Failed to connect to host",
+    28: "Connection timeout",
+    35: "SSL connect error",
+    52: "Server didn't reply with any data",
+    56: "Failure with receiving network data",
+}
