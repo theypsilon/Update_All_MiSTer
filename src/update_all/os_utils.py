@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
-import ssl
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -19,8 +18,8 @@ import ssl
 
 import subprocess
 import time
+import ssl
 from abc import ABC
-from urllib.request import urlopen
 
 from update_all.config import Config
 from update_all.other import GenericProvider
@@ -70,9 +69,17 @@ class LinuxOsUtils(OsUtils):
         time.sleep(seconds)
 
     def download(self, url) -> bytes:
-        config = self._config_provider.get()
-        with urlopen(url, context=context_from_curl_ssl(config.curl_ssl)) as webpage:
-            return webpage.read()
+        curl_ssl = self._config_provider.get().curl_ssl
+        curl_command = ["curl", *curl_ssl.split(), "-s", "-L"]
+        if '--retry' not in curl_ssl:
+            curl_command.extend(["--retry", "3"])
+        if '--connect-timeout' not in curl_ssl:
+            curl_command.extend(["--connect-timeout", "10"])
+        if '--max-time' not in curl_ssl:
+            curl_command.extend(["--max-time", "30"])
+        curl_command.append(url)
+        result = subprocess.check_output(curl_command)
+        return result
 
 
 def context_from_curl_ssl(curl_ssl):
