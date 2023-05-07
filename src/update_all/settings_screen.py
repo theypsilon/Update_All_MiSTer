@@ -164,6 +164,9 @@ class SettingsScreen(UiApplication):
             url = "https://raw.githubusercontent.com/theypsilon/Main_MiSTer/test-unstable-taito-spinner-firmware/bin"
 
         content = self._os_utils.download(url)
+        if content is None:
+            return None
+
         self._file_system.write_file_bytes(FILE_MiSTer_delme, content)
         self._file_system.move(FILE_MiSTer_delme, FILE_MiSTer)
         self._set_spinner_options(ui)
@@ -176,6 +179,9 @@ class SettingsScreen(UiApplication):
 
     def play_bad_apple(self, _ui) -> None:
         content = self._os_utils.download(DOWNLOADER_URL)
+        if content is None:
+            return None
+
         temp_file = self._file_system.temp_file_by_id('downloader.sh')
         self._file_system.write_file_bytes(temp_file.name, content)
 
@@ -330,6 +336,9 @@ class SettingsScreen(UiApplication):
 
     def calculate_arcade_organizer_folders(self, ui: UiContext) -> None:
         content = self._os_utils.download(ARCADE_ORGANIZER_URL)
+        if content is None:
+            return None
+
         temp_file = self._file_system.temp_file_by_id('arcade_organizer.sh')
         self._file_system.write_file_bytes(temp_file.name, content)
 

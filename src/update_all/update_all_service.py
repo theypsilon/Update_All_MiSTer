@@ -222,31 +222,34 @@ class UpdateAllService:
         self._logger.print('Running MiSTer Downloader')
 
         content = self._os_utils.download(DOWNLOADER_URL)
-        temp_file = self._file_system.temp_file_by_id('downloader.sh')
-        self._file_system.write_file_bytes(temp_file.name, content)
+        if content is None:
+            return_code = 1
+        else:
+            temp_file = self._file_system.temp_file_by_id('downloader.sh')
+            self._file_system.write_file_bytes(temp_file.name, content)
 
-        self._logger.print()
+            self._logger.print()
 
-        update_linux = config.update_linux
-        arcade_organizer = config.arcade_organizer
+            update_linux = config.update_linux
+            arcade_organizer = config.arcade_organizer
 
-        if update_linux and arcade_organizer:
-            update_linux = False
+            if update_linux and arcade_organizer:
+                update_linux = False
 
-        env = {
-            'DOWNLOADER_INI_PATH': self._ini_repository.downloader_ini_path_tweaked_by_config(config),
-            'ALLOW_REBOOT': '0',
-            'CURL_SSL': config.curl_ssl,
-            'UPDATE_LINUX': 'true' if update_linux else 'false',
-        }
+            env = {
+                'DOWNLOADER_INI_PATH': self._ini_repository.downloader_ini_path_tweaked_by_config(config),
+                'ALLOW_REBOOT': '0',
+                'CURL_SSL': config.curl_ssl,
+                'UPDATE_LINUX': 'true' if update_linux else 'false',
+            }
 
-        if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
-            env['DEFAULT_BASE_PATH'] = config.base_path
+            if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
+                env['DEFAULT_BASE_PATH'] = config.base_path
 
-        if config.not_mister:
-            env['DEBUG'] = 'true'
+            if config.not_mister:
+                env['DEBUG'] = 'true'
 
-        return_code = self._os_utils.execute_process(temp_file.name, env)
+            return_code = self._os_utils.execute_process(temp_file.name, env)
 
         if return_code != 0:
             self._exit_code = 1
@@ -262,15 +265,18 @@ class UpdateAllService:
         self._logger.print()
 
         content = self._os_utils.download(ARCADE_ORGANIZER_URL)
-        temp_file = self._file_system.temp_file_by_id('arcade_organizer.sh')
-        self._file_system.write_file_bytes(temp_file.name, content)
+        if content is None:
+            return_code = 1
+        else:
+            temp_file = self._file_system.temp_file_by_id('arcade_organizer.sh')
+            self._file_system.write_file_bytes(temp_file.name, content)
 
-        return_code = self._os_utils.execute_process(temp_file.name, {
-            'SSL_SECURITY_OPTION': config.curl_ssl,
-            'INI_FILE': f'{config.base_path}/{ARCADE_ORGANIZER_INI}'
-        })
+            return_code = self._os_utils.execute_process(temp_file.name, {
+                'SSL_SECURITY_OPTION': config.curl_ssl,
+                'INI_FILE': f'{config.base_path}/{ARCADE_ORGANIZER_INI}'
+            })
 
-        if return_code != 0:
+        if content is None or return_code != 0:
             self._exit_code = 1
             self._error_reports.append('Arcade Organizer')
 

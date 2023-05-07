@@ -16,6 +16,7 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+from typing import Optional
 from update_all.os_utils import OsUtils
 
 
@@ -45,6 +46,6 @@ class SpyOsUtils(OsUtils):
         self.calls_to_execute_process.append((cmd, env))
         return 0, ''
 
-    def download(self, url) -> bytes:
+    def download(self, url) -> Optional[bytes]:
         self.calls_to_download.append(url)
         return bytes()

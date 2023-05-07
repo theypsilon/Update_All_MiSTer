@@ -18,8 +18,8 @@
 
 import subprocess
 import time
-import ssl
 from abc import ABC
+from typing import Optional
 
 from update_all.config import Config
 from update_all.other import GenericProvider
@@ -42,7 +42,7 @@ class OsUtils(ABC):
     def sleep(self, seconds) -> None:
         """waits given seconds"""
 
-    def download(self, url) -> bytes:
+    def download(self, url) -> Optional[bytes]:
         """downloads given url and returns content as string"""
 
 
@@ -68,28 +68,32 @@ class LinuxOsUtils(OsUtils):
     def sleep(self, seconds) -> None:
         time.sleep(seconds)
 
-    def download(self, url) -> bytes:
+    def download(self, url) -> Optional[bytes]:
         curl_ssl = self._config_provider.get().curl_ssl
         curl_command = ["curl", *curl_ssl.split(), "-s", "-L"]
         if '--retry' not in curl_ssl:
             curl_command.extend(["--retry", "3"])
         if '--connect-timeout' not in curl_ssl:
-            curl_command.extend(["--connect-timeout", "10"])
+            curl_command.extend(["--connect-timeout", "30"])
         if '--max-time' not in curl_ssl:
-            curl_command.extend(["--max-time", "30"])
+            curl_command.extend(["--max-time", "300"])
         curl_command.append(url)
-        result = subprocess.check_output(curl_command)
-        return result
-
-
-def context_from_curl_ssl(curl_ssl):
-    context = ssl.create_default_context()
-
-    if curl_ssl.startswith('--cacert '):
-        cacert_file = curl_ssl[len('--cacert '):]
-        context.load_verify_locations(cacert_file)
-    elif curl_ssl == '--insecure':
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-
-    return context
+        try:
+            result = subprocess.check_output(curl_command)
+            return result
+        except subprocess.CalledProcessError as e:
+            connection_error_codes = {
+                5: "Couldn't resolve proxy",
+                6: "Couldn't resolve host",
+                7: "Failed to connect to host",
+                28: "Connection timeout",
+                35: "SSL connect error",
+                52: "Server didn't reply with any data",
+                56: "Failure with receiving network data",
+            }
+            self._logger.debug(e)
+            if e.returncode in connection_error_codes:
+                self._logger.print(f"Connection error: {connection_error_codes[e.returncode]}")
+            else:
+                self._logger.print(f"An error occurred, please try again later.")
+            return None
