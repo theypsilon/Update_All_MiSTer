@@ -59,6 +59,19 @@ class TransitionService:
         self._logger.print('Done.')
         self._logger.print()
 
+    def from_mistersam_main_to_db_branch(self, config: Config):
+        if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
+            return
+
+        if not config.has_mistersam_main_branch:
+            return
+
+        self._logger.print('Transitioning MiSTer SAM old DB URL to new one:')
+        self._logger.print(AllDBs.MISTERSAM_FILES.db_url)
+        self._ini_repository.write_downloader_ini(config)
+        self._logger.print('Done.')
+        self._logger.print()
+
     def from_not_existing_downloader_ini(self, config: Config):
         if self._file_exists(self._ini_repository.downloader_ini_standard_path()):
             return

@@ -121,3 +121,10 @@ class TestEnvironmentSetup(unittest.TestCase):
         self.assertSetup(files={
             downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores_with_negated_jtbeta.ini').read_text()
         }, expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=False, has_jtpremium=False))
+
+    def test_setup___with_mistersam_on_main_branch___writes_downloader_ini_with_mistersam_on_db_branch(self):
+        self.assertSetup(
+            files={downloader_ini: Path('test/fixtures/downloader_ini/mistersam_on_main.ini').read_text()},
+            expected_config=Config(databases={AllDBs.MISTERSAM_FILES.db_id}, has_mistersam_main_branch=True),
+            expected_files={downloader_ini: Path('test/fixtures/downloader_ini/mistersam_on_db.ini').read_text()}
+        )

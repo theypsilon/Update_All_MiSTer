@@ -35,6 +35,7 @@ def test_transitions(files: Dict[str, str] = None, config: Config = None):
     sut.from_not_existing_downloader_ini(config)
     sut.from_update_all_1(config, local_store())
     sut.from_jtpremium_to_jtcores(config)
+    sut.from_mistersam_main_to_db_branch(config)
     return fs
 
 
@@ -100,6 +101,15 @@ class TestTransitionService(unittest.TestCase):
         })
         self.assertEqualFiles({
             downloader_ini: 'test/fixtures/downloader_ini/just_jtcores_with_filter_wtf.ini',
+        }, fs.files)
+
+    def test_mistersam_on_main_branch___writes_downloader_ini_with_mistersam_on_db_branch(self):
+        just_mistersam_with_main_branch_config = Config(has_mistersam_main_branch=True, databases={AllDBs.MISTERSAM_FILES.db_id})
+        fs = test_transitions(config=just_mistersam_with_main_branch_config, files={
+            downloader_ini: 'test/fixtures/downloader_ini/mistersam_on_main.ini',
+        })
+        self.assertEqualFiles({
+            downloader_ini: 'test/fixtures/downloader_ini/mistersam_on_db.ini',
         }, fs.files)
 
     def assertEqualFiles(self, expected, actual):

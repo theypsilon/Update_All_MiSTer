@@ -53,3 +53,4 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._config_reader.fill_config_with_ini_files(config)
         self._config_reader.fill_config_with_local_store(config, local_store)
         self._transition_service.from_jtpremium_to_jtcores(config)
+        self._transition_service.from_mistersam_main_to_db_branch(config)

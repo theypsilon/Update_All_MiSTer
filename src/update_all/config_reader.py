@@ -24,7 +24,7 @@ from update_all.config import Config
 from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, \
     KENV_DEBUG, KENV_KEY_IGNORE_TIME
 from update_all.databases import DB_ID_NAMES_TXT, names_locale_by_db_url, model_variables_by_db_id, \
-    AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_URL_JTPREMIUM_DEPRECATED
+    AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_URL_JTPREMIUM_DEPRECATED, DB_URL_MISTERSAM_FILES_DEPRECATED
 from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
 from update_all.local_store import LocalStore
@@ -87,6 +87,12 @@ class ConfigReader:
                 config.has_jtpremium = True
             elif jt_filter is not None and '!jtbeta' not in jt_filter.replace(' ', '').lower():
                 config.download_beta_cores = True
+
+        if AllDBs.MISTERSAM_FILES.db_id.lower() in downloader_ini:
+            parser = IniParser(downloader_ini[AllDBs.MISTERSAM_FILES.db_id.lower()])
+            mistersam_db_url = parser.get_string('db_url', AllDBs.MISTERSAM_FILES.db_url)
+            if mistersam_db_url == DB_URL_MISTERSAM_FILES_DEPRECATED:
+                config.has_mistersam_main_branch = True
 
         if DB_ID_NAMES_TXT in downloader_ini:
             parser = IniParser(downloader_ini[DB_ID_NAMES_TXT])

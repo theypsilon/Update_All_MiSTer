@@ -27,6 +27,7 @@ class Config:
     # Not really a config
     start_time: float = 0.0
     has_jtpremium: bool = False
+    has_mistersam_main_branch: bool = False
 
     # From the environment
     curl_ssl: str = DEFAULT_CURL_SSL_OPTIONS
