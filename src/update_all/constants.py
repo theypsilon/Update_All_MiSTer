@@ -122,5 +122,5 @@ ARCADE_ORGANIZER_INI = "Scripts/update_arcade-organizer.ini"
 DOWNLOADER_URL = "https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/latest/dont_download.zip"
 ARCADE_ORGANIZER_URL = "https://raw.githubusercontent.com/theypsilon/_arcade-organizer/master/_arcade-organizer.sh"
 DOWNLOADER_INI_STANDARD_PATH = "downloader.ini"
-TEST_UNSTABLE_SPINNER_FIRMWARE_MD5 = "cc0518143d90f5662d27f140f3f3d697"
+TEST_UNSTABLE_SPINNER_FIRMWARE_MD5 = "b76bc57d75afce8b1040bc4d225ea3aa"
 FILE_MiSTer_version = '/MiSTer.version'
