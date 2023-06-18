@@ -15,7 +15,7 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
-from typing import Tuple, Any, List, Set, Dict, Callable
+from typing import Tuple, Any, List, Set, Dict, Callable, Optional
 from unittest.mock import MagicMock
 
 from test.countdown_stub import CountdownStub
@@ -24,9 +24,10 @@ from test.logger_tester import NoLogger
 from test.spy_os_utils import SpyOsUtils
 from update_all.config import Config
 from update_all.config_reader import ConfigReader
-from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
+from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl, EnvironmentSetupResult
 from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, \
-    KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, KENV_KEY_IGNORE_TIME, DEFAULT_KEY_IGNORE_TIME
+    KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, KENV_KEY_IGNORE_TIME, DEFAULT_KEY_IGNORE_TIME, KENV_TRANSITION_SERVICE_ONLY, \
+    DEFAULT_TRANSITION_SERVICE_ONLY
 from update_all.countdown import Countdown
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
@@ -50,7 +51,8 @@ def default_env():
         KENV_COMMIT: DEFAULT_COMMIT,
         KENV_LOCATION_STR: DEFAULT_LOCATION_STR,
         KENV_DEBUG: DEFAULT_DEBUG,
-        KENV_KEY_IGNORE_TIME: DEFAULT_KEY_IGNORE_TIME
+        KENV_KEY_IGNORE_TIME: DEFAULT_KEY_IGNORE_TIME,
+        KENV_TRANSITION_SERVICE_ONLY: DEFAULT_TRANSITION_SERVICE_ONLY
     }
 
 
@@ -208,8 +210,11 @@ class EnvironmentSetupTester(EnvironmentSetupImpl):
 
 
 class EnvironmentSetupStub(EnvironmentSetup):
-    def setup_environment(self) -> None:
-        pass
+    def __init__(self, result: Optional[EnvironmentSetupResult] = None):
+        self._result = result or EnvironmentSetupResult()
+
+    def setup_environment(self) -> EnvironmentSetupResult:
+        return self._result
 
 
 class UpdateAllServiceTester(UpdateAllService):

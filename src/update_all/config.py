@@ -43,6 +43,7 @@ class Config:
     not_mister: bool = False
     verbose: bool = False
     temporary_downloader_ini: bool = False
+    transition_service_only: bool = False
 
     # Global Updating Toggles
     databases: Set[str] = field(default_factory=lambda: set())

@@ -15,6 +15,7 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 from abc import abstractmethod, ABC
+from dataclasses import dataclass
 
 from update_all.config import Config
 from update_all.local_store import LocalStore
@@ -24,13 +25,19 @@ from update_all.config_reader import ConfigReader
 from update_all.transition_service import TransitionService
 
 
+@dataclass
+class EnvironmentSetupResult:
+    requires_early_exit: bool = False
+
+
 class EnvironmentSetup(ABC):
     @abstractmethod
-    def setup_environment(self) -> None:
+    def setup_environment(self) -> EnvironmentSetupResult:
         """Setups the application environment."""
 
 
 class EnvironmentSetupImpl(EnvironmentSetup):
+
     def __init__(self, config_reader: ConfigReader,
                  config_provider: GenericProvider[Config],
                  transition_service: TransitionService,
@@ -42,7 +49,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._local_repository = local_repository
         self._store_provider = store_provider
 
-    def setup_environment(self) -> None:
+    def setup_environment(self) -> EnvironmentSetupResult:
         config = Config()
         self._config_reader.fill_config_with_environment_and_mister_section(config)
         self._config_provider.initialize(config)
@@ -54,3 +61,4 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._config_reader.fill_config_with_local_store(config, local_store)
         self._transition_service.from_jtpremium_to_jtcores(config)
         self._transition_service.from_mistersam_main_to_db_branch(config)
+        return EnvironmentSetupResult(requires_early_exit=config.transition_service_only)

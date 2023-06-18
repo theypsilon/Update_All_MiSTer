@@ -19,8 +19,9 @@ from typing import Dict, Any
 
 from test.testing_objects import downloader_ini, update_all_ini, update_arcade_organizer_ini, update_jtcores_ini, update_names_txt_ini
 from update_all.config import Config
-from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR
+from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, KENV_TRANSITION_SERVICE_ONLY
 from update_all.databases import DB_ID_NAMES_TXT, AllDBs
+from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
 from test.fake_filesystem import FileSystemFactory
@@ -31,7 +32,7 @@ import unittest
 
 class TestEnvironmentSetup(unittest.TestCase):
 
-    def assertSetup(self, files: Dict[str, Any] = None, env: dict[str, str] = None, expected_files: Dict[str, str] = None, expected_config: Config = None) -> None:
+    def assertSetup(self, files: Dict[str, Any] = None, env: dict[str, str] = None, expected_files: Dict[str, str] = None, expected_config: Config = None, expected_result: EnvironmentSetupResult = None) -> None:
         state = FileSystemState(files=None if files is None else {k: {'content': v} for k, v in files.items()})
         config_provider = GenericProvider[Config]()
         store_provider = GenericProvider[LocalStore]()
@@ -46,12 +47,13 @@ class TestEnvironmentSetup(unittest.TestCase):
         expected_files = expected_files or {k: v['content'].strip() for k, v in state.files.items()}
         expected_files = {k: v.strip() for k, v in expected_files.items()}
 
-        environment_setup.setup_environment()
+        result = environment_setup.setup_environment()
 
         config = config_provider.get()
         config.start_time = 0.0
         self.assertEqual(expected_files, {k: v['content'].strip() for k, v in state.files.items()})
-        self.assertEqual(expected_config, config)
+        self.assertEqual(expected_config or Config(), config)
+        self.assertEqual(expected_result or EnvironmentSetupResult(), result)
 
     def test_setup___with_empty_files___generates_default_downloader_ini_and_config_with_default_databases(self):
         self.assertSetup(files={}, expected_files={
@@ -127,4 +129,14 @@ class TestEnvironmentSetup(unittest.TestCase):
             files={downloader_ini: Path('test/fixtures/downloader_ini/mistersam_on_main.ini').read_text()},
             expected_config=Config(databases={AllDBs.MISTERSAM_FILES.db_id}, has_mistersam_main_branch=True),
             expected_files={downloader_ini: Path('test/fixtures/downloader_ini/mistersam_on_db.ini').read_text()}
+        )
+
+    def test_setup___with_transition_service_only_env_var___returns_requires_early_exit_result(self):
+        self.assertSetup(
+            env={KENV_TRANSITION_SERVICE_ONLY: ' TRUE '},
+            files={
+                downloader_ini: Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(),
+            },
+            expected_config=Config(databases=default_databases(), transition_service_only=True),
+            expected_result=EnvironmentSetupResult(requires_early_exit=True)
         )

@@ -22,7 +22,7 @@ from pathlib import Path
 
 from update_all.config import Config
 from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, \
-    KENV_DEBUG, KENV_KEY_IGNORE_TIME
+    KENV_DEBUG, KENV_KEY_IGNORE_TIME, KENV_TRANSITION_SERVICE_ONLY
 from update_all.databases import DB_ID_NAMES_TXT, names_locale_by_db_url, model_variables_by_db_id, \
     AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_URL_JTPREMIUM_DEPRECATED, DB_URL_MISTERSAM_FILES_DEPRECATED
 from update_all.ini_repository import IniRepository
@@ -57,6 +57,7 @@ class ConfigReader:
         config.commit = valid_max_length(KENV_COMMIT, self._env[KENV_COMMIT], 50).strip()
         config.start_time = time.time()
         config.key_ignore_time = float(self._env[KENV_KEY_IGNORE_TIME])
+        config.transition_service_only = strtobool(self._env[KENV_TRANSITION_SERVICE_ONLY].strip().lower())
 
         self._logger.configure(config)
 

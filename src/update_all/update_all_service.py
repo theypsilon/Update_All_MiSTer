@@ -26,7 +26,7 @@ from update_all.config import Config
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import UPDATE_ALL_VERSION, DOWNLOADER_URL, ARCADE_ORGANIZER_URL, FILE_update_all_log, \
     FILE_mister_downloader_needs_reboot, MEDIA_FAT, ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, \
-    UPDATE_ALL_LAUNCHER_PATH, UPDATE_ALL_LAUNCHER_MD5, UPDATE_ALL_URL
+    UPDATE_ALL_LAUNCHER_PATH, UPDATE_ALL_LAUNCHER_MD5, UPDATE_ALL_URL, EXIT_CODE_REQUIRES_EARLY_EXIT
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
@@ -121,7 +121,10 @@ class UpdateAllService:
         self._error_reports: List[str] = []
 
     def full_run(self) -> int:
-        self._environment_setup.setup_environment()
+        env_result = self._environment_setup.setup_environment()
+        if env_result.requires_early_exit:
+            return EXIT_CODE_REQUIRES_EARLY_EXIT
+
         self._test_routine()
         self._show_intro()
         self._countdown_for_settings_screen()
