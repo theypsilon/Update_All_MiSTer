@@ -523,7 +523,7 @@ def settings_screen_model(): return {
                         "info": [{
                             "ui": "message",
                             "header": "Arcade Offset folder",
-                            "text": ["Arcade Hacks for popular games maintained by atrac17"],
+                            "text": ["Hacks for popular arcade games maintained by atrac17"],
                         }]
                     }
                 },
@@ -595,8 +595,8 @@ def settings_screen_model(): return {
                             "ui": "message",
                             "header": "Y/C Builds",
                             "text": [
-                                "Fork cores with Y/C outputs for cores that",
-                                "don't support these outputs yet officially."
+                                "Forks with Y/C outputs for cores that don't",
+                                "support these outputs yet officially."
                             ],
                         }]
                     }
