@@ -66,6 +66,15 @@ def settings_screen_model(): return {
                 },
             ]
         },
+        "dialog_sub_menu_info": {
+            "type": "dialog_sub_menu",
+            "actions": [
+                'replace',
+                {"title": "Select", "type": "symbol", "symbol": "ok"},
+                {"title": "Info", "type": "symbol", "symbol": "info"},
+                {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+            ]
+        },
     },
     "items": {
         "test_menu": {
@@ -483,58 +492,114 @@ def settings_screen_model(): return {
             ]
         },
         "unofficial_cores_menu": {
-            "type": "dialog_sub_menu",
+            "type": "dialog_sub_menu_info",
             "header": "Unofficial Cores",
             "variables": {
                 "coin_op_collection_downloader": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
                 "arcade_offset_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "llapi_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "unofficial_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
+                "agg23_db": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MikeS11/YC_Builds-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
                     "title": "1 Coin-Op Collection (atrac17, Darren)",
                     "description": "{coin_op_collection_downloader:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}]}
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Coin-Op Collection",
+                            "text": ["Arcade games developed by atrac17 and others."],
+                        }]
+                    }
                 },
                 {
                     "title": "2 Arcade Offset folder (atrac17)",
                     "description": "{arcade_offset_downloader:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_offset_downloader"}]}
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "arcade_offset_downloader"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Arcade Offset folder",
+                            "text": ["Arcade Hacks for popular games maintained by atrac17"],
+                        }]
+                    }
                 },
                 {
                     "title": "3 LLAPI Forks Folder",
                     "description": "{llapi_updater:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "llapi_updater"}]}
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "llapi_updater"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "LLAPI Forks Folder",
+                            "text": ["Cores for BlisSTer and other addons using the Low-Latency API"],
+                        }]
+                    }
                 },
                 {
                     "title": "4 theypsilon Unofficial Distribution",
                     "description": "{unofficial_updater:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "unofficial_updater"}]}
-                },
-                {
-                    "title": "5 Y/C Builds from MikeS11",
-                    "description": "{MikeS11/YC_Builds-MiSTer:yesno}",
-                    "actions": {"ok": [{
-                        "type": "condition",
-                        "variable": "MikeS11/YC_Builds-MiSTer",
-                        "true": [{"type": "rotate_variable", "target": "MikeS11/YC_Builds-MiSTer"}],
-                        "false": [{
-                            "ui": "confirm",
-                            "header": "You need a compatible cable!",
-                            "preselected_action": "No",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "unofficial_updater"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "theypsilon Unofficial Distribution",
                             "text": [
-                                "The Y/C Builds need a modified VGA cable. And if you don't have it, the cores won't display correctly.",
-                                " ",
-                                "Do you have a modified cable compatible with the Y/C Builds?",
-                            ],
-                            "actions": [
-                                {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": "MikeS11/YC_Builds-MiSTer"}, {"type": "navigate", "target": "back"}]},
-                                {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
+                                "Some unofficial and early-access cores, such as:",
+                                "- zx48 (ZX Spectrum) from Kyp",
+                                "- Nemesis from GX400 Friends",
+                                "- Teenage Mutant Ninja Turtles from Wicker Waka"
                             ],
                         }]
-                    }]}
+                    }
+                },
+                {
+                    "title": "5 agg23's MiSTer Cores",
+                    "description": "{agg23_db:yesno}",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "agg23_db"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "agg23's MiSTer Cores",
+                            "text": ["Cores made by agg23, including Tamagotchi and Game & Watch."],
+                        }]
+                    }
+                },
+                {
+                    "title": "6 Y/C Builds from MikeS11",
+                    "description": "{MikeS11/YC_Builds-MiSTer:yesno}",
+                    "actions": {
+                        "ok": [{
+                            "type": "condition",
+                            "variable": "MikeS11/YC_Builds-MiSTer",
+                            "true": [{"type": "rotate_variable", "target": "MikeS11/YC_Builds-MiSTer"}],
+                            "false": [{
+                                "ui": "confirm",
+                                "header": "You need a compatible cable!",
+                                "preselected_action": "No",
+                                "text": [
+                                    "The Y/C Builds need a modified VGA cable. And if you don't have it, the cores won't display correctly.",
+                                    " ",
+                                    "Do you have a modified cable compatible with the Y/C Builds?",
+                                ],
+                                "actions": [
+                                    {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": "MikeS11/YC_Builds-MiSTer"}, {"type": "navigate", "target": "back"}]},
+                                    {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
+                                ],
+                            }]
+                        }],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Y/C Builds",
+                            "text": [
+                                "Fork cores with Y/C outputs for cores that",
+                                "don't support these outputs yet officially."
+                            ],
+                        }]
+                    }
                 },
             ]
         },

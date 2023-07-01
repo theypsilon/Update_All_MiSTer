@@ -46,11 +46,22 @@ def expand_type(data, base_types):
             if type(content) in (str, int, float, bool):
                 data[key] = base_type[key]
             elif isinstance(content, list):
-                data[key] = [*data.get(key, []), *base_type.get(key, [])]
+                addition, has_replace = filter_key_in_collection(data.get(key, []), 'replace')
+                data[key] = addition if has_replace else [*addition, *base_type.get(key, [])]
             elif isinstance(content, dict):
-                data[key] = {**data.get(key, []), **base_type.get(key, [])}
+                addition, has_replace = filter_key_in_collection(data.get(key, {}), 'replace')
+                data[key] = addition if has_replace else {**addition, **base_type.get(key, {})}
             else:
                 raise ValueError(f'Can not inherit field {key} with content of type: {str(type(content))}')
+
+
+def filter_key_in_collection(collection, key):
+    if isinstance(collection, list):
+        return ([v for v in collection if v != key], True) if key in collection else (collection, False)
+    elif isinstance(collection, dict):
+        return ({k: v for k, v in collection.items() if k != key}, True) if key in collection else (collection, False)
+    else:
+        raise ValueError(f'Can not filter collection of type: {str(type(collection))}')
 
 
 def gather_variable_declarations(model, group=None):
