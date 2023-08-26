@@ -25,5 +25,5 @@ class MigrationV1(Migration):
     def migrate(self, local_store) -> None:
         """create arcade_names_txt field"""
 
-        local_store['introduced_arcade_names_txt'] = 'false'
+        local_store['introduced_arcade_names_txt'] = False
         local_store['_dirty'] = True
