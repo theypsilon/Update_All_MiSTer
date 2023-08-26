@@ -1,4 +1,5 @@
 # Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -16,8 +17,12 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 from update_all.store_migrator import Migration
-from update_all.migrations.migration_v1 import MigrationV1
 
 
-def migrations() -> list[Migration]:
-    return [MigrationV1()]
+class MigrationV1(Migration):
+    version = 1
+
+    def migrate(self, local_store) -> None:
+        """create arcade_names_txt field"""
+
+        local_store['introduced_arcade_names_txt'] = 'false'

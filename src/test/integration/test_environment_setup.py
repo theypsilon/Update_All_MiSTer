@@ -20,7 +20,7 @@ from typing import Dict, Any
 from test.testing_objects import downloader_ini, update_all_ini, update_arcade_organizer_ini, update_jtcores_ini, update_names_txt_ini
 from update_all.config import Config
 from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, KENV_TRANSITION_SERVICE_ONLY
-from update_all.databases import DB_ID_NAMES_TXT, AllDBs
+from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
@@ -51,7 +51,7 @@ class TestEnvironmentSetup(unittest.TestCase):
 
         config = config_provider.get()
         config.start_time = 0.0
-        self.assertEqual(expected_files, {k: v['content'].strip() for k, v in state.files.items()})
+        self.assertEqual(expected_files, {k: v['content'].strip() for k, v in state.files.items() if 'content' in v})
         self.assertEqual(expected_config or Config(), config)
         self.assertEqual(expected_result or EnvironmentSetupResult(), result)
 
@@ -90,12 +90,12 @@ class TestEnvironmentSetup(unittest.TestCase):
         }, expected_files={
             downloader_ini: Path('test/fixtures/downloader_ini/complete_downloader_first.ini').read_text(),
             update_arcade_organizer_ini.lower(): Path('test/fixtures/update_arcade-organizer_ini/complete_ao.ini').read_text()
-        }, expected_config=Config(databases=default_databases(add=[DB_ID_NAMES_TXT]), arcade_organizer=False, encc_forks=True, download_beta_cores=True, names_region='EU', names_char_code='CHAR28'))
+        }, expected_config=Config(databases=default_databases(add=[DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT]), arcade_organizer=False, encc_forks=True, download_beta_cores=True, names_region='EU', names_char_code='CHAR28'))
 
     def test_setup___with_downloader_with_custom_names_db___returns_empty_config(self):
         self.assertSetup(files={
             downloader_ini: Path('test/fixtures/downloader_ini/complete_downloader_first.ini').read_text()
-        }, expected_config=Config(databases=default_databases(add=[DB_ID_NAMES_TXT]), encc_forks=True, download_beta_cores=True, names_region='EU', names_char_code='CHAR28'))
+        }, expected_config=Config(databases=default_databases(add=[DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT]), encc_forks=True, download_beta_cores=True, names_region='EU', names_char_code='CHAR28'))
 
     def test_setup___with_downloader_with_rannysnice_43_wallpapers_db___returns_empty_config(self):
         self.assertSetup(files={

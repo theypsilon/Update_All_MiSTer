@@ -36,6 +36,7 @@ def test_transitions(files: Dict[str, str] = None, config: Config = None):
     sut.from_update_all_1(config, local_store())
     sut.from_jtpremium_to_jtcores(config)
     sut.from_mistersam_main_to_db_branch(config)
+    sut.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store())
     return fs
 
 

@@ -420,6 +420,7 @@ def settings_screen_model(): return {
                 "names_region": {"group": "names_ini", "default": "US", "values": ["US", "EU", "JP"]},
                 "names_char_code": {"group": "names_ini", "default": "CHAR18", "values": ["CHAR18", "CHAR28"]},
                 "names_sort_code": {"group": "names_ini", "default": "Common", "values": ["Common", "Manufacturer"]},
+                "arcade_names_txt": {"group": "db", "default": "true", "values": ["true", "false"]},
 
                 "names_txt_file_warning": {"default": "false", "values": ["false", "true"]},
                 "names_char_code_warning": {"default": "false", "values": ["false", "true"]},
@@ -436,12 +437,17 @@ def settings_screen_model(): return {
                     "actions": {"ok": _try_toggle_update_names_txt()}
                 },
                 {
-                    "title": "2 Region",
+                    "title": "2 Arcade Names TXT",
+                    "description": "Activated: {arcade_names_txt:yesno}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_names_txt"}]}
+                },
+                {
+                    "title": "3 Region",
                     "description": "{names_region}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "names_region"}]}
                 },
                 {
-                    "title": "3 Char Code",
+                    "title": "4 Char Code",
                     "description": "{names_char_code}",
                     "actions": {"ok": [
                         {"type": "rotate_variable", "target": "names_char_code"},
@@ -458,12 +464,12 @@ def settings_screen_model(): return {
                     ]}
                 },
                 {
-                    "title": "4 Sort Code",
+                    "title": "5 Sort Code",
                     "description": "{names_sort_code}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "names_sort_code"}]}
                 },
                 {
-                    "title": "5 Remove \"names.txt\"",
+                    "title": "6 Remove \"names.txt\"",
                     "description": "Back to standard core names based on RBF files",
                     "actions": {"ok": [
                         {"type": "calculate_file_exists", "target": "names.txt"},

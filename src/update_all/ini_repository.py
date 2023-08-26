@@ -24,7 +24,7 @@ from typing import Optional, Dict, List, Tuple, Any
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini
 from update_all.databases import AllDBs, Database, db_distribution_mister_by_encc_forks, \
-    db_jtcores_by_download_beta_cores, db_names_txt_by_locale, dbs_to_model_variables_pairs
+    db_jtcores_by_download_beta_cores, db_names_txt_by_locale, dbs_to_model_variables_pairs, db_arcade_names_txt_by_locale
 from update_all.file_system import FileSystem
 from update_all.ini_parser import IniParser
 from update_all.logger import Logger
@@ -316,7 +316,8 @@ def candidate_databases(config: Config) -> List[Tuple[str, Database]]:
     configurable_dbs = {
         'main_updater': db_distribution_mister_by_encc_forks(config.encc_forks),
         'jotego_updater': db_jtcores_by_download_beta_cores(config.download_beta_cores),
-        'names_txt_updater': db_names_txt_by_locale(config.names_region, config.names_char_code, config.names_sort_code)
+        'names_txt_updater': db_names_txt_by_locale(config.names_region, config.names_char_code, config.names_sort_code),
+        'arcade_names_txt': db_arcade_names_txt_by_locale(config.names_region)
     }
     result = []
     for variable, dbs in dbs_to_model_variables_pairs():

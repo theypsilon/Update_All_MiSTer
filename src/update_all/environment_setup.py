@@ -61,4 +61,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._config_reader.fill_config_with_local_store(config, local_store)
         self._transition_service.from_jtpremium_to_jtcores(config)
         self._transition_service.from_mistersam_main_to_db_branch(config)
+        self._transition_service.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store)
+        if local_store.needs_save():
+            self._local_repository.save_store(local_store)
         return EnvironmentSetupResult(requires_early_exit=config.transition_service_only)

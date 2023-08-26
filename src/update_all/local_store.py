@@ -39,6 +39,8 @@ class LocalStore:
     def get_names_char_code(self) -> str: return self._props['names_char_code']
     def set_names_sort_code(self, names_sort_code: str) -> None: self.generic_set('names_sort_code', names_sort_code)
     def get_names_sort_code(self) -> str: return self._props['names_sort_code']
+    def set_introduced_arcade_names_txt(self, introduced_arcade_names_txt: bool) -> None: self.generic_set('introduced_arcade_names_txt', introduced_arcade_names_txt)
+    def get_introduced_arcade_names_txt(self) -> bool: return self._props['introduced_arcade_names_txt']
 
     def unwrap_props(self):
         return self._props

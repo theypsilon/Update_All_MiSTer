@@ -73,6 +73,7 @@ def make_new_local_store(store_migrator):
         'names_region': default_config.names_region,
         'names_char_code': default_config.names_char_code,
         'names_sort_code': default_config.names_sort_code,
+        'introduced_arcade_names_txt': False,
     }
 
 

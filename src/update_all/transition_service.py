@@ -19,12 +19,13 @@ from typing import Dict
 from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
-from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, AllDBs
+from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, AllDBs, DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils
+from update_all.other import GenericProvider
 from update_all.settings_screen_model import settings_screen_model
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string
 
@@ -136,6 +137,27 @@ class TransitionService:
         self._logger.print('Transitioning from Update All 1:')
         for change in changes:
             self._logger.print(f'  - {change}')
+        self._logger.print()
+        self._logger.print('Waiting 10 seconds...')
+        self._os_utils.sleep(10.0)
+
+    def from_just_names_txt_enabled_to_arcade_names_txt_enabled(self, config: Config, store: LocalStore):
+        if store.get_introduced_arcade_names_txt():
+            return
+
+        store.set_introduced_arcade_names_txt(True)
+
+        if DB_ID_NAMES_TXT not in config.databases:
+            return
+
+        if DB_ID_ARCADE_NAMES_TXT in config.databases:
+            return
+
+        config.databases.add(DB_ID_ARCADE_NAMES_TXT)
+
+        self._ini_repository.write_downloader_ini(config)
+        self._logger.print('Transitioning arcade names from "names.txt" to separated "..CONFIG../arcade_names.txt":')
+        self._logger.print('Adding Arcade Names TXT db to downloader.ini.')
         self._logger.print()
         self._logger.print('Waiting 10 seconds...')
         self._os_utils.sleep(10.0)

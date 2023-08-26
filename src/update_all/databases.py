@@ -32,6 +32,7 @@ class Database:
 
 DB_ID_DISTRIBUTION_MISTER = 'distribution_mister'
 DB_ID_NAMES_TXT = 'names_txt'
+DB_ID_ARCADE_NAMES_TXT = 'arcade_names_txt'
 DB_URL_JTPREMIUM_DEPRECATED = 'https://raw.githubusercontent.com/jotego/jtpremium/main/jtbindb.json.zip'
 DB_URL_MISTERSAM_FILES_DEPRECATED = 'https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/main/MiSTer_SAMdb.json'
 
@@ -58,6 +59,11 @@ class AllDBs:
     NAMES_CHAR18_COMMON_EU_TXT = Database(db_id=DB_ID_NAMES_TXT, db_url='https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_EU.json', title='Names TXT: CHAR18 Common EU')
     NAMES_CHAR18_COMMON_US_TXT = Database(db_id=DB_ID_NAMES_TXT, db_url='https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_US.json', title='Names TXT: CHAR18 Common US')
     NAMES_CHAR18_COMMON_JP_TXT = Database(db_id=DB_ID_NAMES_TXT, db_url='https://raw.githubusercontent.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_JP.json', title='Names TXT: CHAR18 Common JP')
+
+    # ARCADE NAMES TXT
+    ARCADE_NAMES_EU_TXT = Database(db_id=DB_ID_ARCADE_NAMES_TXT, db_url='https://raw.githubusercontent.com/PigSaint/ArcadeNames_MiSTer/dbs/arcade_names_EU.json', title='Arcade Names TXT: EU')
+    ARCADE_NAMES_US_TXT = Database(db_id=DB_ID_ARCADE_NAMES_TXT, db_url='https://raw.githubusercontent.com/PigSaint/ArcadeNames_MiSTer/dbs/arcade_names_US.json', title='Arcade Names TXT: US')
+    ARCADE_NAMES_JP_TXT = Database(db_id=DB_ID_ARCADE_NAMES_TXT, db_url='https://raw.githubusercontent.com/PigSaint/ArcadeNames_MiSTer/dbs/arcade_names_JP.json', title='Arcade Names TXT: JP')
 
     # ROMS
     BIOS = Database(db_id='bios_db', db_url='https://raw.githubusercontent.com/theypsilon/BiosDB_MiSTer/db/bios_db.json', title='BIOS Database')
@@ -192,6 +198,18 @@ _names_dict = {
         }
     }
 }
+
+
+def db_arcade_names_txt_by_locale(region: str) -> Database:
+    return _arcade_names_dict.get(region, AllDBs.ARCADE_NAMES_JP_TXT)
+
+
+_arcade_names_dict = {
+    'JP': AllDBs.ARCADE_NAMES_JP_TXT,
+    'US': AllDBs.ARCADE_NAMES_US_TXT,
+    'EU': AllDBs.ARCADE_NAMES_EU_TXT
+}
+
 
 # Old INI variables mapped to DB IDs
 _old_ini_variables_to_db_ids = {

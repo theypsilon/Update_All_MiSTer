@@ -22,7 +22,7 @@ from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, \
     TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, DOWNLOADER_URL, FILE_MiSTer_ini, ARCADE_ORGANIZER_URL, \
     ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, STANDARD_UI_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
-from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs
+from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
