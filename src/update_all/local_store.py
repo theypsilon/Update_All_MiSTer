@@ -22,6 +22,10 @@ class LocalStore:
     def __init__(self, props: Dict[str, Union[str, int, bool]]):
         self._props = props
         self._dirty = set()
+        if '_dirty' in self._props:
+            if self._props['_dirty']:
+                self._dirty.add('constructed dirty')
+            self._props.pop('_dirty')
 
     def set_theme(self, theme: str) -> None: self.generic_set('theme', theme)
     def get_theme(self) -> str: return self._props['theme']

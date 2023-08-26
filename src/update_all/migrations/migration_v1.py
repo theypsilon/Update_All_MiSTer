@@ -26,3 +26,4 @@ class MigrationV1(Migration):
         """create arcade_names_txt field"""
 
         local_store['introduced_arcade_names_txt'] = 'false'
+        local_store['_dirty'] = True
