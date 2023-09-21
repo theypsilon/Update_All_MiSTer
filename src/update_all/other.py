@@ -70,10 +70,8 @@ TObject = TypeVar('TObject')
 
 
 class GenericProvider(Generic[TObject]):
-    _object: TObject
-
     def __init__(self):
-        self._object = None
+        self._object: TObject = None
 
     def initialize(self, o: TObject) -> None:
         if self._object is not None:
