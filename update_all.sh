@@ -51,7 +51,7 @@ download_file() {
                 export CURL_SSL="${CURL_SSL:-}"
                 return
                 ;;
-            60)
+            60|77|35|51|58|59|82|83)
                 if [ -f /etc/ssl/certs/cacert.pem ] ; then
                     export CURL_SSL="--cacert /etc/ssl/certs/cacert.pem"
                     continue
