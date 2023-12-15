@@ -281,6 +281,8 @@ class _FileSystem(ProductionFileSystem):
             return file_description['unzipped_json']
         elif 'json' in file_description:
             return file_description['json']
+        elif 'content' in file_description:
+            return json.loads(file_description['content'])
         else:
             raise UnreachableException('Should not reach this!')
 
@@ -296,6 +298,7 @@ class _FileSystem(ProductionFileSystem):
             self.touch(path)
         file = self._path(path)
         self._state.files[file]['json'] = db
+        self._state.files[file]['content'] = json.dumps(db)
         self._write_records.append(_Record('save_json', file))
 
     def unzip_contents(self, file_path, zip_target_path, contained_files):

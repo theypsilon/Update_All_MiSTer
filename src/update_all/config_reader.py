@@ -19,6 +19,7 @@ import json
 import time
 from distutils.util import strtobool
 from pathlib import Path
+from typing import Dict
 
 from update_all.config import Config
 from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, \
@@ -37,11 +38,13 @@ class ConfigReader:
         self._env = env
         self._ini_repository = ini_repository
 
-    def fill_config_with_environment_and_mister_section(self, config: Config):
+    def read_downloader_ini(self) -> Dict[str, IniParser]:
         self._ini_repository.initialize_downloader_ini_base_path(str(calculate_base_path(self._env)))
-        downloader_ini = self._ini_repository.get_downloader_ini()
+        return {k: IniParser(v) for k, v in self._ini_repository.get_downloader_ini().items()}
+
+    def fill_config_with_environment_and_mister_section(self, config: Config, downloader_ini: Dict[str, IniParser]):
         if 'mister' in downloader_ini:
-            mister_section = IniParser(downloader_ini['mister'])
+            mister_section = downloader_ini['mister']
             config.base_path = mister_section.get_string('base_path', config.base_path)
             config.base_system_path = mister_section.get_string('base_system_path', config.base_path)
             config.paths_from_downloader_ini = mister_section.has('base_path')
@@ -66,9 +69,7 @@ class ConfigReader:
 
         self._logger.debug('env: ' + json.dumps(self._env, indent=4))
 
-    def fill_config_with_ini_files(self, config: Config) -> None:
-        downloader_ini = self._ini_repository.get_downloader_ini()
-
+    def fill_config_with_ini_files(self, config: Config, downloader_ini: Dict[str, IniParser]) -> None:
         for db_id, variable in model_variables_by_db_id().items():
             is_present = db_id.lower() in downloader_ini
             config.__setattr__(variable, is_present)
@@ -76,35 +77,28 @@ class ConfigReader:
                 config.databases.add(db_id)
 
         if DB_ID_DISTRIBUTION_MISTER in downloader_ini:
-            parser = IniParser(downloader_ini[DB_ID_DISTRIBUTION_MISTER])
-            config.encc_forks = parser.get_string('db_url', AllDBs.MISTER_DEVEL_DISTRIBUTION_MISTER.db_url) == AllDBs.MISTER_DB9_DISTRIBUTION_MISTER.db_url
+            parser = downloader_ini[DB_ID_DISTRIBUTION_MISTER]
+            config.encc_forks = parser.get_string('db_url', AllDBs.MISTER_DEVEL_DISTRIBUTION_MISTER.db_url).strip().lower() == AllDBs.MISTER_DB9_DISTRIBUTION_MISTER.db_url.lower()
 
         if AllDBs.JTCORES.db_id in downloader_ini:
-            parser = IniParser(downloader_ini[AllDBs.JTCORES.db_id])
-            jt_db_url = parser.get_string('db_url', AllDBs.JTCORES.db_url)
+            parser = downloader_ini[AllDBs.JTCORES.db_id]
+            jt_db_url = parser.get_string('db_url', AllDBs.JTCORES.db_url).strip().lower()
             jt_filter = parser.get_string('filter', None)
-            if jt_db_url == DB_URL_JTPREMIUM_DEPRECATED:
+            if jt_db_url == DB_URL_JTPREMIUM_DEPRECATED.lower():
                 config.download_beta_cores = True
-                config.has_jtpremium = True
             elif jt_filter is not None and '!jtbeta' not in jt_filter.replace(' ', '').lower():
                 config.download_beta_cores = True
 
-        if AllDBs.MISTERSAM_FILES.db_id.lower() in downloader_ini:
-            parser = IniParser(downloader_ini[AllDBs.MISTERSAM_FILES.db_id.lower()])
-            mistersam_db_url = parser.get_string('db_url', AllDBs.MISTERSAM_FILES.db_url)
-            if mistersam_db_url == DB_URL_MISTERSAM_FILES_DEPRECATED:
-                config.has_mistersam_main_branch = True
-
         if DB_ID_NAMES_TXT in downloader_ini:
-            parser = IniParser(downloader_ini[DB_ID_NAMES_TXT])
-            config.names_region, config.names_char_code, config.names_sort_code = names_locale_by_db_url(parser.get_string('db_url', AllDBs.NAMES_CHAR18_COMMON_JP_TXT.db_url))
+            parser = downloader_ini[DB_ID_NAMES_TXT]
+            config.names_region, config.names_char_code, config.names_sort_code = names_locale_by_db_url(parser.get_string('db_url', AllDBs.NAMES_CHAR18_COMMON_JP_TXT.db_url).strip())
 
         if AllDBs.ARCADE_ROMS.db_id in downloader_ini:
-            parser = IniParser(downloader_ini[AllDBs.ARCADE_ROMS.db_id])
+            parser = downloader_ini[AllDBs.ARCADE_ROMS.db_id]
             config.hbmame_filter = '!hbmame' in parser.get_string('filter', '')
 
         if AllDBs.RANNYSNICE_WALLPAPERS.db_id.lower() in downloader_ini:
-            parser = IniParser(downloader_ini[AllDBs.RANNYSNICE_WALLPAPERS.db_id.lower()])
+            parser = downloader_ini[AllDBs.RANNYSNICE_WALLPAPERS.db_id.lower()]
             rannysnice_wallpapers_filter = parser.get_string('filter', '').replace('-', '').replace('_', '').lower()
             config.rannysnice_wallpapers_filter = 'ar16-9' if 'ar169' in rannysnice_wallpapers_filter else 'ar4-3' if 'ar43' in rannysnice_wallpapers_filter else 'all'
 

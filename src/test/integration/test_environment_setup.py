@@ -105,30 +105,30 @@ class TestEnvironmentSetup(unittest.TestCase):
     def test_setup___with_downloader_with_just_jtpremium_db___returns_config_has_jtpremium_and_beta_Cores(self):
         self.assertSetup(
             files={downloader_ini: Path('test/fixtures/downloader_ini/just_jtpremium.ini').read_text()},
-            expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=True, has_jtpremium=True),
+            expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=True),
             expected_files={downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores_with_mister_inheritance.ini').read_text()}
         )
 
     def test_setup___with_downloader_with_just_jtcores_db___returns_config_has_not_jtpremium_neither_beta_cores(self):
         self.assertSetup(files={
             downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores.ini').read_text()
-        }, expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=False, has_jtpremium=False))
+        }, expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=False))
 
     def test_setup___with_downloader_with_just_jtcores_with_mister_inheritance_filter_db___returns_config_has_not_jtpremium_but_has_beta_cores(self):
         self.assertSetup(files={
             downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores_with_mister_inheritance.ini').read_text()
-        }, expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=True, has_jtpremium=False))
+        }, expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=True))
 
     def test_setup___with_downloader_with_just_jtcores_and_negated_jtbeta_db___returns_config_has_not_jtpremium_neither_beta_cores(self):
         self.assertSetup(files={
             downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores_with_negated_jtbeta.ini').read_text()
-        }, expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=False, has_jtpremium=False))
+        }, expected_config=Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=False))
 
     def test_setup___with_mistersam_on_main_branch___writes_downloader_ini_with_mistersam_on_db_branch(self):
         self.assertSetup(
-            files={downloader_ini: Path('test/fixtures/downloader_ini/mistersam_on_main.ini').read_text()},
-            expected_config=Config(databases={AllDBs.MISTERSAM_FILES.db_id}, has_mistersam_main_branch=True),
-            expected_files={downloader_ini: Path('test/fixtures/downloader_ini/mistersam_on_db.ini').read_text()}
+            files={downloader_ini: Path('test/fixtures/downloader_ini/db_url_changes/mistersam_on_main.ini').read_text()},
+            expected_config=Config(databases={AllDBs.MISTERSAM_FILES.db_id}),
+            expected_files={downloader_ini: Path('test/fixtures/downloader_ini/db_url_changes/mistersam_on_db.ini').read_text()}
         )
 
     def test_setup___with_transition_service_only_env_var___returns_requires_early_exit_result(self):

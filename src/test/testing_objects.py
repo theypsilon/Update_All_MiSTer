@@ -18,9 +18,10 @@
 from pathlib import Path
 
 from update_all.constants import MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, FILE_update_all_ini, \
-    FILE_update_names_txt_ini, FILE_update_jtcores_ini, ARCADE_ORGANIZER_INI, FILE_update_all_storage
+    FILE_update_names_txt_ini, FILE_update_jtcores_ini, ARCADE_ORGANIZER_INI, FILE_update_all_storage, DOWNLOADER_STORE_STANDARD_PATH
 
 downloader_ini = f'{MEDIA_FAT}/{DOWNLOADER_INI_STANDARD_PATH}'
+downloader_store = f'{MEDIA_FAT}/{DOWNLOADER_STORE_STANDARD_PATH}'
 update_all_ini = f'{MEDIA_FAT}/{FILE_update_all_ini}'
 update_names_txt_ini = f'{MEDIA_FAT}/{FILE_update_names_txt_ini}'
 update_jtcores_ini = f'{MEDIA_FAT}/{FILE_update_jtcores_ini}'

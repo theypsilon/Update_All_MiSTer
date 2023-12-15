@@ -33,7 +33,7 @@ def settings_screen_model(): return {
     },
     "variables": {
         # Global variables
-        "update_all_version": {"default": "2.0"},
+        "update_all_version": {"default": "2.1"},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
         "encc_forks": {"group": "ua_ini", "default": "false", "values": ["false", "true"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -64,6 +64,15 @@ def settings_screen_model(): return {
                     "description": "",
                     "actions": {"ok": [{"type": "navigate", "target": "back"}]}
                 },
+            ]
+        },
+        "dialog_sub_menu_toggle": {
+            "type": "dialog_sub_menu",
+            "actions": [
+                'replace',
+                {"title": "Select", "type": "symbol", "symbol": "ok"},
+                {"title": "Toggle",  "type": "symbol", "symbol": "toggle"},
+                {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
             ]
         },
         "dialog_sub_menu_info": {
@@ -151,6 +160,9 @@ def settings_screen_model(): return {
         "main_menu": {
             "ui": "menu",
             "header": "Update All {update_all_version} Settings",
+            "variables": {
+                "coin_op_collection_downloader": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
+            },
             "hotkeys": [{"keys": [27], "action": _try_abort()}],
             "actions": [
                 {"title": "Select", "type": "symbol", "symbol": "ok"},
@@ -168,62 +180,50 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "2 JTCORES for MiSTer",
-                    "description": "{jotego_updater:enabled} Cores made by Jotego ({download_beta_cores})",
+                    "description": "{jotego_updater:enabled} Cores by Jotego Team ({download_beta_cores})",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "jtcores_menu"}],
                         "toggle": [{"type": "rotate_variable", "target": "jotego_updater"}],
                     }
                 },
                 {
-                    "title": "3 Names TXT",
-                    "description": "{names_txt_updater:enabled} Better core names in the menus",
+                    "title": "3 Coin-Op Collection",
+                    "description": "{coin_op_collection_downloader:enabled} Cores by Coin-Op Team",
                     "actions": {
-                        "ok": [{"type": "navigate", "target": "names_txt_menu"}],
-                        "toggle": _try_toggle_update_names_txt(),
-                    }
-                },
-                {
-                    "title": "4 BIOS Database",
-                    "description": "{bios_getter:enabled} BIOS files for your systems",
-                    "actions": {
-                        "ok": [{"type": "rotate_variable", "target": "bios_getter"}],
-                        "toggle": [{"type": "rotate_variable", "target": "bios_getter"}],
-                    }
-                },
-                {
-                    "title": "5 Arcade ROMs Database",
-                    "description": "{arcade_roms_db_downloader:enabled} ROMs for Arcade Cores",
-                    "actions": {
-                        "ok": [{"type": "navigate", "target": "arcade_roms_database_menu"}],
-                        "toggle": [{"type": "rotate_variable", "target": "arcade_roms_db_downloader"}],
-                    }
-                },
-                {
-                    "title": "6 Arcade Organizer",
-                    "description": "{arcade_organizer:enabled} Creates folder for easy navigation",
-                    "actions": {
-                        "ok": [{"type": "navigate", "target": "arcade_organizer_menu"}],
-                        "toggle": [{"type": "rotate_variable", "target": "arcade_organizer"}],
+                        "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
+                        "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
                     }
                 },
                 {},  # separator
                 {
-                    "title": "7 Unofficial Cores",
-                    "description": "atrac17 Cores, LLAPI Forks, etc...",
-                    "actions": {"ok": [{"type": "navigate", "target": "unofficial_cores_menu"}]}
+                    "title": "4 Other Cores",
+                    "description": "LLAPI, Unofficials, Y/C Builds...",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "other_cores_menu"}],
+                    }
                 },
                 {
-                    "title": "8 Unofficial Scripts",
-                    "description": "Super Attract, MiSTer Extensions, *-2oled",
-                    "actions": {"ok": [{"type": "navigate", "target": "unofficial_scripts_menu"}]}
+                    "title": "5 Tools & Scripts",
+                    "description": "Names TXT, Arcade Organizer, Scripts...",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "tools_and_scripts_menu"}],
+                    }
                 },
                 {
-                    "title": "9 Misc Menu",
-                    "description": "Extra Content (Wallpapers) & Other Settings",
-                    "actions": {"ok": [{"type": "navigate", "target": "misc_menu"}]}
+                    "title": "6 Extra Content",
+                    "description": "ROMs, BIOS & Wallpapers",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "extra_content_menu"}],
+                    }
+                },
+                {},  # separator
+                {
+                    "title": "7 Analogue Pocket",
+                    "description": "Sync saves, Firmware, Updates, Backups...",
+                    "actions": {"ok": [{"type": "navigate", "target": "analogue_pocket_menu"}]}
                 },
                 {
-                    "title": "0 Patrons Menu",
+                    "title": "8 Patrons Menu",
                     "description": "Taito Spinner, Themes, etc... [2022.12.07]",
                     "actions": {"ok": [
                         {"type": "calculate_has_right_available_code"},
@@ -251,14 +251,14 @@ def settings_screen_model(): return {
                                         " ·@Ace@ ~ko-fi.com/ace9921~ - Arcade cores",
                                         " ·@Artemio@ ~patreon.com/aurbina~ - Testing tools",
                                         " ·@atrac17@ ~patreon.com/atrac17~ - Arcade cores",
-                                        " ·@Blackwine@ ~patreon.com/blackwine~ - Arcade cores",
-                                        " ·@FPGAZumSpass@ ~patreon.com/FPGAZumSpass~ - Console & Computer cores",
                                         " ·@d0pefish@ ~ko-fi.com/d0pefish~ - mt32pi author",
+                                        " ·@FPGAZumSpass@ ~patreon.com/FPGAZumSpass~ - Console & Computer cores",
+                                        " ·@furrtek@ ~patreon.com/furrtek~ - Reverse engineering hardware",
+                                        " ·@GoLEm FPGA@ ~patreon.com/golem_fpga~ - Firmware rewrite",
                                         " ·@JOTEGO@ ~patreon.com/jotego~ - Arcade & Console cores",
-                                        " ·@MiSTer-X@ ~patreon.com/MrX_8B~ - Arcade cores",
-                                        " ·@Nullobject@ ~patreon.com/nullobject~ - Arcade cores",
                                         " ·@Srg320@ ~patreon.com/srg320~ - Console cores",
-                                        " ·@theypsilon@ ~patreon.com/theypsilon~ - Downloader, Update All & Other Tools",
+                                        " ·@theypsilon@ ~patreon.com/theypsilon~ - Updaters & Other Tools",
+                                        " ·@wizzo@ ~patreon.com/wizzo~ - Tools & scripts",
                                         " ",
                                         "Your favorite open-source projects require your support to keep evolving!"
                                     ]
@@ -266,6 +266,11 @@ def settings_screen_model(): return {
                             }]
                         }
                     ]}
+                },
+                {
+                    "title": "9 System Options",
+                    "description": "",
+                    "actions": {"ok": [{"type": "navigate", "target": "system_options_menu"}]}
                 },
                 {},  # separator
                 {
@@ -381,7 +386,7 @@ def settings_screen_model(): return {
                 {
                     "title": "1 {arcade_roms_db_downloader:do_enable}",
                     "description": "Activated: {arcade_roms_db_downloader:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_roms_db_downloader"}]}
+                    "actions": {"ok": [_roms_copyright_notice('arcade_roms_db_downloader')]}
                 },
                 {
                     "title": "2 Include HBMAME ROMs",
@@ -497,11 +502,10 @@ def settings_screen_model(): return {
                 },
             ]
         },
-        "unofficial_cores_menu": {
+        "other_cores_menu": {
             "type": "dialog_sub_menu_info",
-            "header": "Unofficial Cores",
+            "header": "Other Cores",
             "variables": {
-                "coin_op_collection_downloader": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
                 "arcade_offset_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "llapi_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "unofficial_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
@@ -510,19 +514,7 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Coin-Op Collection (atrac17, Darren)",
-                    "description": "{coin_op_collection_downloader:yesno}",
-                    "actions": {
-                        "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
-                        "info": [{
-                            "ui": "message",
-                            "header": "Coin-Op Collection",
-                            "text": ["Arcade games developed by atrac17 and others."],
-                        }]
-                    }
-                },
-                {
-                    "title": "2 Arcade Offset folder (atrac17)",
+                    "title": "1 Arcade Offset folder (atrac17)",
                     "description": "{arcade_offset_downloader:yesno}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "arcade_offset_downloader"}],
@@ -534,7 +526,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "3 LLAPI Forks Folder",
+                    "title": "2 LLAPI Forks Folder",
                     "description": "{llapi_updater:yesno}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "llapi_updater"}],
@@ -546,7 +538,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "4 theypsilon Unofficial Distribution",
+                    "title": "3 theypsilon Unofficial Distribution",
                     "description": "{unofficial_updater:yesno}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "unofficial_updater"}],
@@ -563,19 +555,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "5 agg23's MiSTer Cores",
-                    "description": "{agg23_db:yesno}",
-                    "actions": {
-                        "ok": [{"type": "rotate_variable", "target": "agg23_db"}],
-                        "info": [{
-                            "ui": "message",
-                            "header": "agg23's MiSTer Cores",
-                            "text": ["Cores made by agg23, including Tamagotchi and Game & Watch."],
-                        }]
-                    }
-                },
-                {
-                    "title": "6 Y/C Builds from MikeS11",
+                    "title": "4 Y/C Builds from MikeS11",
                     "description": "{MikeS11/YC_Builds-MiSTer:yesno}",
                     "actions": {
                         "ok": [{
@@ -607,75 +587,147 @@ def settings_screen_model(): return {
                         }]
                     }
                 },
+                {
+                    "title": "5 agg23's MiSTer Cores",
+                    "description": "{agg23_db:yesno}",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "agg23_db"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "agg23's MiSTer Cores",
+                            "text": ["Cores made by agg23, including Tamagotchi and Game & Watch."],
+                        }]
+                    }
+                },
             ]
         },
-        "unofficial_scripts_menu": {
+        "tools_and_scripts_menu": {
             "type": "dialog_sub_menu",
-            "header": "Unofficial Scripts",
+            "header": "Tools & Scripts",
             "variables": {
                 "mistersam_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "mrext/all": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "tty2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "i2c2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
+                "retrospy/retrospy-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
-                    "title": "1 MiSTer Super Attract Mode",
-                    "description": "{mistersam_files_downloader:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "mistersam_files_downloader"}]}
+                    "title": "1 Arcade Organizer",
+                    "description": "{arcade_organizer:enabled} Creates folder for easy navigation",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "arcade_organizer_menu"}],
+                        "toggle": [{"type": "rotate_variable", "target": "arcade_organizer"}],
+                    }
                 },
                 {
-                    "title": "2 MiSTer Extensions (wizzo)",
+                    "title": "2 Names TXT",
+                    "description": "{names_txt_updater:enabled} Better core names in the menus",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "names_txt_menu"}],
+                        "toggle": _try_toggle_update_names_txt(),
+                    }
+                },
+                {
+                    "title": "3 MiSTer Extensions (wizzo)",
                     "description": "{mrext/all:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "mrext/all"}]}
                 },
                 {
-                    "title": "3 tty2oled Add-on script",
+                    "title": "4 MiSTer Super Attract Mode",
+                    "description": "{mistersam_files_downloader:yesno}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "mistersam_files_downloader"}]}
+                },
+                {
+                    "title": "5 tty2oled Add-on script",
                     "description": "{tty2oled_files_downloader:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "tty2oled_files_downloader"}]}
                 },
                 {
-                    "title": "4 i2c2oled Add-on script",
+                    "title": "6 i2c2oled Add-on script",
                     "description": "{i2c2oled_files_downloader:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "i2c2oled_files_downloader"}]}
+                },
+                {
+                    "title": "7 RetroSpy utility",
+                    "description": "{retrospy/retrospy-MiSTer:yesno}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "retrospy/retrospy-MiSTer"}]}
                 }
             ]
         },
-        "misc_menu": {
-            "type": "dialog_sub_menu",
-            "header": "Misc Menu",
+        "extra_content_menu": {
+            "type": "dialog_sub_menu_toggle",
+            "header": "Extra Content",
             "formatters": {
-                "rannysnice_wallpapers_filter": {"ar16-9": "16x9", "ar4-3": "4x3", "all": "Both"},
+                "rannysnice_wallpapers_filter": {"ar16-9": "16x9", "ar4-3": "4x3", "all": "all"},
             },
             "variables": {
                 "Ranny-Snice/Ranny-Snice-Wallpapers": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "uberyoji_mister_boot_roms_mgl": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "rannysnice_wallpapers_filter": {"group": "rannysnice_wallpapers", "default": "ar16-9", "values": ["ar16-9", "ar4-3", "all"]},
+            },
+            "entries": [
+                {
+                    "title": "1 BIOS Database",
+                    "description": "{bios_getter:enabled} BIOS files for your systems",
+                    "actions": {
+                        "ok": [_roms_copyright_notice('bios_getter')],
+                        "toggle": [_roms_copyright_notice('bios_getter')],
+                    }
+                },
+                {
+                    "title": "2 Arcade ROMs Database",
+                    "description": "{arcade_roms_db_downloader:enabled} ROMs for Arcade Cores",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "arcade_roms_database_menu"}],
+                        "toggle": [_roms_copyright_notice('arcade_roms_db_downloader')],
+                    }
+                },
+                {
+                    "title": "3 Ranny Snice Wallpapers",
+                    "description": "{Ranny-Snice/Ranny-Snice-Wallpapers:enabled} Wallpapers for {rannysnice_wallpapers_filter} screens",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "rannysnice_wallpapers_menu"}],
+                        "toggle": [{"type": "rotate_variable", "target": "Ranny-Snice/Ranny-Snice-Wallpapers"}],
+                    }
+                },
+                {
+                    "title": "4 Uberjoyi Boot ROMs",
+                    "description": "{uberyoji_mister_boot_roms_mgl} Boot ROMs for popular consoles",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
+                        "toggle": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
+                    }
+                },
+            ]
+        },
+        "analogue_pocket_menu": {
+            "type": "dialog_sub_menu",
+            "header": "Analogue Pocket",
+            "entries": [
+            ]
+        },
+        "system_options_menu": {
+            "type": "dialog_sub_menu",
+            "header": "System Options",
+            "variables": {
                 "autoreboot": {"group": ["ua_ini", "store"], "default": "true", "values": ["false", "true"]},
                 "wait_time_for_reading": {"group": ["ua_ini", "store"], "default": "2", "values": ["2", "0", "30"]},
                 "countdown_time": {"group": ["ua_ini", "store"], "default": "15", "values": ["15", "4", "60"]},
             },
             "entries": [
                 {
-                    "title": "1 Ranny Snice Wallpapers",
-                    "description": "{Ranny-Snice/Ranny-Snice-Wallpapers:enabled}",
-                    "actions": {
-                        "ok": [{"type": "navigate", "target": "rannysnice_wallpapers_menu"}],
-                        "toggle": [{"type": "rotate_variable", "target": "Ranny-Snice/Ranny-Snice-Wallpapers"}],
-                    }
-                },
-                {},
-                {
-                    "title": "2 Autoreboot (if needed)",
+                    "title": "1 Autoreboot (if needed)",
                     "description": "{autoreboot:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "autoreboot"}]}
                 },
                 {
-                    "title": "3 Pause (between updaters)",
+                    "title": "2 Pause (between updaters)",
                     "description": "{wait_time_for_reading}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "wait_time_for_reading"}]}
                 },
                 {
-                    "title": "4 Countdown Timer",
+                    "title": "3 Countdown Timer",
                     "description": "{countdown_time}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "countdown_time"}]}
                 },
@@ -1311,3 +1363,34 @@ def _try_toggle_update_names_txt(): return [
         ]
     }
 ]
+
+
+def _roms_copyright_notice(variable): return {
+    "type": "condition",
+    "variable": variable,
+    "false": [{
+        "ui": "confirm",
+        "header": "COPYRIGHT NOTICE",
+        "text": [
+            "This database may contain links to copyrighted ROMs, potentially",
+            "illegal in your region. Activating this option signifies your",
+            "responsibility for any processing and downloading of files within.",
+            " ",
+            "The author and contributors of this script disclaim all liability",
+            "for any legal infringements arising from the use of these links.",
+            " ",
+            "Users must ensure compliance with local laws and regulations.",
+            " ",
+            " ",
+            "Do you accept these terms and take full responsibility for legal",
+            "compliance in your use of this software?"
+        ],
+        "alert_level": "black",
+        "preselected_action": "No",
+        "actions": [
+            {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": variable}, {"type": "navigate", "target": "back"}]},
+            {"title": "No", "type": "fixed", "fixed": [{"ui": "message", "text": ["Operation Canceled"]}, {"type": "navigate", "target": "back"}]}
+        ],
+    }],
+    "true": [{"type": "rotate_variable", "target": variable}]
+}

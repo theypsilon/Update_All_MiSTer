@@ -35,6 +35,8 @@ DB_ID_NAMES_TXT = 'names_txt'
 DB_ID_ARCADE_NAMES_TXT = 'arcade_names_txt'
 DB_URL_JTPREMIUM_DEPRECATED = 'https://raw.githubusercontent.com/jotego/jtpremium/main/jtbindb.json.zip'
 DB_URL_MISTERSAM_FILES_DEPRECATED = 'https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/main/MiSTer_SAMdb.json'
+DB_ID_COIN_OP_COLLECTION_DEPRECATED = 'atrac17/Coin-Op_Collection'
+DB_ID_UBERYOJI_BOOT_ROMS_DEPRECATED = 'uberyoji_mister_boot_roms'
 
 
 class AllDBs:
@@ -66,14 +68,15 @@ class AllDBs:
     ARCADE_NAMES_JP_TXT = Database(db_id=DB_ID_ARCADE_NAMES_TXT, db_url='https://raw.githubusercontent.com/PigSaint/ArcadeNames_MiSTer/dbs/arcade_names_JP.json', title='Arcade Names TXT: JP')
 
     # ROMS
-    BIOS = Database(db_id='bios_db', db_url='https://raw.githubusercontent.com/theypsilon/BiosDB_MiSTer/db/bios_db.json', title='BIOS Database')
-    ARCADE_ROMS = Database(db_id='arcade_roms_db', db_url='https://raw.githubusercontent.com/theypsilon/ArcadeROMsDB_MiSTer/db/arcade_roms_db.json.zip', title='Arcade ROMs Database')
+    BIOS = Database(db_id='bios_db', db_url='https://raw.githubusercontent.com/BigDendy/BiosDB_MiSTer/db/bios_db.json.zip', title='BIOS Database')
+    ARCADE_ROMS = Database(db_id='arcade_roms_db', db_url='https://raw.githubusercontent.com/BigDendy/ArcadeROMsDB_MiSTer/db/arcade_roms_db.json.zip', title='Arcade ROMs Database')
+    UBERYOJI_BOOT_ROMS = Database(db_id='uberyoji_mister_boot_roms_mgl', db_url='https://raw.githubusercontent.com/uberyoji/mister-boot-roms/main/db/uberyoji_mister_boot_roms_mgl.json', title='Uberyoji Boot ROMs')
 
     # UNOFFICIAL CORES
     THEYPSILON_UNOFFICIAL_DISTRIBUTION = Database(db_id='theypsilon_unofficial_distribution', db_url='https://raw.githubusercontent.com/theypsilon/Distribution_Unofficial_MiSTer/main/unofficialdb.json.zip', title='theypsilon Unofficial Distribution')
     LLAPI_FOLDER = Database(db_id='llapi_folder', db_url='https://raw.githubusercontent.com/MiSTer-LLAPI/LLAPI_folder_MiSTer/main/llapidb.json.zip', title='LLAPI Folder')
     ARCADE_OFFSET_FOLDER = Database(db_id='arcade_offset_folder', db_url='https://raw.githubusercontent.com/atrac17/Arcade_Offset/db/arcadeoffsetdb.json.zip', title='Arcade Offset folder')
-    COIN_OP_COLLECTION = Database(db_id='atrac17/Coin-Op_Collection', db_url='https://raw.githubusercontent.com/atrac17/Coin-Op_Collection/db/db.json.zip', title='Coin-Op Collection')
+    COIN_OP_COLLECTION = Database(db_id='Coin-OpCollection/Distribution-MiSTerFPGA', db_url='https://raw.githubusercontent.com/Coin-OpCollection/Distribution-MiSTerFPGA/db/db.json.zip', title='Coin-Op Collection')
     AGG23_DB = Database(db_id='agg23_db', db_url='https://raw.githubusercontent.com/agg23/mister-repository/db/manifest.json', title="agg23's MiSTer Cores")
     YC_BUILDS = Database(db_id='MikeS11/YC_Builds-MiSTer', db_url='https://raw.githubusercontent.com/MikeS11/YC_Builds-MiSTer/db/db.json.zip', title='Y/C Builds')
 
@@ -82,6 +85,7 @@ class AllDBs:
     I2C2OLED_FILES = Database(db_id='i2c2oled_files', db_url='https://raw.githubusercontent.com/venice1200/MiSTer_i2c2oled/main/i2c2oleddb.json', title='i2c2oled files')
     MISTERSAM_FILES = Database(db_id='MiSTer_SAM_files', db_url='https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/db/db.json.zip', title='MiSTer SAM files')
     WIZZO_MREXT_FILES = Database(db_id='mrext/all', db_url='https://raw.githubusercontent.com/wizzomafizzo/mrext/main/releases/all.json', title='MiSTer Extensions (wizzo)')
+    RETROSPY = Database(db_id='retrospy/retrospy-MiSTer', db_url='https://raw.githubusercontent.com/retrospy/retrospy-MiSTer/db/db.json.zip', title='RetroSpy')
 
     # WALLPAPERS
     RANNYSNICE_WALLPAPERS = Database(db_id='Ranny-Snice/Ranny-Snice-Wallpapers', db_url='https://raw.githubusercontent.com/Ranny-Snice/Ranny-Snice-Wallpapers/db/db.json.zip', title='Ranny Snice Wallpapers')
@@ -91,6 +95,13 @@ class AllDBs:
 def dbs_to_model_variables_pairs() -> List[Tuple[str, List[Database]]]:
     mapping = databases_by_ids()
     return [(variable, mapping[db_id]) for variable, db_id in db_ids_to_model_variable_pairs()]
+
+
+def changed_db_ids() -> Dict[str, str]:
+    return {
+        DB_ID_COIN_OP_COLLECTION_DEPRECATED: AllDBs.COIN_OP_COLLECTION.db_id,
+        DB_ID_UBERYOJI_BOOT_ROMS_DEPRECATED: AllDBs.UBERYOJI_BOOT_ROMS.db_id,
+    }
 
 
 @cache

@@ -16,28 +16,34 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import unittest
+import json
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Any
 
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.testing_objects import downloader_ini, update_all_ini, update_arcade_organizer_ini, update_names_txt_ini, \
-    update_jtcores_ini
-from test.update_all_service_tester import TransitionServiceTester, local_store
+    update_jtcores_ini, downloader_store
+from test.update_all_service_tester import TransitionServiceTester, local_store, IniRepositoryTester, ConfigReaderTester
 from update_all.config import Config
-from update_all.databases import AllDBs
 
 
-def test_transitions(files: Dict[str, str] = None, config: Config = None):
-    config = config or Config()
-    fs = FileSystemState(config=config, files=None if files is None else {filename: {'content': Path(path).read_text()} for filename, path in files.items()})
-    sut = TransitionServiceTester(file_system=FileSystemFactory(state=fs).create_for_system_scope())
+def test_transitions(files: Dict[str, str] = None):
+    config = Config()
+    fs_state = FileSystemState(config=config, files=None if files is None else {filename: read_content(path) for filename, path in files.items()})
+    fs = FileSystemFactory(state=fs_state).create_for_system_scope()
+    ini_repos = IniRepositoryTester(file_system=fs)
+    config_reader = ConfigReaderTester(downloader_ini_repository=ini_repos, file_system=fs)
+    sut = TransitionServiceTester(file_system=fs, ini_repository=ini_repos)
+    downloader_ini = config_reader.read_downloader_ini()
+    sut.from_old_db_ids_to_new_db_ids(downloader_ini)
+    config_reader.fill_config_with_environment_and_mister_section(config, downloader_ini)
+    config_reader.fill_config_with_ini_files(config, downloader_ini)
     sut.from_not_existing_downloader_ini(config)
     sut.from_update_all_1(config, local_store())
-    sut.from_jtpremium_to_jtcores(config)
-    sut.from_mistersam_main_to_db_branch(config)
     sut.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store())
-    return fs
+    sut.from_old_db_urls_to_actual_db_urls(config, downloader_ini)
+    return fs_state
 
 
 class TestTransitionService(unittest.TestCase):
@@ -87,8 +93,7 @@ class TestTransitionService(unittest.TestCase):
         }, fs.files)
 
     def test_with_just_jtpremium_in_downloader_ini___writes_downloader_ini_with_jtcores_with_mister_inheritance(self):
-        just_jtpremium_config = Config(has_jtpremium=True, download_beta_cores=True, databases={AllDBs.JTCORES.db_id})
-        fs = test_transitions(config=just_jtpremium_config, files={
+        fs = test_transitions(files={
             downloader_ini: 'test/fixtures/downloader_ini/just_jtpremium.ini',
         })
         self.assertEqualFiles({
@@ -96,8 +101,7 @@ class TestTransitionService(unittest.TestCase):
         }, fs.files)
 
     def test_with_just_jtpremium_with_filter_wtf_in_downloader_ini___writes_downloader_ini_with_jtcores_with_filter_wtf(self):
-        just_jtpremium_config = Config(has_jtpremium=True, download_beta_cores=True, databases={AllDBs.JTCORES.db_id})
-        fs = test_transitions(config=just_jtpremium_config, files={
+        fs = test_transitions(files={
             downloader_ini: 'test/fixtures/downloader_ini/just_jtpremium_with_filter_wtf.ini',
         })
         self.assertEqualFiles({
@@ -105,15 +109,52 @@ class TestTransitionService(unittest.TestCase):
         }, fs.files)
 
     def test_mistersam_on_main_branch___writes_downloader_ini_with_mistersam_on_db_branch(self):
-        just_mistersam_with_main_branch_config = Config(has_mistersam_main_branch=True, databases={AllDBs.MISTERSAM_FILES.db_id})
-        fs = test_transitions(config=just_mistersam_with_main_branch_config, files={
-            downloader_ini: 'test/fixtures/downloader_ini/mistersam_on_main.ini',
+        fs = test_transitions(files={
+            downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/mistersam_on_main.ini',
         })
         self.assertEqualFiles({
-            downloader_ini: 'test/fixtures/downloader_ini/mistersam_on_db.ini',
+            downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/mistersam_on_db.ini',
+        }, fs.files)
+
+    def test_old_bios_db_url_in_ini___writes_downloader_ini_with_bigdendy_db_url(self):
+        fs = test_transitions(files={
+            downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_bios_before.ini',
+        })
+        self.assertEqualFiles({
+            downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_bios_after.ini',
+        }, fs.files)
+
+    def test_old_arcade_roms_db_url_in_ini___writes_downloader_ini_with_bigdendy_db_urls(self):
+        fs = test_transitions(files={
+            downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_arcade_roms_before.ini',
+        })
+        self.assertEqualFiles({
+            downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_arcade_roms_after.ini',
+        }, fs.files)
+
+    def test_coin_op_from_atrac17_ini___writes_downloader_ini_with_coin_op_org_db_id_and_url(self):
+        fs = test_transitions(files={
+            downloader_store: 'test/fixtures/downloader_ini/db_id_changes/old_coin_op_to_new_before.json',
+            downloader_ini: 'test/fixtures/downloader_ini/db_id_changes/old_coin_op_to_new_before.ini',
+        })
+        self.assertEqualFiles({
+            downloader_store: 'test/fixtures/downloader_ini/db_id_changes/old_coin_op_to_new_after.json',
+            downloader_ini: 'test/fixtures/downloader_ini/db_id_changes/old_coin_op_to_new_after.ini',
         }, fs.files)
 
     def assertEqualFiles(self, expected, actual):
-        actual = {filename.lower(): description['content'].strip() for filename, description in actual.items()}
-        expected = {filename.lower(): Path(path).read_text().strip() for filename, path in expected.items()}
+        actual = {filename.lower(): read_description(description) for filename, description in actual.items()}
+        expected = {filename.lower(): read_json_or_text(path) for filename, path in expected.items()}
         self.assertEqual(expected, actual)
+
+
+def read_description(description: Dict[str, Any]) -> Dict[str, str]:
+    return description['json'] if 'json' in description else description['content'].strip()
+
+
+def read_json_or_text(path: str) -> Dict[str, str]:
+    return json.loads(Path(path).read_text()) if Path(path).suffix == '.json' else Path(path).read_text().strip()
+
+
+def read_content(path: str) -> Dict[str, str]:
+    return {'content': Path(path).read_text()}

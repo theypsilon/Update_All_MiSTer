@@ -15,11 +15,14 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+from collections import Counter
 from typing import Dict
 from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
-from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, AllDBs, DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT
+from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, AllDBs, DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT, all_dbs_list, DB_ID_COIN_OP_COLLECTION_DEPRECATED, \
+    changed_db_ids
+from update_all.ini_parser import IniParser
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
@@ -47,31 +50,6 @@ class TransitionService:
         if file not in self._file_checks:
             self._file_checks[file] = self._file_system.is_file(file)
         return self._file_checks[file]
-
-    def from_jtpremium_to_jtcores(self, config: Config):
-        if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
-            return
-
-        if not config.has_jtpremium:
-            return
-
-        self._logger.print('Transitioning from jtpremium to jtcores with premium filter:')
-        self._ini_repository.write_downloader_ini(config)
-        self._logger.print('Done.')
-        self._logger.print()
-
-    def from_mistersam_main_to_db_branch(self, config: Config):
-        if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
-            return
-
-        if not config.has_mistersam_main_branch:
-            return
-
-        self._logger.print('Transitioning MiSTer SAM old DB URL to new one:')
-        self._logger.print(AllDBs.MISTERSAM_FILES.db_url)
-        self._ini_repository.write_downloader_ini(config)
-        self._logger.print('Done.')
-        self._logger.print()
 
     def from_not_existing_downloader_ini(self, config: Config):
         if self._file_exists(self._ini_repository.downloader_ini_standard_path()):
@@ -215,6 +193,49 @@ class TransitionService:
                 return pb
 
         raise ValueError(f'Value {string_value} is not among the possible values: {", ".join(possible_values)}')
+
+    def from_old_db_urls_to_actual_db_urls(self, config: Config, downloader_ini: Dict[str, IniParser]):
+        if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
+            return
+
+        needs_save = []
+
+        db_counts = Counter(db.db_id for db in all_dbs_list())
+        unique_dbs = [db for db in all_dbs_list() if db_counts[db.db_id] == 1]
+        for db in unique_dbs:
+            db_id = db.db_id.lower()
+            if db_id in downloader_ini:
+                if downloader_ini[db_id].get_string('db_url', '').lower() != db.db_url.lower():
+                    needs_save.append(db_id)
+
+        if len(needs_save) == 0:
+            return
+
+        self._logger.print(f'Updating {", ".join(needs_save)} DB URLs:')
+        self._logger.print('Writing downloader.ini.')
+        self._logger.print()
+        self._logger.print('Waiting 5 seconds...')
+        self._os_utils.sleep(5.0)
+        self._ini_repository.write_downloader_ini(config)
+
+    def from_old_db_ids_to_new_db_ids(self, downloader_ini: Dict[str, IniParser]):
+        if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
+            return
+
+        replacements = {}
+        for old_db_id, new_db_id in changed_db_ids().items():
+            if old_db_id.lower() in downloader_ini:
+                replacements[old_db_id] = new_db_id
+
+        if len(replacements) == 0:
+            return
+
+        self._logger.print(f'Updating {", ".join(replacements.keys())} DB IDs to {", ".join(replacements.values())}:')
+        self._logger.print('Writing downloader.ini.')
+        self._logger.print()
+        self._logger.print('Waiting 5 seconds...')
+        self._os_utils.sleep(5.0)
+        self._ini_repository.replace_db_ids_in_ini_and_fs(replacements, downloader_ini)
 
 #
 # set_default_options:

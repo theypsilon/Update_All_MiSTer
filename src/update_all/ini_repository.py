@@ -19,10 +19,10 @@ import configparser
 import io
 import json
 import re
-from typing import Optional, Dict, List, Tuple, Any
+from typing import Optional, Dict, List, Tuple, Any, Set
 
 from update_all.config import Config
-from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini
+from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini, DOWNLOADER_STORE_STANDARD_PATH
 from update_all.databases import AllDBs, Database, db_distribution_mister_by_encc_forks, \
     db_jtcores_by_download_beta_cores, db_names_txt_by_locale, dbs_to_model_variables_pairs, db_arcade_names_txt_by_locale
 from update_all.file_system import FileSystem
@@ -76,6 +76,17 @@ class IniRepository:
 
         return {header.lower(): {k.lower(): v for k, v in section.items()} for header, section in parser.items() if header.lower() != 'default'}
 
+    def _read_downloader_ini_rawtext(self) -> Optional[str]:
+        path = self.downloader_ini_standard_path()
+        contents = ''
+        try:
+            return self._file_system.read_file_contents(path)
+        except Exception as e:
+            self._logger.debug(f'Could not read Downloader INI file at: {path}')
+            self._logger.debug(f'contents: {contents}')
+            self._logger.debug(e)
+            return None
+
     def read_old_ini_file(self, path: str) -> IniParser:
         if not self._file_system.is_file(path):
             return IniParser({})
@@ -98,6 +109,12 @@ class IniRepository:
 
         return f'{self._base_path}/{DOWNLOADER_INI_STANDARD_PATH}'
 
+    def downloader_store_standard_path(self) -> str:
+        if self._base_path is None:
+            raise IniRepositoryInitializationError("DownloaderIniRepository needs to be initialized.")
+
+        return f'{self._base_path}/{DOWNLOADER_STORE_STANDARD_PATH}'
+
     def downloader_ini_path_tweaked_by_config(self, config: Config) -> str:
         return FILE_downloader_temp_ini if config.temporary_downloader_ini else self.downloader_ini_standard_path()
 
@@ -115,6 +132,62 @@ class IniRepository:
 
         if target_path == downloader_ini_path:
             self._downloader_ini = None
+
+    def replace_db_ids_in_ini_and_fs(self, changed_ids: Dict[str, str], downloader_ini: Dict[str, IniParser]) -> None:
+        downloader_ini_txt = self._read_downloader_ini_rawtext()
+        if downloader_ini_txt is None:
+            self._logger.debug(f'WARNING! Could not replace db_id because downloader ini is not readable.')
+            return
+
+        new_lines = []
+        replaced_ids = set()
+        for line in downloader_ini_txt.splitlines():
+            for old_id, new_id in changed_ids.items():
+                str_pos = line.lower().find(f'[{old_id.lower()}]')
+                if str_pos != -1:
+                    line = line[:str_pos] + f'[{new_id}]' + line[str_pos + len(old_id):]
+                    replaced_ids.add(old_id)
+
+            new_lines.append(line)
+
+        if len(replaced_ids) == 0:
+            self._logger.debug(f'WARNING! Could not replace db_id because downloader ini does not contain it.')
+            return
+
+        # Updating downloader.ini
+        self._file_system.write_file_contents(self.downloader_ini_standard_path(), '\n'.join(new_lines))
+
+        # Updating downloader_ini object
+        for old_id in replaced_ids:
+            new_id = changed_ids[old_id]
+            downloader_ini[new_id.lower()] = downloader_ini[old_id.lower()]
+            del downloader_ini[old_id.lower()]
+
+        # Updating downloader store from now on:
+        store_path = self.downloader_store_standard_path()
+        if not self._file_system.is_file(store_path):
+            return
+
+        store = self._file_system.load_dict_from_file(store_path)
+        if 'dbs' not in store:
+            self._logger.debug(f'Downloader store was not initialized yet.')
+            return
+
+        replaced_stores = []
+        for old_id in replaced_ids:
+            new_id = changed_ids[old_id]
+            if old_id in store['dbs']:
+                replaced_stores.append((old_id, new_id))
+
+        if len(replaced_stores) == 0:
+            self._logger.debug(f'Could not replace any db_id because downloader store does not contain it.')
+            return
+
+        for old_id, new_id in replaced_stores:
+            store['dbs'][new_id] = store['dbs'][old_id]
+            del store['dbs'][old_id]
+
+        self._file_system.save_json(store, store_path)
 
     def write_arcade_organizer_active_at_arcade_organizer_ini(self, config: Config) -> None:
         contents = ''
@@ -245,6 +318,7 @@ class IniAst:
     no_section = 0
     other_section = 1
     common_section = 2
+    ignore_section = 3
 
     def __init__(self, ini: Dict[str, Any], db_ids: Dict[str, str]):
         self._ini = ini
