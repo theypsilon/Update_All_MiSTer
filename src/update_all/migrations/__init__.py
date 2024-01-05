@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,8 @@
 
 from update_all.store_migrator import Migration
 from update_all.migrations.migration_v1 import MigrationV1
+from update_all.migrations.migration_v2 import MigrationV2
 
 
 def migrations() -> list[Migration]:
-    return [MigrationV1()]
+    return [MigrationV1(), MigrationV2()]

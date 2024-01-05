@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -111,8 +111,8 @@ def _add_target_formatters(result, item):
     if 'header' in item:
         result.update(extract_interpolations_from_text(item['header'])[1])
 
-    if 'texts' in item:
-        for text in item['texts']:
+    if 'text' in item:
+        for text in item['text']:
             result.update(extract_interpolations_from_text(text)[1])
 
     if 'title' in item:
@@ -145,6 +145,16 @@ def gather_target_variables(model) -> Set[str]:
 def _add_target_variables(result: Set[str], item: Dict[str, Any]) -> None:
     if 'header' in item:
         result.update(extract_interpolations_from_text(item['header'])[0])
+
+    if 'text' in item:
+        for text in item['text']:
+            result.update(extract_interpolations_from_text(text)[0])
+
+    if 'description' in item:
+        result.update(extract_interpolations_from_text(item['description'])[0])
+
+    if 'title' in item:
+        result.update(extract_interpolations_from_text(item['title'])[0])
 
     if 'type' not in item:
         return

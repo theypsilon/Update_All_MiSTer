@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -110,6 +110,8 @@ class ConfigReader:
         config.wait_time_for_reading = store.get_wait_time_for_reading()
         config.countdown_time = store.get_countdown_time()
         config.autoreboot = store.get_autoreboot()
+        config.pocket_firmware_update = store.get_pocket_firmware_update()
+        config.pocket_backup = store.get_pocket_backup()
 
         self._logger.debug('store: ' + json.dumps(store.unwrap_props(), indent=4))
 

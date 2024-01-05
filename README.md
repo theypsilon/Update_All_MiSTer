@@ -80,7 +80,7 @@ Special thanks to [Locutus73](https://github.com/Locutus73) for all his great wo
 
 ## License
 
-Copyright © 2020-2022, [José Manuel Barroso Galindo](https://twitter.com/josembarroso). 
+Copyright © 2020-2024, [José Manuel Barroso Galindo](https://twitter.com/josembarroso). 
 Released under the [GPL v3 License](LICENSE).
 
 

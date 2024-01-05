@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -24,6 +24,7 @@ from typing import Optional
 from update_all.config import Config
 from update_all.other import GenericProvider
 from update_all.logger import Logger
+import ssl
 
 
 class OsUtils(ABC):
@@ -103,3 +104,16 @@ _curl_connection_error_codes = {
     52: "Server didn't reply with any data",
     56: "Failure with receiving network data",
 }
+
+
+def context_from_curl_ssl(curl_ssl):
+    context = ssl.create_default_context()
+
+    if curl_ssl.startswith('--cacert '):
+        cacert_file = curl_ssl[len('--cacert '):]
+        context.load_verify_locations(cacert_file)
+    elif curl_ssl == '--insecure':
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+
+    return context
