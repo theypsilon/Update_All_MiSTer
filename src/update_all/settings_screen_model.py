@@ -20,8 +20,7 @@ def settings_screen_model(): return {
     "formatters": {
         "yesno": {"false": "No", "true": "Yes"},
         "yesno_reverse": {"false": "Yes", "true": "No"},
-        "enabled": {"false": "Disabled.", "true": "Enabled. "},
-        "do_enable": {"false": "Enable", "true": "Disable"},
+        "enabled": {"false": "[ ]", "true": "[✓]"},
         "encc_forks": {"false": "MiSTer-devel", "true": "MiSTer-DB9"},
         "encc_forks_description": {"false": "Official Cores from MiSTer-devel", "true": "DB9 / SNAC8 forks with ENCC"},
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
@@ -189,7 +188,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "3 Coin-Op Collection",
-                    "description": "{coin_op_collection_downloader:enabled} Cores by Coin-Op Org",
+                    "description": "{coin_op_collection_downloader:enabled} Cores by Coin-Op Collection Org",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
                         "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
@@ -350,8 +349,8 @@ def settings_screen_model(): return {
             "header": "Main Distribution Settings",
             "entries": [
                 {
-                    "title": "1 {main_updater:do_enable}",
-                    "description": "Activated: {main_updater:yesno}",
+                    "title": "1 Distribution Enabled",
+                    "description": "{main_updater:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "main_updater"}]}
                 },
                 {
@@ -366,8 +365,8 @@ def settings_screen_model(): return {
             "header": "JTCORES Settings",
             "entries": [
                 {
-                    "title": "1 {jotego_updater:do_enable}",
-                    "description": "Activated: {jotego_updater:yesno}",
+                    "title": "1 JTCORES Enabled",
+                    "description": "{jotego_updater:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "jotego_updater"}]}
                 },
                 {
@@ -385,8 +384,8 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 {arcade_roms_db_downloader:do_enable}",
-                    "description": "Activated: {arcade_roms_db_downloader:yesno}",
+                    "title": "1 Arcade ROMs Database Enabled",
+                    "description": "{arcade_roms_db_downloader:yesno}",
                     "actions": {"ok": [_roms_copyright_notice('arcade_roms_db_downloader')]}
                 },
                 {
@@ -438,13 +437,13 @@ def settings_screen_model(): return {
             ],
             "entries": [
                 {
-                    "title": "1 {names_txt_updater:do_enable}",
-                    "description": "Activated: {names_txt_updater:yesno}",
+                    "title": "1 Names TXT",
+                    "description": "{names_txt_updater:yesno}",
                     "actions": {"ok": _try_toggle_update_names_txt()}
                 },
                 {
                     "title": "2 Arcade Names TXT",
-                    "description": "Activated: {arcade_names_txt:yesno}",
+                    "description": "{arcade_names_txt:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_names_txt"}]}
                 },
                 {
@@ -516,7 +515,7 @@ def settings_screen_model(): return {
             "entries": [
                 {
                     "title": "1 Arcade Offset folder (atrac17)",
-                    "description": "{arcade_offset_downloader:yesno}",
+                    "description": "{arcade_offset_downloader:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "arcade_offset_downloader"}],
                         "info": [{
@@ -528,7 +527,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "2 LLAPI Forks Folder",
-                    "description": "{llapi_updater:yesno}",
+                    "description": "{llapi_updater:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "llapi_updater"}],
                         "info": [{
@@ -540,7 +539,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "3 theypsilon Unofficial Distribution",
-                    "description": "{unofficial_updater:yesno}",
+                    "description": "{unofficial_updater:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "unofficial_updater"}],
                         "info": [{
@@ -557,7 +556,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "4 Y/C Builds from MikeS11",
-                    "description": "{MikeS11/YC_Builds-MiSTer:yesno}",
+                    "description": "{MikeS11/YC_Builds-MiSTer:enabled}",
                     "actions": {
                         "ok": [{
                             "type": "condition",
@@ -590,7 +589,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "5 agg23's MiSTer Cores",
-                    "description": "{agg23_db:yesno}",
+                    "description": "{agg23_db:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "agg23_db"}],
                         "info": [{
@@ -631,27 +630,27 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "3 MiSTer Extensions (wizzo)",
-                    "description": "{mrext/all:yesno}",
+                    "description": "{mrext/all:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "mrext/all"}]}
                 },
                 {
                     "title": "4 MiSTer Super Attract Mode",
-                    "description": "{mistersam_files_downloader:yesno}",
+                    "description": "{mistersam_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "mistersam_files_downloader"}]}
                 },
                 {
                     "title": "5 tty2oled Add-on script",
-                    "description": "{tty2oled_files_downloader:yesno}",
+                    "description": "{tty2oled_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "tty2oled_files_downloader"}]}
                 },
                 {
                     "title": "6 i2c2oled Add-on script",
-                    "description": "{i2c2oled_files_downloader:yesno}",
+                    "description": "{i2c2oled_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "i2c2oled_files_downloader"}]}
                 },
                 {
                     "title": "7 RetroSpy utility",
-                    "description": "{retrospy/retrospy-MiSTer:yesno}",
+                    "description": "{retrospy/retrospy-MiSTer:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "retrospy/retrospy-MiSTer"}]}
                 }
             ]
@@ -827,8 +826,8 @@ def settings_screen_model(): return {
             "header": "Ranny Snice Wallpapers Settings",
             "entries": [
                 {
-                    "title": "1 {Ranny-Snice/Ranny-Snice-Wallpapers:do_enable}",
-                    "description": "Activated: {Ranny-Snice/Ranny-Snice-Wallpapers:yesno}",
+                    "title": "1 Wallpapers Enabled",
+                    "description": "{Ranny-Snice/Ranny-Snice-Wallpapers:yesno}",
                     "actions":  {"ok": [{"type": "rotate_variable", "target": "Ranny-Snice/Ranny-Snice-Wallpapers"}]}
                 },
                 {
@@ -988,8 +987,8 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 {arcade_organizer:do_enable}",
-                    "description": "Activated: {arcade_organizer:yesno}",
+                    "title": "1 Arcade Organizer Enabled",
+                    "description": "{arcade_organizer:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer"}]}
                 },
                 {
