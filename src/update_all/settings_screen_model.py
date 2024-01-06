@@ -693,7 +693,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "4 Uberjoyi Boot ROMs",
+                    "title": "4 Uberyoji Boot ROMs",
                     "description": "{uberyoji_mister_boot_roms_mgl:enabled} Boot ROMs for popular consoles",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
