@@ -35,11 +35,9 @@ Then turn on your __MiSTer__, go to the _Scripts_ menu and run this script from 
 It will take around 15 minutes the first time you run it, but later runs should take much less time.
 
 
-## Further Configuration
+## Accessing the Settings Screen
 
-In case you would like to configure Update All so it downloads exactly what you need, you can do it through the Settings screen.
-
-![settings screen](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/menu-2-0.jpeg "Settings Screen")
+![settings screen](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/menu-2-1.jpg "Settings Screen")
 
 The Settings screen will show up if you press UP in your controller or keyboard during the countdown showing up right after starting `update_all.sh` in your MiSTer. Please, don't forget to select `SAVE` to keep all the changes you have done before leaving.
 
