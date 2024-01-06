@@ -20,7 +20,7 @@ def settings_screen_model(): return {
     "formatters": {
         "yesno": {"false": "No", "true": "Yes"},
         "yesno_reverse": {"false": "Yes", "true": "No"},
-        "enabled": {"false": "[ ]", "true": "[*]"},
+        "enabled": {"false": "Off.", "true": "On."},
         "encc_forks": {"false": "MiSTer-devel", "true": "MiSTer-DB9"},
         "encc_forks_description": {"false": "Official Cores from MiSTer-devel", "true": "DB9 / SNAC8 forks with ENCC"},
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
