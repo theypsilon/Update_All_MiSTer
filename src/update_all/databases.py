@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,6 +89,7 @@ class AllDBs:
 
     # WALLPAPERS
     RANNYSNICE_WALLPAPERS = Database(db_id='Ranny-Snice/Ranny-Snice-Wallpapers', db_url='https://raw.githubusercontent.com/Ranny-Snice/Ranny-Snice-Wallpapers/db/db.json.zip', title='Ranny Snice Wallpapers')
+    RGARCIALAGO_WALLPAPER_COLLECTION = Database(db_id='RGarciaLago/Wallpaper_Collection', db_url='https://raw.githubusercontent.com/RGarciaLago/Wallpaper_Collection/db/db.json.zip', title='RGarciaLago Wallpaper Collection (by different authors)')
 
 
 @cache

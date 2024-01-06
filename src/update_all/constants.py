@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -107,7 +107,7 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION = "2.0"
+UPDATE_ALL_VERSION = "2.1"
 MISTER_DOWNLOADER_VERSION = "1.8"
 UPDATE_ALL_PC_UPDATER = "false"
 UPDATE_ALL_OS = "MiSTer_Linux"

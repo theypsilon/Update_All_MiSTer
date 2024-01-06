@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,9 @@ import sys
 import time
 from typing import List
 
+from update_all.analogue_pocket.firmware_update import pocket_firmware_update
+from update_all.analogue_pocket.pocket_backup import pocket_backup
+from update_all.analogue_pocket.utils import is_pocket_mounted
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
@@ -32,7 +35,7 @@ from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
 from update_all.other import Checker, GenericProvider
 from update_all.logger import Logger
-from update_all.os_utils import OsUtils, LinuxOsUtils
+from update_all.os_utils import OsUtils, LinuxOsUtils, context_from_curl_ssl
 from update_all.settings_screen import SettingsScreen
 from update_all.settings_screen_standard_curses_printer import SettingsScreenStandardCursesPrinter
 from update_all.settings_screen_trivial_curses_printer import SettingsScreenTrivialCursesPrinter
@@ -130,6 +133,7 @@ class UpdateAllService:
         self._countdown_for_settings_screen()
         self._pre_run_tweaks()
         self._run_launcher_update()
+        self._run_pocket_tools()
         self._run_downloader()
         self._run_arcade_organizer()
         self._run_linux_update()
@@ -139,11 +143,15 @@ class UpdateAllService:
         return self._exit_code
 
     def _test_routine(self) -> None:
-        if os.environ.get('TEST_SETTINGS_SCREEN', 'false') != 'true':
-            return
-
-        self._settings_screen.load_test_menu()
-        exit(0)
+        if os.environ.get('TEST_SETTINGS_SCREEN', 'false') == 'true':
+            self._settings_screen.load_test_menu()
+            exit(0)
+        elif os.environ.get('TEST_POCKET_FIRMWARE_UPDATE', 'false') == 'true':
+            pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), self._logger)
+            exit(0)
+        elif os.environ.get('TEST_POCKET_BACKUP', 'false') == 'true':
+            pocket_backup(self._logger)
+            exit(0)
 
     def _show_intro(self) -> None:
         self._logger.print()
@@ -215,6 +223,38 @@ class UpdateAllService:
         except Exception as e:
             self._logger.debug(e)
             self._logger.print('Launcher update ignored.')
+
+    def _run_pocket_tools(self) -> None:
+        if not is_pocket_mounted():
+            return
+
+        if self._config_provider.get().pocket_firmware_update:
+            self._draw_separator()
+            self._logger.print('Installing Analogue Pocket Firmware')
+            self._logger.print()
+            if pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), self._logger):
+                self._logger.print()
+                self._logger.print('Your Pocket firmware is on the latest version.')
+            else:
+                self._logger.print()
+                self._logger.print('Your Pocket firmware could not be updated.')
+                self._os_utils.sleep(6)
+
+            self._logger.print()
+
+        if self._config_provider.get().pocket_backup:
+            self._draw_separator()
+            self._logger.print('Backing up Analogue Pocket')
+            self._logger.print()
+            if pocket_backup(self._logger):
+                self._logger.print()
+                self._logger.print('Your Pocket backup is ready.')
+            else:
+                self._logger.print()
+                self._logger.print('Your Pocket backup could not be created.')
+                self._os_utils.sleep(6)
+
+            self._logger.print()
 
     def _run_downloader(self) -> None:
         config = self._config_provider.get()
@@ -382,6 +422,13 @@ class UpdateAllService:
         if config.arcade_organizer:
             lines += 1
             self._logger.print('- Arcade Organizer')
+        if config.pocket_firmware_update:
+            lines += 1
+            self._logger.print('- Analogue Pocket Firmware')
+
+        if config.pocket_backup:
+            lines += 1
+            self._logger.print('- Analogue Pocket Backup')
 
         if lines == 0:
             self._logger.print('- Nothing to do!')

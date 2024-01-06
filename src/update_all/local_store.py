@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@ class LocalStore:
     def get_countdown_time(self) -> int: return self._props['countdown_time']
     def set_autoreboot(self, autoreboot: bool) -> None: self.generic_set('autoreboot', autoreboot)
     def get_autoreboot(self) -> bool: return self._props['autoreboot']
+    def set_pocket_firmware_update(self, pocket_firmware_update: bool) -> None: self.generic_set('pocket_firmware_update', pocket_firmware_update)
+    def get_pocket_firmware_update(self): return self._props['pocket_firmware_update']
+    def set_pocket_backup(self, pocket_backup: bool) -> None: self.generic_set('pocket_backup', pocket_backup)
+    def get_pocket_backup(self): return self._props['pocket_backup']
     def set_download_beta_cores(self, download_beta_cores: bool) -> None: self.generic_set('download_beta_cores', download_beta_cores)
     def get_download_beta_cores(self) -> bool: return self._props['download_beta_cores']
     def set_names_region(self, names_region: str) -> None: self.generic_set('names_region', names_region)

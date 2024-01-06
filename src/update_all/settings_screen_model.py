@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ def settings_screen_model(): return {
         # Internal variables
         "file_exists": {"default": "false", "values": ["false", "true"]},
         "needs_save": {"default": "false", "values": ["false", "true"]},
+        "needs_save_file_list": {"default": ""},
         "has_arcade_organizer_folders": {"default": "false", "values": ["false", "true"]},
         "has_right_available_code": {"default": "false", "values": ["false", "true"]},
     },
@@ -188,7 +189,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "3 Coin-Op Collection",
-                    "description": "{coin_op_collection_downloader:enabled} Cores by Coin-Op Team",
+                    "description": "{coin_op_collection_downloader:enabled} Cores by Coin-Op Org",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
                         "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
@@ -219,7 +220,7 @@ def settings_screen_model(): return {
                 {},  # separator
                 {
                     "title": "7 Analogue Pocket",
-                    "description": "Sync saves, Firmware, Updates, Backups...",
+                    "description": "Firmware Update & Backups",
                     "actions": {"ok": [{"type": "navigate", "target": "analogue_pocket_menu"}]}
                 },
                 {
@@ -664,6 +665,7 @@ def settings_screen_model(): return {
             "variables": {
                 "Ranny-Snice/Ranny-Snice-Wallpapers": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "uberyoji_mister_boot_roms_mgl": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "RGarciaLago/Wallpaper_Collection": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "rannysnice_wallpapers_filter": {"group": "rannysnice_wallpapers", "default": "ar16-9", "values": ["ar16-9", "ar4-3", "all"]},
             },
             "entries": [
@@ -693,18 +695,105 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "4 Uberjoyi Boot ROMs",
-                    "description": "{uberyoji_mister_boot_roms_mgl} Boot ROMs for popular consoles",
+                    "description": "{uberyoji_mister_boot_roms_mgl:enabled} Boot ROMs for popular consoles",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
                         "toggle": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
                     }
                 },
+                {
+                    "title": "5 RGarciaLago Wallpaper Col.",
+                    "description": "{RGarciaLago/Wallpaper_Collection:enabled} Wallpapers from different authors",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "RGarciaLago/Wallpaper_Collection"}],
+                        "toggle": [{"type": "rotate_variable", "target": "RGarciaLago/Wallpaper_Collection"}],
+                    }
+                },
             ]
         },
         "analogue_pocket_menu": {
-            "type": "dialog_sub_menu",
+            "type": "dialog_sub_menu_toggle",
             "header": "Analogue Pocket",
+            "variables": {
+                "pocket_firmware_version": {"default": "1.0"},
+                "pocket_firmware_update": {"group": ["store", "pocket"], "default": "false", "values": ["false", "true"]},
+                "pocket_firmware_update_result_header": {"default": "Update Complete!"},
+                "pocket_firmware_update_result_txt": {"default": "OK."},
+                "pocket_backup": {"group": ["store", "pocket"], "default": "false", "values": ["false", "true"]},
+                "pocket_backup_result_header": {"default": "Update Complete!"},
+                "pocket_backup_result_txt": {"default": "OK."},
+            },
             "entries": [
+                {
+                    "title": "1 Firmware Update",
+                    "description": "{pocket_firmware_update:enabled} Installs firmware {pocket_firmware_version} on your Pocket",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "pocket_firmware_update_menu"}],
+                        "toggle": [{"type": "rotate_variable", "target": "pocket_firmware_update"}]
+                    }
+                },
+                {
+                    "title": "2 Pocket Backup",
+                    "description": "{pocket_backup:enabled} Backup saves & other important files.",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "pocket_backup_menu"}],
+                        "toggle": [{"type": "rotate_variable", "target": "pocket_backup"}]
+                    }
+                }
+            ]
+        },
+        "pocket_firmware_update_menu": {
+            "type": "dialog_sub_menu",
+            "header": "Pocket Firmware Update",
+            "entries": [
+                {
+                    "title": "1 Run now",
+                    "description": "",
+                    "actions": {
+                        "ok": [
+                            {"type": "pocket_firmware_update"},
+                            {
+                                "ui": "message",
+                                "header": "{pocket_firmware_update_result_header}",
+                                "text": ["{pocket_firmware_update_result_txt}"]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "title": "2 Run always with Update All",
+                    "description": "{pocket_firmware_update:enabled}",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "pocket_firmware_update"}]
+                    }
+                }
+            ]
+        },
+        "pocket_backup_menu": {
+            "type": "dialog_sub_menu",
+            "header": "Pocket Backup",
+            "entries": [
+                {
+                    "title": "1 Run now",
+                    "description": "",
+                    "actions": {
+                        "ok": [
+                            {"type": "pocket_backup"},
+                            {
+                                "ui": "message",
+                                "header": "{pocket_backup_result_header}",
+                                "text": ["{pocket_backup_result_txt}"]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "title": "2 Run always with Update All",
+                    "description": "{pocket_backup:enabled}",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "pocket_backup"}]
+                    }
+                }
             ]
         },
         "system_options_menu": {
@@ -1242,6 +1331,9 @@ def settings_screen_model(): return {
         "arcade_organizer_advanced_menu": {
             "type": "dialog_sub_menu",
             "header": "Arcade Organizer 2.0 Advanced Options",
+            "variables": {
+                "arcade_organizer_folders_list": {"default": ""}
+            },
             "entries": [
                 {
                     "title": "1 Clean Folders",

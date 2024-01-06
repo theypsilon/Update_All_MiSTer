@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.1 - 2024-01-06
+
+### Added
+- Analogue Pocket menu with 2 utilities: Firmware Update & Backup
+- New Databases: Uberyoji Boot ROMs, RetroSpy, RGarciaLago Wallpaper Collection (by different authors) 
+
+### Changed
+- The Settings Screen has been restructured to accommodate the new databases.
+- Using the Arcade ROMs and Bios DBs from BigDendy instead.
+- Using the Coin-Op Collection DB from the Coin-Op organization instead.
+- Options that could lead to copyrighted content display now a warning screen.
+
 ## Version 2.0 - 2022-10-21
 
 ### Added

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -152,6 +152,30 @@ class TestSettingsScreenSaving(unittest.TestCase):
         ini_sections = len(read_ini_contents(fs.files[downloader_ini.lower()]['content']).sections())
         self.assertEqual(len(db_ids_to_model_variable_pairs()), ini_sections)
         self.assertGreaterEqual(ini_sections, 10)
+
+    def test_save__when_disabling_autoreboot___writes_changes_on_local_store(self):
+        self.assertStoreBooleanTransition('autoreboot', True)
+
+    def test_save__when_enabling_pocket_firmware_update___writes_changes_on_local_store(self):
+        self.assertStoreBooleanTransition('pocket_firmware_update', False)
+
+    def test_save__when_enabling_pocket_backup___writes_changes_on_local_store(self):
+        self.assertStoreBooleanTransition('pocket_backup', False)
+
+    def assertStoreBooleanTransition(self, field: str, initial_value: bool) -> None:
+        sut, ui, fs = tester()
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual(initial_value, fs.files[store_json_zip.lower()]['unzipped_json'][field])
+
+        ui.set_value(field, str(not initial_value))
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual(not initial_value, fs.files[store_json_zip.lower()]['unzipped_json'][field])
 
     def test_save__when_selecting_theme___writes_changes_on_local_store(self):
         sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})

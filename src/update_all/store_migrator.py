@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,6 +74,8 @@ def make_new_local_store(store_migrator):
         'names_char_code': default_config.names_char_code,
         'names_sort_code': default_config.names_sort_code,
         'introduced_arcade_names_txt': False,
+        'pocket_firmware_update': default_config.pocket_firmware_update,
+        'pocket_backup': default_config.pocket_backup
     }
 
 

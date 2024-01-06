@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,6 +60,8 @@ class Config:
     wait_time_for_reading: int = 2
     countdown_time: int = 15
     autoreboot: bool = True
+    pocket_firmware_update: bool = False
+    pocket_backup: bool = False
 
 
 @unique

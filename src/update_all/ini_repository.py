@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -176,8 +176,9 @@ class IniRepository:
         replaced_stores = []
         for old_id in replaced_ids:
             new_id = changed_ids[old_id]
-            if old_id in store['dbs']:
-                replaced_stores.append((old_id, new_id))
+            self._logger.debug(f'Replacing db_id {old_id} with {new_id} in downloader store.')
+            if old_id.lower() in store['dbs']:
+                replaced_stores.append((old_id.lower(), new_id.lower()))
 
         if len(replaced_stores) == 0:
             self._logger.debug(f'Could not replace any db_id because downloader store does not contain it.')

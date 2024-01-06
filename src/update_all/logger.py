@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -83,14 +83,31 @@ class PrintLogger(Logger):
             print('An unknown exception occurred during logging: %s' % str(error))
 
 
-class FileLoggerDecorator(Logger):
-    def __init__(self, decorated_logger, local_repository_provider):
+class TrivialLoggerDecorator(Logger):
+    def __init__(self, decorated_logger):
         self._decorated_logger = decorated_logger
-        self._logfile = tempfile.NamedTemporaryFile('w', delete=False)
-        self._local_repository_provider = local_repository_provider
 
     def configure(self, config):
         self._decorated_logger.configure(config)
+
+    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
+        self._decorated_logger.print(*args, sep=sep, end=end, flush=flush)
+
+    def debug(self, *args, sep='', end='\n', flush=True):
+        self._decorated_logger.debug(*args, sep=sep, end=end, flush=flush)
+
+    def bench(self, label):
+        self._decorated_logger.bench(label)
+
+    def finalize(self):
+        self._decorated_logger.finalize()
+
+
+class FileLoggerDecorator(TrivialLoggerDecorator):
+    def __init__(self, decorated_logger, local_repository_provider):
+        super().__init__(decorated_logger)
+        self._logfile = tempfile.NamedTemporaryFile('w', delete=False)
+        self._local_repository_provider = local_repository_provider
 
     def finalize(self):
         self._decorated_logger.finalize()
@@ -109,30 +126,39 @@ class FileLoggerDecorator(Logger):
         self._decorated_logger.debug(*args, sep=sep, end=end, flush=flush)
         self._do_print_in_file(*args, sep=sep, end=end, flush=flush)
 
-    def bench(self, label):
-        self._decorated_logger.bench(label)
-
     def _do_print_in_file(self, *args, sep, end, flush):
         if self._logfile is not None:
             print(*args, sep=sep, end=end, file=self._logfile, flush=flush)
 
 
-class DebugOnlyLoggerDecorator(Logger):
+class DebugOnlyLoggerDecorator(TrivialLoggerDecorator):
     def __init__(self, decorated_logger):
-        self._decorated_logger = decorated_logger
-
-    def configure(self, config):
-        self._decorated_logger.configure(config)
+        super().__init__(decorated_logger)
 
     def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
         """Calls debug instead of print"""
         self._decorated_logger.debug(*args, sep=sep, end=end, flush=flush)
 
+
+class CollectorLoggerDecorator(TrivialLoggerDecorator):
+    def __init__(self, decorated_logger):
+        super().__init__(decorated_logger)
+        self.prints = []
+        self.debugs = []
+
+    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
+        self._decorated_logger.print(*args, sep=sep, end=end, flush=flush)
+        self.prints.append(args[0])
+
     def debug(self, *args, sep='', end='\n', flush=True):
         self._decorated_logger.debug(*args, sep=sep, end=end, flush=flush)
+        self.debugs.append(args[0])
 
-    def bench(self, label):
-        self._decorated_logger.bench(label)
 
-    def finalize(self):
-        self._decorated_logger.finalize()
+class PostPrintCallbackLoggerDecorator(TrivialLoggerDecorator):
+    def __init__(self, decorated_logger, post_print_cb):
+        super().__init__(decorated_logger)
+        self._post_print_cb = post_print_cb
+
+    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
+        self._post_print_cb(args[0])

@@ -16,12 +16,15 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-BOLD_IN = '\033[1m'
-BOLD_OUT = '\033[0m'
+from update_all.store_migrator import Migration
 
 
-def bold(text):
-    return f'{BOLD_IN}{text}{BOLD_OUT}'
+class MigrationV2(Migration):
+    version = 2
 
+    def migrate(self, local_store) -> None:
+        """create arcade_names_txt field"""
 
-CLEAR_SCREEN = "\033[H\033[J"
+        local_store['pocket_firmware_update'] = False
+        local_store['pocket_backup'] = False
+        local_store['_dirty'] = True

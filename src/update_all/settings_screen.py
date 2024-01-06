@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 import hashlib
 from functools import cached_property
 
+from update_all.analogue_pocket.firmware_update import latest_firmware_info, pocket_firmware_update
+from update_all.analogue_pocket.pocket_backup import pocket_backup
 from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, \
     TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, DOWNLOADER_URL, FILE_MiSTer_ini, ARCADE_ORGANIZER_URL, \
@@ -28,8 +30,8 @@ from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
 from update_all.other import Checker, GenericProvider
-from update_all.logger import Logger
-from update_all.os_utils import OsUtils
+from update_all.logger import Logger, CollectorLoggerDecorator
+from update_all.os_utils import OsUtils, context_from_curl_ssl
 from update_all.settings_screen_model import settings_screen_model
 from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
@@ -98,6 +100,8 @@ class SettingsScreen(UiApplication):
         ui.set_value('wait_time_for_reading', str(local_store.get_wait_time_for_reading()))
         ui.set_value('countdown_time', str(local_store.get_countdown_time()))
         ui.set_value('autoreboot', str(local_store.get_autoreboot()).lower())
+        ui.set_value('pocket_firmware_update', str(local_store.get_pocket_firmware_update()).lower())
+        ui.set_value('pocket_backup', str(local_store.get_pocket_backup()).lower())
 
         if AllDBs.JTCORES.db_id not in config.databases:
             ui.set_value('download_beta_cores', str(local_store.get_download_beta_cores()).lower())
@@ -109,6 +113,8 @@ class SettingsScreen(UiApplication):
 
         drawer_factory, theme_manager = self._settings_screen_printer.initialize_screen()
         theme_manager.set_theme(ui_theme)
+
+        ui.set_value('pocket_firmware_version', latest_firmware_info()['version'])
 
         ui.add_custom_effects({
             'calculate_needs_save': lambda effect: self.calculate_needs_save(ui),
@@ -124,6 +130,8 @@ class SettingsScreen(UiApplication):
             'calculate_names_char_code_warning': lambda effect: self.calculate_names_char_code_warning(ui),
             'calculate_names_txt_file_warning': lambda effect: self.calculate_names_txt_file_warning(ui),
             'apply_theme': lambda effect: self.apply_theme(ui),
+            'pocket_firmware_update': lambda effect: self.pocket_firmware_update(ui),
+            'pocket_backup': lambda effect: self.pocket_backup(ui),
         })
 
         self._theme_manager = theme_manager
@@ -223,6 +231,8 @@ class SettingsScreen(UiApplication):
         local_store.set_wait_time_for_reading(temp_config.wait_time_for_reading)
         local_store.set_countdown_time(temp_config.countdown_time)
         local_store.set_autoreboot(temp_config.autoreboot)
+        local_store.set_pocket_firmware_update(temp_config.pocket_firmware_update)
+        local_store.set_pocket_backup(temp_config.pocket_backup)
 
         if local_store.needs_save():
             needs_save_file_set.add(f"Internals ({', '.join(local_store.changed_fields())})")
@@ -306,6 +316,7 @@ class SettingsScreen(UiApplication):
             *gather_variable_declarations(settings_screen_model(), "names_ini"),
             *gather_variable_declarations(settings_screen_model(), "arcade_roms"),
             *gather_variable_declarations(settings_screen_model(), "rannysnice_wallpapers"),
+            *gather_variable_declarations(settings_screen_model(), "pocket"),
         ]
 
     def calculate_names_char_code_warning(self, ui: UiContext) -> None:
@@ -367,3 +378,45 @@ class SettingsScreen(UiApplication):
         config.temporary_downloader_ini = True
         self._ini_repository.write_downloader_ini(config, FILE_downloader_temp_ini)
         self._logger.debug(f'Written temporary {FILE_downloader_temp_ini} file.')
+
+    def pocket_firmware_update(self, ui):
+        self._ui_runtime.interrupt()
+
+        self._logger.print()
+        logger = CollectorLoggerDecorator(self._logger)
+        installed = pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), logger)
+
+        logs = list(logger.prints)
+        logs.append('')
+
+        header = 'Your Pocket is updated' if installed else 'Update failed!'
+        if installed:
+            logs.append("\n\nReboot your Analogue Pocket to apply the new firmware if you haven't done it yet.")
+        else:
+            logs.append('\n\nUpdate failed.')
+
+        ui.set_value('pocket_firmware_update_result_txt', '\n'.join(logs))
+        ui.set_value('pocket_firmware_update_result_header', header)
+
+        self._ui_runtime.resume()
+
+    def pocket_backup(self, ui):
+        self._ui_runtime.interrupt()
+
+        self._logger.print()
+        logger = CollectorLoggerDecorator(self._logger)
+        backup_done = pocket_backup(logger)
+
+        logs = list(logger.prints)
+        logs.append('')
+
+        header = 'Your Pocket Backup has been created!' if backup_done else 'Pocket Backup failed!'
+        if backup_done:
+            logs.append("\n\nPocket Backup process ended successfully.")
+        else:
+            logs.append('\n\nPocket Backup process failed.')
+
+        ui.set_value('pocket_backup_result_txt', '\n'.join([log for log in logs if log.strip() != '.' and 'Done' not in log]))
+        ui.set_value('pocket_backup_result_header', header)
+
+        self._ui_runtime.resume()
