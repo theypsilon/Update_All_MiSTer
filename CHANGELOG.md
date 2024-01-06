@@ -7,14 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## Version 2.1 - 2024-01-06
 
 ### Added
-- Analogue Pocket menu with 2 utilities: Firmware Update & Backup
-- New Databases: Uberyoji Boot ROMs, RetroSpy, RGarciaLago Wallpaper Collection (by different authors) 
+- Analogue Pocket menu with 2 utilities: Firmware Update & Backup.
+- New Databases: Uberyoji Boot ROMs, RetroSpy, RGarciaLago Wallpaper Collection (by different authors).
+- Adding more curl return codes to the SSL certs branch.
+- Databases added months ago between releases: agg23's MiSTer Cores.
+- Info button on the Other Cores menu.
 
 ### Changed
 - The Settings Screen has been restructured to accommodate the new databases.
 - Using the Arcade ROMs and Bios DBs from BigDendy instead.
 - Using the Coin-Op Collection DB from the Coin-Op organization instead.
+- Using different branch for MiSTer SAM DB.
+- Using jtcores_mister always instead of jtpremium.
+- Using raw url on wizzo extensions db_url.
 - Options that could lead to copyrighted content display now a warning screen.
+- Using curl instead of urllib, to solve some rare connectivity issues.
+- More graceful error handling on connection errors.
 
 ## Version 2.0 - 2022-10-21
 
