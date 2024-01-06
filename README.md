@@ -1,24 +1,28 @@
 # Update All ![ViewCount](https://views.whatilearened.today/views/github/theypsilon/Update_All_MiSTer.svg) ![GitHub all releases](https://img.shields.io/github/downloads/theypsilon/Update_All_MiSTer/total) ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/theypsilon/Update_All_MiSTer/build.yml?branch=master) <span class="badge-patreon"><a href="https://patreon.com/theypsilon" title="Donate to this project using Patreon"><img src="https://img.shields.io/badge/patreon-donate-yellow.svg" alt="Patreon donate button" /></a></span> [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/josembarroso.svg?style=social&label=Follow%20%40josembarroso)](https://twitter.com/josembarroso)
 All-in-one script for keeping up-to-date with the [MiSTer](https://github.com/MiSTer-devel/Main_MiSTer/wiki) ecosystem.
 
-This script runs the [__MiSTer Downloader__](https://github.com/MiSTer-devel/Downloader_MiSTer/) tool configured with the following databases:
+This script runs the [__MiSTer Downloader__](https://github.com/MiSTer-devel/Downloader_MiSTer/) under the hood. It expands it by selecting additional downloader databases.
+
+Update All has a Settings Screen that allows you to configure which databases and tools you want to use. In said screen the menu includes:
 1. __Main Distribution__. Downloads most essential files, including cores and firmware. You are able to select between two versions:
     * The [official MiSTer Distribution](https://github.com/MiSTer-devel/Distribution_MiSTer) in the [MiSTer-devel](https://github.com/MiSTer-devel) organization. **[Default option]**
     * The [DB9 Fork MiSTer Distribution](https://github.com/MiSTer-DB9/Distribution_MiSTer) with [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers. *Requires [SNAC8](https://github.com/theypsilon/Update_All_MiSTer/wiki#snac8) compatible adapter.*
-2. __JTCORES for MiSTer__. Downloads many cores made by [Jotego](https://github.com/jotego). You may select between two versions:
-    * [jtcores](https://github.com/jotego/jtcores_mister). Public cores only. **[Default option]**
-    * [jtpremium](https://github.com/jotego/jtpremium). Public + patreon-only cores in their latest versions.
-3. [Names TXT](https://github.com/ThreepwoodLeBrush/Names_MiSTer). Downloads a complete names.txt file curated by [Threepwood](https://github.com/ThreepwoodLeBrush) that enables better core names in the menus. **[Disabled by default]**
-4. [BIOS Database](https://github.com/BigDendy/BiosDB_MiSTer). Downloads bios from https://archive.org/ for your installed systems. **[Disabled by default]**
-5. [Arcade ROMs Database](https://github.com/BigDendy/ArcadeROMsDB_MiSTer). Downloads arcade roms from https://archive.org/ that are compatible with MRAs. **[Disabled by default]**
-6. **Unofficial Cores**. A selection of curated databases that provide unofficial cores, including:
-   1. [Coin-Op Collection](https://github.com/Coin-OpCollection/Distribution-MiSTerFPGA). Downloads cores developed by [Darren](https://github.com/va7deo) and [atrac17](https://github.com/atrac17). **[Default option]**
-   2. [Arcade Offset](https://github.com/atrac17/Arcade_Offset). Downloads patched arcade games curated by [atrac17](https://github.com/atrac17). **[Disabled by default]**
-   3. [LLAPI Forks Folder](https://github.com/MiSTer-LLAPI/LLAPI_folder_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). **[Disabled by default]**
-8. **Unofficial Scripts**. A selection of curated databases that provide unofficial scripts.  **[Disabled by default]**
-
-
-Additionally, this script also runs the [Arcade Organizer](https://github.com/theypsilon/_arcade-organizer). Which creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files.
+2. [JTCORES for MiSTer](https://github.com/jotego/jtcores_mister). Downloads many cores made by [Jotego Team](https://github.com/jotego). You may additionally enable patreon-only cores.
+3. [Coin-Op Collection](https://github.com/Coin-OpCollection/Distribution-MiSTerFPGA). Downloads cores developed by [the Coin-Op Collection organization](https://github.com/Coin-OpCollection). **[Default option]**
+4. **Other Cores**. A selection of curated databases that provide unofficial cores, including:
+   * [Arcade Offset](https://github.com/atrac17/Arcade_Offset). Downloads patched arcade games curated by [atrac17](https://github.com/atrac17). **[Disabled by default]**
+   * [LLAPI Forks Folder](https://github.com/MiSTer-LLAPI/LLAPI_folder_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). **[Disabled by default]**
+   * And more...
+5. **Other Tools & Scripts**. Additional tools & scripts.
+   * [Arcade Organizer](https://github.com/theypsilon/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files. **[Default option]**
+   * [Names TXT](https://github.com/ThreepwoodLeBrush/Names_MiSTer). Downloads a complete names.txt file curated by [Threepwood](https://github.com/ThreepwoodLeBrush) that enables better core names in the menus. **[Disabled by default]**
+   * And more...
+6. **Extra Content**. A selection of curated databases that provide extra content.
+   * [BIOS Database](https://github.com/BigDendy/BiosDB_MiSTer). Downloads bios from https://archive.org/ for your installed systems. **[Disabled by default]**
+   * [Arcade ROMs Database](https://github.com/BigDendy/ArcadeROMsDB_MiSTer). Downloads arcade roms from https://archive.org/ that are compatible with MRAs. **[Disabled by default]**
+   * And more...
+7. **Analogue Pocket**. Tools to connect your MiSTer with your Analogue Pocket.
+8. **Patron Menu**. A menu with exclusive contents for members of my Patreon community.
 
 
 ## Setup
@@ -72,7 +76,7 @@ And finally, if you would like to support my work, you may also subscribe to my 
 
 ## Supporters+ shout-out!
 
-Daniel Tarsky, James D Eberhart, Koala Koa, MiSTerFPGA.co.uk, Tony Escobar, turbochop3300 and Wayne Booker
+Blum Chillins, Daniel Tarsky, Koala Koa, Tony Escobar, turbochop3300 and Wayne Booker
 
 Thank you so much for supporting this project on [Patreon](https://www.patreon.com/bePatron?u=37499475)! You'll show up here if you become a **Supporter+**!
 
