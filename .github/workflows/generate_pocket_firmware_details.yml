@@ -22,9 +22,21 @@ jobs:
 
     - name: Generate Pocket Firmware Version file
       run: |
-        cd src
-        python3 generate_pocket_firmware_details.py
         git config --global user.email "theypsilon@gmail.com"
         git config --global user.name "The CI/CD Bot"
+  
+        cd src
+        python3 generate_pocket_firmware_details.py
         git add update_all/analogue_pocket/pocket_firmware_details.py
-        git diff --staged --exit-code || (git commit -m "Commit message" && git push)
+        if git diff --staged --exit-code; then
+          echo "changed=false" >> $GITHUB_OUTPUT
+        else
+          git commit -m "[BOT] Analogue Pocket firmware details updated"
+          git push
+          echo "changed=true" >> $GITHUB_OUTPUT
+        fi
+
+    - uses: theypsilon/Update_All_MiSTer/.github/workflows/build.yml@build
+      if: steps.generate.outputs.changed == 'true'
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
