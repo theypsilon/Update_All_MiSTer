@@ -38,7 +38,7 @@ jobs:
           echo "changed=false" >> $GITHUB_OUTPUT
           echo "sha=" >> $GITHUB_OUTPUT
         else
-          git commit -m "[BOT] Analogue Pocket firmware details updated"
+          git commit -m "BOT: Analogue Pocket firmware details updated"
           git push
           echo "Changes committed and pushed, build needs to be triggered."
           echo "changed=true" >> $GITHUB_OUTPUT
