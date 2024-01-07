@@ -24,7 +24,16 @@ from update_all.analogue_pocket.firmware_update import latest_firmware_info
 
 class TestFirmwareUpdate(unittest.TestCase):
 
-        def test_firmware_update(self) -> None:
+        def test_firmware_firmware_info_has_expected_types(self) -> None:
+            info = latest_firmware_info()
+            self.assertTrue(isinstance(info['size'], float))
+            self.assertTrue(isinstance(info['file'], str))
+            self.assertTrue(isinstance(info['md5'], str))
+            self.assertTrue(isinstance(info['version'], str))
+            self.assertTrue(isinstance(info['url'], str))
+            self.assertEqual(5, len(info.keys()))
+
+        def test_firmware_firmware_info_follows_expected_invariants(self) -> None:
             info = latest_firmware_info()
             self.assertGreaterEqual(2.0, float(info['version']))
             self.assertTrue('analogue.co', urlparse(info['url']).netloc)
