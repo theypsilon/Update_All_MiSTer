@@ -26,6 +26,7 @@ from update_all.analogue_pocket.http_gateway import HttpGateway, write_incoming_
 from update_all.analogue_pocket.utils import pocket_mount
 from update_all.file_system import hash_file
 from update_all.logger import Logger
+from update_all.analogue_pocket.pocket_firmware_details import pocket_firmware_details
 
 
 class FirmwareInfo(TypedDict):
@@ -37,19 +38,11 @@ class FirmwareInfo(TypedDict):
 
 
 def latest_firmware_info() -> FirmwareInfo:
-    firmware_info: FirmwareInfo = {
-        'url': 'https://assets.analogue.co/firmware/bce124b1193d7e35d66f41abbca966e9/pocket_firmware_2_0.bin',
-        'version': '2.0',
-        'file': 'pocket_firmware_2_0.bin',
-        'md5': 'bce124b1193d7e35d66f41abbca966e9',
-        'size': 54.5
-    }
-
-    return firmware_info
+    return pocket_firmware_details()
 
 
 def pocket_firmware_update(ssl_ctx: ssl.SSLContext, logger: Logger):
-    firmware_info: FirmwareInfo = latest_firmware_info()
+    firmware_info = latest_firmware_info()
 
     mount = pocket_mount()
     if mount is None:

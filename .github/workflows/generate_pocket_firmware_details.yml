@@ -1,0 +1,29 @@
+name: Generate Pocket Firmware Details
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+
+    - run: pip install requests==2.31.0
+
+    - name: Generate Pocket Firmware Version file
+      run: |
+        cd src
+        python3 generate_pocket_firmware_details.py
+        git config --global user.email "theypsilon@gmail.com"
+        git config --global user.name "The CI/CD Bot"
+        git add update_all/analogue_pocket/pocket_firmware_details.py
+        git diff --staged --exit-code || (git commit -m "Commit message" && git push)
