@@ -42,6 +42,6 @@ jobs:
   trigger_build:
     needs: generate
     if: ${{ needs.job1.outputs.changed == 'true' }}
-    uses: theypsilon/Update_All_MiSTer/.github/workflows/build.yml@build
+    uses: theypsilon/Update_All_MiSTer/.github/workflows/build.yml@master
     with:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
