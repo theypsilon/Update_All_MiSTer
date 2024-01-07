@@ -40,6 +40,7 @@ jobs:
           git push
           echo "Changes committed and pushed, build needs to be triggered."
           echo "changed=true" >> $GITHUB_OUTPUT
+          sleep 60
         fi
 
   trigger_build:

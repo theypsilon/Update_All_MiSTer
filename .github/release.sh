@@ -17,8 +17,8 @@ if [ ${CHANGES} -ge 1 ] ; then
   git push origin master
   echo
   echo "New dont_download2.sh can be used."
-  echo "::set-output name=NEW_RELEASE::yes"
+  echo "NEW_RELEASE=yes" >> ${GITHUB_OUTPUT}
 else
   echo "Nothing to be updated."
-  echo "::set-output name=NEW_RELEASE::no"
+  echo "NEW_RELEASE=no" >> ${GITHUB_OUTPUT}
 fi
