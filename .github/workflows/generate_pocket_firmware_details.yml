@@ -36,7 +36,12 @@ jobs:
           echo "changed=true" >> $GITHUB_OUTPUT
         fi
 
-    - uses: theypsilon/Update_All_MiSTer/.github/workflows/build.yml@build
-      if: steps.generate.outputs.changed == 'true'
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      changed: ${{ steps.generate.outputs.changed }}
+
+  trigger_build:
+    needs: generate
+    if: ${{ needs.job1.outputs.changed == 'true' }}
+    uses: theypsilon/Update_All_MiSTer/.github/workflows/build.yml@build
+    with:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
