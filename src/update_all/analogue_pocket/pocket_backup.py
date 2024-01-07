@@ -287,7 +287,7 @@ def setup():
         os.mkdir(SNAPSHOTS_FOLDER)
 
 
-def pocket_backup(logger=None):
+def pocket_backup(logger):
     """Main entry point for the script."""
     config = get_config()
 
@@ -338,3 +338,10 @@ def pocket_backup(logger=None):
     logger.print("Done!", flush=True)
 
     return True
+
+
+if __name__ == '__main__':
+    class SimpleLogger:
+        def print(self, *args, **kwargs):
+            print(*args, **kwargs)
+    pocket_backup(SimpleLogger())
