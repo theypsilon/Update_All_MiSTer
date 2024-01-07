@@ -5,6 +5,10 @@ on:
     branches:
       - master
   workflow_call:
+    inputs:
+      sha:
+        required: false
+        type: string
   workflow_dispatch:
 
 jobs:
@@ -15,11 +19,13 @@ jobs:
     - name: Install sharutils
       run: sudo apt-get install sharutils
 
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.sha || github.ref }}
 
     - name: Unit Tests
       run: cd src && python3 -m unittest discover -s test/unit
