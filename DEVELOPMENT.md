@@ -6,7 +6,7 @@ Here I guide you through the different methods. We'll always assume that you sta
 
 - If you want to test it on MiSTer:
   - a. Write your MiSTer ip on a file named *mister.ip*
-  - b. Optionally, ff you have a different password, write it on a file named *mister.pw*
+  - b. Optionally, if you have a different password, write it on a file named *mister.pw*
   - c. Run `./src/debug.sh` to send a runnable copy of Update All to */media/fat/update_all.sh*
   - d. Access your MiSTer via ssh, and run */media/fat/update_all.sh*
   - e. Optionally, if you want to run specific routines add the specific environment variable that is defined in the *_test_routine* of the *UpdateAllService* class.
