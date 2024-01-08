@@ -88,7 +88,7 @@ def pocket_firmware_update(ssl_ctx: ssl.SSLContext, logger: Logger):
 
     decimals = count_decimals(firmware_info['size'])
     size = round(float(target_file.stat().st_size) / 1_000_000, decimals)
-    print(f'Downloaded {round(size, 1)}MB')
+    logger.print(f'Downloaded {size}MB')
     if size != firmware_info['size']:
         logger.print(f'ERROR! Wrong size! {size} != {firmware_info["size"]}')
         return False
