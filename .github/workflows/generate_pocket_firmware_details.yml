@@ -2,7 +2,7 @@ name: Generate Pocket Firmware Details
 
 on:
   schedule:
-    - cron: "*/20 * * * *"
+    - cron: "0 */2 * * *"
   workflow_dispatch:
 
 jobs:
