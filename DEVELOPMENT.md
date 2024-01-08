@@ -10,7 +10,7 @@ Here I guide you through the different methods. We'll always assume that you sta
   - c. Run `./src/debug.sh` to send a new runnable build of Update All to */media/fat/update_all.sh*
   - d. Access your MiSTer via ssh, and run */media/fat/update_all.sh*
   - e. Optionally, if you want to run specific routines add the specific environment variable that is defined in the *_test_routine* of the *UpdateAllService* class.
-  - f. Optionally, you may also export `DEBUG=true` or `BENCH=true` to get a more verbose output.
+  - f. Optionally, you may also export `DEBUG=true` to get a more verbose output.
   - g. Alternativelly, instead of the step (c), you may run `./src/debug.sh run` to run the new build on MiSTer without having to ssh into it manually, thus skipping step (d).
 
 - If you want to test it on your development machine: Just run `./src/run_on_delme_folder.sh` and everything will be installed on a new *delme* folder.
