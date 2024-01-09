@@ -42,7 +42,7 @@ download_file() {
             sleep 1s
         fi
         set +e
-        curl ${CURL_SSL:-} --fail --location -o "${DOWNLOAD_PATH}" "${DOWNLOAD_URL}" &> /dev/null
+        curl ${CURL_SSL:-} --silent --fail --location -o "${DOWNLOAD_PATH}" "${DOWNLOAD_URL}"
         local CMD_RET=$?
         set -e
 
@@ -52,7 +52,7 @@ download_file() {
                 return
                 ;;
             60|77|35|51|58|59|82|83)
-                if [ -f /etc/ssl/certs/cacert.pem ] ; then
+                if [ -s /etc/ssl/certs/cacert.pem ] ; then
                     export CURL_SSL="--cacert /etc/ssl/certs/cacert.pem"
                     continue
                 fi
@@ -73,8 +73,20 @@ download_file() {
                     rm /etc/ssl/certs/* 2> /dev/null || true
                     echo
                     echo "Installing cacert.pem from https://curl.se"
-                    curl --insecure --location -o /etc/ssl/certs/cacert.pem "https://curl.se/ca/cacert.pem"
-                    sync
+                    curl --insecure --location -o /tmp/cacert.pem "https://curl.se/ca/cacert.pem"
+                    curl --insecure --location -o /tmp/cacert.pem.sha256 "https://curl.se/ca/cacert.pem.sha256"
+
+                    local DOWNLOAD_SHA256=$(cat /tmp/cacert.pem.sha256 | awk '{print $1}')
+                    local CALCULATED_SHA256=$(sha256sum /tmp/cacert.pem | awk '{print $1}')
+
+                    if [[ "${DOWNLOAD_SHA256}" == "${CALCULATED_SHA256}" ]]; then
+                        mv /tmp/cacert.pem /etc/ssl/certs/cacert.pem
+                        sync
+                    else
+                        echo "Checksum validation for downloaded CA certificate failed."
+                        continue
+                    fi
+
                     [ "${RO_ROOT}" == "true" ] && mount / -o remount,ro
                     echo
                     export CURL_SSL="--cacert /etc/ssl/certs/cacert.pem"
