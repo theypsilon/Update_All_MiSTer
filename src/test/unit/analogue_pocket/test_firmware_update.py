@@ -35,5 +35,5 @@ class TestFirmwareUpdate(unittest.TestCase):
 
         def test_firmware_firmware_info_follows_expected_invariants(self) -> None:
             info = latest_firmware_info()
-            self.assertGreaterEqual(2.0, float(info['version']))
+            self.assertGreaterEqual(float(info['version']), 2.0)
             self.assertTrue('analogue.co', urlparse(info['url']).netloc)
