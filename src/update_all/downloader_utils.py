@@ -21,12 +21,14 @@ from update_all.os_utils import OsUtils
 from update_all.constants import DOWNLOADER_URL, DOWNLOADER_LATEST_ZIP_PATH
 from update_all.file_system import FileSystem
 from typing import Optional
+from update_all.logger import Logger
 
 
-def prepare_latest_downloader(os_utils: OsUtils, file_system: FileSystem) -> Optional[str]:
+def prepare_latest_downloader(os_utils: OsUtils, file_system: FileSystem, logger: Logger) -> Optional[str]:
     if file_system.is_file(DOWNLOADER_LATEST_ZIP_PATH):
         temp_file = file_system.temp_file_by_id('downloader.sh')
         file_system.copy(DOWNLOADER_LATEST_ZIP_PATH, temp_file.name)
+        logger.debug('Using latest downloader from %s' % DOWNLOADER_LATEST_ZIP_PATH)
         return temp_file.name
     else:
         content = os_utils.download(DOWNLOADER_URL)
@@ -35,4 +37,5 @@ def prepare_latest_downloader(os_utils: OsUtils, file_system: FileSystem) -> Opt
 
         temp_file = file_system.temp_file_by_id('downloader.sh')
         file_system.write_file_bytes(temp_file.name, content)
+        logger.debug('Fetching latest downloader from %s' % DOWNLOADER_URL)
         return temp_file.name

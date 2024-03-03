@@ -265,7 +265,7 @@ class UpdateAllService:
         self._draw_separator()
         self._logger.print('Running MiSTer Downloader')
 
-        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system)
+        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger)
         if downloader_file is None:
             return_code = 1
         else:
