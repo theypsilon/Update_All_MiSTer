@@ -128,5 +128,6 @@ DOWNLOADER_URL = "https://github.com/MiSTer-devel/Downloader_MiSTer/releases/dow
 ARCADE_ORGANIZER_URL = "https://raw.githubusercontent.com/theypsilon/_arcade-organizer/master/_arcade-organizer.sh"
 DOWNLOADER_INI_STANDARD_PATH = "downloader.ini"
 DOWNLOADER_STORE_STANDARD_PATH = "Scripts/.config/downloader/downloader.json"
+DOWNLOADER_LATEST_ZIP_PATH = "Scripts/.config/downloader/downloader_latest.zip"
 TEST_UNSTABLE_SPINNER_FIRMWARE_MD5 = "b76bc57d75afce8b1040bc4d225ea3aa"
 FILE_MiSTer_version = '/MiSTer.version'

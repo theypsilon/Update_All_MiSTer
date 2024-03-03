@@ -25,6 +25,7 @@ from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, \
     TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, DOWNLOADER_URL, FILE_MiSTer_ini, ARCADE_ORGANIZER_URL, \
     ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, STANDARD_UI_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
 from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT
+from update_all.downloader_utils import prepare_latest_downloader
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
@@ -186,12 +187,9 @@ class SettingsScreen(UiApplication):
         ui.set_value('firmware_needs_reboot', 'true' if self._original_firmware != firmware_md5 else 'false')
 
     def play_bad_apple(self, _ui) -> None:
-        content = self._os_utils.download(DOWNLOADER_URL)
-        if content is None:
+        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system)
+        if downloader_file is None:
             return None
-
-        temp_file = self._file_system.temp_file_by_id('downloader.sh')
-        self._file_system.write_file_bytes(temp_file.name, content)
 
         mister_ini = self._read_mister_ini()
 
@@ -211,7 +209,7 @@ class SettingsScreen(UiApplication):
 
         self._ui_runtime.interrupt()
 
-        self._os_utils.execute_process(temp_file.name, env)
+        self._os_utils.execute_process(downloader_file, env)
 
         self._ui_runtime.resume()
 

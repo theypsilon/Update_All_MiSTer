@@ -26,6 +26,7 @@ from update_all.analogue_pocket.pocket_backup import pocket_backup
 from update_all.analogue_pocket.utils import is_pocket_mounted
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
+from update_all.downloader_utils import prepare_latest_downloader
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import UPDATE_ALL_VERSION, DOWNLOADER_URL, ARCADE_ORGANIZER_URL, FILE_update_all_log, \
     FILE_mister_downloader_needs_reboot, MEDIA_FAT, ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, \
@@ -264,13 +265,10 @@ class UpdateAllService:
         self._draw_separator()
         self._logger.print('Running MiSTer Downloader')
 
-        content = self._os_utils.download(DOWNLOADER_URL)
-        if content is None:
+        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system)
+        if downloader_file is None:
             return_code = 1
         else:
-            temp_file = self._file_system.temp_file_by_id('downloader.sh')
-            self._file_system.write_file_bytes(temp_file.name, content)
-
             self._logger.print()
 
             update_linux = config.update_linux
@@ -292,7 +290,7 @@ class UpdateAllService:
             if config.not_mister:
                 env['DEBUG'] = 'true'
 
-            return_code = self._os_utils.execute_process(temp_file.name, env)
+            return_code = self._os_utils.execute_process(downloader_file, env)
 
         if return_code != 0:
             self._exit_code = 1

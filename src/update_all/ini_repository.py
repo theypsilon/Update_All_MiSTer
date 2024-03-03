@@ -19,7 +19,7 @@ import configparser
 import io
 import json
 import re
-from typing import Optional, Dict, List, Tuple, Any, Set
+from typing import Optional, Dict, List, Tuple, Any
 
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini, DOWNLOADER_STORE_STANDARD_PATH

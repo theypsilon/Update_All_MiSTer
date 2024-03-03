@@ -19,6 +19,9 @@
 
 set -euo pipefail
 
+SCRIPT_PATH="/tmp/update_all.sh"
+CACERT_PEM="/etc/ssl/certs/cacert.pem"
+
 if (( $(date +%Y) < 2000 )) ; then
     NTP_SERVER="0.pool.ntp.org"
     echo "Syncing date and time with $NTP_SERVER"
@@ -32,6 +35,10 @@ if (( $(date +%Y) < 2000 )) ; then
         echo "Please, try again later."
         exit 1
     fi
+fi
+
+if [ -s "${CACERT_PEM}" ] ; then
+    export CURL_CA_BUNDLE="${CACERT_PEM}"
 fi
 
 download_file() {
@@ -52,11 +59,6 @@ download_file() {
                 return
                 ;;
             60|77|35|51|58|59|82|83)
-                if [ -s /etc/ssl/certs/cacert.pem ] ; then
-                    export CURL_SSL="--cacert /etc/ssl/certs/cacert.pem"
-                    continue
-                fi
-
                 set +e
                 dialog --keep-window --title "Bad Certificates" --defaultno \
                     --yesno "CA certificates need to be fixed, do you want me to fix them?\n\nNOTE: This operation will delete files at /etc/ssl/certs" \
@@ -125,8 +127,6 @@ download_file() {
 
 echo "Launching Update All"
 echo
-
-SCRIPT_PATH="/tmp/update_all.sh"
 
 rm ${SCRIPT_PATH} 2> /dev/null || true
 
