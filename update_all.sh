@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2022 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 set -euo pipefail
 
 SCRIPT_PATH="/tmp/update_all.sh"
+LATEST_SCRIPT_PATH="/media/fat/Scripts/.config/update_all/update_all_latest.zip"
 CACERT_PEM="/etc/ssl/certs/cacert.pem"
 
 if (( $(date +%Y) < 2000 )) ; then
@@ -126,11 +127,20 @@ download_file() {
 }
 
 echo "Launching Update All"
-echo
 
 rm ${SCRIPT_PATH} 2> /dev/null || true
 
-download_file "${SCRIPT_PATH}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
+if [ -s "${LATEST_SCRIPT_PATH}" ] ; then
+    cp "${LATEST_SCRIPT_PATH}" "${SCRIPT_PATH}"
+    if [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
+        download_file "/dev/null" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh"
+    fi
+else
+    download_file "${SCRIPT_PATH}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
+    echo -n "!"
+fi
+
+echo
 
 chmod +x "${SCRIPT_PATH}"
 
