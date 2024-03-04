@@ -135,14 +135,12 @@ if [ -s "${LATEST_SCRIPT_PATH}" ] ; then
     if [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
         download_file "/dev/null" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh"
     fi
-    echo
 else
     download_file "${SCRIPT_PATH}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
-    echo "!"
+    echo -n "!"
 fi
 
-echo
-
+echo ; echo
 chmod +x "${SCRIPT_PATH}"
 
 if ! "${SCRIPT_PATH}" ; then
