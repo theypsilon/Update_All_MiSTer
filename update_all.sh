@@ -126,7 +126,7 @@ download_file() {
     exit 1
 }
 
-echo "Launching Update All"
+echo -n "Launching Update All"
 
 rm ${SCRIPT_PATH} 2> /dev/null || true
 
@@ -135,9 +135,10 @@ if [ -s "${LATEST_SCRIPT_PATH}" ] ; then
     if [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
         download_file "/dev/null" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh"
     fi
+    echo
 else
     download_file "${SCRIPT_PATH}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
-    echo -n "!"
+    echo "!"
 fi
 
 echo
