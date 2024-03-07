@@ -15,6 +15,7 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+
 from dataclasses import dataclass, field
 from enum import unique, IntEnum
 from typing import Set
