@@ -10,10 +10,12 @@ subprocess.run(['git', 'fetch', 'origin', 'master'], check=True)
 
 diff_cmd = "git diff master:dont_download2.sh origin/master:dont_download2.sh"
 filter_cmd = "grep '^[+-]' | grep -v 'export COMMIT' | grep -v '^\+\+\+' | grep -v '^---'"
-changes = int(subprocess.getoutput(f"{diff_cmd} | {filter_cmd} | wc -l"))
+changes = subprocess.getoutput(f"{diff_cmd} | {filter_cmd} | wc -l")
 
-if changes >= 1:
-    print("There are changes to push.\n")
+if int(changes) >= 1:
+    print("There are changes to push:")
+    print(changes)
+    print()
     subprocess.run(['git', 'push', 'origin', 'master'], check=True)
     print("\nNew dont_download2.sh can be used.")
     with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
