@@ -19,7 +19,6 @@ def hash_file(path: str) -> str:
 subprocess.run(['git', 'add', 'dont_download2.sh'], check=True)
 subprocess.run(['git', 'commit', '-m', 'BOT: New dont_download2.sh'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 subprocess.run(['git', 'fetch', 'origin', 'master'], check=True)
-subprocess.run(['cp', 'dont_download2.sh', '/tmp/dont_download2.sh'], check=True)
 
 diff_cmd = "git diff master:dont_download2.sh origin/master:dont_download2.sh"
 filter_cmd = "grep '^[+-]' | grep -v 'export COMMIT' | grep -v '^\+\+\+' | grep -v '^---'"
@@ -33,8 +32,8 @@ if int(changes) >= 1:
     subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
     subprocess.run(['git', 'rm', '-rf', '.'], check=False)
 
-    subprocess.run(['cp', '/tmp/dont_download2.sh', 'dont_download2.sh'], check=True)
-    subprocess.run(['git', 'add', 'dont_download2.sh'], check=True)
+    subprocess.run(['cp', '/tmp/update_all_latest.zip', 'update_all_latest.zip'], check=True)
+    subprocess.run(['git', 'add', 'update_all_latest.zip'], check=True)
     subprocess.run(['git', 'commit', '-m', '-'], check=True)
 
     commit_id = subprocess.getoutput("git rev-parse HEAD")
@@ -43,9 +42,9 @@ if int(changes) >= 1:
         "db_id": 'update_all_mister',
         "files": {
             'Scripts/.config/update_all/update_all_latest.zip': {
-                'size': os.path.getsize('dont_download2.sh'),
-                'hash': hash_file('dont_download2.sh'),
-                'url': f'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/{commit_id}/dont_download2.sh',
+                'size': os.path.getsize('update_all_latest.zip'),
+                'hash': hash_file('update_all_latest.zip'),
+                'url': f'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/{commit_id}/update_all_latest.zip',
                 'tags': ['updatealllatest', 'updateall']
             }
         },
