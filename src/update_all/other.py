@@ -16,6 +16,7 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+
 import hashlib
 import os
 import sys
