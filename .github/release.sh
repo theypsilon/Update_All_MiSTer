@@ -32,6 +32,8 @@ if int(changes) >= 1:
 
     subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
     subprocess.run(['git', 'rm', '-rf', '.'], check=False)
+
+    subprocess.run(['cp', '/tmp/dont_download2.sh', 'dont_download2.sh'], check=True)
     subprocess.run(['git', 'add', 'dont_download2.sh'], check=True)
     subprocess.run(['git', 'commit', '-m', '-'], check=True)
 
@@ -41,8 +43,8 @@ if int(changes) >= 1:
         "db_id": 'update_all_mister',
         "files": {
             'Scripts/.config/update_all/update_all_latest.zip': {
-                'size': os.path.getsize('/tmp/dont_download2.sh'),
-                'hash': hash_file('/tmp/dont_download2.sh'),
+                'size': os.path.getsize('dont_download2.sh'),
+                'hash': hash_file('dont_download2.sh'),
                 'url': f'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/{commit_id}/dont_download2.sh',
                 'tags': ['updatealllatest', 'updateall']
             }
