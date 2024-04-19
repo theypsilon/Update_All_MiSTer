@@ -205,13 +205,16 @@ class UpdateAllService:
 
     def _run_launcher_update(self) -> None:
         if not self._file_system.is_file(UPDATE_ALL_LAUNCHER_PATH):
+            self._logger.debug('Launcher update aborted: no current launcher.')
             return
 
         launcher_hash = self._file_system.hash(UPDATE_ALL_LAUNCHER_PATH)
         if len(launcher_hash) == 0:
+            self._logger.debug('Launcher update aborted: launcher hash 0.')
             return
 
         if launcher_hash == UPDATE_ALL_LAUNCHER_MD5:
+            self._logger.debug('Launcher update aborted: already current hash.')
             return
 
         self._draw_separator()
