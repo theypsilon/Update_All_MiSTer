@@ -75,7 +75,7 @@ class AllDBs:
     # UNOFFICIAL CORES
     THEYPSILON_UNOFFICIAL_DISTRIBUTION = Database(db_id='theypsilon_unofficial_distribution', db_url='https://raw.githubusercontent.com/theypsilon/Distribution_Unofficial_MiSTer/main/unofficialdb.json.zip', title='theypsilon Unofficial Distribution')
     LLAPI_FOLDER = Database(db_id='llapi_folder', db_url='https://raw.githubusercontent.com/MiSTer-LLAPI/LLAPI_folder_MiSTer/main/llapidb.json.zip', title='LLAPI Folder')
-    ARCADE_OFFSET_FOLDER = Database(db_id='arcade_offset_folder', db_url='https://raw.githubusercontent.com/atrac17/Arcade_Offset/db/arcadeoffsetdb.json.zip', title='Arcade Offset folder')
+    ARCADE_OFFSET_FOLDER = Database(db_id='arcade_offset_folder', db_url='https://raw.githubusercontent.com/toryalai1/Arcade_Offset/db/arcadeoffsetdb.json.zip', title='Arcade Offset folder')
     COIN_OP_COLLECTION = Database(db_id='Coin-OpCollection/Distribution-MiSTerFPGA', db_url='https://raw.githubusercontent.com/Coin-OpCollection/Distribution-MiSTerFPGA/db/db.json.zip', title='Coin-Op Collection')
     AGG23_DB = Database(db_id='agg23_db', db_url='https://raw.githubusercontent.com/agg23/mister-repository/db/manifest.json', title="agg23's MiSTer Cores")
     YC_BUILDS = Database(db_id='MikeS11/YC_Builds-MiSTer', db_url='https://raw.githubusercontent.com/MikeS11/YC_Builds-MiSTer/db/db.json.zip', title='Y/C Builds')

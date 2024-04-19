@@ -514,14 +514,14 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Arcade Offset folder (atrac17)",
+                    "title": "1 Arcade Offset (Toya)",
                     "description": "{arcade_offset_downloader:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "arcade_offset_downloader"}],
                         "info": [{
                             "ui": "message",
                             "header": "Arcade Offset folder",
-                            "text": ["Hacks for popular arcade games maintained by atrac17"],
+                            "text": ["Hacks for popular arcade games maintained by Toya"],
                         }]
                     }
                 },

@@ -11,7 +11,7 @@ Update All has a Settings Screen that allows you to configure which databases an
     * You may additionally enable patreon-only cores.
 3. [Coin-Op Collection](https://github.com/Coin-OpCollection/Distribution-MiSTerFPGA). Downloads cores developed by [the Coin-Op Collection organization](https://github.com/Coin-OpCollection). **[Default option]**
 4. **Other Cores**. A selection of curated databases that provide unofficial cores, including:
-    * [Arcade Offset](https://github.com/atrac17/Arcade_Offset). Downloads patched arcade games curated by [atrac17](https://github.com/atrac17). **[Disabled by default]**
+    * [Arcade Offset](https://github.com/toryalai1/Arcade_Offset). Downloads patched arcade games curated by [Toya](https://github.com/toryalai1). **[Disabled by default]**
     * [LLAPI Forks Folder](https://github.com/MiSTer-LLAPI/LLAPI_folder_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). **[Disabled by default]**
     * And more...
 5. **Other Tools & Scripts**. Additional tools & scripts.
@@ -24,7 +24,6 @@ Update All has a Settings Screen that allows you to configure which databases an
     * And more...
 7. **Analogue Pocket**. Tools to connect your MiSTer with your Analogue Pocket.
 8. **Patron Menu**. A menu with exclusive contents for members of my Patreon community.
-
 
 ## Setup
 
