@@ -69,7 +69,7 @@ class AllDBs:
 
     # ROMS
     BIOS = Database(db_id='bios_db', db_url='https://raw.githubusercontent.com/BigDendy/BiosDB_MiSTer/db/bios_db.json.zip', title='BIOS Database')
-    ARCADE_ROMS = Database(db_id='arcade_roms_db', db_url='https://raw.githubusercontent.com/BigDendy/ArcadeROMsDB_MiSTer/db/arcade_roms_db.json.zip', title='Arcade ROMs Database')
+    ARCADE_ROMS = Database(db_id='arcade_roms_db', db_url='https://raw.githubusercontent.com/zakk4223/ArcadeROMsDB_MiSTer/db/arcade_roms_db.json.zip', title='Arcade ROMs Database')
     UBERYOJI_BOOT_ROMS = Database(db_id='uberyoji_mister_boot_roms_mgl', db_url='https://raw.githubusercontent.com/uberyoji/mister-boot-roms/main/db/uberyoji_mister_boot_roms_mgl.json', title='Uberyoji Boot ROMs')
 
     # UNOFFICIAL CORES

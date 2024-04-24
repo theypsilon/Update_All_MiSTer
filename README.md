@@ -20,7 +20,7 @@ Update All has a Settings Screen that allows you to configure which databases an
     * And more...
 6. **Extra Content**. A selection of curated databases that provide extra content.
     * [BIOS Database](https://github.com/BigDendy/BiosDB_MiSTer). Downloads bios from https://archive.org/ for your installed systems. **[Disabled by default]**
-    * [Arcade ROMs Database](https://github.com/BigDendy/ArcadeROMsDB_MiSTer). Downloads arcade roms from https://archive.org/ that are compatible with MRAs. **[Disabled by default]**
+    * [Arcade ROMs Database](https://github.com/zakk4223/ArcadeROMsDB_MiSTer). Downloads arcade roms from https://archive.org/ that are compatible with MRAs. **[Disabled by default]**
     * And more...
 7. **Analogue Pocket**. Tools to connect your MiSTer with your Analogue Pocket.
 8. **Patron Menu**. A menu with exclusive contents for members of my Patreon community.
