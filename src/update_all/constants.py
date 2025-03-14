@@ -108,7 +108,7 @@ class PathType(Enum):
 
 # Update All old constants
 UPDATE_ALL_VERSION = "2.1"
-MISTER_DOWNLOADER_VERSION = "1.8"
+MISTER_DOWNLOADER_VERSION = "2.0"
 UPDATE_ALL_PC_UPDATER = "false"
 UPDATE_ALL_OS = "MiSTer_Linux"
 UPDATE_ALL_LAUNCHER_PATH = 'Scripts/update_all.sh'
