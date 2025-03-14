@@ -167,7 +167,6 @@ class UpdateAllService:
             self._logger.print("               ║  Become a patron to unlock exclusive features!  ║              ")
             self._logger.print("               ║           www.patreon.com/theypsilon            ║              ")
             self._logger.print("               ╚═════════════════════════════════════════════════╝              ")
-            self._os_utils.sleep(2.0)
         else:
             self._logger.print()
             self._logger.print("                    ╔═══════════════════════════════════════╗                   ")
