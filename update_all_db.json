@@ -1,0 +1,20 @@
+{
+    "db_id": "update_all_mister",
+    "files": {
+        "Scripts/.config/update_all/update_all_latest.zip": {
+            "size": 332941,
+            "hash": "0ee3eb0ffde9bda827f9097798d605ef",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/dbaf451505c1567924eaeabd7bbaa02e9df3650a/update_all_latest.zip",
+            "tags": [
+                "updatealllatest",
+                "updateall"
+            ]
+        }
+    },
+    "folders": {
+        "Scripts": {},
+        "Scripts/.config": {},
+        "Scripts/.config/update_all": {}
+    },
+    "timestamp": 1741985432
+}
