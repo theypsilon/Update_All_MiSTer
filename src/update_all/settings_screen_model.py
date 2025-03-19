@@ -967,7 +967,7 @@ def settings_screen_model(): return {
             "header": "Arcade Organizer 2.0 Settings",
             "variables": {
                 "arcade_organizer_orgdir": {"rename": "orgdir", "group": "ao_ini", "default": "/media/fat/_Arcade/_Organized", "values": ["/media/fat/_Arcade/_Organized", "/media/fat/_Arcade", "/media/fat/_Arcade Organized"]},
-                "arcade_organizer_mad_db_description": {"rename": "mad_db_description", "group": "ao_ini", "default": "https://raw.githubusercontent.com/Toryalai1/MiSTer_ArcadeDatabase/db/mad_db.json.zip", "values": ["https://raw.githubusercontent.com/Toryalai1/MiSTer_ArcadeDatabase/db/mad_db.json.zip", "https://raw.githubusercontent.com/theypsilon/MAD_Database_MiSTer/db/mad_db.json.zip"]},
+                "arcade_organizer_mad_db_description": {"rename": "mad_db_description", "group": "ao_ini", "default": "https://raw.githubusercontent.com/MiSTer-devel/MiSTer_ArcadeDatabase/db/mad_db.json.zip", "values": ["https://raw.githubusercontent.com/MiSTer-devel/MiSTer_ArcadeDatabase/db/mad_db.json.zip", "https://raw.githubusercontent.com/theypsilon/MAD_Database_MiSTer/db/mad_db.json.zip"]},
                 "arcade_organizer_topdir": {"rename": "topdir", "group": "ao_ini", "default": "", "values": ["", "platform", "core", "year"]},
                 "arcade_organizer_skipalts": {"rename": "skipalts", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
                 "arcade_organizer_prepend_year": {"rename": "prepend_year", "group": "ao_ini", "default": "false", "values": ["false", "true"]},
@@ -975,7 +975,7 @@ def settings_screen_model(): return {
             },
             "formatters": {
                 "mad_db_name_formatter": {
-                    "https://raw.githubusercontent.com/Toryalai1/MiSTer_ArcadeDatabase/db/mad_db.json.zip": "Toryalai1/MiSTer_ArcadeDatabase",
+                    "https://raw.githubusercontent.com/MiSTer-devel/MiSTer_ArcadeDatabase/db/mad_db.json.zip": "MiSTer-devel/MiSTer_ArcadeDatabase",
                     "https://raw.githubusercontent.com/theypsilon/MAD_Database_MiSTer/db/mad_db.json.zip": "theypsilon/Incomplete_MAD_DB_Generator",
                 },
                 'orgdir_description': {
