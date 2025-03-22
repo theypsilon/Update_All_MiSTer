@@ -78,7 +78,14 @@ class ConfigReader:
 
         if DB_ID_DISTRIBUTION_MISTER in downloader_ini:
             parser = downloader_ini[DB_ID_DISTRIBUTION_MISTER]
-            config.encc_forks = parser.get_string('db_url', AllDBs.MISTER_DEVEL_DISTRIBUTION_MISTER.db_url).strip().lower() == AllDBs.MISTER_DB9_DISTRIBUTION_MISTER.db_url.lower()
+            db_url = parser.get_string('db_url', AllDBs.MISTER_DEVEL_DISTRIBUTION_MISTER.db_url).strip().lower()
+        
+            if db_url == AllDBs.MISTER_DB9_DISTRIBUTION_MISTER.db_url.lower():
+                config.encc_forks = 'db9'
+            elif db_url == AllDBs.MISTER_AITORGOMEZ_DISTRIBUTION_MISTER.db_url.lower():
+                config.encc_forks = 'aitorgomez'
+            else:
+                config.encc_forks = 'devel'
 
         if AllDBs.JTCORES.db_id in downloader_ini:
             parser = downloader_ini[AllDBs.JTCORES.db_id]

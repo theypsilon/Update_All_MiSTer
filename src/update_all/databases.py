@@ -43,6 +43,7 @@ class AllDBs:
     # Distribution MiSTer
     MISTER_DEVEL_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/db.json.zip', title='Main Distribution: MiSTer-devel')
     MISTER_DB9_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://raw.githubusercontent.com/MiSTer-DB9/Distribution_MiSTer/main/dbencc.json.zip', title='Main Distribution: DB9 / SNAC8')
+    MISTER_AITORGOMEZ_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://www.aitorgomez.net/static/mistermain/db.json.zip', title='Main Distribution: AitorGomez Fork')
 
     # JT
     JTCORES = Database(db_id='jtcores', db_url='https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip', title='JTCORES for MiSTer')
@@ -149,10 +150,13 @@ def databases_by_ids() -> Dict[str, List[Database]]:
         result[db.db_id].append(db)
     return result
 
-
-def db_distribution_mister_by_encc_forks(encc_forks: bool) -> Database:
-    return AllDBs.MISTER_DB9_DISTRIBUTION_MISTER if encc_forks else AllDBs.MISTER_DEVEL_DISTRIBUTION_MISTER
-
+def db_distribution_mister_by_encc_forks(encc_forks: str) -> Database:
+    if encc_forks == "db9":
+        return AllDBs.MISTER_DB9_DISTRIBUTION_MISTER
+    elif encc_forks == "aitorgomez":
+        return AllDBs.MISTER_AITORGOMEZ_DISTRIBUTION_MISTER
+    else:
+        return AllDBs.MISTER_DEVEL_DISTRIBUTION_MISTER
 
 def db_jtcores_by_download_beta_cores(download_beta_cores: bool) -> Database:
     return AllDBs.JTCORES.with_title(AllDBs.JTCORES.title + ' (+betas)') if download_beta_cores else AllDBs.JTCORES

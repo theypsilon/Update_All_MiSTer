@@ -21,8 +21,8 @@ def settings_screen_model(): return {
         "yesno": {"false": "No", "true": "Yes"},
         "yesno_reverse": {"false": "Yes", "true": "No"},
         "enabled": {"false": "Off.", "true": "On."},
-        "encc_forks": {"false": "MiSTer-devel", "true": "MiSTer-DB9"},
-        "encc_forks_description": {"false": "Official Cores from MiSTer-devel", "true": "DB9 / SNAC8 forks with ENCC"},
+        "encc_forks": {"devel": "MiSTer-devel", "db9": "MiSTer-DB9", "aitorgomez": "AitorGomez Fork"},
+        "encc_forks_description": {"devel": "Official Cores from MiSTer-devel", "db9": "DB9 / SNAC8 forks with ENCC", "aitorgomez": "AitorGomez Fork"},
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
         "bool_flag_presence_text": {
             "0": "Ignore them entirely",
@@ -33,8 +33,8 @@ def settings_screen_model(): return {
     "variables": {
         # Global variables
         "update_all_version": {"default": "2.1"},
-        "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
-        "encc_forks": {"group": "ua_ini", "default": "false", "values": ["false", "true"]},
+        "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
+        "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
         "download_beta_cores": {"group": "jt_ini", "default": "false", "values": ["false", "true"]},
         "bios_getter": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
