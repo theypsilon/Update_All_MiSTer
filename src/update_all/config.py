@@ -49,7 +49,7 @@ class Config:
     arcade_organizer: bool = True
 
     # Specific Updating Toggles
-    encc_forks: bool = False
+    encc_forks: str = "devel"  # Possible values: "devel", "db9", "aitorgomez"
     download_beta_cores: bool = False
     names_region: str = 'JP'
     names_char_code: str = 'CHAR18'

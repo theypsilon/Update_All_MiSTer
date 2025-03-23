@@ -90,12 +90,12 @@ class TestEnvironmentSetup(unittest.TestCase):
         }, expected_files={
             downloader_ini: Path('test/fixtures/downloader_ini/complete_downloader_first.ini').read_text(),
             update_arcade_organizer_ini.lower(): Path('test/fixtures/update_arcade-organizer_ini/complete_ao.ini').read_text()
-        }, expected_config=Config(databases=default_databases(add=[DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT]), arcade_organizer=False, encc_forks=True, download_beta_cores=True, names_region='EU', names_char_code='CHAR28'))
+        }, expected_config=Config(databases=default_databases(add=[DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT]), arcade_organizer=False, encc_forks="db9", download_beta_cores=True, names_region='EU', names_char_code='CHAR28'))
 
     def test_setup___with_downloader_with_custom_names_db___returns_empty_config(self):
         self.assertSetup(files={
             downloader_ini: Path('test/fixtures/downloader_ini/complete_downloader_first.ini').read_text()
-        }, expected_config=Config(databases=default_databases(add=[DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT]), encc_forks=True, download_beta_cores=True, names_region='EU', names_char_code='CHAR28'))
+        }, expected_config=Config(databases=default_databases(add=[DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT]), encc_forks="db9", download_beta_cores=True, names_region='EU', names_char_code='CHAR28'))
 
     def test_setup___with_downloader_with_rannysnice_43_wallpapers_db___returns_empty_config(self):
         self.assertSetup(files={
