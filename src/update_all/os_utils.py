@@ -18,6 +18,7 @@
 
 import subprocess
 import time
+import select
 from abc import ABC
 from typing import Optional
 
@@ -59,7 +60,31 @@ class LinuxOsUtils(OsUtils):
         subprocess.run(['reboot', 'now'], shell=False, stderr=subprocess.STDOUT)
 
     def execute_process(self, launcher, env) -> int:
-        proc = subprocess.run(['python3', launcher], env=env)
+        proc = subprocess.Popen(
+            ['python3', '-u', launcher],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            bufsize=1,
+            text=True
+        )
+
+        while True:
+            exit_code = proc.poll()
+            if exit_code is not None:
+                break
+
+            rlist, _, _ = select.select([proc.stdout, proc.stderr], [], [], 0.25)
+
+            for pipe in rlist:
+                line = pipe.readline()
+                if line:
+                    self._logger.print(line, end='', flush=True)
+
+        for pipe in [proc.stdout, proc.stderr]:
+            for line in pipe.readlines():
+                self._logger.print(line, end='', flush=True)
+
         return proc.returncode
 
     def read_command_output(self, cmd, env) -> [int, str]:

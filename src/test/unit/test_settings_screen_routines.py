@@ -21,7 +21,7 @@ from typing import Tuple
 from test.ui_model_test_utils import gather_used_effects
 from test.update_all_service_tester import SettingsScreenTester, UiContextStub, default_databases, local_store
 from update_all.config import Config
-from update_all.databases import DB_ID_NAMES_TXT
+from update_all.databases import DB_ID_NAMES_TXT, AllDBs
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
 from update_all.settings_screen import SettingsScreen
@@ -76,7 +76,7 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         sut.prepare_exit_dont_save_and_run(ui)
 
         self.assertEqual(config.arcade_organizer, False)
-        self.assertEqual(config.databases, {DB_ID_NAMES_TXT})
+        self.assertEqual(config.databases, {DB_ID_NAMES_TXT, AllDBs.UPDATE_ALL_MISTER.db_id})
         self.assertTrue(config.temporary_downloader_ini)
 
 

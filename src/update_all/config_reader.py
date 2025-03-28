@@ -17,7 +17,6 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 import json
 import time
-from distutils.util import strtobool
 from pathlib import Path
 from typing import Dict
 
@@ -30,6 +29,7 @@ from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
 from update_all.local_store import LocalStore
 from update_all.logger import Logger
+from update_all.other import strtobool
 
 
 class ConfigReader:
@@ -75,6 +75,8 @@ class ConfigReader:
             config.__setattr__(variable, is_present)
             if is_present:
                 config.databases.add(db_id)
+
+        config.databases.add(AllDBs.UPDATE_ALL_MISTER.db_id)
 
         if DB_ID_DISTRIBUTION_MISTER in downloader_ini:
             parser = downloader_ini[DB_ID_DISTRIBUTION_MISTER]

@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.2 - 2025-03-28
+
+### Added
+- Added update_all_mister database, which contains Update All files to improve the self-update process and enable more utilities to be installed in the future.
+- Arcade Organizer is now part of Update All codebase, which improves execution speed, fixes bugs and simplifies maintenance. As result, the Arcade Organizer log now appears in update_all.log.
+- New option to enable the distribution_main alternative database from Aitor Gómez which contains his custom version of the firmware (PR by Aitor Gómez).
+- It is now possible to install Update All without remote code execution. The new section in the [README.md](README.md#how-to-avoid-executing-remote-code-altogether) shows how to do it.
+- Added Patreon shoutout line that prints the supporter of the day at the end of the run.
+
+### Changes
+- The new update_all_mister database will be appended to downloader.ini automatically.
+- The Arcade Organizer is now using to the new official [ArcadeDatabase](https://github.com/MiSTer-devel/ArcadeDatabase_MiSTer) for the metadata, which is a direct continuation of the work done by Toya, and still maintained by him.
+- The downloader log is now correctly written to update_all.log, along with the rest of Update All's output.
+- The launcher has been changed:
+  - It now takes certificates installed by the distribution_mister database, substantially reducing the possibility of certificate problems.
+  - It now runs update_all build faster by avoiding network checks when the build file `update_all.pyz` is present.
+- When present, the build file from Downloader `downloader_latest.zip` is used instead of fetching it from the network.
+- Optimized build process, which now uses less space and is faster to unzip and run.
+- The initial output lines of Update All have been optimized by eliminating some unnecessary waits, resulting in a quicker startup.
+- The local store of Update All is now saved in a JSON file instead of a ZIP, making loading and saving processes much faster.
+- Enhanced debug script with additional capabilities for maintainers.
+
+### Removed
+- Removed deprecated distutils dependency.
+
 ## Version 2.1 - 2024-01-06
 
 ### Added

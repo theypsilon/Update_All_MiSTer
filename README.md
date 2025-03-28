@@ -69,6 +69,13 @@ Check also other core developers that you might want to support:
 And finally, if you would like to support my work, you may also subscribe to my patreon here: https://www.patreon.com/bePatron?u=37499475
 
 
+### How to avoid executing remote code altogether
+
+If you're concerned about executing a build that the launcher fetches from the web, you can avoid this by manually installing the latest version of Update All's build. Just get [this file](https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/db/update_all.pyz) and save it to `/media/fat/Scripts/.config/update_all/update_all.pyz` (remember to rename the file as instructed). You can verify the file's integrity using the provided SHA256 checksum [here](https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/db/update_all.pyz). Then, you should do the same with Downloader, [as instructed here](https://github.com/MiSTer-devel/Downloader_MiSTer?tab=readme-ov-file#how-to-avoid-executing-remote-code-altogether).
+
+If not done manually, the launcher will automatically install that build on its first run. This auto-installation occurs only once and is designed to be secure.
+
+
 ## Supporters+ shout-out!
 
 Alex Frégeau, Luca Fiandri, The Sentinel's Playground Team, Thomas Williams and Wayne Booker

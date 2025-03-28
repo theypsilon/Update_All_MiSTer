@@ -22,7 +22,7 @@ from test.ui_model_test_utils import special_navigate_targets, gather_target_var
     gather_navigate_targets, gather_section_names, gather_all_nodes, ensure_node_is_correct
 from test.update_all_service_tester import default_databases
 from update_all.config_reader import Config
-from update_all.databases import model_variables_by_db_id, db_ids_by_model_variables
+from update_all.databases import model_variables_by_db_id, db_ids_by_model_variables, AllDBs
 from update_all.settings_screen_model import settings_screen_model
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string
 
@@ -86,12 +86,12 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertGreaterEqual(len(intersection), 5)
         self.assertEqual({k: v for k, v in default_config_values.items() if k in intersection}, default_model_main_values)
 
-    def test_all_database_variables_are_declared_in_the_model(self):
+    def test_all_database_variables_are_declared_in_the_model_except_update_all(self):
         db_variables = set(db_ids_by_model_variables())
         model_variables = set(gather_variable_declarations(self.model, 'db'))
 
         self.assertGreaterEqual(len(db_variables), 5)
-        self.assertEqual(db_variables, model_variables)
+        self.assertEqual(db_variables - {AllDBs.UPDATE_ALL_MISTER.db_id}, model_variables)
 
     def test_target_variables_are_declared_in_the_model(self):
         target_variables = gather_target_variables(self.model)

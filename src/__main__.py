@@ -33,10 +33,15 @@ except (ImportError, SyntaxError) as e:
     print()
     exit(1)
 
+try:
+    from commit import default_commit  # type: ignore[import-not-found]
+except ImportError as e:
+    default_commit = DEFAULT_COMMIT  # type: ignore[assignment]
+
 if __name__ == '__main__':
     exit_code = main({
         KENV_CURL_SSL: os.getenv(KENV_CURL_SSL, DEFAULT_CURL_SSL_OPTIONS),
-        KENV_COMMIT: os.getenv(KENV_COMMIT, DEFAULT_COMMIT),
+        KENV_COMMIT: os.getenv(KENV_COMMIT, default_commit),
         KENV_LOCATION_STR: os.getenv(KENV_LOCATION_STR, DEFAULT_LOCATION_STR),
         KENV_DEBUG: os.getenv(KENV_DEBUG, DEFAULT_DEBUG),
         KENV_KEY_IGNORE_TIME: os.getenv(KENV_KEY_IGNORE_TIME, DEFAULT_KEY_IGNORE_TIME),

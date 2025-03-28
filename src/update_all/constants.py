@@ -19,6 +19,10 @@
 # Default SSL option
 from enum import unique, Enum
 
+# From patreon.com/theypsilon
+supporter_plus_patrons = ('Alex Frégeau', 'Luca Fiandri', "The Sentinel's Playground Team", 'Thomas Williams', 'Wayne Booker')
+
+# Default options
 DEFAULT_CURL_SSL_OPTIONS = '--cacert /etc/ssl/certs/cacert.pem'
 DEFAULT_COMMIT = 'unknown'
 DEFAULT_LOCATION_STR = 'MiSTer'
@@ -30,7 +34,9 @@ MISTER_ENVIRONMENT = 'mister'
 STANDARD_UI_THEME = 'Blue Installer'
 
 # Downloader files
-FILE_update_all_storage = 'Scripts/.config/update_all/update_all.json.zip'
+FILE_update_all_pyz = 'Scripts/.config/update_all/update_all.pyz'
+FILE_update_all_zipped_storage = 'Scripts/.config/update_all/update_all.json.zip'
+FILE_update_all_storage = 'Scripts/.config/update_all/update_all.json'
 FILE_update_all_log = 'Scripts/.config/update_all/update_all.log'
 FILE_update_all_ini = 'Scripts/update_all.ini'
 FILE_update_jtcores_ini = 'Scripts/update_jtcores.ini'
@@ -97,8 +103,8 @@ KENV_KEY_IGNORE_TIME = 'KEY_IGNORE_TIME'
 KENV_TRANSITION_SERVICE_ONLY = 'TRANSITION_SERVICE_ONLY'
 
 # Exit codes
-EXIT_CODE_REQUIRES_EARLY_EXIT = 40
-
+EXIT_CODE_REQUIRES_EARLY_EXIT = 1
+EXIT_CODE_CAN_CONTINUE = 2
 
 @unique
 class PathType(Enum):
@@ -107,27 +113,12 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION = "2.1"
+UPDATE_ALL_VERSION = "2.2"
 MISTER_DOWNLOADER_VERSION = "2.1"
-UPDATE_ALL_PC_UPDATER = "false"
-UPDATE_ALL_OS = "MiSTer_Linux"
-UPDATE_ALL_LAUNCHER_PATH = 'Scripts/update_all.sh'
-UPDATE_ALL_LAUNCHER_MD5 = 'ace9881ae7690d2620f25775ef870e07'
-SETTINGS_ON_FILENAME = "settings-on"
-WORK_PATH = "Scripts/.config/update_all"
-MISTER_DOWNLOADER_WORK_FOLDER = "Scripts/.config/downloader"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT = "Scripts/.config/arcade-organizer/installed_names.txt"
-ARCADE_ORGANIZER_FOLDER_OPTION_1 = "_Arcade/_Organized"
-ARCADE_ORGANIZER_FOLDER_OPTION_2 = "_Arcade"
-ARCADE_ORGANIZER_FOLDER_OPTION_3 = "_Arcade Organized"
-MISTER_INI_PATH = "MiSTer.ini"
-NAMES_TXT_PATH = "names.txt"
-UPDATE_ALL_URL = "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh"
 ARCADE_ORGANIZER_INI = "Scripts/update_arcade-organizer.ini"
 DOWNLOADER_URL = "https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/latest/dont_download.zip"
-ARCADE_ORGANIZER_URL = "https://raw.githubusercontent.com/theypsilon/_arcade-organizer/master/_arcade-organizer.sh"
 DOWNLOADER_INI_STANDARD_PATH = "downloader.ini"
 DOWNLOADER_STORE_STANDARD_PATH = "Scripts/.config/downloader/downloader.json"
 DOWNLOADER_LATEST_ZIP_PATH = "Scripts/.config/downloader/downloader_latest.zip"
 TEST_UNSTABLE_SPINNER_FIRMWARE_MD5 = "b76bc57d75afce8b1040bc4d225ea3aa"
-FILE_MiSTer_version = '/MiSTer.version'

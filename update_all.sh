@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,9 +19,10 @@
 
 set -euo pipefail
 
-SCRIPT_PATH="/tmp/update_all.sh"
-LATEST_SCRIPT_PATH="/media/fat/Scripts/.config/update_all/update_all_latest.zip"
-CACERT_PEM="/etc/ssl/certs/cacert.pem"
+RUN_SCRIPT_PATH="/tmp/update_all.sh"
+LATEST_SCRIPT_PATH="/media/fat/Scripts/.config/update_all/update_all.pyz"
+CACERT_PEM_0="/etc/ssl/certs/cacert.pem"
+CACERT_PEM_1="/media/fat/Scripts/.config/downloader/cacert.pem"
 
 if (( $(date +%Y) < 2000 )) ; then
     NTP_SERVER="0.pool.ntp.org"
@@ -32,122 +33,112 @@ if (( $(date +%Y) < 2000 )) ; then
         echo "$(date)"
         echo
     elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
-	    echo "Unable to sync."
+	      echo "Unable to sync."
         echo "Please, try again later."
         exit 1
     fi
 fi
 
-if [ -s "${CACERT_PEM}" ] ; then
-    export CURL_CA_BUNDLE="${CACERT_PEM}"
+if [ -s "${CACERT_PEM_1}" ] ; then
+    export SSL_CERT_FILE="${CACERT_PEM_1}"
+elif [ -s "${CACERT_PEM_0}" ] ; then
+    export SSL_CERT_FILE="${CACERT_PEM_0}"
+elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
+    set +e
+    dialog --keep-window --title "Bad Certificates" --defaultno \
+        --yesno "CA certificates need to be fixed, do you want me to fix them?\n\nNOTE: This operation will delete files at /etc/ssl/certs" \
+        7 65
+    DIALOG_RET=$?
+    set -e
+
+    if [[ "${DIALOG_RET}" != "0" ]] ; then
+        echo "No secure connection is possible without fixing the certificates."
+        exit 1
+    fi
+
+    RO_ROOT="false"
+    if mount | grep "on / .*[(,]ro[,$]" -q ; then
+        RO_ROOT="true"
+    fi
+    [ "${RO_ROOT}" == "true" ] && mount / -o remount,rw
+    rm /etc/ssl/certs/* 2> /dev/null || true
+    echo
+    echo "Installing cacert.pem from https://curl.se"
+    curl --insecure --location -o /tmp/cacert.pem "https://curl.se/ca/cacert.pem"
+    curl --insecure --location -o /tmp/cacert.pem.sha256 "https://curl.se/ca/cacert.pem.sha256"
+
+    DOWNLOAD_SHA256=$(cat /tmp/cacert.pem.sha256 | awk '{print $1}')
+    CALCULATED_SHA256=$(sha256sum /tmp/cacert.pem | awk '{print $1}')
+
+    if [[ "${DOWNLOAD_SHA256}" == "${CALCULATED_SHA256}" ]]; then
+        mv /tmp/cacert.pem "${CACERT_PEM_0}"
+        sync
+    else
+        echo "Checksum validation for downloaded CA certificate failed."
+        echo "Please try again later."
+        exit 0
+    fi
+
+    [ "${RO_ROOT}" == "true" ] && mount / -o remount,ro
+
+    export SSL_CERT_FILE="${CACERT_PEM_0}"
 fi
 
 download_file() {
     local DOWNLOAD_PATH="${1}"
     local DOWNLOAD_URL="${2}"
-    for (( COUNTER=0; COUNTER<=60; COUNTER+=1 )); do
-        if [ ${COUNTER} -ge 1 ] ; then
-            sleep 1s
-        fi
-        set +e
-        curl ${CURL_SSL:-} --silent --fail --location -o "${DOWNLOAD_PATH}" "${DOWNLOAD_URL}"
-        local CMD_RET=$?
-        set -e
+    set +e
+    curl ${CURL_SSL:-} --silent --fail --location -o "${DOWNLOAD_PATH}" "${DOWNLOAD_URL}"
+    local CMD_RET=$?
+    set -e
 
-        case ${CMD_RET} in
-            0)
-                export CURL_SSL="${CURL_SSL:-}"
-                return
-                ;;
-            60|77|35|51|58|59|82|83)
-                set +e
-                dialog --keep-window --title "Bad Certificates" --defaultno \
-                    --yesno "CA certificates need to be fixed, do you want me to fix them?\n\nNOTE: This operation will delete files at /etc/ssl/certs" \
-                    7 65
-                local DIALOG_RET=$?
-                set -e
-
-                if [[ "${DIALOG_RET}" == "0" ]] ; then
-                    local RO_ROOT="false"
-                    if mount | grep "on / .*[(,]ro[,$]" -q ; then
-                        RO_ROOT="true"
-                    fi
-                    [ "${RO_ROOT}" == "true" ] && mount / -o remount,rw
-                    rm /etc/ssl/certs/* 2> /dev/null || true
-                    echo
-                    echo "Installing cacert.pem from https://curl.se"
-                    curl --insecure --location -o /tmp/cacert.pem "https://curl.se/ca/cacert.pem"
-                    curl --insecure --location -o /tmp/cacert.pem.sha256 "https://curl.se/ca/cacert.pem.sha256"
-
-                    local DOWNLOAD_SHA256=$(cat /tmp/cacert.pem.sha256 | awk '{print $1}')
-                    local CALCULATED_SHA256=$(sha256sum /tmp/cacert.pem | awk '{print $1}')
-
-                    if [[ "${DOWNLOAD_SHA256}" == "${CALCULATED_SHA256}" ]]; then
-                        mv /tmp/cacert.pem /etc/ssl/certs/cacert.pem
-                        sync
-                    else
-                        echo "Checksum validation for downloaded CA certificate failed."
-                        continue
-                    fi
-
-                    [ "${RO_ROOT}" == "true" ] && mount / -o remount,ro
-                    echo
-                    export CURL_SSL="--cacert /etc/ssl/certs/cacert.pem"
-                    continue
-                fi
-
-                set +e
-                dialog --keep-window --title "Insecure Connection" --defaultno \
-                    --yesno "Would you like to run this tool using an insecure connection?\n\nNOTE: You should fix the certificates instead." \
-                    7 67
-                DIALOG_RET=$?
-                set -e
-
-                if [[ "${DIALOG_RET}" == "0" ]] ; then
-                    echo
-                    echo "WARNING! Connection is insecure."
-                    export CURL_SSL="--insecure"
-                    sleep 5s
-                    echo
-                    continue
-                fi
-
-                echo "No secure connection is possible without fixing the certificates."
-                exit 1
-                ;;
-            *)
-                echo "No Internet connection, please try again later."
-                exit 1
-                ;;
-        esac
-    done
-
-    echo "Internet connection failed, please try again later."
-    exit 1
+    case ${CMD_RET} in
+        0)
+            return
+            ;;
+        60|77|35|51|58|59|82|83)
+            echo ; echo "No secure connection is possible without fixing the certificates."
+            exit 1
+            ;;
+        *)
+            echo ; echo "No internet connection, please try again later."
+            exit 1
+            ;;
+    esac
 }
 
 echo -n "Launching Update All"
 
-rm ${SCRIPT_PATH} 2> /dev/null || true
+rm ${RUN_SCRIPT_PATH} 2> /dev/null || true
 
 if [ -s "${LATEST_SCRIPT_PATH}" ] ; then
-    cp "${LATEST_SCRIPT_PATH}" "${SCRIPT_PATH}"
-    if [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
-        download_file "/dev/null" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/update_all.sh"
-    fi
+    cp "${LATEST_SCRIPT_PATH}" "${RUN_SCRIPT_PATH}"
 else
-    download_file "${SCRIPT_PATH}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
+    download_file "${RUN_SCRIPT_PATH}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
     echo -n "!"
 fi
 
 echo ; echo
-chmod +x "${SCRIPT_PATH}"
+chmod +x "${RUN_SCRIPT_PATH}"
 
-if ! "${SCRIPT_PATH}" ; then
+set +e
+${RUN_SCRIPT_PATH}
+UA_RET=$?
+set -e
+
+if [[ ${UA_RET} -eq 2 ]] && [ -s "${LATEST_SCRIPT_PATH}" ] ; then
+    cp "${LATEST_SCRIPT_PATH}" "${RUN_SCRIPT_PATH}"
+    set +e
+    ${RUN_SCRIPT_PATH} --continue
+    UA_RET=$?
+    set -e
+fi
+
+if [[ ${UA_RET} -ne 0 ]] ; then
     echo -e "Update All failed!\n"
     exit 1
 fi
 
-rm ${SCRIPT_PATH} 2> /dev/null || true
+rm ${RUN_SCRIPT_PATH} 2> /dev/null || true
 
 exit 0

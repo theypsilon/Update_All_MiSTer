@@ -1,42 +1,37 @@
 #!/usr/bin/env bash
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2021-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 set -euo pipefail
 
-UPDATE_ALL_ZIP="update_all_latest.zip"
-TEMP_ZIP2="$(mktemp -u).zip"
-BIN="/tmp/dont_download.zip"
-UUDECODE_CMD=$({ [[ "${MISTER:-false}" == "false" ]] && [[ "$(uname -s)" == "Darwin" ]] ; } && echo "uudecode -p" || echo "uudecode -o -")
-EXPORTS="export COMMIT=$(git rev-parse --short HEAD)"
+rm -rf build || true
+mkdir -p build/src
 
-if [[ "${DEBUG:-false}" == "true" ]] ; then
-  EXPORTS="${EXPORTS}"$'\n'"export DEBUG=true"
+cp src/__main__.py build/src/__main__.py
+cp -r src/update_all/ build/src/update_all
+if [[ "${SKIP_COMMIT:-false}" != "true" ]] ; then
+  echo "default_commit = '$(git rev-parse --short HEAD)'" > "build/src/commit.py"
 fi
 
-pin_metadata() {
-  touch -a -m -t 202108231405 "${1}"
-}
+if [[ "${SKIP_REMOVALS:-false}" != "true" ]] ; then
+  find build/src -type f -name '*.py' -exec perl -i -0pe 's/"""(.*?)"""/""/sg; s/^\s*#.*\n//mg; s/^\s*\n//mg' {} +
+fi
+#if which strip-hints > /dev/null ; then
+#  find build/src -type f -name '*.py' -exec strip-hints --inplace {} \; 2> /dev/null
+#fi
+find build/src -type f ! -name '*.py' -exec rm -f {} +
+find build/src -exec touch -t 202108231405 {} +
 
-cd src
-
-find update_all -type f -iname "*.py" -print0 | while IFS= read -r -d '' file ; do pin_metadata "${file}" ; done
-pin_metadata __main__.py
-zip -q -0 -D -X -A -r "${UPDATE_ALL_ZIP}" __main__.py update_all -x "*/__pycache__/*"
-pin_metadata "${UPDATE_ALL_ZIP}"
-echo '#!/usr/bin/env python3' | cat - "${UPDATE_ALL_ZIP}" > "${TEMP_ZIP2}"
-pin_metadata "${TEMP_ZIP2}"
-mv "${UPDATE_ALL_ZIP}" "/tmp/${UPDATE_ALL_ZIP}"
-cd ..
+export SOURCE_DATE_EPOCH=0
+python -m zipapp build/src -o build/update_all.pyz -p "/usr/bin/env python3"
 
 cat <<-EOF
 #!/usr/bin/env bash
 set -euo pipefail
-${EXPORTS}
-${UUDECODE_CMD} "\${0}" | xzcat -d -c > "${BIN}"
-chmod a+x "${BIN}"
-"${BIN}" "\${1:-}"
+export DEBUG="\${DEBUG:-false}"
+tail -n +8 "\${0}" | xzcat -d -c > "/tmp/update_all.pyz"
+chmod a+x "/tmp/update_all.pyz"
+"/tmp/update_all.pyz" "\${1:-}"
 exit 0
 EOF
 
-uuencode - < <(xzcat -z < "${TEMP_ZIP2}")
-rm "${TEMP_ZIP2}" > /dev/null 2>&1 || true
+xzcat -z < build/update_all.pyz

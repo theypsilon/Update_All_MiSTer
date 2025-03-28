@@ -22,6 +22,7 @@ from test.countdown_stub import CountdownStub
 from test.fake_filesystem import FileSystemFactory
 from test.logger_tester import NoLogger
 from test.spy_os_utils import SpyOsUtils
+from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.config_reader import ConfigReader
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl, EnvironmentSetupResult
@@ -130,7 +131,8 @@ class SettingsScreenTester(SettingsScreen):
                  ui_runtime: UiRuntime = None,
                  checker: Checker = None,
                  local_repository: LocalRepository = None,
-                 store_provider: GenericProvider[LocalStore] = None):
+                 store_provider: GenericProvider[LocalStore] = None,
+                 ao_service: ArcadeOrganizerService = None):
 
         config_provider = config_provider or GenericProvider[Config]()
         file_system = file_system or FileSystemFactory(config_provider=config_provider).create_for_system_scope()
@@ -144,7 +146,8 @@ class SettingsScreenTester(SettingsScreen):
             ui_runtime=ui_runtime or UiRuntimeStub(),
             checker=checker or CheckerTester(file_system=file_system),
             local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system),
-            store_provider=store_provider or GenericProvider[LocalStore]()
+            store_provider=store_provider or GenericProvider[LocalStore](),
+            ao_service=ao_service or ArcadeOrganizerServiceStub()
         )
 
 
@@ -177,7 +180,7 @@ def ensure_str_lists(this: List[any]) -> List[str]:
 
 def default_databases(add: List[str] = None, sub: List[str] = None) -> Set[str]:
     sub = ensure_str_lists(sub or [])
-    return {value for value in {DB_ID_DISTRIBUTION_MISTER, AllDBs.JTCORES.db_id, AllDBs.COIN_OP_COLLECTION.db_id} if value not in sub} | set(ensure_str_lists(add or []))
+    return {value for value in {DB_ID_DISTRIBUTION_MISTER, AllDBs.JTCORES.db_id, AllDBs.COIN_OP_COLLECTION.db_id, AllDBs.UPDATE_ALL_MISTER.db_id} if value not in sub} | set(ensure_str_lists(add or []))
 
 
 class TransitionServiceTester(TransitionService):
@@ -231,12 +234,12 @@ class UpdateAllServiceTester(UpdateAllService):
         os_utils = os_utils or SpyOsUtils()
         config_provider = config_provider or GenericProvider[Config]()
 
+        ao_service = ArcadeOrganizerServiceStub()
         environment_setup = environment_setup or EnvironmentSetupTester(file_system=file_system, os_utils=os_utils, config_provider=config_provider)
-        settings_screen = settings_screen or SettingsScreenTester(config_provider=config_provider, file_system=file_system, os_utils=os_utils)
+        settings_screen = settings_screen or SettingsScreenTester(config_provider=config_provider, file_system=file_system, os_utils=os_utils, ao_service=ao_service)
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
 
         super().__init__(
-            environment_setup=environment_setup,
             config_provider=config_provider,
             logger=NoLogger(),
             file_system=file_system,
@@ -245,5 +248,23 @@ class UpdateAllServiceTester(UpdateAllService):
             settings_screen=settings_screen,
             checker=CheckerTester(),
             store_provider=store_provider or GenericProvider[LocalStore](),
-            ini_repository=self.ini_repository
+            ini_repository=self.ini_repository,
+            environment_setup=environment_setup,
+            ao_service=ao_service
         )
+
+class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
+    def __init__(self):
+        super().__init__(NoLogger())
+
+    def make_arcade_organizer_config(self, ini_file_str: str) -> Dict[str, Any]:
+        return {}
+
+    def run_arcade_organizer_organize_all_mras(self, config: Dict[str, Any]) -> bool:
+        return True
+
+    def run_arcade_organizer_print_orgdir_folders(self, config: Dict[str, Any]) -> Tuple[List[str], bool]:
+        return [], True
+
+    def run_arcade_organizer_print_ini_options(self, config: Dict[str, Any]) -> bool:
+        return True

@@ -20,11 +20,11 @@ from functools import cached_property
 
 from update_all.analogue_pocket.firmware_update import latest_firmware_info, pocket_firmware_update
 from update_all.analogue_pocket.pocket_backup import pocket_backup
+from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
-from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, \
-    TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, DOWNLOADER_URL, FILE_MiSTer_ini, ARCADE_ORGANIZER_URL, \
+from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
     ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, STANDARD_UI_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
-from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT
+from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs
 from update_all.downloader_utils import prepare_latest_downloader
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
@@ -44,7 +44,7 @@ class SettingsScreen(UiApplication):
     def __init__(self, logger: Logger, config_provider: GenericProvider[Config], file_system: FileSystem,
                  ini_repository: IniRepository, os_utils: OsUtils, settings_screen_printer: SettingsScreenPrinter,
                  checker: Checker, local_repository: LocalRepository, store_provider: GenericProvider[LocalStore],
-                 ui_runtime: UiRuntime):
+                 ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService):
         self._logger = logger
         self._config_provider = config_provider
         self._file_system = file_system
@@ -55,6 +55,7 @@ class SettingsScreen(UiApplication):
         self._local_repository = local_repository
         self._store_provider = store_provider
         self._ui_runtime = ui_runtime
+        self._ao_service = ao_service
         self._original_firmware = None
         self._theme_manager = None
 
@@ -306,6 +307,8 @@ class SettingsScreen(UiApplication):
 
             config.databases.add(db_ids[variable])
 
+        config.databases.add(AllDBs.UPDATE_ALL_MISTER.db_id)
+
     @cached_property
     def _all_config_variables(self):
         return [
@@ -344,21 +347,11 @@ class SettingsScreen(UiApplication):
             return ''
 
     def calculate_arcade_organizer_folders(self, ui: UiContext) -> None:
-        content = self._os_utils.download(ARCADE_ORGANIZER_URL)
-        if content is None:
-            return None
+        ao_config = self._ao_service.make_arcade_organizer_config(f'{self._config_provider.get().base_path}/{ARCADE_ORGANIZER_INI}')
+        folders, success = self._ao_service.run_arcade_organizer_print_orgdir_folders(ao_config, self._logger)
 
-        temp_file = self._file_system.temp_file_by_id('arcade_organizer.sh')
-        self._file_system.write_file_bytes(temp_file.name, content)
-
-        return_code, output = self._os_utils.read_command_output(['python3', temp_file.name, '--print-orgdir-folders'],
-                                                                 {
-                                                                     'SSL_SECURITY_OPTION': self._config_provider.get().curl_ssl,
-                                                                     'INI_FILE': f'{self._config_provider.get().base_path}/{ARCADE_ORGANIZER_INI}'
-                                                                 })
-
-        ui.set_value('has_arcade_organizer_folders', 'true' if return_code == 0 and len(output.strip()) > 0 else 'false')
-        ui.set_value('arcade_organizer_folders_list', output if return_code == 0 else '')
+        ui.set_value('has_arcade_organizer_folders', 'true' if success and len(folders) > 0 else 'false')
+        ui.set_value('arcade_organizer_folders_list', '\n'.join(folders) if success else '')
 
     def clean_arcade_organizer_folders(self, ui: UiContext) -> None:
         for line in ui.get_value('arcade_organizer_folders_list').splitlines():

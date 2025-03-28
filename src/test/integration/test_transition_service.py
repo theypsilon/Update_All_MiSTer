@@ -22,6 +22,7 @@ from typing import Dict, Any
 
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
+from test.ini_assertions import assertEqualIni
 from test.testing_objects import downloader_ini, update_all_ini, update_arcade_organizer_ini, update_names_txt_ini, \
     update_jtcores_ini, downloader_store
 from test.update_all_service_tester import TransitionServiceTester, local_store, IniRepositoryTester, ConfigReaderTester
@@ -43,17 +44,18 @@ def test_transitions(files: Dict[str, str] = None):
     sut.from_update_all_1(config, local_store())
     sut.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store())
     sut.from_old_db_urls_to_actual_db_urls(config, downloader_ini)
+    sut.from_no_update_all_mister_db_to_adding_it(config, downloader_ini)
     return fs_state
 
 
 class TestTransitionService(unittest.TestCase):
     def test_on_empty_state___writes_default_downloader_ini(self):
         fs = test_transitions()
-        self.assertEqual(Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/default_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_with_dirty_downloader_ini___writes_nothing(self):
         fs = test_transitions(files={downloader_ini: 'test/fixtures/downloader_ini/dirty_downloader.ini'})
-        self.assertEqual(Path('test/fixtures/downloader_ini/dirty_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/dirty_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_with_downloader_ini_and_other_inis___writes_ao_ini_and_keeps_downloader_ini(self):
         fs = test_transitions(files={
@@ -153,8 +155,10 @@ def read_description(description: Dict[str, Any]) -> Dict[str, str]:
 
 
 def read_json_or_text(path: str) -> Dict[str, str]:
-    return json.loads(Path(path).read_text()) if Path(path).suffix == '.json' else Path(path).read_text().strip()
+    p = Path(__file__).parent.parent.parent / path
+    return json.loads(p.read_text()) if p.suffix == '.json' else p.read_text().strip()
 
 
 def read_content(path: str) -> Dict[str, str]:
-    return {'content': Path(path).read_text()}
+    p = Path(__file__).parent.parent.parent / path
+    return {'content': p.read_text()}

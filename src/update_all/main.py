@@ -18,10 +18,11 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 import traceback
+import sys
 from update_all.local_repository import LocalRepository
 from update_all.logger import FileLoggerDecorator, PrintLogger
 from update_all.other import GenericProvider
-from update_all.update_all_service import UpdateAllServiceFactory
+from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllServicePass
 
 
 def main(env):
@@ -45,4 +46,12 @@ def main(env):
 
 
 def execute_update_all(factory, env):
-    return factory.create(env).full_run()
+    return factory.create(env).full_run(pass_parameter(sys.argv))
+
+def pass_parameter(args: list[str]) -> UpdateAllServicePass:
+    if len(args) > 1 and args[1] == '--continue':
+        return UpdateAllServicePass.Continue
+    elif len(args) > 1 and args[1] == '--no-continue':
+        return UpdateAllServicePass.NewRunNonStop
+    else:
+        return UpdateAllServicePass.NewRun

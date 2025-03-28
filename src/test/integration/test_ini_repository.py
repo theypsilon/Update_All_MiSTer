@@ -1,5 +1,4 @@
 # Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
-
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +16,7 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 from pathlib import Path
 
+from test.ini_assertions import assertEqualIni
 from test.testing_objects import downloader_ini
 from update_all.config import Config
 from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT
@@ -46,7 +46,7 @@ class TestIniRepository(unittest.TestCase):
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/dirty_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/changed_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/changed_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___over_bug_duplications_downloader_ini_after_changing_some_options___writes_changed_downloader(self):
         config = Config(download_beta_cores=True, names_region='EU', databases=default_databases(add=[
@@ -62,7 +62,7 @@ class TestIniRepository(unittest.TestCase):
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/bug_duplications_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/bug_duplications_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/bug_duplications_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___over_bug_names_txt_updater_disabled_downloader_ini_after_changing_some_options___writes_changed_downloader(self):
         config = Config(download_beta_cores=True, databases=default_databases(sub=[DB_ID_NAMES_TXT], add=[
@@ -78,74 +78,82 @@ class TestIniRepository(unittest.TestCase):
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/bug_names_txt_updater_disabled_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/bug_names_txt_updater_disabled_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/bug_names_txt_updater_disabled_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___lower_case_coin_ops_after_adding_names_txt___becomes_uppercase_after_writing_downloader(self):
         config = Config(databases=default_databases(add=[DB_ID_NAMES_TXT]))
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/coin_op_lowercase_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/coin_op_uppercase_plus_names_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/coin_op_uppercase_plus_names_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___with_roms_db_and_filtered_hbmame___adds_expected_db_with_expected_filter_field(self):
         config = Config(databases=default_databases(add=[AllDBs.ARCADE_ROMS.db_id]), hbmame_filter=True)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/filtered_hbmame_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/filtered_hbmame_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___with_already_existing_roms_db_and_filtered_hbmame___keeps_it_the_same(self):
         config = Config(databases=default_databases(add=[AllDBs.ARCADE_ROMS.db_id]), hbmame_filter=True)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/filtered_hbmame_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/filtered_hbmame_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/filtered_hbmame_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___when_removing_filtered_hbmame___removes_expected_filter_field(self):
         config = Config(databases=default_databases(add=[AllDBs.ARCADE_ROMS.db_id]), hbmame_filter=False)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/filtered_hbmame_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/arcade_roms_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/arcade_roms_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___when_removing_arcade_roms_db_altogether___removes_the_db_from_downloader_ini(self):
         config = Config(databases=default_databases())
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/filtered_hbmame_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/default_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___with_roms_db_and_mister_filtered_hbmame___adds_expected_composed_filter_field(self):
         config = Config(databases=default_databases(add=[AllDBs.ARCADE_ROMS.db_id]), hbmame_filter=True)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/mister_filtered_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/mister_filtered_plus_hbmame_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/mister_filtered_plus_hbmame_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini__removes_hbmame_from_mister_filtered_roms_db___restores_previous_filters(self):
         config = Config(databases=default_databases(add=[AllDBs.ARCADE_ROMS.db_id]), hbmame_filter=False)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/mister_filtered_plus_hbmame_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/mister_filtered_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/mister_filtered_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___with_roms_db_and_heavily_filtered_hbmame___adds_expected_composed_filter_field(self):
         config = Config(databases=default_databases(add=[AllDBs.ARCADE_ROMS.db_id]), hbmame_filter=True)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/heavily_filtered_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/heavily_filtered_plus_hbmame_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/heavily_filtered_plus_hbmame_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___removes_hbmame_from_heavily_filtered_roms_db___restores_previous_filters(self):
         config = Config(databases=default_databases(add=[AllDBs.ARCADE_ROMS.db_id]), hbmame_filter=False)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/heavily_filtered_plus_hbmame_downloader.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/heavily_filtered_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/heavily_filtered_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___with_negated_jtbeta_but_beta_cores_activated___writes_jtcores_without_negated_jtbeta(self):
-        config = Config(databases={AllDBs.JTCORES.db_id}, download_beta_cores=True)
+        config = Config(databases={AllDBs.JTCORES.db_id, AllDBs.UPDATE_ALL_MISTER.db_id}, download_beta_cores=True)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores_with_negated_jtbeta.ini').read_text()}
         }, config=config)
-        self.assertEqual(Path('test/fixtures/downloader_ini/just_jtcores_with_filter_wtf.ini').read_text(), fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/just_jtcores_with_filter_wtf.ini', fs.files[downloader_ini]['content'])
+
+    def test_write_downloader_ini___with_update_all_ini_and_a_bunch_other_things___puts_update_all_ini_at_the_end(self):
+        config = Config(databases=default_databases())
+        fs = test_write_downloader_ini(files={
+            downloader_ini: {'content': Path('test/fixtures/downloader_ini/default_downloader_unsorted.ini').read_text()}
+        }, config=config)
+        self.assertEqual(Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+

@@ -67,6 +67,7 @@ class TransitionService:
         self._ini_repository.write_downloader_ini(config)
 
         self._logger.print('A new file "downloader.ini" has been created with default DBs:')
+        self._logger.print(f'  - Added DB with id [{AllDBs.UPDATE_ALL_MISTER.db_id}]')
         self._logger.print(f'  - Added DB with id [{DB_ID_DISTRIBUTION_MISTER}]')
         self._logger.print(f'  - Added DB with id [{AllDBs.JTCORES.db_id}]')
         self._logger.print(f'  - Added DB with id [{AllDBs.COIN_OP_COLLECTION.db_id}]')
@@ -171,6 +172,11 @@ class TransitionService:
             if string_value is None:
                 string_value = description['default']
             else:
+                if variable == 'encc_forks':
+                    if string_value == 'true':
+                        string_value = 'db9'
+                    elif string_value == 'false':
+                        string_value = 'devel'
                 string_value = self._ensure_string_value_is_possible(string_value, description['values'])
                 self._logger.debug(f'{variable}={string_value}')
 
@@ -206,7 +212,7 @@ class TransitionService:
             db_id = db.db_id.lower()
             if db_id in downloader_ini:
                 if downloader_ini[db_id].get_string('db_url', '').lower() != db.db_url.lower():
-                    needs_save.append(db_id)
+                    needs_save.append(db.db_id)
 
         if len(needs_save) == 0:
             return
@@ -236,6 +242,16 @@ class TransitionService:
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)
         self._ini_repository.replace_db_ids_in_ini_and_fs(replacements, downloader_ini)
+
+    def from_no_update_all_mister_db_to_adding_it(self, config: Config, downloader_ini: Dict[str, IniParser]):
+        if AllDBs.UPDATE_ALL_MISTER.db_id in downloader_ini:
+            return
+
+        self._ini_repository.write_downloader_ini(config)
+        self._logger.print(f'Adding DB with id [{AllDBs.UPDATE_ALL_MISTER.db_id}] to downloader.ini.')
+        self._logger.print()
+        self._logger.print('Waiting 5 seconds...')
+        self._os_utils.sleep(5.0)
 
 #
 # set_default_options:

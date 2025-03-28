@@ -19,12 +19,13 @@ import configparser
 import io
 import json
 import re
+from collections import OrderedDict
 from typing import Optional, Dict, List, Tuple, Any
 
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini, DOWNLOADER_STORE_STANDARD_PATH
 from update_all.databases import AllDBs, Database, db_distribution_mister_by_encc_forks, \
-    db_jtcores_by_download_beta_cores, db_names_txt_by_locale, dbs_to_model_variables_pairs, db_arcade_names_txt_by_locale
+    db_jtcores_by_download_beta_cores, db_names_txt_by_locale, dbs_to_model_variables_pairs, db_arcade_names_txt_by_locale, DB_ID_DISTRIBUTION_MISTER
 from update_all.file_system import FileSystem
 from update_all.ini_parser import IniParser
 from update_all.logger import Logger
@@ -119,7 +120,7 @@ class IniRepository:
         return FILE_downloader_temp_ini if config.temporary_downloader_ini else self.downloader_ini_standard_path()
 
     def write_downloader_ini(self, config: Config, target_path: str = None) -> None:
-        new_ini_contents = self._build_new_downloader_ini_contents(config)
+        new_ini_contents = self._try_build_new_downloader_ini_contents(config)
         if new_ini_contents is None:
             return
 
@@ -145,7 +146,7 @@ class IniRepository:
             for old_id, new_id in changed_ids.items():
                 str_pos = line.lower().find(f'[{old_id.lower()}]')
                 if str_pos != -1:
-                    line = line[:str_pos] + f'[{new_id}]' + line[str_pos + len(old_id):]
+                    line = line[:str_pos] + f'[{new_id}]' + line[str_pos + len(old_id) + 2:]
                     replaced_ids.add(old_id)
 
             new_lines.append(line)
@@ -218,7 +219,7 @@ class IniRepository:
             self._add_new_downloader_ini_changes(ini, config)
             return len(ini) > 0
 
-        new_ini_contents = self._build_new_downloader_ini_contents(config)
+        new_ini_contents = self._try_build_new_downloader_ini_contents(config)
         if new_ini_contents is None:
             return False
         new_ini_contents = new_ini_contents.strip().lower()
@@ -280,25 +281,29 @@ class IniRepository:
             elif '!jtbeta' in filter_value:
                 ini[lower_id]['filter'] = filter_value.replace('!jtbeta', '').strip()
 
-    def _build_new_downloader_ini_contents(self, config: Config) -> Optional[str]:
+    def _try_build_new_downloader_ini_contents(self, config: Config) -> Optional[str]:
         ini: Dict[str, Dict[str, str]] = self.get_downloader_ini(cached=False)
         before = json.dumps(ini)
+
         self._add_new_downloader_ini_changes(ini, config)
-        after = json.dumps(ini)
+        ordered_ini: OrderedDict[str, Dict[str, str]] = into_ordered_ini_dict(ini, [DB_ID_DISTRIBUTION_MISTER], [AllDBs.UPDATE_ALL_MISTER.db_id])
+        after = json.dumps(ordered_ini)
 
         if before == after:
             return None
 
         db_ids = {db.db_id.lower(): db.db_id for _, db in candidate_databases(config)}
+        return self._build_ini_contents_from_ini(ordered_ini, db_ids)
 
-        ini_ast = IniAst(ini, db_ids)
+    def _build_ini_contents_from_ini(self, ordered_ini: OrderedDict[str, Dict[str, str]], db_ids: Dict[str, str]) -> str:
+        ini_ast = IniAst(ordered_ini, db_ids)
 
         if self._file_system.is_file(self.downloader_ini_standard_path()):
             ini_contents = io.StringIO(self._file_system.read_file_contents(self.downloader_ini_standard_path()))
             ini_ast.process(ini_contents.readlines())
 
         parser = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
-        for header, section_id in ini.items():
+        for header, section_id in ordered_ini.items():
             if header in db_ids:
                 header = db_ids[header]
             parser[header] = section_id
@@ -419,3 +424,21 @@ def read_ini_contents(contents: str):
 
 class IniRepositoryInitializationError(Exception):
     pass
+
+
+def into_ordered_ini_dict(ini: Dict[str, Dict[str, str]], first_sections: List[str], last_sections: List[str]) -> OrderedDict[str, Dict[str, str]]:
+    ordered_ini = OrderedDict()
+
+    for db_id in first_sections:
+        if db_id in ini:
+            ordered_ini[db_id] = ini.pop(db_id)
+
+    ordered_ini.update(ini)
+
+    for db_id in last_sections:
+        if db_id in ordered_ini:
+            ordered_ini[db_id] = ordered_ini.pop(db_id)
+
+    ini.clear()
+
+    return ordered_ini

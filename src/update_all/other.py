@@ -35,6 +35,16 @@ class UnreachableException(Exception):
 _calling_test_only = False
 
 
+def strtobool(val: str):
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return 1
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return 0
+    else:
+        raise ValueError("invalid truth value %r" % (val,))
+
+
 def empty_store_without_base_path():
     return {}
 

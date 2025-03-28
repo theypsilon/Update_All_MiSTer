@@ -16,11 +16,11 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 from update_all.config import Config
-from update_all.constants import FILE_mister_downloader_needs_reboot, UPDATE_ALL_LAUNCHER_PATH, UPDATE_ALL_LAUNCHER_MD5, EXIT_CODE_REQUIRES_EARLY_EXIT
+from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_REQUIRES_EARLY_EXIT
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
-from update_all.update_all_service import UpdateAllService
+from update_all.update_all_service import UpdateAllService, UpdateAllServicePass
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.update_all_service_tester import UpdateAllServiceFactoryTester, UpdateAllServiceTester, \
@@ -49,55 +49,43 @@ class TestUpdateAllService(unittest.TestCase):
 
     def test_full_run___on_default_environment___returns_0(self):
         sut, _ = tester()
-        self.assertEqual(0, sut.full_run())
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___with_no_databases_and_no_arcade_organizer___returns_0(self):
         sut, _ = tester(config=Config(arcade_organizer=False))
-        self.assertEqual(0, sut.full_run())
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___only_arcade_organizer___returns_0(self):
         sut, _ = tester(config=Config(arcade_organizer=True))
-        self.assertEqual(0, sut.full_run())
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___only_downloader___returns_0(self):
         sut, _ = tester(config=Config(arcade_organizer=False, databases=default_databases()))
-        self.assertEqual(0, sut.full_run())
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___only_downloader_without_linux___returns_0(self):
         sut, _ = tester(config=Config(arcade_organizer=False, databases=default_databases(), update_linux=False))
-        self.assertEqual(0, sut.full_run())
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___when_reboot_is_needed___returns_0(self):
         sut, _ = tester(files={FILE_mister_downloader_needs_reboot: {'content': 'true'}})
-        self.assertEqual(0, sut.full_run())
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___when_reboot_is_needed_but_is_disabled___returns_0(self):
         sut, _ = tester(
             files={FILE_mister_downloader_needs_reboot: {'content': 'true'}},
             config=Config(databases=default_databases(), autoreboot=False)
         )
-        self.assertEqual(0, sut.full_run())
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___when_reboot_is_needed_but_is_not_mister___returns_0(self):
         sut, _ = tester(
             files={FILE_mister_downloader_needs_reboot: {'content': 'true'}},
             config=Config(databases=default_databases(), not_mister=True)
         )
-        self.assertEqual(0, sut.full_run())
-
-    def test_full_run___when_launcher_is_present_with_correct_hash___returns_0(self):
-        sut, _ = tester(files={UPDATE_ALL_LAUNCHER_PATH: {'content': 'true', 'hash': UPDATE_ALL_LAUNCHER_MD5}})
-        self.assertEqual(0, sut.full_run())
-
-    def test_full_run___when_launcher_is_present_with_empty_hash___returns_0(self):
-        sut, _ = tester(files={UPDATE_ALL_LAUNCHER_PATH: {'content': 'true', 'hash': ''}})
-        self.assertEqual(0, sut.full_run())
-
-    def test_full_run___when_launcher_is_present_with_wrong_hash___returns_0(self):
-        sut, _ = tester(files={UPDATE_ALL_LAUNCHER_PATH: {'content': 'true', 'hash': 'wrong'}})
-        self.assertEqual(0, sut.full_run())
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___when_env_setup_requires_early_exit___returns_exit_code_requires_early_exit(self):
         stub = EnvironmentSetupStub(EnvironmentSetupResult(requires_early_exit=True))
         sut, _ = tester(config=Config(databases=default_databases(), transition_service_only=True), env_stub=stub)
-        self.assertEqual(EXIT_CODE_REQUIRES_EARLY_EXIT, sut.full_run())
+        self.assertEqual(EXIT_CODE_REQUIRES_EARLY_EXIT, sut.full_run(UpdateAllServicePass.NewRun))

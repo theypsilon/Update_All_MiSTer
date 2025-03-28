@@ -11,14 +11,13 @@ on:
         type: string
   workflow_dispatch:
 
+permissions: write-all
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Install sharutils
-      run: sudo apt-get install sharutils
-
     - uses: actions/setup-python@v5
       with:
         python-version: '3.9'
@@ -37,11 +36,29 @@ jobs:
       run: cd src && python3 -m unittest discover -s test/system
 
     - name: Build
-      run: ./src/build.sh > dont_download2.sh
+      run: |
+        set -euo pipefail
+        SKIP_COMMIT=true ./src/build.sh | sha256sum > latest.id
+        ./src/build.sh > dont_download2.sh
 
-    - name: Release
-      id: release
+    - name: Release Build
+      id: release_build
       run: |
         git config --global user.email "theypsilon@gmail.com"
         git config --global user.name "The CI/CD Bot"
-        ./.github/release.sh
+        python3 ./.github/release_build.py
+
+    - name: Print New Build
+      if : steps.release_build.outputs.new_build == 'yes'
+      run: echo "New Build"
+
+    - name: Release Database
+      id: release_db
+      run: |
+        git config --global user.email "theypsilon@gmail.com"
+        git config --global user.name "The CI/CD Bot"
+        python3 ./.github/release_db.py 
+
+    - name: Print New DB
+      if : steps.release_db.outputs.new_db == 'yes'
+      run: echo "New DB"

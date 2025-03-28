@@ -18,7 +18,8 @@
 from pathlib import Path
 
 from update_all.constants import MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, FILE_update_all_ini, \
-    FILE_update_names_txt_ini, FILE_update_jtcores_ini, ARCADE_ORGANIZER_INI, FILE_update_all_storage, DOWNLOADER_STORE_STANDARD_PATH
+    FILE_update_names_txt_ini, FILE_update_jtcores_ini, ARCADE_ORGANIZER_INI, FILE_update_all_zipped_storage, \
+    DOWNLOADER_STORE_STANDARD_PATH, FILE_update_all_storage
 
 downloader_ini = f'{MEDIA_FAT}/{DOWNLOADER_INI_STANDARD_PATH}'
 downloader_store = f'{MEDIA_FAT}/{DOWNLOADER_STORE_STANDARD_PATH}'
@@ -26,8 +27,12 @@ update_all_ini = f'{MEDIA_FAT}/{FILE_update_all_ini}'
 update_names_txt_ini = f'{MEDIA_FAT}/{FILE_update_names_txt_ini}'
 update_jtcores_ini = f'{MEDIA_FAT}/{FILE_update_jtcores_ini}'
 update_arcade_organizer_ini = f'{MEDIA_FAT}/{ARCADE_ORGANIZER_INI}'
-store_json_zip = f'{MEDIA_FAT}/{FILE_update_all_storage}'
-
+store_json_zip = f'{MEDIA_FAT}/{FILE_update_all_zipped_storage}'
+store_json = f'{MEDIA_FAT}/{FILE_update_all_storage}'
 
 def default_downloader_ini_content():
     return Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()
+
+
+def downloader_ini_content_only_update_all_db():
+    return Path('test/fixtures/downloader_ini/downloader_ini_empty_but_update_all.ini').read_text()

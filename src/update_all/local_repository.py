@@ -18,7 +18,7 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 from update_all.config import Config
 from update_all.other import GenericProvider
-from update_all.constants import FILE_update_all_storage, FILE_update_all_log
+from update_all.constants import FILE_update_all_zipped_storage, FILE_update_all_log, FILE_update_all_storage
 from update_all.local_store import LocalStore
 from update_all.store_migrator import make_new_local_store
 
@@ -34,14 +34,16 @@ class LocalRepository:
     def load_store(self) -> LocalStore:
         self._logger.bench('Loading store...')
 
-        if self._file_system.is_file(FILE_update_all_storage):
-            try:
-                local_store_props = self._file_system.load_dict_from_file(FILE_update_all_storage)
-            except Exception as e:
-                self._logger.debug(e)
-                self._logger.print('Could not load store')
-                local_store_props = make_new_local_store(self._store_migrator)
-        else:
+        local_store_props = None
+        for store_file_path in (FILE_update_all_storage, FILE_update_all_zipped_storage):
+            if self._file_system.is_file(store_file_path):
+                try:
+                    local_store_props = self._file_system.load_dict_from_file(store_file_path)
+                except Exception as e:
+                    self._logger.debug(e)
+                    self._logger.print('Could not load store')
+
+        if local_store_props is None:
             local_store_props = make_new_local_store(self._store_migrator)
 
         self._store_migrator.migrate(local_store_props)  # exception must be fixed, users are not modifying this by hand
@@ -55,9 +57,8 @@ class LocalRepository:
 
         local_store = local_store_wrapper.unwrap_props()
 
-        self._file_system.make_dirs_parent(FILE_update_all_storage)
-        self._file_system.save_json_on_zip(local_store, FILE_update_all_storage)
-
+        self._file_system.make_dirs_parent(FILE_update_all_zipped_storage)
+        self._file_system.save_json(local_store, FILE_update_all_storage)
         local_store_wrapper.mark_as_cleaned()
 
     def save_log_from_tmp(self, path):
