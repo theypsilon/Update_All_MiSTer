@@ -28,9 +28,10 @@ import shutil
 import json
 import xml.etree.cElementTree as ET
 from enum import IntEnum, unique
-from typing import List, Dict, Any, Protocol, Tuple
+from typing import List, Dict, Any, Tuple
 
 from update_all.constants import FILE_arcade_database_mad_db_json_zip
+from update_all.logger import Logger
 from update_all.other import strtobool
 
 
@@ -127,7 +128,7 @@ def guess_arcade_organizer_ini_file() -> str:
 
 
 class ArcadeOrganizerService:
-    def __init__(self, printer: 'AoLogger'):
+    def __init__(self, printer: 'Logger'):
         self._printer = printer
 
     def make_arcade_organizer_config(self, ini_file_str: str):
@@ -312,12 +313,6 @@ class ArcadeOrganizerService:
 def lineno():
     return getframeinfo(currentframe().f_back).lineno
 
-
-class AoLogger(Protocol):
-    def print(self, *args, sep='', end='\n', flush=False):
-        pass
-
-
 class Printer:
     def __init__(self, config):
         self._config = config
@@ -432,9 +427,8 @@ class Infrastructure:
                 self._os_errors.append((mra_path, e))
 
     def download_mad_db_zip(self):
-        self._printer.print("Downloading Mister Arcade Descriptions database")
-
         if not self._config['MAD_DB'].startswith('http'):
+            self._printer.print("Using local Mister Arcade Descriptions database")
             src = self._config['MAD_DB']
             try:
                 shutil.copyfile(src, self._config['TMP_DATA_ZIP'])
@@ -448,6 +442,7 @@ class Infrastructure:
                 self._printer.print()
                 return self._tmp_data_zip_path
 
+        self._printer.print("Downloading Mister Arcade Descriptions database")
         zip_output = subprocess.run('curl %s %s -o %s %s' % (self._config['CURL_RETRY'], self._config['SSL_SECURITY_OPTION'], self._config['TMP_DATA_ZIP'], self._config['MAD_DB']), shell=True,
                                     stderr=subprocess.DEVNULL)
 
@@ -1124,9 +1119,9 @@ class ArcadeOrganizer:
 
         self._printer.print()
         self._printer.print('Arcade Organizer %s' % self._config['ARCADE_ORGANIZER_VERSION'])
-        self._printer.print('Arguments:')
+        self._printer.debug('Arguments:')
         for key, value in sorted(self.calculate_ini_options().items()):
-            self._printer.print("%s=%s" % (key, value))
+            self._printer.debug("%s=%s" % (key, value))
         self._printer.print()
 
         self._infra.remove_any_previous_mad_db_files_in_tmp()
@@ -1227,7 +1222,7 @@ class ArcadeOrganizer:
         self._printer.print('%s ver. by theypsilon' % self._config['ARCADE_ORGANIZER_VERSION'])
 
 
-def check_pass_errors(errors: List[str], printer: AoLogger) -> bool:
+def check_pass_errors(errors: List[str], printer: Logger) -> bool:
     errors_amount = len(errors)
     if errors_amount > 0:
         printer.print("")
