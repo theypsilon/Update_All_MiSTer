@@ -30,7 +30,7 @@ from update_all.store_migrator import make_new_local_store
 from test.file_system_tester_state import FileSystemState
 from test.ini_assertions import assertEqualIni
 from test.testing_objects import downloader_ini, update_arcade_organizer_ini, default_downloader_ini_content, \
-    downloader_ini_content_only_update_all_db, store_json, store_json_zip
+    downloader_ini_content_only_update_all_db, store_json, store_json_zip, pocket_firmware_details_json
 from test.update_all_service_tester import SettingsScreenTester, UiContextStub, EnvironmentSetupTester
 from test.fake_filesystem import FileSystemFactory
 from test.update_all_service_tester import StoreMigratorTester
@@ -97,7 +97,8 @@ class TestSettingsScreenSaving(unittest.TestCase):
 
     def test_calculate_needs_save___on_complete_ao_with_arcade_organizer_changes___returns_arcade_organizer_changes(self):
         sut, ui, fs = tester(files={
-            update_arcade_organizer_ini: {'content': Path('test/fixtures/update_arcade-organizer_ini/complete_ao.ini').read_text()}
+            update_arcade_organizer_ini: {'content': Path('test/fixtures/update_arcade-organizer_ini/complete_ao.ini').read_text()},
+            pocket_firmware_details_json: {'content': Path('test/fixtures/pocket_firmware_details_json/standard.json').read_text()}
         })
 
         ui.set_value('arcade_organizer', 'true')

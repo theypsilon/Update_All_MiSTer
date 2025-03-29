@@ -24,7 +24,7 @@ from typing import Final
 supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', 'Luca Fiandri', "The Sentinel's Playground Team", 'Thomas Williams', 'Wayne Booker')
 
 # Default options
-DEFAULT_CURL_SSL_OPTIONS: Final[str] = '--cacert /etc/ssl/certs/cacert.pem'
+DEFAULT_CURL_SSL_OPTIONS: Final[str] = ''
 DEFAULT_COMMIT: Final[str] = 'unknown'
 DEFAULT_LOCATION_STR: Final[str] = 'MiSTer'
 DEFAULT_DEBUG: Final[str] = 'false'
@@ -39,6 +39,8 @@ FILE_update_all_pyz: Final[str] = 'Scripts/.config/update_all/update_all.pyz'
 FILE_update_all_zipped_storage: Final[str] = 'Scripts/.config/update_all/update_all.json.zip'
 FILE_update_all_storage: Final[str] = 'Scripts/.config/update_all/update_all.json'
 FILE_update_all_log: Final[str] = 'Scripts/.config/update_all/update_all.log'
+FILE_pocket_firmware_details_json: Final[str] = "Scripts/.config/update_all/pocket_firmware_details.json"
+FILE_arcade_database_mad_db_json_zip: Final[str] = "Scripts/.config/update_all/mad_db.json.zip"
 FILE_update_all_ini: Final[str] = 'Scripts/update_all.ini'
 FILE_update_jtcores_ini: Final[str] = 'Scripts/update_jtcores.ini'
 FILE_update_jtcores_sh: Final[str] = 'Scripts/update_jtcores.sh'

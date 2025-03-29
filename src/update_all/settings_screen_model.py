@@ -714,7 +714,7 @@ def settings_screen_model(): return {
             "type": "dialog_sub_menu_toggle",
             "header": "Analogue Pocket",
             "variables": {
-                "pocket_firmware_version": {"default": "1.0"},
+                "pocket_firmware_version": {"default": "2.5"},
                 "pocket_firmware_update": {"group": ["store", "pocket"], "default": "false", "values": ["false", "true"]},
                 "pocket_firmware_update_result_header": {"default": "Update Complete!"},
                 "pocket_firmware_update_result_txt": {"default": "OK."},

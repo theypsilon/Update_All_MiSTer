@@ -16,7 +16,6 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-from typing import TypedDict
 import ssl
 from pathlib import Path
 import glob
@@ -25,24 +24,16 @@ import os
 from update_all.analogue_pocket.http_gateway import HttpGateway, write_incoming_stream
 from update_all.analogue_pocket.utils import pocket_mount
 from update_all.file_system import hash_file
+from update_all.local_repository import LocalRepository
 from update_all.logger import Logger
-from update_all.analogue_pocket.pocket_firmware_details import pocket_firmware_details
 
 
-class FirmwareInfo(TypedDict):
-    url: str
-    version: str
-    file: str
-    md5: str
-    size: float
-
-
-def latest_firmware_info() -> FirmwareInfo:
-    return pocket_firmware_details()
-
-
-def pocket_firmware_update(ssl_ctx: ssl.SSLContext, logger: Logger):
-    firmware_info = latest_firmware_info()
+def pocket_firmware_update(ssl_ctx: ssl.SSLContext, local_repository: LocalRepository, logger: Logger):
+    firmware_info = local_repository.pocket_firmware_info()
+    if isinstance(firmware_info, Exception):
+        logger.print('ERROR! Firmware info not found. Make sure [update_all_mister] db is enabled.')
+        logger.print(firmware_info)
+        return False
 
     mount = pocket_mount()
     if mount is None:

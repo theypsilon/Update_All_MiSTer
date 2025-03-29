@@ -4,11 +4,6 @@ on:
   push:
     branches:
       - master
-  workflow_call:
-    inputs:
-      sha:
-        required: false
-        type: string
   workflow_dispatch:
 
 permissions: write-all
@@ -16,6 +11,8 @@ permissions: write-all
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:  # 👈 Add job outputs
+      new_build: ${{ steps.release_build.outputs.new_build }}
 
     steps:
     - uses: actions/setup-python@v5

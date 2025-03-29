@@ -108,7 +108,8 @@ class UpdateAllServiceFactory:
             store_provider=store_provider,
             ini_repository=ini_repository,
             environment_setup=environment_setup,
-            ao_service=ao_service
+            ao_service=ao_service,
+            local_repository=local_repository
         )
 
 
@@ -123,7 +124,8 @@ class UpdateAllService:
                  store_provider: GenericProvider[LocalStore],
                  ini_repository: IniRepository,
                  environment_setup: EnvironmentSetup,
-                 ao_service: ArcadeOrganizerService):
+                 ao_service: ArcadeOrganizerService,
+                 local_repository: LocalRepository):
         self._config_provider = config_provider
         self._logger = logger
         self._file_system = file_system
@@ -135,6 +137,7 @@ class UpdateAllService:
         self._ini_repository = ini_repository
         self._environment_setup = environment_setup
         self._ao_service = ao_service
+        self._local_repository = local_repository
         self._exit_code = 0
         self._error_reports: List[str] = []
 
@@ -174,7 +177,7 @@ class UpdateAllService:
             self._settings_screen.load_test_menu()
             exit(0)
         elif os.environ.get('TEST_POCKET_FIRMWARE_UPDATE', 'false') == 'true':
-            pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), self._logger)
+            pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), self._local_repository, self._logger)
             exit(0)
         elif os.environ.get('TEST_POCKET_BACKUP', 'false') == 'true':
             pocket_backup(self._logger)
@@ -283,7 +286,7 @@ class UpdateAllService:
             self._draw_separator()
             self._logger.print('Installing Analogue Pocket Firmware')
             self._logger.print()
-            if pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), self._logger):
+            if pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), self._local_repository, self._logger):
                 self._logger.print()
                 self._logger.print('Your Pocket firmware is on the latest version.')
             else:

@@ -228,7 +228,8 @@ class UpdateAllServiceTester(UpdateAllService):
                  countdown: Countdown = None,
                  settings_screen: SettingsScreen = None,
                  store_provider: GenericProvider[LocalStore] = None,
-                 ini_repository: IniRepository = None):
+                 ini_repository: IniRepository = None,
+                 local_repository: LocalRepository = None):
 
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
@@ -250,7 +251,8 @@ class UpdateAllServiceTester(UpdateAllService):
             store_provider=store_provider or GenericProvider[LocalStore](),
             ini_repository=self.ini_repository,
             environment_setup=environment_setup,
-            ao_service=ao_service
+            ao_service=ao_service,
+            local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system)
         )
 
 class ArcadeOrganizerServiceStub(ArcadeOrganizerService):

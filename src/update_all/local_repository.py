@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
@@ -16,11 +15,23 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+
+from typing import TypedDict, Union
+from urllib.parse import urlparse
 from update_all.config import Config
 from update_all.other import GenericProvider
-from update_all.constants import FILE_update_all_zipped_storage, FILE_update_all_log, FILE_update_all_storage
+from update_all.constants import FILE_update_all_zipped_storage, FILE_update_all_log, FILE_update_all_storage, \
+    FILE_pocket_firmware_details_json
 from update_all.local_store import LocalStore
 from update_all.store_migrator import make_new_local_store
+
+
+class FirmwareInfo(TypedDict):
+    url: str
+    version: str
+    file: str
+    md5: str
+    size: float
 
 
 class LocalRepository:
@@ -30,6 +41,25 @@ class LocalRepository:
         self._logger = logger
         self._file_system = file_system
         self._store_migrator = store_migrator
+        self._pocket_firmware_info = None
+
+    def pocket_firmware_info(self) -> Union[FirmwareInfo, Exception]:
+        if self._pocket_firmware_info is None:
+            try:
+                details = self._file_system.load_dict_from_file(FILE_pocket_firmware_details_json)
+                assert (isinstance(details['url'], str))
+                assert (isinstance(details['version'], str))
+                assert (isinstance(details['file'], str))
+                assert (isinstance(details['md5'], str))
+                assert (isinstance(details['size'], float))
+                assert (len(details.keys()) == 5)
+                assert (float(details['version']) > 2.0)
+                netloc = urlparse(details['url']).netloc
+                assert (netloc == 'analogue.co' or netloc.endswith('.analogue.co'))
+                self._pocket_firmware_info = details
+            except Exception as e:
+                self._pocket_firmware_info = e
+        return self._pocket_firmware_info
 
     def load_store(self) -> LocalStore:
         self._logger.bench('Loading store...')

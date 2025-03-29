@@ -30,6 +30,7 @@ import xml.etree.cElementTree as ET
 from enum import IntEnum, unique
 from typing import List, Dict, Any, Protocol, Tuple
 
+from update_all.constants import FILE_arcade_database_mad_db_json_zip
 from update_all.other import strtobool
 
 
@@ -135,7 +136,7 @@ class ArcadeOrganizerService:
         ini_parser.initialize()
 
         config = dict()
-        config['MAD_DB'] = os.getenv('MAD_DB', "https://raw.githubusercontent.com/MiSTer-devel/ArcadeDatabase_MiSTer/db/mad_db.json.zip")
+        config['MAD_DB'] = os.getenv('MAD_DB', '/media/fat/' + FILE_arcade_database_mad_db_json_zip)
         config['MRADIR'] = ini_parser.get_string('MRADIR', "/media/fat/_Arcade/")
         config['ORGDIR'] = ini_parser.get_string('ORGDIR', "/media/fat/_Arcade/_Organized")
         config['SKIPALTS'] = ini_parser.get_bool('SKIPALTS', True)

@@ -18,7 +18,7 @@
 import hashlib
 from functools import cached_property
 
-from update_all.analogue_pocket.firmware_update import latest_firmware_info, pocket_firmware_update
+from update_all.analogue_pocket.firmware_update import pocket_firmware_update
 from update_all.analogue_pocket.pocket_backup import pocket_backup
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
@@ -116,7 +116,9 @@ class SettingsScreen(UiApplication):
         drawer_factory, theme_manager = self._settings_screen_printer.initialize_screen()
         theme_manager.set_theme(ui_theme)
 
-        ui.set_value('pocket_firmware_version', latest_firmware_info()['version'])
+        pocket_firmware = self._local_repository.pocket_firmware_info()
+        if isinstance(pocket_firmware, dict):
+            ui.set_value('pocket_firmware_version', pocket_firmware['version'])
 
         ui.add_custom_effects({
             'calculate_needs_save': lambda effect: self.calculate_needs_save(ui),
@@ -375,7 +377,7 @@ class SettingsScreen(UiApplication):
 
         self._logger.print()
         logger = CollectorLoggerDecorator(self._logger)
-        installed = pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), logger)
+        installed = pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), self._local_repository, logger)
 
         logs = list(logger.prints)
         logs.append('')

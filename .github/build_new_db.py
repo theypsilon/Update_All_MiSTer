@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import TypedDict
 import requests
 
-no_check = 'no_check'
 
 def save_json(obj, path_str):
     with open(path_str, 'w') as json_file:
@@ -63,7 +62,7 @@ def nested_match(a, b):
             return False
         return all(nested_match(x, y) for x, y in zip(a, b))
     else:
-        return a == b or a == no_check or b == no_check
+        return a == b
 
 def set_new_db(new_db: str) -> None:
     with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
@@ -91,6 +90,10 @@ except Exception as e:
         "folders": {},
         "timestamp":  0
     }
+
+for description in old_db['files'].values():
+    if 'url' in description:
+        description.pop('url')
 
 new_db = copy.deepcopy(old_db)
 
@@ -120,22 +123,18 @@ new_db['files'] = {
     'Scripts/.config/update_all/update_all.pyz': {
         'size': os.path.getsize('update_all.pyz'),
         'hash': hash_file('update_all.pyz'),
-        'url': no_check
     },
     'Scripts/.config/update_all/mad_db.json.zip': {
         'size': os.path.getsize('mad_db.json.zip'),
         'hash': hash_file('mad_db.json.zip'),
-        'url': no_check
     },
     'Scripts/.config/update_all/pocket_firmware_details.json': {
         'size': os.path.getsize('pocket_firmware_details.json'),
         'hash': hash_file('pocket_firmware_details.json'),
-        'url': no_check
     },
     'Scripts/update_all.sh': {
         'size': os.path.getsize('update_all.sh'),
         'hash': hash_file('update_all.sh'),
-        'url': no_check
     }
 }
 new_db['folders'] = {}
