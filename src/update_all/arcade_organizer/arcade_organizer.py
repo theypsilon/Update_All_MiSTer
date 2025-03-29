@@ -278,11 +278,15 @@ class ArcadeOrganizerService:
         return config
 
     def run_arcade_organizer_organize_all_mras(self, config: Dict[str, Any]) -> bool:
-        infra = Infrastructure(config, self._printer)
-        mra_finder = MraFinder(config, infra)
-        ao = ArcadeOrganizer(config, infra, mra_finder, self._printer)
-        ao.organize_all_mras()
-        return check_pass_errors(infra.errors(), self._printer)
+        try:
+            infra = Infrastructure(config, self._printer)
+            mra_finder = MraFinder(config, infra)
+            ao = ArcadeOrganizer(config, infra, mra_finder, self._printer)
+            ao.organize_all_mras()
+            return check_pass_errors(infra.errors(), self._printer)
+        except Exception as e:
+            self._printer.print(e)
+            return False
 
 
     def run_arcade_organizer_print_orgdir_folders(self, config: Dict[str, Any]) -> Tuple[List[str], bool]:
