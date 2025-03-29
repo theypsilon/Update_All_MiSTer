@@ -62,7 +62,7 @@ class IniParser:
         return result.strip('"\' ')
 
     def get_bool(self, key, default):
-        return strtobool(self.get_string(key, 'true' if default else 'false')) == 0
+        return strtobool(self.get_string(key, 'true' if default else 'false')) == 1
 
     def get_int(self, key, default):
         result = self.get_string(key, None)
@@ -183,7 +183,6 @@ class ArcadeOrganizerService:
         config['PLATFORM_DIR'] = ini_parser.get_bool('PLATFORM_DIR', True)
         config['SPECIAL_CONTROLS_DIR'] = ini_parser.get_bool('SPECIAL_CONTROLS_DIR', True)
         config['NUM_MONITORS_DIR'] = ini_parser.get_bool('NUM_MONITORS_DIR', True)
-        config['BEST_OF_DIR'] = ini_parser.get_bool('BEST_OF_DIR', True)
 
         config['TOPDIR'] = ini_parser.get_string('TOPDIR', None)
 
@@ -239,7 +238,6 @@ class ArcadeOrganizerService:
         config['ORGDIR_Category'] = "%s/_4 By Genre" % config['ORGDIR_Collections']
         config['ORGDIR_Manufacturer'] = "%s/_5 By Manufacturer" % config['ORGDIR_Collections']
         config['ORGDIR_Series'] = "%s/_6 By Series" % config['ORGDIR_Collections']
-        config['ORGDIR_BestOf'] = "%s/_7 Best-Of Lists" % config['ORGDIR_Collections']
 
         config['ORGDIR_Resolution'] = "%s/_1 Resolution" % config['ORGDIR_VideoNInputs']
         config['ORGDIR_Rotation'] = "%s/_2 Rotation" % config['ORGDIR_VideoNInputs']
@@ -805,7 +803,6 @@ class ArcadeOrganizer:
         self.ensure_description_or_default('num_buttons', 1)
         self.ensure_description_or_default('num_monitors', 1)
         self.ensure_description_or_default('cocktail', '')
-        self.ensure_description_or_default('best_of', [])
         self.ensure_description_or_default('alternative', is_path_alternative(mra_path))
         # @TODO Activate PR #38
         # self.ensure_description_or_default('parent', ''),
@@ -901,7 +898,6 @@ class ArcadeOrganizer:
                     or (self._description['region'] != 'World' and self._description['region'] != 'USA' and self._description['region'] != 'Japan'):
                 self.create_region()
 
-            self.create_best_of()
             self.create_bootleg()
             self.create_homebrew()
             return
@@ -914,7 +910,6 @@ class ArcadeOrganizer:
         self.create_platform()
         self.create_manufacturer()
         self.create_series()
-        self.create_best_of()
         self.create_resolution()
         self.create_rotation()
         self.create_players()
@@ -1052,17 +1047,6 @@ class ArcadeOrganizer:
 
     def create_special_controls(self):
         self.impl_create_array_links('SPECIAL_CONTROLS_DIR', 'special_controls', 'ORGDIR_SpecialControls')
-
-    def create_best_of(self):
-        if self._config['BEST_OF_DIR']:
-            for best_of in self._description['best_of']:
-                if 'pos' in best_of:
-                    self.create_symlink_name_prefix(best_of['pos'], "%s/_%s/" % (self._config['ORGDIR_BestOf'], best_of['val']))
-                elif 'val' in best_of:
-                    self.create_symlink("%s/_%s/" % (self._config['ORGDIR_BestOf'], best_of['val']))
-                else:
-                    # @TODO This branch has to go once the db is updated
-                    self.create_symlink("%s/_%s/" % (self._config['ORGDIR_BestOf'], best_of))
 
     def create_cocktail(self):
         self.impl_create_bool_link('cocktail', 'ORGDIR_Cocktail')
