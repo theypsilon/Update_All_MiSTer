@@ -669,7 +669,7 @@ class Infrastructure:
 
     def text_to_date(self, date_text):
         try:
-            date = datetime.datetime.strptime(date_text, '%Y-%m-%dT%H:%M:%SZ')
+            date = datetime.datetime.strptime(date_text, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=datetime.timezone.utc)
             return date
         except Exception as e:
             self._printer.print("Line %s || %s (%s)" % (lineno(), e, date_text))
