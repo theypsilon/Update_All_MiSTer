@@ -3,6 +3,7 @@
 
 import subprocess
 import os
+import time
 
 subprocess.run(['git', 'add', 'dont_download2.sh', 'latest.id'], check=True)
 subprocess.run(['git', 'commit', '-m', 'BOT: New dont_download2.sh'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -31,6 +32,14 @@ if file_has_changed("master", "origin/master", "latest.id"):
     print("There are changes to push.")
 
     subprocess.run(['git', 'push', 'origin', 'master'], check=True)
+
+    has_latest = subprocess.run(['gh', 'release', 'list'], capture_output=True, text=True)
+    if "latest" not in has_latest.stdout:
+        subprocess.run(['gh', 'release', 'create', 'latest'], stderr=subprocess.DEVNULL)
+        time.sleep(15)
+
+    subprocess.run('cd build; sha256sum update_all.pyz > update_all.pyz.sha256', shell=True, check=True)
+    subprocess.run(['gh', 'release', 'upload', 'latest', 'build/update_all.pyz', 'build/update_all.pyz.sha256', '--clobber'], check=True)
 
     print("\nNew dont_download2.sh can be used.")
     with open(os.environ['GITHUB_OUTPUT'], 'a') as f:

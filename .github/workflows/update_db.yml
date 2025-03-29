@@ -1,0 +1,33 @@
+name: Update Database
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - run: pip install -r .github/requirements.txt
+
+    - name: Build new DB
+      id: build_new_db
+      run: |
+        git config --global user.email "theypsilon@gmail.com"
+        git config --global user.name "The CI/CD Bot"
+        python3 .github/build_new_db.py
+
+    - name: Release new DB
+      if : steps.build_new_db.outputs.new_db == 'yes'
+      run: |
+        git config --global user.email "theypsilon@gmail.com"
+        git config --global user.name "The CI/CD Bot"
+        git push --force origin test_db
