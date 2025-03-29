@@ -1,0 +1,21 @@
+{
+    "db_id": "update_all_mister",
+    "files": {
+        "Scripts/.config/update_all/update_all.pyz": {
+            "size": 353228,
+            "hash": "ba2a975b79bc650f9eab1d518c1fd50c",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/597d891a9cf324e7fba96ff0f7ce99444c13fbe6/update_all.pyz"
+        },
+        "Scripts/update_all.sh": {
+            "size": 4334,
+            "hash": "23dd68b30e450ea22ec06813c5aef010",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/597d891a9cf324e7fba96ff0f7ce99444c13fbe6/update_all.sh"
+        }
+    },
+    "folders": {
+        "Scripts": {},
+        "Scripts/.config": {},
+        "Scripts/.config/update_all": {}
+    },
+    "timestamp": 1743259128
+}
