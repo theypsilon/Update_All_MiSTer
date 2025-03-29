@@ -134,9 +134,7 @@ class ArcadeOrganizerService:
         ini_parser.initialize()
 
         config = dict()
-        config['MAD_DB'] = ini_parser.get_string('MAD_DB', "/media/fat/Scripts/.config/arcade-organizer/mad_db.json.zip")
-        if config['MAD_DB'] == "https://raw.githubusercontent.com/misteraddons/MiSTer_Arcade_MAD/db/mad_db.json.zip":
-            config['MAD_DB'] = "https://raw.githubusercontent.com/theypsilon/misteraddons_Arcade_MAD/db/mad_db.json.zip"
+        config['MAD_DB'] = os.getenv('MAD_DB', "https://raw.githubusercontent.com/MiSTer-devel/ArcadeDatabase_MiSTer/db/mad_db.json.zip")
         config['MRADIR'] = ini_parser.get_string('MRADIR', "/media/fat/_Arcade/")
         config['ORGDIR'] = ini_parser.get_string('ORGDIR', "/media/fat/_Arcade/_Organized")
         config['SKIPALTS'] = ini_parser.get_bool('SKIPALTS', True)
