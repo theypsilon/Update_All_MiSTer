@@ -18,107 +18,108 @@
 
 # Default SSL option
 from enum import unique, Enum
+from typing import Final
 
 # From patreon.com/theypsilon
-supporter_plus_patrons = ('Alex Frégeau', 'Luca Fiandri', "The Sentinel's Playground Team", 'Thomas Williams', 'Wayne Booker')
+supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', 'Luca Fiandri', "The Sentinel's Playground Team", 'Thomas Williams', 'Wayne Booker')
 
 # Default options
-DEFAULT_CURL_SSL_OPTIONS = '--cacert /etc/ssl/certs/cacert.pem'
-DEFAULT_COMMIT = 'unknown'
-DEFAULT_LOCATION_STR = 'MiSTer'
-DEFAULT_DEBUG = 'false'
-DEFAULT_KEY_IGNORE_TIME = '0.1'
-DEFAULT_TRANSITION_SERVICE_ONLY = 'false'
+DEFAULT_CURL_SSL_OPTIONS: Final[str] = '--cacert /etc/ssl/certs/cacert.pem'
+DEFAULT_COMMIT: Final[str] = 'unknown'
+DEFAULT_LOCATION_STR: Final[str] = 'MiSTer'
+DEFAULT_DEBUG: Final[str] = 'false'
+DEFAULT_KEY_IGNORE_TIME: Final[str] = '0.1'
+DEFAULT_TRANSITION_SERVICE_ONLY: Final[str] = 'false'
 
-MISTER_ENVIRONMENT = 'mister'
-STANDARD_UI_THEME = 'Blue Installer'
+MISTER_ENVIRONMENT: Final[str] = 'mister'
+STANDARD_UI_THEME: Final[str] = 'Blue Installer'
 
 # Downloader files
-FILE_update_all_pyz = 'Scripts/.config/update_all/update_all.pyz'
-FILE_update_all_zipped_storage = 'Scripts/.config/update_all/update_all.json.zip'
-FILE_update_all_storage = 'Scripts/.config/update_all/update_all.json'
-FILE_update_all_log = 'Scripts/.config/update_all/update_all.log'
-FILE_update_all_ini = 'Scripts/update_all.ini'
-FILE_update_jtcores_ini = 'Scripts/update_jtcores.ini'
-FILE_update_jtcores_sh = 'Scripts/update_jtcores.sh'
-FILE_update_names_txt_ini = 'Scripts/update_names-txt.ini'
-FILE_update_names_txt_sh = 'Scripts/update_names-txt.sh'
-FILE_MiSTer = 'MiSTer'
-FILE_MiSTer_delme = '.MiSTer.delme'
-FILE_MiSTer_ini = 'MiSTer.ini'
-FOLDER_scripts = 'Scripts'
-FOLDER_scripts_config_lc = 'scripts/.config'
-FILE_downloader_temp_ini = '/tmp/downloader_temp.ini'
+FILE_update_all_pyz: Final[str] = 'Scripts/.config/update_all/update_all.pyz'
+FILE_update_all_zipped_storage: Final[str] = 'Scripts/.config/update_all/update_all.json.zip'
+FILE_update_all_storage: Final[str] = 'Scripts/.config/update_all/update_all.json'
+FILE_update_all_log: Final[str] = 'Scripts/.config/update_all/update_all.log'
+FILE_update_all_ini: Final[str] = 'Scripts/update_all.ini'
+FILE_update_jtcores_ini: Final[str] = 'Scripts/update_jtcores.ini'
+FILE_update_jtcores_sh: Final[str] = 'Scripts/update_jtcores.sh'
+FILE_update_names_txt_ini: Final[str] = 'Scripts/update_names-txt.ini'
+FILE_update_names_txt_sh: Final[str] = 'Scripts/update_names-txt.sh'
+FILE_MiSTer: Final[str] = 'MiSTer'
+FILE_MiSTer_delme: Final[str] = '.MiSTer.delme'
+FILE_MiSTer_ini: Final[str] = 'MiSTer.ini'
+FOLDER_scripts: Final[str] = 'Scripts'
+FOLDER_scripts_config_lc: Final[str] = 'scripts/.config'
+FILE_downloader_temp_ini: Final[str] = '/tmp/downloader_temp.ini'
 
 # Reboot files
-FILE_downloader_needs_reboot_after_linux_update = '/tmp/downloader_needs_reboot_after_linux_update'
-FILE_mister_downloader_needs_reboot = '/tmp/MiSTer_downloader_needs_reboot'
+FILE_downloader_needs_reboot_after_linux_update: Final[str] = '/tmp/downloader_needs_reboot_after_linux_update'
+FILE_mister_downloader_needs_reboot: Final[str] = '/tmp/MiSTer_downloader_needs_reboot'
 
-MEDIA_FAT = '/media/fat'
+MEDIA_FAT: Final[str] = '/media/fat'
 
 # Dictionary Keys:
 
 # Config
-K_BASE_PATH = 'base_path'
-K_BASE_SYSTEM_PATH = 'base_system_path'
-K_STORAGE_PRIORITY = 'storage_priority'
-K_DATABASES = 'databases'
-K_ALLOW_DELETE = 'allow_delete'
-K_ALLOW_REBOOT = 'allow_reboot'
-K_UPDATE_LINUX = 'update_linux'
-K_PARALLEL_UPDATE = 'parallel_update'
-K_DOWNLOADER_SIZE_MB_LIMIT = 'downloader_size_mb_limit'
-K_DOWNLOADER_PROCESS_LIMIT = 'downloader_process_limit'
-K_DOWNLOADER_TIMEOUT = 'downloader_timeout'
-K_DOWNLOADER_RETRIES = 'downloader_retries'
-K_ZIP_FILE_COUNT_THRESHOLD = 'zip_file_count_threshold'
-K_ZIP_ACCUMULATED_MB_THRESHOLD = 'zip_accumulated_mb_threshold'
-K_FILTER = 'filter'
-K_VERBOSE = 'verbose'
-K_CONFIG_PATH = 'config_path'
-K_USER_DEFINED_OPTIONS = 'user_defined_options'
-K_CURL_SSL = 'curl_ssl'
-K_DB_URL = 'db_url'
-K_SECTION = 'section'
-K_OPTIONS = 'options'
-K_DEBUG = 'debug'
-K_FAIL_ON_FILE_ERROR = 'fail_on_file_error'
-K_COMMIT = 'commit'
-K_DEFAULT_DB_ID = 'default_db_id'
-K_START_TIME = 'start_time'
+K_BASE_PATH: Final[str] = 'base_path'
+K_BASE_SYSTEM_PATH: Final[str] = 'base_system_path'
+K_STORAGE_PRIORITY: Final[str] = 'storage_priority'
+K_DATABASES: Final[str] = 'databases'
+K_ALLOW_DELETE: Final[str] = 'allow_delete'
+K_ALLOW_REBOOT: Final[str] = 'allow_reboot'
+K_UPDATE_LINUX: Final[str] = 'update_linux'
+K_PARALLEL_UPDATE: Final[str] = 'parallel_update'
+K_DOWNLOADER_SIZE_MB_LIMIT: Final[str] = 'downloader_size_mb_limit'
+K_DOWNLOADER_PROCESS_LIMIT: Final[str] = 'downloader_process_limit'
+K_DOWNLOADER_TIMEOUT: Final[str] = 'downloader_timeout'
+K_DOWNLOADER_RETRIES: Final[str] = 'downloader_retries'
+K_ZIP_FILE_COUNT_THRESHOLD: Final[str] = 'zip_file_count_threshold'
+K_ZIP_ACCUMULATED_MB_THRESHOLD: Final[str] = 'zip_accumulated_mb_threshold'
+K_FILTER: Final[str] = 'filter'
+K_VERBOSE: Final[str] = 'verbose'
+K_CONFIG_PATH: Final[str] = 'config_path'
+K_USER_DEFINED_OPTIONS: Final[str] = 'user_defined_options'
+K_CURL_SSL: Final[str] = 'curl_ssl'
+K_DB_URL: Final[str] = 'db_url'
+K_SECTION: Final[str] = 'section'
+K_OPTIONS: Final[str] = 'options'
+K_DEBUG: Final[str] = 'debug'
+K_FAIL_ON_FILE_ERROR: Final[str] = 'fail_on_file_error'
+K_COMMIT: Final[str] = 'commit'
+K_DEFAULT_DB_ID: Final[str] = 'default_db_id'
+K_START_TIME: Final[str] = 'start_time'
 
 # Update All old options
-K_COUNTDOWN_TIME = "countdown_time"
-K_WAIT_TIME_FOR_READING = "wait_time_for_reading"
-K_AUTOREBOOT = "autoreboot"
-K_KEEP_USBMOUNT_CONF = "keep_usbmount_conf"
+K_COUNTDOWN_TIME: Final[str] = "countdown_time"
+K_WAIT_TIME_FOR_READING: Final[str] = "wait_time_for_reading"
+K_AUTOREBOOT: Final[str] = "autoreboot"
+K_KEEP_USBMOUNT_CONF: Final[str] = "keep_usbmount_conf"
 
 
 # Env
-KENV_CURL_SSL = 'CURL_SSL'
-KENV_COMMIT = 'COMMIT'
-KENV_LOCATION_STR = 'LOCATION_STR'
-KENV_DEBUG = 'DEBUG'
-KENV_KEY_IGNORE_TIME = 'KEY_IGNORE_TIME'
-KENV_TRANSITION_SERVICE_ONLY = 'TRANSITION_SERVICE_ONLY'
+KENV_CURL_SSL: Final[str] = 'CURL_SSL'
+KENV_COMMIT: Final[str] = 'COMMIT'
+KENV_LOCATION_STR: Final[str] = 'LOCATION_STR'
+KENV_DEBUG: Final[str] = 'DEBUG'
+KENV_KEY_IGNORE_TIME: Final[str] = 'KEY_IGNORE_TIME'
+KENV_TRANSITION_SERVICE_ONLY: Final[str] = 'TRANSITION_SERVICE_ONLY'
 
 # Exit codes
-EXIT_CODE_REQUIRES_EARLY_EXIT = 1
-EXIT_CODE_CAN_CONTINUE = 2
+EXIT_CODE_REQUIRES_EARLY_EXIT: Final[int] = 1
+EXIT_CODE_CAN_CONTINUE: Final[int] = 2
 
 @unique
 class PathType(Enum):
-    FILE = 0
-    FOLDER = 1
+    FILE: str = 0
+    FOLDER: str = 1
 
 
 # Update All old constants
-UPDATE_ALL_VERSION = "2.2"
-MISTER_DOWNLOADER_VERSION = "2.1"
-ARCADE_ORGANIZER_INSTALLED_NAMES_TXT = "Scripts/.config/arcade-organizer/installed_names.txt"
-ARCADE_ORGANIZER_INI = "Scripts/update_arcade-organizer.ini"
-DOWNLOADER_URL = "https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/latest/dont_download.zip"
-DOWNLOADER_INI_STANDARD_PATH = "downloader.ini"
-DOWNLOADER_STORE_STANDARD_PATH = "Scripts/.config/downloader/downloader.json"
-DOWNLOADER_LATEST_ZIP_PATH = "Scripts/.config/downloader/downloader_latest.zip"
-TEST_UNSTABLE_SPINNER_FIRMWARE_MD5 = "b76bc57d75afce8b1040bc4d225ea3aa"
+UPDATE_ALL_VERSION: Final[str] = "2.2"
+MISTER_DOWNLOADER_VERSION: Final[str] = "2.1"
+ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
+ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"
+DOWNLOADER_URL: Final[str] = "https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/latest/dont_download.zip"
+DOWNLOADER_INI_STANDARD_PATH: Final[str] = "downloader.ini"
+DOWNLOADER_STORE_STANDARD_PATH: Final[str] = "Scripts/.config/downloader/downloader.json"
+DOWNLOADER_LATEST_ZIP_PATH: Final[str] = "Scripts/.config/downloader/downloader_latest.zip"
+TEST_UNSTABLE_SPINNER_FIRMWARE_MD5: Final[str] = "b76bc57d75afce8b1040bc4d225ea3aa"

@@ -47,6 +47,8 @@ jobs:
         git config --global user.email "theypsilon@gmail.com"
         git config --global user.name "The CI/CD Bot"
         python3 ./.github/release_build.py
+      env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Print New Build
       if : steps.release_build.outputs.new_build == 'yes'

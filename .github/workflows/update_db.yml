@@ -31,3 +31,5 @@ jobs:
         git config --global user.email "theypsilon@gmail.com"
         git config --global user.name "The CI/CD Bot"
         git push --force origin test_db
+      env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
