@@ -349,7 +349,10 @@ def is_path_alternative(mra_path):
 
 
 def datetime_from_ctime(entry):
-    return datetime.datetime.utcfromtimestamp(entry.stat().st_ctime)
+    try:
+        return datetime.datetime.fromtimestamp(entry.stat().st_ctime, tz=datetime.timezone.utc)
+    except FileNotFoundError:
+        return None
 
 
 class MraFinder:
@@ -372,9 +375,13 @@ class MraFinder:
         for entry in os.scandir(directory):
             if entry.is_dir(follow_symlinks=False) and entry.path not in self._not_in_directory:
                 yield from self._scan(entry.path)
-            elif entry.name.lower().endswith(".mra") \
-                    and (self._newer_than is None or datetime_from_ctime(entry) > self._newer_than):
-                yield Path(entry.path)
+            elif entry.name.lower().endswith(".mra"):
+                if self._newer_than is None:
+                    yield Path(entry.path)
+                else:
+                    entry_dt = datetime_from_ctime(entry)
+                    if entry_dt is not None and entry_dt > self._newer_than:
+                        yield Path(entry.path)
 
 
 class Infrastructure:
@@ -492,7 +499,7 @@ class Infrastructure:
         return ini_date
 
     def get_now_date(self):
-        return datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def read_last_run_file(self):
         last_ini_date = ''
