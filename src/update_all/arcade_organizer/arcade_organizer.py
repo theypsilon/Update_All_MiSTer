@@ -15,6 +15,7 @@
 
 import sys
 import subprocess
+import traceback
 from pathlib import Path
 import configparser
 from inspect import currentframe, getframeinfo
@@ -286,6 +287,7 @@ class ArcadeOrganizerService:
             return check_pass_errors(infra.errors(), self._printer)
         except Exception as e:
             self._printer.print(e)
+            self._printer.print(''.join(traceback.TracebackException.from_exception(e).format()))
             return False
 
 
