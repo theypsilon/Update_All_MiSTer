@@ -3,6 +3,11 @@ name: Update Database
 on:
   schedule:
     - cron: "*/20 * * * *"
+  workflow_call:
+    inputs:
+      sha:
+        required: false
+        type: string
   workflow_dispatch:
 
 jobs:
@@ -32,4 +37,4 @@ jobs:
       run: |
         git config --global user.email "theypsilon@gmail.com"
         git config --global user.name "The CI/CD Bot"
-        git push --force origin test_db
+        git push --force origin db

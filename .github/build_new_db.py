@@ -164,7 +164,7 @@ print("There are changes to push.")
 print('old_db', old_db)
 print('new_db', new_db)
 
-subprocess.run(['git', 'checkout', '--orphan', 'test_db'], check=True)
+subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
 subprocess.run(['git', 'reset'], check=True)
 subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'mad_db.json.zip', 'pocket_firmware_details.json'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)

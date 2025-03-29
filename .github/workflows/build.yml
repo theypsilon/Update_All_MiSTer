@@ -50,17 +50,14 @@ jobs:
       env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Print New Build
+    - name: Print new build
       if : steps.release_build.outputs.new_build == 'yes'
-      run: echo "New Build"
+      run: echo "New build!"
 
-    - name: Release Database
-      id: release_db
-      run: |
-        git config --global user.email "theypsilon@gmail.com"
-        git config --global user.name "The CI/CD Bot"
-        python3 ./.github/release_db.py 
-
-    - name: Print New DB
-      if : steps.release_db.outputs.new_db == 'yes'
-      run: echo "New DB"
+  trigger_db_update:
+    needs: build
+    if: ${{ needs.build.outputs.new_build == 'yes' }}
+    uses: ./.github/workflows/update_db.yml
+    secrets: inherit
+    with:
+      sha: ${{ github.sha }}
