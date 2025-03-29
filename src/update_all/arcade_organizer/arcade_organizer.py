@@ -372,16 +372,19 @@ class MraFinder:
         return sorted(self._scan(self._config['MRADIR']), key=lambda mra: mra.name.lower())
 
     def _scan(self, directory):
-        for entry in os.scandir(directory):
-            if entry.is_dir(follow_symlinks=False) and entry.path not in self._not_in_directory:
-                yield from self._scan(entry.path)
-            elif entry.name.lower().endswith(".mra"):
-                if self._newer_than is None:
-                    yield Path(entry.path)
-                else:
-                    entry_dt = datetime_from_ctime(entry)
-                    if entry_dt is not None and entry_dt > self._newer_than:
+        try:
+            for entry in os.scandir(directory):
+                if entry.is_dir(follow_symlinks=False) and entry.path not in self._not_in_directory:
+                    yield from self._scan(entry.path)
+                elif entry.name.lower().endswith(".mra"):
+                    if self._newer_than is None:
                         yield Path(entry.path)
+                    else:
+                        entry_dt = datetime_from_ctime(entry)
+                        if entry_dt is not None and entry_dt > self._newer_than:
+                            yield Path(entry.path)
+        except FileNotFoundError:
+            pass
 
 
 class Infrastructure:
@@ -738,17 +741,26 @@ class ArcadeOrganizer:
 
     def organize_topdir(self):
         if self._config['TOPDIR'] == 'platform' and Path(self._config['ORGDIR_Platform']).is_dir():
-            for entry in os.scandir(self._config['ORGDIR_Platform']):
-                if entry.is_dir(follow_symlinks=False):
-                    self._infra.make_symlink(Path(entry.path), entry.name, self._config['ORGDIR'])
+            try:
+                for entry in os.scandir(self._config['ORGDIR_Platform']):
+                    if entry.is_dir(follow_symlinks=False):
+                        self._infra.make_symlink(Path(entry.path), entry.name, self._config['ORGDIR'])
+            except FileNotFoundError:
+                pass
         elif self._config['TOPDIR'] == 'core' and Path(self._config['ORGDIR_Core']).is_dir():
-            for entry in os.scandir(self._config['ORGDIR_Core']):
-                if entry.is_dir(follow_symlinks=False):
-                    self._infra.make_symlink(Path(entry.path), entry.name, self._config['ORGDIR'])
+            try:
+                for entry in os.scandir(self._config['ORGDIR_Core']):
+                    if entry.is_dir(follow_symlinks=False):
+                        self._infra.make_symlink(Path(entry.path), entry.name, self._config['ORGDIR'])
+            except FileNotFoundError:
+                pass
         elif self._config['TOPDIR'] == 'year' and Path(self._config['ORGDIR_Year']).is_dir():
-            for entry in os.scandir(self._config['ORGDIR_Year']):
-                if entry.is_dir(follow_symlinks=False):
-                    self._infra.make_symlink(Path(entry.path), entry.name, self._config['ORGDIR'])
+            try:
+                for entry in os.scandir(self._config['ORGDIR_Year']):
+                    if entry.is_dir(follow_symlinks=False):
+                        self._infra.make_symlink(Path(entry.path), entry.name, self._config['ORGDIR'])
+            except FileNotFoundError:
+                pass
 
     def ensure_description_or_default(self, key, default):
         if key not in self._description:
