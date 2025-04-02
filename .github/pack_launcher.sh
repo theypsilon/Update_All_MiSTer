@@ -5,5 +5,7 @@ set -euo pipefail
 
 zip "update_all.zip" update_all.sh
 
+release_tag="$(date +"%Y-%m-%d_%H-%M-%S")"
 gh release download --pattern "update_all.pyz update_all.pyz.sha256"
-gh release upload "$(date +"%Y-%m-%d_%H-%M-%S")" "update_all.zip" "update_all.pyz" "update_all.pyz.sha256" --clobber
+gh release create "$release_tag"
+gh release upload "$release_tag" "update_all.zip" "update_all.pyz" "update_all.pyz.sha256" --clobber
