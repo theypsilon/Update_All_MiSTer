@@ -97,7 +97,7 @@ for description in old_db['files'].values():
 
 new_db = copy.deepcopy(old_db)
 
-subprocess.run(["gh", "release", "download", "latest", "-p", "update_all.pyz", "-p", "update_all.pyz.sha256"], check=True)
+subprocess.run(["gh", "release", "download", "-p", "update_all.pyz", "-p", "update_all.pyz.sha256"], check=True)
 hashsum = subprocess.run(['sha256sum', 'update_all.pyz'], check=True, capture_output=True, text=True).stdout.strip().split()[0]
 with open('update_all.pyz.sha256', 'r') as f:
     expected_hashsum = f.read().strip().split()[0]
