@@ -28,7 +28,7 @@ Update All has a Settings Screen that allows you to configure which databases an
 
 ## Setup
 
-Download this [ZIP file](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all.zip) and extract `update_all.sh` to your `/Scripts` folder on your primary SD card.
+Download this [ZIP file](https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/db/update_all.zip) and extract `update_all.sh` to your `/Scripts` folder on your primary SD card.
 
 Then turn on your __MiSTer__, go to the _Scripts_ menu and run this script from there.
 
