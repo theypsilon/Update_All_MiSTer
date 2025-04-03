@@ -177,7 +177,11 @@ class UpdateAllService:
             self._settings_screen.load_test_menu()
             exit(0)
         elif os.environ.get('TEST_POCKET_FIRMWARE_UPDATE', 'false') == 'true':
-            pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), self._local_repository, self._logger)
+            ssl_ctx, ssl_err = context_from_curl_ssl(self._config_provider.get().curl_ssl)
+            if ssl_err is not None:
+                self._logger.debug(ssl_err)
+                self._logger.print('WARNING! Ignoring SSL parameters...')
+            pocket_firmware_update(ssl_ctx, self._local_repository, self._logger)
             exit(0)
         elif os.environ.get('TEST_POCKET_BACKUP', 'false') == 'true':
             pocket_backup(self._logger)
@@ -286,7 +290,11 @@ class UpdateAllService:
             self._draw_separator()
             self._logger.print('Installing Analogue Pocket Firmware')
             self._logger.print()
-            if pocket_firmware_update(context_from_curl_ssl(self._config_provider.get().curl_ssl), self._local_repository, self._logger):
+            ssl_ctx, ssl_err = context_from_curl_ssl(self._config_provider.get().curl_ssl)
+            if ssl_err is not None:
+                self._logger.debug(ssl_err)
+                self._logger.print('WARNING! Ignoring SSL parameters...')
+            if pocket_firmware_update(ssl_ctx, self._local_repository, self._logger):
                 self._logger.print()
                 self._logger.print('Your Pocket firmware is on the latest version.')
             else:

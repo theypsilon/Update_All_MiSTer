@@ -20,7 +20,7 @@ import subprocess
 import time
 import select
 from abc import ABC
-from typing import Optional
+from typing import Optional, Tuple
 
 from update_all.config import Config
 from update_all.other import GenericProvider
@@ -131,14 +131,17 @@ _curl_connection_error_codes = {
 }
 
 
-def context_from_curl_ssl(curl_ssl):
-    context = ssl.create_default_context()
+def context_from_curl_ssl(curl_ssl) -> Tuple[ssl.SSLContext, Optional[Exception]]:
+    try:
+        context = ssl.create_default_context()
 
-    if curl_ssl.startswith('--cacert '):
-        cacert_file = curl_ssl[len('--cacert '):]
-        context.load_verify_locations(cacert_file)
-    elif curl_ssl == '--insecure':
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
+        if curl_ssl.startswith('--cacert '):
+            cacert_file = curl_ssl[len('--cacert '):]
+            context.load_verify_locations(cacert_file)
+        elif curl_ssl == '--insecure':
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
 
-    return context
+        return context, None
+    except Exception as e:
+        return ssl.create_default_context(), e
