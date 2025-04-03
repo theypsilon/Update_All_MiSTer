@@ -32,7 +32,7 @@ from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
 from update_all.other import Checker, GenericProvider
 from update_all.logger import Logger, CollectorLoggerDecorator
-from update_all.os_utils import OsUtils, context_from_curl_ssl
+from update_all.os_utils import OsUtils
 from update_all.settings_screen_model import settings_screen_model
 from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
@@ -377,11 +377,7 @@ class SettingsScreen(UiApplication):
 
         self._logger.print()
         logger = CollectorLoggerDecorator(self._logger)
-        ssl_ctx, ssl_err = context_from_curl_ssl(self._config_provider.get().curl_ssl)
-        if ssl_err is not None:
-            self._logger.debug(ssl_err)
-            self._logger.print('WARNING! Ignoring SSL parameters...')
-        installed = pocket_firmware_update(ssl_ctx, self._local_repository, logger)
+        installed = pocket_firmware_update(self._config_provider.get().curl_ssl, self._local_repository, logger)
 
         logs = list(logger.prints)
         logs.append('')

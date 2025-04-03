@@ -26,9 +26,15 @@ from update_all.analogue_pocket.utils import pocket_mount
 from update_all.file_system import hash_file
 from update_all.local_repository import LocalRepository
 from update_all.logger import Logger
+from update_all.os_utils import context_from_curl_ssl
 
 
-def pocket_firmware_update(ssl_ctx: ssl.SSLContext, local_repository: LocalRepository, logger: Logger):
+def pocket_firmware_update(curl_ssl: str, local_repository: LocalRepository, logger: Logger):
+    ssl_ctx, ssl_err = context_from_curl_ssl(curl_ssl)
+    if ssl_err is not None:
+        logger.debug(ssl_err)
+        logger.print('WARNING! Ignoring SSL parameters...')
+
     firmware_info = local_repository.pocket_firmware_info()
     if isinstance(firmware_info, Exception):
         logger.print('ERROR! Firmware info not found. Make sure [update_all_mister] db is enabled.')
