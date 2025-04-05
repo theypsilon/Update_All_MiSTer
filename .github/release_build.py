@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 import subprocess
 import os
@@ -37,7 +37,7 @@ if file_has_changed("master", "origin/master", "latest.id"):
     subprocess.run('cd build; sha256sum update_all.pyz > update_all.pyz.sha256', shell=True, check=True)
     subprocess.run(['zip', 'build/update_all.zip', 'update_all.sh'], check=True)
 
-    release_tag = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    release_tag = datetime.datetime.now().strftime("Update All %Y-%m-%d %H:%M:%S")
     print('Creating release', release_tag)
     subprocess.run(['gh', 'release', 'create', release_tag], stderr=subprocess.DEVNULL)
     subprocess.run(['gh', 'release', 'upload', release_tag, 'build/update_all.pyz', 'build/update_all.pyz.sha256', 'build/update_all.zip', '--clobber'], check=True)
