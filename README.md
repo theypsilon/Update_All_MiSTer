@@ -26,13 +26,26 @@ Update All has a Settings Screen that allows you to configure which databases an
 7. **Analogue Pocket**. Tools to connect your MiSTer with your Analogue Pocket.
 8. **Patron Menu**. A menu with exclusive contents for members of my Patreon community.
 
-## Setup
+## Installation
 
 Download this [ZIP file](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all.zip) and extract `update_all.sh` to your `/Scripts` folder on your primary SD card.
 
 Then turn on your __MiSTer__, go to the _Scripts_ menu and run this script from there.
 
 It will take around 15 minutes the first time you run it, but later runs should take much less time.
+
+
+## Alternative Installation (via Downloader)
+
+Manually edit the `downloader.ini` file on the root of your SD (or create it if it doesn't exist) to add the following lines:
+```ini
+[update_all_mister]
+db_url = https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/db/update_all_db.json
+```
+
+Then turn on your __MiSTer__, go to the _Scripts_ menu and run `update` or `downloader` from there (they are both equivalent).
+
+It will install Update All and other files. Then go back to the _Scripts_ menu and run it.
 
 
 ## Accessing the Settings Screen
@@ -72,7 +85,9 @@ And finally, if you would like to support my work, you may also subscribe to my 
 
 ### How to avoid executing remote code altogether
 
-If you're concerned about executing a build that the launcher fetches from the web, you can avoid this by manually installing the latest version of Update All's build. Just get [this file](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all.pyz) and save it to `/media/fat/Scripts/.config/update_all/update_all.pyz`. You can verify the file's integrity using the provided SHA256 checksum [here](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all.pyz.sha256). Then, you should do the same with Downloader, [as instructed here](https://github.com/MiSTer-devel/Downloader_MiSTer?tab=readme-ov-file#how-to-avoid-executing-remote-code-altogether).
+If you're concerned about executing a build that the launcher fetches from the web, you can avoid it by installing Update All in the following way:
+- First, manually install Downloader's build [as instructed here](https://github.com/MiSTer-devel/Downloader_MiSTer?tab=readme-ov-file#how-to-avoid-executing-remote-code-altogether).
+- Then follow the [Alternative Installation (via Downloader)](#alternative-installation-via-downloader) section.
 
 If not done manually, the launcher will automatically install that build on its first run. This auto-installation occurs only once and is designed to be secure.
 
