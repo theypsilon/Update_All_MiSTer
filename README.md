@@ -89,7 +89,7 @@ If you're concerned about executing a build that the launcher fetches from the w
 - First, manually install Downloader's build [as instructed here](https://github.com/MiSTer-devel/Downloader_MiSTer?tab=readme-ov-file#how-to-avoid-executing-remote-code-altogether).
 - Then follow the [Alternative Installation (via Downloader)](#alternative-installation-via-downloader) section.
 
-If not done manually, the launcher will automatically install that build on its first run. This auto-installation occurs only once and is designed to be secure.
+If not done manually, the launcher will automatically install the Update All and Downloader builds during its first run. This auto-installation occurs only once and is designed to be secure.
 
 
 ## Supporters+ shout-out!
