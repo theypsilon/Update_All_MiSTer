@@ -35,19 +35,6 @@ Then turn on your __MiSTer__, go to the _Scripts_ menu and run this script from 
 It will take around 15 minutes the first time you run it, but later runs should take much less time.
 
 
-## Alternative Installation (via Downloader)
-
-Manually edit the `downloader.ini` file on the root of your SD (or create it if it doesn't exist) to add the following lines:
-```ini
-[update_all_mister]
-db_url = https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/db/update_all_db.json
-```
-
-Then turn on your __MiSTer__, go to the _Scripts_ menu and run `update` or `downloader` from there (they are both equivalent).
-
-It will install Update All and other files. Then go back to the _Scripts_ menu and run it.
-
-
 ## Accessing the Settings Screen
 
 ![settings screen](https://github.com/theypsilon/Update_All_MiSTer/raw/master/setups/menu-2-1.jpg "Settings Screen")
@@ -62,6 +49,30 @@ Check [MiSTer Downloader's PC Launcher](https://github.com/MiSTer-devel/Download
 Useful if you can't connect your MiSTer to the internet.
 
 To install the same files that you get with Update All, use the same `downloader.ini` file that you have in your MiSTer at the root of the SD card. Keep in mind that Update All writes into that file every time you change something in the Settings Screen.
+
+
+## Alternative Installation on MiSTer (via Downloader)
+
+Manually edit the `downloader.ini` file on the root of your SD (or create it if it doesn't exist) to add the following lines:
+```ini
+[update_all_mister]
+db_url = https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/db/update_all_db.json
+```
+
+Then turn on your __MiSTer__, go to the _Scripts_ menu and run `update` or `downloader` from there (they are both equivalent).
+
+It will install Update All and other files. Then go back to the _Scripts_ menu and run it.
+
+**NOTE**: This alternative method installs the same files as the other one, but it's a bit safer. 
+
+
+## How to avoid executing remote code altogether (Installation via Downloader)
+
+If you're concerned about executing a build that the launcher fetches from the web, you can avoid it by installing Update All in the following way:
+- First, manually install Downloader's build [as instructed here](https://github.com/MiSTer-devel/Downloader_MiSTer?tab=readme-ov-file#how-to-avoid-executing-remote-code-altogether).
+- Then follow the [Alternative Installation (via Downloader)](#alternative-installation-on-mister-via-downloader) section.
+
+If not done manually, the launcher will automatically install the Update All and Downloader builds during its first run. This auto-installation occurs only once and is designed to be secure.
 
 
 ## Funding
@@ -81,15 +92,6 @@ Check also other core developers that you might want to support:
 * [Darren](https://ko-fi.com/darreno)
 
 And finally, if you would like to support my work, you may also subscribe to my patreon here: https://www.patreon.com/bePatron?u=37499475
-
-
-### How to avoid executing remote code altogether
-
-If you're concerned about executing a build that the launcher fetches from the web, you can avoid it by installing Update All in the following way:
-- First, manually install Downloader's build [as instructed here](https://github.com/MiSTer-devel/Downloader_MiSTer?tab=readme-ov-file#how-to-avoid-executing-remote-code-altogether).
-- Then follow the [Alternative Installation (via Downloader)](#alternative-installation-via-downloader) section.
-
-If not done manually, the launcher will automatically install the Update All and Downloader builds during its first run. This auto-installation occurs only once and is designed to be secure.
 
 
 ## Supporters+ shout-out!
