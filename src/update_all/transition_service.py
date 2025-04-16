@@ -20,8 +20,9 @@ from typing import Dict
 from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
-from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, AllDBs, DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT, all_dbs_list, DB_ID_COIN_OP_COLLECTION_DEPRECATED, \
-    changed_db_ids
+from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, AllDBs, DB_ID_NAMES_TXT, \
+    DB_ID_ARCADE_NAMES_TXT, all_dbs_list, DB_ID_COIN_OP_COLLECTION_DEPRECATED, \
+    changed_db_ids, removed_db_ids
 from update_all.ini_parser import IniParser
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
@@ -242,6 +243,29 @@ class TransitionService:
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)
         self._ini_repository.replace_db_ids_in_ini_and_fs(replacements, downloader_ini)
+
+    def removing_obsolete_db_ids(self, downloader_ini: Dict[str, IniParser]):
+        if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
+            return
+
+        removed = set()
+        for removed_db_id, removed_db_url in removed_db_ids().items():
+            if removed_db_id.lower() not in downloader_ini:
+                continue
+            if downloader_ini[removed_db_id.lower()].get_string('db_url', '').lower() != removed_db_url.lower():
+                continue
+            removed.add(removed_db_id)
+
+        if len(removed) == 0:
+            return
+
+        self._logger.print(f'Removing {", ".join(removed)} DBs.')
+        self._logger.print('Writing downloader.ini.')
+        self._logger.print()
+        self._logger.print('Waiting 5 seconds...')
+        self._os_utils.sleep(5.0)
+        self._ini_repository.remove_db_ids_in_ini_and_fs(removed, downloader_ini)
+
 
     def from_no_update_all_mister_db_to_adding_it(self, config: Config, downloader_ini: Dict[str, IniParser]):
         if AllDBs.UPDATE_ALL_MISTER.db_id in downloader_ini:

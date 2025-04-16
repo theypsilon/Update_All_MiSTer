@@ -107,6 +107,11 @@ def changed_db_ids() -> Dict[str, str]:
         DB_ID_UBERYOJI_BOOT_ROMS_DEPRECATED: AllDBs.UBERYOJI_BOOT_ROMS.db_id,
     }
 
+def removed_db_ids() -> dict[str, str]:
+    return {
+        'n64_dev': 'https://raw.githubusercontent.com/RobertPeip/Mister64/db/db.json.zip'
+    }
+
 
 @cache
 def ids_sequence() -> List[str]:

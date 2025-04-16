@@ -38,6 +38,7 @@ def test_transitions(files: Dict[str, str] = None):
     sut = TransitionServiceTester(file_system=fs, ini_repository=ini_repos)
     downloader_ini = config_reader.read_downloader_ini()
     sut.from_old_db_ids_to_new_db_ids(downloader_ini)
+    sut.removing_obsolete_db_ids(downloader_ini)
     config_reader.fill_config_with_environment_and_mister_section(config, downloader_ini)
     config_reader.fill_config_with_ini_files(config, downloader_ini)
     sut.from_not_existing_downloader_ini(config)
@@ -142,6 +143,16 @@ class TestTransitionService(unittest.TestCase):
         self.assertEqualFiles({
             downloader_store: 'test/fixtures/downloader_ini/db_id_changes/old_coin_op_to_new_after.json',
             downloader_ini: 'test/fixtures/downloader_ini/db_id_changes/old_coin_op_to_new_after.ini',
+        }, fs.files)
+
+    def test_n64_dev_ini___writes_downloader_ini_without_n64_dev_database(self):
+        fs = test_transitions(files={
+            downloader_store: 'test/fixtures/downloader_ini/db_id_removes/n64_dev_before.json',
+            downloader_ini: 'test/fixtures/downloader_ini/db_id_removes/n64_dev_before.ini',
+        })
+        self.assertEqualFiles({
+            downloader_store: 'test/fixtures/downloader_ini/db_id_removes/n64_dev_after.json',
+            downloader_ini: 'test/fixtures/downloader_ini/db_id_removes/n64_dev_after.ini',
         }, fs.files)
 
     def assertEqualFiles(self, expected, actual):

@@ -191,6 +191,59 @@ class IniRepository:
 
         self._file_system.save_json(store, store_path)
 
+    def remove_db_ids_in_ini_and_fs(self, removed_ids: set[str], downloader_ini: Dict[str, IniParser]) -> None:
+        downloader_ini_txt = self._read_downloader_ini_rawtext()
+        if downloader_ini_txt is None:
+            self._logger.debug(f'WARNING! Could not replace db_id because downloader ini is not readable.')
+            return
+
+        new_lines = []
+        ignoring_lines = False
+        for line in downloader_ini_txt.splitlines():
+            if ignoring_lines:
+                if line.strip().startswith('['):
+                    ignoring_lines = False
+
+            for rem_id in removed_ids:
+                str_pos = line.lower().find(f'[{rem_id.lower()}]')
+                if str_pos != -1:
+                    ignoring_lines = True
+
+            if not ignoring_lines:
+                new_lines.append(line)
+
+        # Updating downloader.ini
+        self._file_system.write_file_contents(self.downloader_ini_standard_path(), '\n'.join(new_lines))
+
+        # Updating downloader_ini object
+        for rem_id in removed_ids:
+            del downloader_ini[rem_id.lower()]
+
+        # Updating downloader store from now on:
+        store_path = self.downloader_store_standard_path()
+        if not self._file_system.is_file(store_path):
+            return
+
+        store = self._file_system.load_dict_from_file(store_path)
+        if 'dbs' not in store:
+            self._logger.debug(f'Downloader store was not initialized yet.')
+            return
+
+        removed_stores = []
+        for rem_id in removed_ids:
+            self._logger.debug(f'Removing db_id {rem_id} in downloader store.')
+            if rem_id.lower() in store['dbs']:
+                removed_stores.append(rem_id.lower())
+
+        if len(removed_stores) == 0:
+            self._logger.debug(f'Could not remove any db_id because downloader store does not contain it.')
+            return
+
+        for old_id in removed_stores:
+            del store['dbs'][old_id]
+
+        self._file_system.save_json(store, store_path)
+
     def write_arcade_organizer_active_at_arcade_organizer_ini(self, config: Config) -> None:
         contents = ''
         if self._file_system.is_file(ARCADE_ORGANIZER_INI):

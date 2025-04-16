@@ -53,6 +53,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         config = Config()
         downloader_ini = self._config_reader.read_downloader_ini()
         self._transition_service.from_old_db_ids_to_new_db_ids(downloader_ini)
+        self._transition_service.removing_obsolete_db_ids(downloader_ini)
         self._config_reader.fill_config_with_environment_and_mister_section(config, downloader_ini)
         self._config_provider.initialize(config)
         local_store = self._local_repository.load_store()

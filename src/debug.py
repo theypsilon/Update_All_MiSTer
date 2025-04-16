@@ -6,7 +6,6 @@ import sys
 import tempfile
 import subprocess
 import time
-import zipfile
 import argparse
 import traceback
 from pathlib import Path
