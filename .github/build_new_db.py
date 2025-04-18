@@ -117,6 +117,11 @@ with zipfile.ZipFile('mad_db.json.zip') as z:
     if bad_file is not None:
         raise Exception('Zip is wrong:', bad_file)
 
+response = requests.get('https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/downloader_bin/downloader_bin')
+response.raise_for_status()
+with open('downloader_bin', 'wb') as f:
+    f.write(response.content)
+
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
 
 new_db['files'] = {
@@ -135,6 +140,10 @@ new_db['files'] = {
     'Scripts/update_all.sh': {
         'size': os.path.getsize('update_all.sh'),
         'hash': hash_file('update_all.sh'),
+    },
+    'Scripts/downloader_bin': {
+        'size': os.path.getsize('downloader_bin'),
+        'hash': hash_file('downloader_bin')
     }
 }
 new_db['folders'] = {}
@@ -167,7 +176,7 @@ subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
 
 subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
 subprocess.run(['git', 'reset'], check=True)
-subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json'], check=True)
+subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'downloader_bin'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
 commit_id = subprocess.getoutput("git rev-parse HEAD")
 
