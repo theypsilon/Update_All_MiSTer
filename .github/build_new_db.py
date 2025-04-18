@@ -122,6 +122,9 @@ response.raise_for_status()
 with open('downloader_bin', 'wb') as f:
     f.write(response.content)
 
+with open('.gitattributes', 'a', encoding='utf-8') as f:
+    f.write('downloader_bin binary\n')
+
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
 
 new_db['files'] = {
@@ -176,7 +179,7 @@ subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
 
 subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
 subprocess.run(['git', 'reset'], check=True)
-subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'downloader_bin'], check=True)
+subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', '.gitattributes', 'downloader_bin'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
 commit_id = subprocess.getoutput("git rev-parse HEAD")
 
