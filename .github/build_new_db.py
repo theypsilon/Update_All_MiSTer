@@ -179,7 +179,9 @@ subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
 
 subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
 subprocess.run(['git', 'reset'], check=True)
-subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', '.gitattributes', 'downloader_bin.sh'], check=True)
+subprocess.run(['git', 'add', '.gitattributes'], check=True)
+subprocess.run(['git', 'commit', '-m', '-'], check=True)
+subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'downloader_bin.sh'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
 commit_id = subprocess.getoutput("git rev-parse HEAD")
 
