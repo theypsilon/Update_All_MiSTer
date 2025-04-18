@@ -123,7 +123,7 @@ with open('downloader_bin.sh', 'wb') as f:
     f.write(response.content)
 
 with open('.gitattributes', 'a', encoding='utf-8') as f:
-    f.write('downloader_bin binary\n')
+    f.write('downloader_bin.sh binary\n')
 
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
 
