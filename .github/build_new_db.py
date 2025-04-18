@@ -144,7 +144,7 @@ new_db['files'] = {
         'size': os.path.getsize('update_all.sh'),
         'hash': hash_file('update_all.sh'),
     },
-    'Scripts/downloader_bin': {
+    'Scripts/downloader_bin.sh': {
         'size': os.path.getsize('downloader_bin'),
         'hash': hash_file('downloader_bin')
     }
