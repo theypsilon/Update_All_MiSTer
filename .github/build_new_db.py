@@ -124,6 +124,7 @@ with open('downloader_bin.sh', 'wb') as f:
 
 with open('.gitattributes', 'a', encoding='utf-8') as f:
     f.write('downloader_bin.sh binary\n')
+    f.write('*.zip binary\n')
 
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
 
