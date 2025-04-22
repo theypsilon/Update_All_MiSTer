@@ -1,0 +1,36 @@
+{
+    "db_id": "update_all_mister",
+    "files": {
+        "Scripts/.config/update_all/update_all.pyz": {
+            "size": 367594,
+            "hash": "1faa3da0cd4e79bd96fa9d1a1bf9de72",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/a5a6495b15e4cbf1016cbc1896c31be0fdec7cbf/update_all.pyz"
+        },
+        "Scripts/.config/update_all/mad_db.json.zip": {
+            "size": 71423,
+            "hash": "b18eb3f43ec461f42dd9655809f568dc",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/a5a6495b15e4cbf1016cbc1896c31be0fdec7cbf/mad_db.json.zip"
+        },
+        "Scripts/.config/update_all/pocket_firmware_details.json": {
+            "size": 235,
+            "hash": "5e8e44afd359fea9c25cb62b82e9d7e6",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/a5a6495b15e4cbf1016cbc1896c31be0fdec7cbf/pocket_firmware_details.json"
+        },
+        "Scripts/update_all.sh": {
+            "size": 4334,
+            "hash": "23dd68b30e450ea22ec06813c5aef010",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/a5a6495b15e4cbf1016cbc1896c31be0fdec7cbf/update_all.sh"
+        },
+        "Scripts/downloader_bin.sh": {
+            "size": 1034072,
+            "hash": "58e5d1e3e068bab73a717a316e9b090c",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/a5a6495b15e4cbf1016cbc1896c31be0fdec7cbf/downloader_bin.sh"
+        }
+    },
+    "folders": {
+        "Scripts/.config/update_all": {},
+        "Scripts/.config": {},
+        "Scripts": {}
+    },
+    "timestamp": 1745319280
+}
