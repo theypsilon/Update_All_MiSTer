@@ -58,14 +58,13 @@ class TestTransitionService(unittest.TestCase):
         fs = test_transitions(files={downloader_ini: 'test/fixtures/downloader_ini/dirty_downloader.ini'})
         assertEqualIni(self, 'test/fixtures/downloader_ini/dirty_downloader.ini', fs.files[downloader_ini]['content'])
 
-    def test_with_downloader_ini_and_other_inis___writes_ao_ini_and_keeps_downloader_ini(self):
+    def test_with_downloader_ini_and_other_inis_with_disabled_ao___just_keeps_downloader_ini(self):
         fs = test_transitions(files={
             downloader_ini: 'test/fixtures/downloader_ini/default_downloader.ini',
             update_all_ini: 'test/fixtures/update_all_ini/complete_ua_first.ini',
         })
         self.assertEqualFiles({
             downloader_ini: 'test/fixtures/downloader_ini/default_downloader.ini',
-            update_arcade_organizer_ini: 'test/fixtures/update_arcade-organizer_ini/complete_ao.ini',
         }, fs.files)
 
     def test_with_update_all_ini_with_names_and_encc___writes_corresponding_downloader_ini(self):
@@ -76,7 +75,6 @@ class TestTransitionService(unittest.TestCase):
         })
         self.assertEqualFiles({
             downloader_ini: 'test/fixtures/downloader_ini/complete_downloader_first.ini',
-            update_arcade_organizer_ini: 'test/fixtures/update_arcade-organizer_ini/complete_ao.ini'
         }, fs.files)
 
     def test_with_just_update_all_ini_with_opposite_to_defaults___writes_corresponding_downloader_ini(self):

@@ -69,6 +69,7 @@ class LocalRepository:
             if self._file_system.is_file(store_file_path):
                 try:
                     local_store_props = self._file_system.load_dict_from_file(store_file_path)
+                    break
                 except Exception as e:
                     self._logger.debug(e)
                     self._logger.print('Could not load store')

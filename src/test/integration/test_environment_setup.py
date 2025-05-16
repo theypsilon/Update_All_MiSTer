@@ -18,9 +18,9 @@ from pathlib import Path
 from typing import Dict, Any
 
 from test.ini_assertions import testableIni
-from test.testing_objects import downloader_ini, update_all_ini, update_arcade_organizer_ini, update_jtcores_ini, update_names_txt_ini
+from test.testing_objects import downloader_ini, update_all_ini, update_jtcores_ini, update_names_txt_ini
 from update_all.config import Config
-from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, KENV_TRANSITION_SERVICE_ONLY, FILE_update_all_storage
+from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, FILE_update_all_storage, KENV_TRANSITION_SERVICE_ONLY
 from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
@@ -92,7 +92,6 @@ class TestEnvironmentSetup(unittest.TestCase):
             update_all_ini: Path('test/fixtures/update_all_ini/complete_ua_first.ini').read_text()
         }, expected_files={
             downloader_ini: Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(),
-            update_arcade_organizer_ini.lower(): Path('test/fixtures/update_arcade-organizer_ini/complete_ao.ini').read_text()
         }, expected_config=Config(databases=default_databases(), arcade_organizer=False))
 
     def test_setup___with_only_update_all_ini_with_disabled_arcade_organizer___returns_empty_config(self):
@@ -102,7 +101,6 @@ class TestEnvironmentSetup(unittest.TestCase):
             update_names_txt_ini: Path('test/fixtures/update_names-txt_ini/complete_nt.ini').read_text(),
         }, expected_files={
             downloader_ini: Path('test/fixtures/downloader_ini/complete_downloader_first.ini').read_text(),
-            update_arcade_organizer_ini.lower(): Path('test/fixtures/update_arcade-organizer_ini/complete_ao.ini').read_text()
         }, expected_config=Config(databases=default_databases(add=[DB_ID_NAMES_TXT, DB_ID_ARCADE_NAMES_TXT]), arcade_organizer=False, encc_forks="db9", download_beta_cores=True, names_region='EU', names_char_code='CHAR28'))
 
     def test_setup___with_downloader_with_custom_names_db___returns_empty_config(self):

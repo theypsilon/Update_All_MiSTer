@@ -106,24 +106,25 @@ if hashsum != expected_hashsum:
     print(f'hash missmatch: {hashsum} != {expected_hashsum}')
     exit(1)
 
-response = requests.get('https://raw.githubusercontent.com/MiSTer-devel/ArcadeDatabase_MiSTer/refs/heads/db/mad_db.json.zip')
-response.raise_for_status()
+def fetch_file(path: str, url: str) -> None:
+    response = requests.get(url)
+    response.raise_for_status()
+    with open(path, 'wb') as res_file:
+        res_file.write(response.content)
 
-with open('mad_db.json.zip', 'wb') as f:
-    f.write(response.content)
+fetch_file('mad_db.json.zip', 'https://raw.githubusercontent.com/MiSTer-devel/ArcadeDatabase_MiSTer/refs/heads/db/mad_db.json.zip')
 
 with zipfile.ZipFile('mad_db.json.zip') as z:
     bad_file = z.testzip()
     if bad_file is not None:
         raise Exception('Zip is wrong:', bad_file)
 
-response = requests.get('https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/downloader_bin/downloader_bin')
-response.raise_for_status()
-with open('downloader_bin.sh', 'wb') as f:
-    f.write(response.content)
+fetch_file('downloader_bin.sh', 'https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/downloader_bin/downloader_bin')
 
 with open('.gitattributes', 'w', encoding='utf-8') as f:
     f.write('downloader_bin.sh binary\n')
+
+fetch_file('update_all_latest_log.sh', 'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/master/src/update_all/log_viewer.py')
 
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
 
@@ -140,14 +141,24 @@ new_db['files'] = {
         'size': os.path.getsize('pocket_firmware_details.json'),
         'hash': hash_file('pocket_firmware_details.json'),
     },
+    'Scripts/downloader_bin.sh': {
+        'size': os.path.getsize('downloader_bin.sh'),
+        'hash': hash_file('downloader_bin.sh'),
+        'tags': [0],
+    },
     'Scripts/update_all.sh': {
         'size': os.path.getsize('update_all.sh'),
         'hash': hash_file('update_all.sh'),
     },
-    'Scripts/downloader_bin.sh': {
-        'size': os.path.getsize('downloader_bin.sh'),
-        'hash': hash_file('downloader_bin.sh')
+    'Scripts/update_all_latest_log.sh': {
+        'size': os.path.getsize('update_all_latest_log.sh'),
+        'hash': hash_file('update_all_latest_log.sh'),
+        'tags': [1],
     }
+}
+new_db['tags_dictionary'] = {
+    'downloaderbin': 0,
+    'updatealllatestlog': 1,
 }
 new_db['folders'] = {}
 for file_path in new_db['files']:

@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.3 - 2025-05-16
+### Added
+- Built-in Log Viewer screen which shows at the end of the run. You may use it to scroll up and down through the run output. It can be disabled but is on by default.
+- `update_all_latest_log.sh` Script is installed with Update All database. It opens the Log Viewer screen with the log from the latest run of Update All.
+- New Dinierto GBA Borders database.
+- Added instructions for alternative installation via downloader.ini to README.md.
+- downloader_bin Release Candidate is installed with Update All database.
+- Migration to automatically remove databases that are no longer by the community. As of now, it only removes `n64_dev`.
+- Traditional snapshot releases in [GitHub Releases page](https://github.com/theypsilon/Update_All_MiSTer/releases).
+
+### Changes
+- Improved forwarding of downloader output into Update All’s logs.
+- Fixed a bug that prevented saving some internal system settings after changing them in the Settings Screen.
+- Reduced the amount of wait before rebooting the system after a system file has been updated or installed.
+- Pocket Firmware updater now uses a firmware json file installed by Update All database, which makes Pocket Firmware releases a bit quicker to install.
+- The Arcade Organizer now uses the official Arcade Database which is installed with the Update All database, making it a bit quicker to run.
+- Seamless Self-Update enhancement: Update All now restarts mid-run if any relevant file was updated during Downloader execution, allowing the updated procedure to take effect immediately.
+- Fixed a number Arcade Organizer bugs, such as deprecated function calls, os.scandir errors, and other minor issues.
+- Improvements in workflows, typing, and other minor fixes.
+
+### Removed
+- Arcade Organizer no longer supports `best_of` fields. They weren't being used by MAD databases, and they have also been removed from that specification.
+
 ## Version 2.2 - 2025-03-28
 
 ### Added

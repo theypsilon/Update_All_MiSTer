@@ -16,11 +16,10 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import curses
+import os
 import time
-from typing import Callable, Union
+from typing import Callable, Union, Optional
 
-from update_all.config import Config
-from update_all.other import GenericProvider
 from update_all.ui_engine import UiRuntime
 from update_all.ui_model_utilities import Key
 
@@ -29,10 +28,7 @@ class CursesRuntime(UiRuntime):
     _screen = None
     _window = None
     _last_key_pressed = -1
-    _config = None
-
-    def set_config_provider(self, config: GenericProvider[Config]):
-        self._config = config
+    _key_ignore_time: float = 0.1
 
     @property
     def screen(self) -> curses.window:
@@ -56,7 +52,7 @@ class CursesRuntime(UiRuntime):
         time_after_read = time.time()
 
         wait_time = time_after_read - time_before_read
-        if wait_time < self._config.get().key_ignore_time and self._last_key_pressed == key:
+        if wait_time < self._key_ignore_time and self._last_key_pressed == key:
             return Key.NONE
 
         self._last_key_pressed = key
@@ -78,6 +74,12 @@ class CursesRuntime(UiRuntime):
         def loader(screen):
             self._screen = screen
             cb()
+
+        try:
+            key_ignore_time = float(os.getenv('KEY_IGNORE_TIME', '0.1'))  # @TODO: Remove at some point when I decide for a final value
+            self._key_ignore_time = key_ignore_time
+        except Exception as e:
+            print('WARNING: KEY_IGNORE_TIME environment variable invalid.', e)
 
         curses.wrapper(loader)
 

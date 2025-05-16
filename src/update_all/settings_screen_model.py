@@ -40,7 +40,7 @@ def settings_screen_model(): return {
         "bios_getter": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
         "arcade_roms_db_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
         "names_txt_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
-        "arcade_organizer": {"group": ["ua_ini", "ao_ini"], "default": "true", "values": ["false", "true"]},
+        "arcade_organizer": {"group": ["ua_ini", "ao_ini"], "default": "false", "values": ["false", "true"]},
 
         # Internal variables
         "file_exists": {"default": "false", "values": ["false", "true"]},
@@ -665,6 +665,7 @@ def settings_screen_model(): return {
                 "Ranny-Snice/Ranny-Snice-Wallpapers": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "uberyoji_mister_boot_roms_mgl": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "RGarciaLago/Wallpaper_Collection": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "Dinierto/MiSTer-GBA-Borders": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "rannysnice_wallpapers_filter": {"group": "rannysnice_wallpapers", "default": "ar16-9", "values": ["ar16-9", "ar4-3", "all"]},
             },
             "entries": [
@@ -706,6 +707,14 @@ def settings_screen_model(): return {
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "RGarciaLago/Wallpaper_Collection"}],
                         "toggle": [{"type": "rotate_variable", "target": "RGarciaLago/Wallpaper_Collection"}],
+                    }
+                },
+                {
+                    "title": "6 Dinierto GBA Borders",
+                    "description": "{Dinierto/MiSTer-GBA-Borders:enabled} Borders for the GBA Core",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
+                        "toggle": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
                     }
                 },
             ]
@@ -802,6 +811,7 @@ def settings_screen_model(): return {
                 "autoreboot": {"group": ["ua_ini", "store"], "default": "true", "values": ["false", "true"]},
                 "wait_time_for_reading": {"group": ["ua_ini", "store"], "default": "2", "values": ["2", "0", "30"]},
                 "countdown_time": {"group": ["ua_ini", "store"], "default": "15", "values": ["15", "4", "60"]},
+                "log_viewer": {"group": "store", "default": "true", "values": ["false", "true"]},
             },
             "entries": [
                 {
@@ -819,6 +829,11 @@ def settings_screen_model(): return {
                     "description": "{countdown_time}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "countdown_time"}]}
                 },
+                {
+                    "title": "4 Log Viewer",
+                    "description": "Scrollable Screen: {log_viewer:yesno}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "log_viewer"}]}
+                }
             ]
         },
         "rannysnice_wallpapers_menu": {

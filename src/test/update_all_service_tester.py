@@ -27,14 +27,16 @@ from update_all.config import Config
 from update_all.config_reader import ConfigReader
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl, EnvironmentSetupResult
 from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, \
-    KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, KENV_KEY_IGNORE_TIME, DEFAULT_KEY_IGNORE_TIME, KENV_TRANSITION_SERVICE_ONLY, \
-    DEFAULT_TRANSITION_SERVICE_ONLY
+    KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, \
+    KENV_TRANSITION_SERVICE_ONLY, \
+    DEFAULT_TRANSITION_SERVICE_ONLY, KENV_LOCAL_TEST_RUN, DEFAULT_LOCAL_TEST_RUN
 from update_all.countdown import Countdown
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
+from update_all.log_viewer import LogViewer
 from update_all.os_utils import OsUtils
 from update_all.other import Checker, GenericProvider
 from update_all.settings_screen import SettingsScreen
@@ -52,7 +54,7 @@ def default_env():
         KENV_COMMIT: DEFAULT_COMMIT,
         KENV_LOCATION_STR: DEFAULT_LOCATION_STR,
         KENV_DEBUG: DEFAULT_DEBUG,
-        KENV_KEY_IGNORE_TIME: DEFAULT_KEY_IGNORE_TIME,
+        KENV_LOCAL_TEST_RUN: DEFAULT_LOCAL_TEST_RUN,
         KENV_TRANSITION_SERVICE_ONLY: DEFAULT_TRANSITION_SERVICE_ONLY
     }
 
@@ -220,6 +222,10 @@ class EnvironmentSetupStub(EnvironmentSetup):
         return self._result
 
 
+class LogViewerTester(LogViewer):
+    def show(self, file_path: str) -> None:
+        pass
+
 class UpdateAllServiceTester(UpdateAllService):
     def __init__(self, environment_setup: EnvironmentSetup = None,
                  config_provider: GenericProvider[Config] = None,
@@ -252,7 +258,8 @@ class UpdateAllServiceTester(UpdateAllService):
             ini_repository=self.ini_repository,
             environment_setup=environment_setup,
             ao_service=ao_service,
-            local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system)
+            local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system),
+            log_viewer=LogViewerTester()
         )
 
 class ArcadeOrganizerServiceStub(ArcadeOrganizerService):

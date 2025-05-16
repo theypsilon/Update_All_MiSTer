@@ -101,6 +101,7 @@ class SettingsScreen(UiApplication):
         ui.set_value('ui_theme', ui_theme)
         ui.set_value('wait_time_for_reading', str(local_store.get_wait_time_for_reading()))
         ui.set_value('countdown_time', str(local_store.get_countdown_time()))
+        ui.set_value('log_viewer', str(local_store.get_log_viewer()).lower())
         ui.set_value('autoreboot', str(local_store.get_autoreboot()).lower())
         ui.set_value('pocket_firmware_update', str(local_store.get_pocket_firmware_update()).lower())
         ui.set_value('pocket_backup', str(local_store.get_pocket_backup()).lower())
@@ -231,6 +232,7 @@ class SettingsScreen(UiApplication):
         local_store.set_theme(ui.get_value('ui_theme'))
         local_store.set_wait_time_for_reading(temp_config.wait_time_for_reading)
         local_store.set_countdown_time(temp_config.countdown_time)
+        local_store.set_log_viewer(temp_config.log_viewer)
         local_store.set_autoreboot(temp_config.autoreboot)
         local_store.set_pocket_firmware_update(temp_config.pocket_firmware_update)
         local_store.set_pocket_backup(temp_config.pocket_backup)
@@ -299,8 +301,8 @@ class SettingsScreen(UiApplication):
             if variable in db_ids:
                 continue
             else:
-                if not isinstance(value, type(getattr(config, variable))):
-                    raise TypeError(f'{variable} can not have value {value}! (wrong type)')
+                if not isinstance(value, type(getattr(config, variable, None))):
+                    continue
                 setattr(config, variable, value)
 
         for variable in gather_variable_declarations(settings_screen_model(), "db"):
@@ -315,6 +317,8 @@ class SettingsScreen(UiApplication):
     def _all_config_variables(self):
         return [
             *gather_variable_declarations(settings_screen_model(), "ua_ini"),
+            *gather_variable_declarations(settings_screen_model(), "store"),
+            *gather_variable_declarations(settings_screen_model(), "summary"),
             *gather_variable_declarations(settings_screen_model(), "jt_ini"),
             *gather_variable_declarations(settings_screen_model(), "names_ini"),
             *gather_variable_declarations(settings_screen_model(), "arcade_roms"),

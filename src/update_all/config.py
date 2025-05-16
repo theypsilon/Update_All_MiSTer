@@ -31,7 +31,7 @@ class Config:
     # From the environment
     curl_ssl: str = DEFAULT_CURL_SSL_OPTIONS
     commit: str = DEFAULT_COMMIT
-    key_ignore_time: float = 0.1
+    local_test_run: bool = False
 
     # General options
     base_path: str = MEDIA_FAT
@@ -46,7 +46,7 @@ class Config:
 
     # Global Updating Toggles
     databases: Set[str] = field(default_factory=lambda: set())
-    arcade_organizer: bool = True
+    arcade_organizer: bool = False
 
     # Specific Updating Toggles
     encc_forks: str = "devel"  # Possible values: "devel", "db9", "aitorgomez"
@@ -63,6 +63,7 @@ class Config:
     autoreboot: bool = True
     pocket_firmware_update: bool = False
     pocket_backup: bool = False
+    log_viewer: bool = True
 
 
 @unique

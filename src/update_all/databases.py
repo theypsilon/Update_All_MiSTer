@@ -90,6 +90,9 @@ class AllDBs:
     WIZZO_MREXT_FILES = Database(db_id='mrext/all', db_url='https://raw.githubusercontent.com/wizzomafizzo/mrext/main/releases/all.json', title='MiSTer Extensions (wizzo)')
     RETROSPY = Database(db_id='retrospy/retrospy-MiSTer', db_url='https://raw.githubusercontent.com/retrospy/retrospy-MiSTer/db/db.json.zip', title='RetroSpy')
 
+    # BORDERS
+    DINIERTO_GBA_BORDERS = Database(db_id='Dinierto/MiSTer-GBA-Borders', db_url='https://raw.githubusercontent.com/Dinierto/MiSTer-GBA-Borders/db/db.json.zip', title='Dinierto GBA Borders')
+
     # WALLPAPERS
     RANNYSNICE_WALLPAPERS = Database(db_id='Ranny-Snice/Ranny-Snice-Wallpapers', db_url='https://raw.githubusercontent.com/Ranny-Snice/Ranny-Snice-Wallpapers/db/db.json.zip', title='Ranny Snice Wallpapers')
     RGARCIALAGO_WALLPAPER_COLLECTION = Database(db_id='RGarciaLago/Wallpaper_Collection', db_url='https://raw.githubusercontent.com/RGarciaLago/Wallpaper_Collection/db/db.json.zip', title='RGarciaLago Wallpaper Collection (by different authors)')

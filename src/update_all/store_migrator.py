@@ -16,22 +16,12 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-from abc import ABC, abstractmethod
-
+from typing import Callable
 from update_all.config import Config
 from update_all.logger import Logger
 
 
-class Migration(ABC):
-    @property
-    @abstractmethod
-    def version(self) -> int:
-        """Version of the migration object"""
-
-    @abstractmethod
-    def migrate(self, local_store) -> None:
-        """Migrate the local store"""
-
+Migration = Callable[[dict[str, str]], None]
 
 class StoreMigrator:
     def __init__(self, migration_list: list[Migration], logger: Logger):
@@ -47,11 +37,8 @@ class StoreMigrator:
             return
 
         for i in range(current_version, len(self._migrations), 1):
-            if (self._migrations[i].version - 1) != i:
-                raise WrongMigrationException('Migration error: (%s -1) != %s' % (self._migrations[i].version, i))
-
-            self._logger.debug('Running migration version %s.' % self._migrations[i].version)
-            self._migrations[i].migrate(local_store)
+            self._logger.debug('Running migration version %s.' % (i + 1))
+            self._migrations[i](local_store)
 
         local_store['migration_version'] = self.latest_migration_version()
 
@@ -68,6 +55,7 @@ def make_new_local_store(store_migrator):
         'theme': 'Blue Installer',
         'wait_time_for_reading': default_config.wait_time_for_reading,
         'countdown_time': default_config.countdown_time,
+        'log_viewer': default_config.log_viewer,
         'autoreboot': default_config.autoreboot,
         'download_beta_cores': default_config.download_beta_cores,
         'names_region': default_config.names_region,

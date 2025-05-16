@@ -72,12 +72,14 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         sut, ui = tester(config=config)
         ui.set_value('arcade_organizer', 'false')
         ui.set_value('names_txt_updater', 'true')
+        ui.set_value('log_viewer', 'false')
 
         sut.prepare_exit_dont_save_and_run(ui)
 
         self.assertEqual(config.arcade_organizer, False)
         self.assertEqual(config.databases, {DB_ID_NAMES_TXT, AllDBs.UPDATE_ALL_MISTER.db_id})
         self.assertTrue(config.temporary_downloader_ini)
+        self.assertFalse(config.log_viewer)
 
 
 def tester(config: Config = None, store: LocalStore = None) -> Tuple[SettingsScreen, UiContextStub]:

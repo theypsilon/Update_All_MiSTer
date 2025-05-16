@@ -33,10 +33,11 @@ from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_mister_downloader_needs_reboot, \
     MEDIA_FAT, \
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, FILE_update_all_pyz, \
-    EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons
+    EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
+from update_all.log_viewer import LogViewer
 from update_all.other import Checker, GenericProvider
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils, LinuxOsUtils
@@ -75,7 +76,6 @@ class UpdateAllServiceFactory:
         checker = Checker(file_system=file_system)
         transition_service = TransitionService(logger=self._logger, file_system=file_system, os_utils=os_utils, ini_repository=ini_repository)
         printer = SettingsScreenStandardCursesPrinter()
-        printer.set_config_provider(config_provider)
         ao_service = ArcadeOrganizerService(self._logger)
         settings_screen = SettingsScreen(
             logger=self._logger,
@@ -109,7 +109,8 @@ class UpdateAllServiceFactory:
             ini_repository=ini_repository,
             environment_setup=environment_setup,
             ao_service=ao_service,
-            local_repository=local_repository
+            local_repository=local_repository,
+            log_viewer=LogViewer()
         )
 
 
@@ -125,6 +126,7 @@ class UpdateAllService:
                  ini_repository: IniRepository,
                  environment_setup: EnvironmentSetup,
                  ao_service: ArcadeOrganizerService,
+                 log_viewer: LogViewer,
                  local_repository: LocalRepository):
         self._config_provider = config_provider
         self._logger = logger
@@ -138,7 +140,9 @@ class UpdateAllService:
         self._environment_setup = environment_setup
         self._ao_service = ao_service
         self._local_repository = local_repository
+        self._log_viewer = log_viewer
         self._exit_code = 0
+        self._end_time = 0.0
         self._error_reports: List[str] = []
 
     def full_run(self, run_pass: UpdateAllServicePass) -> int:
@@ -169,11 +173,16 @@ class UpdateAllService:
         self._run_linux_update()
         self._cleanup()
         self._show_outro()
+        self._finalize_log()
+        self._show_interactive_summary()
         self._reboot_if_needed()
         return self._exit_code
 
     def _test_routine(self) -> None:
-        if os.environ.get('TEST_SETTINGS_SCREEN', 'false') == 'true':
+        if os.environ.get('TEST_LOG_VIEWER', 'false') == 'true':
+            self._log_viewer.show(FILE_update_all_log if self._file_system.is_file(FILE_update_all_log) else 'test_log_viewer.log')
+            exit(0)
+        elif os.environ.get('TEST_SETTINGS_SCREEN', 'false') == 'true':
             self._settings_screen.load_test_menu()
             exit(0)
         elif os.environ.get('TEST_POCKET_FIRMWARE_UPDATE', 'false') == 'true':
@@ -365,7 +374,8 @@ class UpdateAllService:
         self._draw_separator()
         config = self._config_provider.get()
 
-        run_time = str(datetime.timedelta(seconds=time.time() - config.start_time))[0:-4]
+        self._end_time = time.time()
+        run_time = str(datetime.timedelta(seconds=self._end_time - config.start_time))[0:-4]
         self._logger.print(f'Update All {UPDATE_ALL_VERSION} ({config.commit[0:3]}) by theypsilon. Run time: {run_time}s at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
         self._logger.debug(f"Commit: {config.commit}")
         self._logger.print()
@@ -387,7 +397,7 @@ class UpdateAllService:
             self._logger.print(f"Success! More details at: {FILE_update_all_log}")
 
         self._logger.print()
-        days_since_epoch = int(time.time() // 86400) +1
+        days_since_epoch = int(self._end_time // 86400) +1
         supporter_of_the_day = supporter_plus_patrons[days_since_epoch % len(supporter_plus_patrons)]
         longer_msg = f'Today\'s shoutout is for {supporter_of_the_day}! - Join us at patreon.com/theypsilon'
         if len(longer_msg) <= 80:
@@ -395,29 +405,44 @@ class UpdateAllService:
         else:
             self._logger.print(f'Shoutout to {supporter_of_the_day}! patreon.com/theypsilon')
 
-    def _reboot_if_needed(self) -> None:
-        if self._config_provider.get().not_mister:
-            return
-
-        if not self._file_system.is_file(FILE_mister_downloader_needs_reboot):
-            return
-
-        if not self._config_provider.get().autoreboot:
-            self._logger.print('You should reboot')
+    def _finalize_log(self) -> None:
+        config = self._config_provider.get()
+        should_reboot = not config.not_mister and (
+            self._file_system.is_file(FILE_mister_downloader_needs_reboot) or
+            self._file_system.is_file(FILE_downloader_needs_reboot_after_linux_update)
+        )
+        if should_reboot and not config.autoreboot:
+            self._logger.print("You should reboot")
             self._logger.print()
+
+        self._logger.finalize()
+
+    def _show_interactive_summary(self) -> None:
+        if self._config_provider.get().log_viewer:
+            self._log_viewer.show(os.path.join('/media/fat', FILE_update_all_log))
+
+    def _reboot_if_needed(self) -> None:
+        config = self._config_provider.get()
+        if config.not_mister:
             return
 
-        self._logger.print()
-        self._logger.print("Rebooting in 10 seconds...")
-        sys.stdout.flush()
-        self._os_utils.sleep(2)
-        self._logger.finalize()
-        sys.stdout.flush()
-        self._os_utils.sleep(4)
-        self._os_utils.sync()
-        self._os_utils.sleep(4)
-        self._os_utils.sync()
-        self._os_utils.sleep(30)
+        linux_reboot = self._file_system.is_file(FILE_downloader_needs_reboot_after_linux_update)
+        if not self._file_system.is_file(FILE_mister_downloader_needs_reboot) and not linux_reboot:
+            return
+
+        if not config.autoreboot:
+            return
+
+        outro_time = int(time.time() - self._end_time)
+        prudent_time = 30 if linux_reboot else 3
+
+        if outro_time < prudent_time:
+            reboot_time = prudent_time - outro_time
+            self._logger.print(f"\nRebooting in {reboot_time} seconds...")
+            self._os_utils.sleep(reboot_time)
+        else:
+            self._logger.print("\nRebooting now...")
+
         self._os_utils.reboot()
 
     def _print_sequence(self) -> None:

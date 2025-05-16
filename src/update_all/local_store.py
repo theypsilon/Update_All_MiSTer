@@ -33,6 +33,8 @@ class LocalStore:
     def get_wait_time_for_reading(self) -> int: return self._props['wait_time_for_reading']
     def set_countdown_time(self, countdown_time: int) -> None: self.generic_set('countdown_time', countdown_time)
     def get_countdown_time(self) -> int: return self._props['countdown_time']
+    def set_log_viewer(self, log_viewer: bool) -> None: self.generic_set('log_viewer', log_viewer)
+    def get_log_viewer(self) -> bool: return self._props['log_viewer']
     def set_autoreboot(self, autoreboot: bool) -> None: self.generic_set('autoreboot', autoreboot)
     def get_autoreboot(self) -> bool: return self._props['autoreboot']
     def set_pocket_firmware_update(self, pocket_firmware_update: bool) -> None: self.generic_set('pocket_firmware_update', pocket_firmware_update)

@@ -22,7 +22,7 @@ from typing import Dict
 
 from update_all.config import Config
 from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, \
-    KENV_DEBUG, KENV_KEY_IGNORE_TIME, KENV_TRANSITION_SERVICE_ONLY
+    KENV_DEBUG, KENV_TRANSITION_SERVICE_ONLY, KENV_LOCAL_TEST_RUN
 from update_all.databases import DB_ID_NAMES_TXT, names_locale_by_db_url, model_variables_by_db_id, \
     AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_URL_JTPREMIUM_DEPRECATED, DB_URL_MISTERSAM_FILES_DEPRECATED
 from update_all.ini_repository import IniRepository
@@ -59,7 +59,7 @@ class ConfigReader:
         config.curl_ssl = valid_max_length(KENV_CURL_SSL, self._env[KENV_CURL_SSL], 50).strip()
         config.commit = valid_max_length(KENV_COMMIT, self._env[KENV_COMMIT], 50).strip()
         config.start_time = time.time()
-        config.key_ignore_time = float(self._env[KENV_KEY_IGNORE_TIME])
+        config.local_test_run = strtobool(self._env.get(KENV_LOCAL_TEST_RUN).strip().lower())
         config.transition_service_only = strtobool(self._env[KENV_TRANSITION_SERVICE_ONLY].strip().lower())
 
         self._logger.configure(config)
@@ -121,7 +121,7 @@ class ConfigReader:
         config.autoreboot = store.get_autoreboot()
         config.pocket_firmware_update = store.get_pocket_firmware_update()
         config.pocket_backup = store.get_pocket_backup()
-
+        config.log_viewer = store.get_log_viewer()
         self._logger.debug('store: ' + json.dumps(store.unwrap_props(), indent=4))
 
 

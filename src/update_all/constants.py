@@ -21,15 +21,15 @@ from enum import unique, Enum
 from typing import Final
 
 # From patreon.com/theypsilon
-supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', "The Sentinel's Playground Team", 'Thomas Williams', 'Wayne Booker')
+supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', 'Thomas Williams')
 
 # Default options
 DEFAULT_CURL_SSL_OPTIONS: Final[str] = ''
 DEFAULT_COMMIT: Final[str] = 'unknown'
 DEFAULT_LOCATION_STR: Final[str] = 'MiSTer'
 DEFAULT_DEBUG: Final[str] = 'false'
-DEFAULT_KEY_IGNORE_TIME: Final[str] = '0.1'
 DEFAULT_TRANSITION_SERVICE_ONLY: Final[str] = 'false'
+DEFAULT_LOCAL_TEST_RUN: Final[str] = 'false'
 
 MISTER_ENVIRONMENT: Final[str] = 'mister'
 STANDARD_UI_THEME: Final[str] = 'Blue Installer'
@@ -102,8 +102,8 @@ KENV_CURL_SSL: Final[str] = 'CURL_SSL'
 KENV_COMMIT: Final[str] = 'COMMIT'
 KENV_LOCATION_STR: Final[str] = 'LOCATION_STR'
 KENV_DEBUG: Final[str] = 'DEBUG'
-KENV_KEY_IGNORE_TIME: Final[str] = 'KEY_IGNORE_TIME'
 KENV_TRANSITION_SERVICE_ONLY: Final[str] = 'TRANSITION_SERVICE_ONLY'
+KENV_LOCAL_TEST_RUN: Final[str] = 'LOCAL_TEST_RUN'
 
 # Exit codes
 EXIT_CODE_REQUIRES_EARLY_EXIT: Final[int] = 1
@@ -116,7 +116,7 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION: Final[str] = "2.2"
+UPDATE_ALL_VERSION: Final[str] = "2.3"
 MISTER_DOWNLOADER_VERSION: Final[str] = "2.1"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"

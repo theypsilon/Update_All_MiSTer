@@ -1,5 +1,4 @@
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
-
+# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -19,12 +18,23 @@
 from update_all.store_migrator import Migration
 
 
-class MigrationV2(Migration):
-    version = 2
+def migrations() -> list[Migration]:
+    return [migration_v1, migration_v2, migration_v3]
 
-    def migrate(self, local_store) -> None:
-        """create arcade_names_txt field"""
+def migration_v1(local_store) -> None:
+    """create arcade_names_txt field"""
 
-        local_store['pocket_firmware_update'] = False
-        local_store['pocket_backup'] = False
-        local_store['_dirty'] = True
+    local_store['introduced_arcade_names_txt'] = False
+    local_store['_dirty'] = True
+
+def migration_v2(local_store) -> None:
+    """create arcade_names_txt field"""
+
+    local_store['pocket_firmware_update'] = False
+    local_store['pocket_backup'] = False
+    local_store['_dirty'] = True
+
+def migration_v3(local_store) -> None:
+    """create summary screen field"""
+
+    local_store['log_viewer'] = True
