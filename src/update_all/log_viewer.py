@@ -140,24 +140,11 @@ class LogViewer:
             print(e)
             return False
 
-def get_cmdline(pid):
-    try:
-        with open(f"/proc/{pid}/cmdline", "rb") as f:
-            data = f.read()
-        parts = data.split(b"\0")
-        return [p.decode("utf-8", "ignore") for p in parts if p]
-    except Exception:
-        return []
 
 if __name__ == "__main__":
-    import sys, signal
-    parent = os.getppid()
-    cmdline = get_cmdline(parent)
-    print(f"Parent PID: {parent} | Command line: {cmdline}")
-
+    import sys
     log_path = sys.argv[1] if len(sys.argv) > 1 else '/media/fat/Scripts/.config/update_all/update_all.log'
-    print(f"Log file: {log_path}")
-    LogViewer().show(log_path)
-
-    if '/tmp/script' in cmdline:
-        os.kill(parent, signal.SIGHUP)
+    success = LogViewer().show(log_path)
+    if not success:
+        print("Failed to display the log file: " + log_path)
+        sys.exit(1)
