@@ -156,7 +156,7 @@ new_db['files'] = {
         'tags': [1],
     }
 }
-new_db['tags_dictionary'] = {
+new_db['tag_dictionary'] = {
     'downloaderbin': 0,
     'updatealllatestlog': 1,
 }
