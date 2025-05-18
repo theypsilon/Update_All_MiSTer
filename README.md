@@ -96,7 +96,7 @@ And finally, if you would like to support my work, you may also subscribe to my 
 
 ## Supporters+ shout-out!
 
-Alex Frégeau, The Sentinel's Playground Team, Thomas Williams and Wayne Booker
+Alex Frégeau, and Thomas Williams
 
 Thank you so much for supporting this project on [Patreon](https://www.patreon.com/bePatron?u=37499475)! You'll show up here if you become a **Supporter+**!
 
