@@ -16,7 +16,6 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-# Default SSL option
 from enum import unique, Enum
 from typing import Final
 
