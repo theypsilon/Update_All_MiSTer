@@ -1,0 +1,55 @@
+{
+    "db_id": "update_all_mister",
+    "files": {
+        "Scripts/.config/update_all/update_all.pyz": {
+            "size": 374535,
+            "hash": "2f2ae616f37042b824060eceb85fbb51",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/ed313f909d1ce6546ab84ea6d1df559318464ed2/update_all.pyz"
+        },
+        "Scripts/.config/update_all/mad_db.json.zip": {
+            "size": 71766,
+            "hash": "388b95f79000bfaba416d6999dc6c2ff",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/ed313f909d1ce6546ab84ea6d1df559318464ed2/mad_db.json.zip"
+        },
+        "Scripts/.config/update_all/pocket_firmware_details.json": {
+            "size": 235,
+            "hash": "5e8e44afd359fea9c25cb62b82e9d7e6",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/ed313f909d1ce6546ab84ea6d1df559318464ed2/pocket_firmware_details.json"
+        },
+        "Scripts/downloader_bin.sh": {
+            "size": 1034072,
+            "hash": "58e5d1e3e068bab73a717a316e9b090c",
+            "tags": [
+                0
+            ],
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/ed313f909d1ce6546ab84ea6d1df559318464ed2/downloader_bin.sh"
+        },
+        "Scripts/update_all.sh": {
+            "size": 4334,
+            "hash": "23dd68b30e450ea22ec06813c5aef010",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/ed313f909d1ce6546ab84ea6d1df559318464ed2/update_all.sh"
+        },
+        "Scripts/update_all_latest_log.sh": {
+            "size": 5705,
+            "hash": "4fd01a727c4806b7d6360d9d03dfce69",
+            "tags": [
+                1
+            ],
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/ed313f909d1ce6546ab84ea6d1df559318464ed2/update_all_latest_log.sh"
+        }
+    },
+    "folders": {
+        "Scripts/.config/update_all": {},
+        "Scripts/.config": {},
+        "Scripts": {}
+    },
+    "timestamp": 1748701591,
+    "tags_dictionary": {
+        "downloaderbin": 0,
+        "updatealllatestlog": 1
+    },
+    "tag_dictionary": {
+        "downloaderbin": 0,
+        "updatealllatestlog": 1
+    }
+}
