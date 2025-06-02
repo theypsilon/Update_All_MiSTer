@@ -19,16 +19,13 @@ Update All has a Settings Screen that allows you to configure which databases an
     * [Arcade Organizer](https://github.com/theypsilon/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files. **[Default option]**
     * [Names TXT](https://github.com/ThreepwoodLeBrush/Names_MiSTer). Downloads a complete names.txt file curated by [Threepwood](https://github.com/ThreepwoodLeBrush) that enables better core names in the menus. **[Disabled by default]**
     * And more...
-6. **Extra Content**. A selection of curated databases that provide extra content.
-    * [BIOS Database](https://github.com/BigDendy/BiosDB_MiSTer). Downloads bios from https://archive.org/ for your installed systems. **[Disabled by default]**
-    * [Arcade ROMs Database](https://github.com/zakk4223/ArcadeROMsDB_MiSTer). Downloads arcade roms from https://archive.org/ that are compatible with MRAs. **[Disabled by default]**
-    * And more...
+6. **Extra Content**. A selection of curated databases that provide extra content. Roms, Bios, Wallpapers, etc.
 7. **Analogue Pocket**. Tools to connect your MiSTer with your Analogue Pocket.
 8. **Patron Menu**. A menu with exclusive contents for members of my Patreon community.
 
 ## Installation
 
-Download this [ZIP file](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all.zip) and extract `update_all.sh` to your `/Scripts` folder on your primary SD card.
+Download this [ZIP file](https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all.zip) and extract `update_all.sh` to your `/Scripts` folder on your primary SD card (create that folder if it doesn't exist). You only need to perform this operation once, since this tool self-updates itself.
 
 Then turn on your __MiSTer__, go to the _Scripts_ menu and run this script from there.
 

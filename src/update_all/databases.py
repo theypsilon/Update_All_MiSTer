@@ -71,7 +71,7 @@ class AllDBs:
     ARCADE_NAMES_JP_TXT = Database(db_id=DB_ID_ARCADE_NAMES_TXT, db_url='https://raw.githubusercontent.com/PigSaint/ArcadeNames_MiSTer/dbs/arcade_names_JP.json', title='Arcade Names TXT: JP')
 
     # ROMS
-    BIOS = Database(db_id='bios_db', db_url='https://raw.githubusercontent.com/BigDendy/BiosDB_MiSTer/db/bios_db.json.zip', title='BIOS Database')
+    BIOS = Database(db_id='bios_db', db_url='https://raw.githubusercontent.com/ajgowans/BiosDB_MiSTer/db/bios_db.json.zip', title='BIOS Database')
     ARCADE_ROMS = Database(db_id='arcade_roms_db', db_url='https://raw.githubusercontent.com/zakk4223/ArcadeROMsDB_MiSTer/db/arcade_roms_db.json.zip', title='Arcade ROMs Database')
     UBERYOJI_BOOT_ROMS = Database(db_id='uberyoji_mister_boot_roms_mgl', db_url='https://raw.githubusercontent.com/uberyoji/mister-boot-roms/main/db/uberyoji_mister_boot_roms_mgl.json', title='Uberyoji Boot ROMs')
 

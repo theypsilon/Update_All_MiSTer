@@ -117,7 +117,7 @@ class TestTransitionService(unittest.TestCase):
             downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/mistersam_on_db.ini',
         }, fs.files)
 
-    def test_old_bios_db_url_in_ini___writes_downloader_ini_with_bigdendy_db_url(self):
+    def test_old_bios_db_url_in_ini___writes_downloader_ini_with_ajgowans_db_url(self):
         fs = test_transitions(files={
             downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_bios_before.ini',
         })
@@ -125,7 +125,7 @@ class TestTransitionService(unittest.TestCase):
             downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_bios_after.ini',
         }, fs.files)
 
-    def test_old_arcade_roms_db_url_in_ini___writes_downloader_ini_with_bigdendy_db_urls(self):
+    def test_old_arcade_roms_db_url_in_ini___writes_downloader_ini_with_zakk4223_db_urls(self):
         fs = test_transitions(files={
             downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_arcade_roms_before.ini',
         })
