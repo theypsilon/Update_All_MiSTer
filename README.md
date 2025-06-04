@@ -16,7 +16,7 @@ Update All has a Settings Screen that allows you to configure which databases an
     * [LLAPI Forks Folder](https://github.com/MiSTer-LLAPI/LLAPI_folder_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). **[Disabled by default]**
     * And more...
 5. **Other Tools & Scripts**. Additional tools & scripts.
-    * [Arcade Organizer](https://github.com/theypsilon/_arcade-organizer). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files. **[Default option]**
+    * [Arcade Organizer](docs/arcade_organizer.md). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files. **[Disabled by default]**
     * [Names TXT](https://github.com/ThreepwoodLeBrush/Names_MiSTer). Downloads a complete names.txt file curated by [Threepwood](https://github.com/ThreepwoodLeBrush) that enables better core names in the menus. **[Disabled by default]**
     * And more...
 6. **Extra Content**. A selection of curated databases that provide extra content. Roms, Bios, Wallpapers, etc.
