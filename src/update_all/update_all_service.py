@@ -27,6 +27,7 @@ from update_all.analogue_pocket.utils import is_pocket_mounted
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
+from update_all.databases import Database
 from update_all.downloader_utils import prepare_latest_downloader
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_mister_downloader_needs_reboot, \
@@ -253,33 +254,39 @@ class UpdateAllService:
         if len(active_databases(config)) == 0:
             return
 
-        return_code = self._execute_downloader(config)
-        if return_code != 0:
-            self._exit_code = 10
-            self._error_reports.append('Scripts/.config/downloader/downloader.log')
-
-    def _execute_downloader(self, config: Config) -> int:
-        self._draw_separator()
-        self._logger.print('Running MiSTer Downloader')
-
-        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=True)
-        if downloader_file is None:
-            return 1
-
-        self._logger.print()
-
         update_linux = config.update_linux
         arcade_organizer = config.arcade_organizer
 
         if update_linux and arcade_organizer:
             update_linux = False
 
+        return_code = self._execute_downloader(config, self._ini_repository.downloader_ini_path_tweaked_by_config(config), update_linux, None, None)
+        if return_code != 0:
+            self._exit_code = 10
+            self._error_reports.append('Scripts/.config/downloader/downloader.log')
+
+    def _execute_downloader(self, config: Config, downloader_ini_path: str, update_linux: bool, logfile: Optional[str], default_db: Optional[Database]) -> int:
+        self._draw_separator()
         env = {
-            'DOWNLOADER_INI_PATH': self._ini_repository.downloader_ini_path_tweaked_by_config(config),
+            'DOWNLOADER_INI_PATH': downloader_ini_path,
             'ALLOW_REBOOT': '0',
             'CURL_SSL': config.curl_ssl,
             'UPDATE_LINUX': 'true' if update_linux else 'false',
         }
+        if logfile is not None:
+            env['LOGFILE'] = logfile
+        if default_db is not None:
+            env['DEFAULT_DB_ID'] = default_db.db_id
+            env['DEFAULT_DB_URL'] = default_db.db_url
+            self._logger.print('Running ' + default_db.title)
+        else:
+            self._logger.print('Running MiSTer Downloader')
+
+        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=True)
+        if downloader_file is None:
+            return 1
+
+        self._logger.print()
 
         if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
             env['DEFAULT_BASE_PATH'] = config.base_path
@@ -364,25 +371,8 @@ class UpdateAllService:
         if len(active_databases(config)) == 0 or not config.arcade_organizer:
             return
 
-        self._draw_separator()
-        self._logger.print('Running Linux Update')
-        self._logger.print()
-
-        env = {
-            'DOWNLOADER_INI_PATH': '/tmp/linux_update.ini',
-            'ALLOW_REBOOT': '0',
-            'CURL_SSL': config.curl_ssl,
-            'DEFAULT_DB_ID': 'theypsilon/LinuxDB',
-            'DEFAULT_DB_URL': 'https://raw.githubusercontent.com/theypsilon/LinuxDB_MiSTer/db/linuxdb.json',
-            'LOGFILE': f'{config.base_system_path}/Scripts/.config/downloader/update_linux.log'
-        }
-
-        if config.not_mister:
-            env['DEBUG'] = 'true'
-
-        temp_file = self._file_system.temp_file_by_id('downloader.sh')
-        return_code = self._os_utils.execute_process(temp_file.name, env)
-
+        linux_db = Database(db_id='theypsilon/LinuxDB', db_url='https://raw.githubusercontent.com/theypsilon/LinuxDB_MiSTer/db/linuxdb.json', title='Linux Update')
+        return_code = self._execute_downloader(config, '/tmp/linux_update.ini', True, f'{config.base_system_path}/Scripts/.config/downloader/update_linux.log', linux_db)
         if return_code != 0:
             self._exit_code = 11
             self._error_reports.append('Scripts/.config/downloader/update_linux.log')
