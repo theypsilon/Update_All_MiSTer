@@ -1,0 +1,42 @@
+{
+    "db_id": "update_all_mister",
+    "files": {
+        "Scripts/.config/update_all/update_all.pyz": {
+            "size": 379271,
+            "hash": "d7a3ea6e000df13a417085342bcb7f87",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/4334c3f3d3239e1c0eb3c7804a548c540642303b/update_all.pyz"
+        },
+        "Scripts/.config/update_all/mad_db.json.zip": {
+            "size": 73156,
+            "hash": "5fc41c52c3fa999ed54385a485268b45",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/4334c3f3d3239e1c0eb3c7804a548c540642303b/mad_db.json.zip"
+        },
+        "Scripts/.config/update_all/pocket_firmware_details.json": {
+            "size": 235,
+            "hash": "5e8e44afd359fea9c25cb62b82e9d7e6",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/4334c3f3d3239e1c0eb3c7804a548c540642303b/pocket_firmware_details.json"
+        },
+        "Scripts/update_all.sh": {
+            "size": 4334,
+            "hash": "23dd68b30e450ea22ec06813c5aef010",
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/4334c3f3d3239e1c0eb3c7804a548c540642303b/update_all.sh"
+        },
+        "Scripts/update_all_latest_log.sh": {
+            "size": 5705,
+            "hash": "4fd01a727c4806b7d6360d9d03dfce69",
+            "tags": [
+                0
+            ],
+            "url": "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/4334c3f3d3239e1c0eb3c7804a548c540642303b/update_all_latest_log.sh"
+        }
+    },
+    "folders": {
+        "Scripts/.config/update_all": {},
+        "Scripts/.config": {},
+        "Scripts": {}
+    },
+    "timestamp": 1749243287,
+    "tag_dictionary": {
+        "updatealllatestlog": 0
+    }
+}
