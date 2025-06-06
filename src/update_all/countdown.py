@@ -67,7 +67,7 @@ class CountdownImpl(Countdown):
         try:
             child_process.start()
 
-            begin = time.time()
+            begin = time.monotonic()
             end = begin + float(count)
             now = begin
             latest_seconds = -1
@@ -89,7 +89,7 @@ class CountdownImpl(Countdown):
                     break
 
                 time.sleep(1.0 / 120.0)
-                now = time.time()
+                now = time.monotonic()
 
         finally:
             ends.value = 1

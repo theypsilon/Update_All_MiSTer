@@ -18,7 +18,6 @@
 import datetime
 import enum
 import os
-import sys
 import time
 from typing import List, Optional
 
@@ -33,7 +32,8 @@ from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_mister_downloader_needs_reboot, \
     MEDIA_FAT, \
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, FILE_update_all_pyz, \
-    EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update
+    EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update, \
+    FILE_downloader_run_signal
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
@@ -194,7 +194,7 @@ class UpdateAllService:
 
     def _show_intro(self) -> None:
         self._logger.print()
-        self._logger.print(f"                        -------- Update All {UPDATE_ALL_VERSION} ---------                        ")
+        self._logger.print(f"                        ------- Update All {UPDATE_ALL_VERSION} --------                        ")
         self._logger.print(f"                        The All-in-One Updater for MiSTer")
         self._logger.print("                        ---------------------------------")
         self._logger.print(f"                          - Powered by Downloader {MISTER_DOWNLOADER_VERSION} -")
@@ -232,7 +232,7 @@ class UpdateAllService:
         config = self._config_provider.get()
 
         self._logger.bench("Time reset on pre-run stage")
-        config.start_time = time.time()
+        config.start_time = time.monotonic()
 
         if config.not_mister:
             self._logger.debug('Not MiSTer environment!')
@@ -253,39 +253,59 @@ class UpdateAllService:
         if len(active_databases(config)) == 0:
             return
 
-        self._draw_separator()
-        self._logger.print('Running MiSTer Downloader')
-
-        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger)
-        if downloader_file is None:
-            return_code = 1
-        else:
-            self._logger.print()
-
-            update_linux = config.update_linux
-            arcade_organizer = config.arcade_organizer
-
-            if update_linux and arcade_organizer:
-                update_linux = False
-
-            env = {
-                'DOWNLOADER_INI_PATH': self._ini_repository.downloader_ini_path_tweaked_by_config(config),
-                'ALLOW_REBOOT': '0',
-                'CURL_SSL': config.curl_ssl,
-                'UPDATE_LINUX': 'true' if update_linux else 'false',
-            }
-
-            if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
-                env['DEFAULT_BASE_PATH'] = config.base_path
-
-            if config.not_mister:
-                env['DEBUG'] = 'true'
-
-            return_code = self._os_utils.execute_process(downloader_file, env)
-
+        return_code = self._execute_downloader(config)
         if return_code != 0:
             self._exit_code = 10
             self._error_reports.append('Scripts/.config/downloader/downloader.log')
+
+    def _execute_downloader(self, config: Config) -> int:
+        self._draw_separator()
+        self._logger.print('Running MiSTer Downloader')
+
+        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=True)
+        if downloader_file is None:
+            return 1
+
+        self._logger.print()
+
+        update_linux = config.update_linux
+        arcade_organizer = config.arcade_organizer
+
+        if update_linux and arcade_organizer:
+            update_linux = False
+
+        env = {
+            'DOWNLOADER_INI_PATH': self._ini_repository.downloader_ini_path_tweaked_by_config(config),
+            'ALLOW_REBOOT': '0',
+            'CURL_SSL': config.curl_ssl,
+            'UPDATE_LINUX': 'true' if update_linux else 'false',
+        }
+
+        if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
+            env['DEFAULT_BASE_PATH'] = config.base_path
+
+        if config.not_mister:
+            env['DEBUG'] = 'true'
+
+        return_code = self._os_utils.execute_process(downloader_file, env)
+        if not self._file_system.is_file(FILE_downloader_run_signal):
+            return return_code
+
+        self._logger.print(f"WARNING! downloader_bin didn't work as expected with error code {return_code}!\n")
+
+        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=False)
+        if downloader_file is None:
+            return 1
+
+        return_code = self._os_utils.execute_process(downloader_file, env)
+        if not self._file_system.is_file(FILE_downloader_run_signal):
+            return return_code
+
+        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=False, consider_zip=False)
+        if downloader_file is None:
+            return 1
+
+        return self._os_utils.execute_process(downloader_file, env)
 
     def _run_pocket_tools(self) -> None:
         if not is_pocket_mounted():
@@ -374,8 +394,8 @@ class UpdateAllService:
         self._draw_separator()
         config = self._config_provider.get()
 
-        self._end_time = time.time()
-        run_time = str(datetime.timedelta(seconds=self._end_time - config.start_time))[0:-4]
+        self._end_time = time.monotonic()
+        run_time = str(datetime.timedelta(seconds=self._end_time - config.start_time))[2:-4]
         self._logger.print(f'Update All {UPDATE_ALL_VERSION} ({config.commit[0:3]}) by theypsilon. Run time: {run_time}s at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
         self._logger.debug(f"Commit: {config.commit}")
         self._logger.print()
@@ -433,8 +453,8 @@ class UpdateAllService:
         if not config.autoreboot:
             return
 
-        outro_time = int(time.time() - self._end_time)
-        prudent_time = 30 if linux_reboot else 3
+        outro_time = int(time.monotonic() - self._end_time)
+        prudent_time = 30 if linux_reboot else 5
 
         if outro_time < prudent_time:
             reboot_time = prudent_time - outro_time

@@ -40,7 +40,7 @@ if file_has_changed("master", "origin/master", "latest.id"):
     release_tag = datetime.datetime.now().strftime("UpdateAll_%Y-%m-%d_%H.%M.%S")
     print('Creating release', release_tag)
     subprocess.run(['gh', 'release', 'create', release_tag], check=True)
-    subprocess.run(['gh', 'release', 'upload', release_tag, 'build/update_all.pyz', 'build/update_all.pyz.sha256', 'build/update_all.zip', '--clobber'], check=True)
+    subprocess.run(['gh', 'release', 'upload', release_tag, 'build/update_all.pyz', 'build/update_all.pyz.sha256', 'build/update_all.zip', 'update_all.sh', '--clobber'], check=True)
 
     print("\nNew dont_download2.sh can be used.")
     with open(os.environ['GITHUB_OUTPUT'], 'a') as f:

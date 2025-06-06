@@ -18,16 +18,24 @@
 
 
 from update_all.os_utils import OsUtils
-from update_all.constants import DOWNLOADER_URL, DOWNLOADER_LATEST_ZIP_PATH
+from update_all.constants import DOWNLOADER_URL, DOWNLOADER_LATEST_ZIP_PATH, DOWNLOADER_LATEST_BIN_PATH, \
+    DOWNLOADER_LATEST_BIN_PYTHON_COMPATIBLE, FILE_downloader_run_signal
 from update_all.file_system import FileSystem
 from typing import Optional
 from update_all.logger import Logger
 
 
-def prepare_latest_downloader(os_utils: OsUtils, file_system: FileSystem, logger: Logger) -> Optional[str]:
-    if file_system.is_file(DOWNLOADER_LATEST_ZIP_PATH):
+def prepare_latest_downloader(os_utils: OsUtils, file_system: FileSystem, logger: Logger, consider_bin: bool, consider_zip: bool = True) -> Optional[str]:
+    if consider_bin and file_system.is_file(DOWNLOADER_LATEST_BIN_PATH) and file_system.is_file(DOWNLOADER_LATEST_BIN_PYTHON_COMPATIBLE):
+        temp_file = file_system.temp_file_by_id('downloader_bin')
+        file_system.copy(DOWNLOADER_LATEST_BIN_PATH, temp_file.name)
+        file_system.touch(FILE_downloader_run_signal)
+        logger.debug('Using latest downloader from %s' % DOWNLOADER_LATEST_BIN_PATH)
+        return temp_file.name
+    elif consider_zip and file_system.is_file(DOWNLOADER_LATEST_ZIP_PATH):
         temp_file = file_system.temp_file_by_id('downloader.sh')
         file_system.copy(DOWNLOADER_LATEST_ZIP_PATH, temp_file.name)
+        file_system.touch(FILE_downloader_run_signal)
         logger.debug('Using latest downloader from %s' % DOWNLOADER_LATEST_ZIP_PATH)
         return temp_file.name
     else:
