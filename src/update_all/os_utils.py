@@ -62,39 +62,44 @@ class LinuxOsUtils(OsUtils):
         subprocess.run(['reboot', 'now'], shell=False, stderr=subprocess.STDOUT)
 
     def execute_process(self, launcher, env) -> int:
-        proc = subprocess.Popen(
-            ['python3', '-u', launcher],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env=env,
-            bufsize=1,
-            text=True
-        )
+        try:
+            proc = subprocess.Popen(
+                ['python3', '-u', launcher],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=env,
+                bufsize=1,
+                text=True
+            )
 
-        for pipe in (proc.stdout, proc.stderr):
-            fd = pipe.fileno()
-            flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-            fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+            for pipe in (proc.stdout, proc.stderr):
+                fd = pipe.fileno()
+                flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+                fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
-        while True:
-            exit_code = proc.poll()
-            if exit_code is not None:
-                break
+            while True:
+                exit_code = proc.poll()
+                if exit_code is not None:
+                    break
 
-            rlist, _, _ = select.select([proc.stdout, proc.stderr], [], [], 0.25)
-            for pipe in rlist:
-                try:
-                    output = pipe.read(4096)
-                    if output:
-                        self._logger.print(output, end='', flush=True)
-                except BlockingIOError:
-                    continue
+                rlist, _, _ = select.select([proc.stdout, proc.stderr], [], [], 0.25)
+                for pipe in rlist:
+                    try:
+                        output = pipe.read(4096)
+                        if output:
+                            self._logger.print(output, end='', flush=True)
+                    except BlockingIOError:
+                        continue
 
-        for pipe in [proc.stdout, proc.stderr]:
-            for line in pipe.readlines():
-                self._logger.print(line, end='', flush=True)
+            for pipe in [proc.stdout, proc.stderr]:
+                for line in pipe.readlines():
+                    self._logger.print(line, end='', flush=True)
 
-        return proc.returncode
+            return proc.returncode
+        except Exception as e:
+            self._logger.debug(f"Error executing process {launcher}")
+            self._logger.debug(e)
+            return -1
 
     def read_command_output(self, cmd, env) -> [int, str]:
         proc = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
