@@ -28,7 +28,7 @@ from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
 from update_all.databases import Database
-from update_all.downloader_utils import prepare_latest_downloader
+from update_all.downloader_utils import prepare_latest_downloader, downloader_temp_files
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_mister_downloader_needs_reboot, \
     MEDIA_FAT, \
@@ -299,7 +299,7 @@ class UpdateAllService:
         if not self._file_system.is_file(FILE_downloader_run_signal):
             return return_code
 
-        self._logger.print(f"WARNING! downloader_bin didn't work as expected with error code {return_code}!\n")
+        self._logger.print(f"WARNING! {downloader_file} didn't work as expected with error code {return_code}!\n")
 
         downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=False)
         if downloader_file is None:
@@ -308,6 +308,8 @@ class UpdateAllService:
         return_code = self._os_utils.execute_process(downloader_file, env)
         if not self._file_system.is_file(FILE_downloader_run_signal):
             return return_code
+
+        self._logger.print(f"WARNING! {downloader_file} didn't work as expected with error code {return_code}!\n")
 
         downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=False, consider_zip=False)
         if downloader_file is None:
@@ -389,6 +391,10 @@ class UpdateAllService:
             self._error_reports.append('Scripts/.config/downloader/update_linux.log')
 
     def _cleanup(self) -> None:
+        for file in downloader_temp_files():
+            if self._file_system.is_file(file):
+                self._file_system.unlink(file, verbose=False)
+
         self._file_system.clean_temp_files_with_ids()
 
     def _show_outro(self) -> None:

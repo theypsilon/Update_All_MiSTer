@@ -24,11 +24,14 @@ from update_all.file_system import FileSystem
 from typing import Optional
 from update_all.logger import Logger
 
+tmp_downloader_bin = '/tmp/ua_downloader_bin'
+tmp_downloader_latest = '/tmp/ua_downloader_latest.zip'
+tmp_dont_download = '/tmp/ua_downloader_dd.pyz'
+
 
 def prepare_latest_downloader(os_utils: OsUtils, file_system: FileSystem, logger: Logger, consider_bin: bool, consider_zip: bool = True) -> Optional[str]:
     if consider_bin and file_system.is_file(DOWNLOADER_LATEST_BIN_PATH) and file_system.is_file(DOWNLOADER_LATEST_BIN_PYTHON_COMPATIBLE):
         logger.debug('Using latest downloader from %s' % DOWNLOADER_LATEST_BIN_PATH)
-        tmp_downloader_bin = '/tmp/ua_downloader_bin'
         try:
             file_system.copy(DOWNLOADER_LATEST_BIN_PATH, tmp_downloader_bin)
             file_system.touch(FILE_downloader_run_signal)
@@ -39,7 +42,6 @@ def prepare_latest_downloader(os_utils: OsUtils, file_system: FileSystem, logger
         return tmp_downloader_bin
     elif consider_zip and file_system.is_file(DOWNLOADER_LATEST_ZIP_PATH):
         logger.debug('Using latest downloader from %s' % DOWNLOADER_LATEST_ZIP_PATH)
-        tmp_downloader_latest = '/tmp/ua_downloader_latest.zip'
         try:
             file_system.copy(DOWNLOADER_LATEST_ZIP_PATH, tmp_downloader_latest)
             file_system.touch(FILE_downloader_run_signal)
@@ -50,7 +52,6 @@ def prepare_latest_downloader(os_utils: OsUtils, file_system: FileSystem, logger
         return tmp_downloader_latest
     else:
         logger.debug('Fetching latest downloader from %s' % DOWNLOADER_URL)
-        tmp_dont_download = '/tmp/ua_downloader_dd.pyz'
         content = os_utils.download(DOWNLOADER_URL)
         if content is None:
             return None
@@ -62,3 +63,7 @@ def prepare_latest_downloader(os_utils: OsUtils, file_system: FileSystem, logger
             logger.print('ERROR! Failed to make executable from downloader dont_download.zip')
             logger.debug(e)
         return tmp_dont_download
+
+
+def downloader_temp_files() -> list[str]:
+    return [tmp_downloader_bin, tmp_downloader_latest, tmp_dont_download]
