@@ -50,11 +50,11 @@ def prepare_latest_downloader(os_utils: OsUtils, file_system: FileSystem, logger
         return tmp_downloader_latest
     else:
         logger.debug('Fetching latest downloader from %s' % DOWNLOADER_URL)
-        tmp_dont_download = '/tmp/ua_downloader_dd.pyz'
         content = os_utils.download(DOWNLOADER_URL)
         if content is None:
             return None
 
+        tmp_dont_download = '/tmp/ua_downloader_dd.pyz'
         file_system.write_file_bytes(tmp_dont_download, content)
         try:
             os_utils.make_executable(tmp_dont_download)

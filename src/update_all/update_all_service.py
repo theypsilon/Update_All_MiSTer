@@ -145,6 +145,7 @@ class UpdateAllService:
         self._exit_code = 0
         self._end_time = 0.0
         self._error_reports: List[str] = []
+        self._temp_launchers: List[str] = []
 
     def full_run(self, run_pass: UpdateAllServicePass) -> int:
         if run_pass == UpdateAllServicePass.Continue:
@@ -287,6 +288,7 @@ class UpdateAllService:
         if downloader_file is None:
             return 1
 
+        self._temp_launchers.append(downloader_file)
         self._logger.print()
 
         if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
@@ -299,20 +301,24 @@ class UpdateAllService:
         if not self._file_system.is_file(FILE_downloader_run_signal):
             return return_code
 
-        self._logger.print(f"WARNING! downloader_bin didn't work as expected with error code {return_code}!\n")
+        self._logger.print(f"WARNING! {downloader_file} didn't work as expected with error code {return_code}!\n")
 
         downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=False)
         if downloader_file is None:
             return 1
 
+        self._temp_launchers.append(downloader_file)
         return_code = self._os_utils.execute_process(downloader_file, env)
         if not self._file_system.is_file(FILE_downloader_run_signal):
             return return_code
+
+        self._logger.print(f"WARNING! {downloader_file} didn't work as expected with error code {return_code}!\n")
 
         downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=False, consider_zip=False)
         if downloader_file is None:
             return 1
 
+        self._temp_launchers.append(downloader_file)
         return self._os_utils.execute_process(downloader_file, env)
 
     def _sync_downloader_launcher(self) -> None:
@@ -389,6 +395,10 @@ class UpdateAllService:
             self._error_reports.append('Scripts/.config/downloader/update_linux.log')
 
     def _cleanup(self) -> None:
+        for file in self._temp_launchers:
+            if self._file_system.is_file(file):
+                self._file_system.unlink(file, verbose=False)
+
         self._file_system.clean_temp_files_with_ids()
 
     def _show_outro(self) -> None:
