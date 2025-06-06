@@ -191,7 +191,7 @@ class SettingsScreen(UiApplication):
         ui.set_value('firmware_needs_reboot', 'true' if self._original_firmware != firmware_md5 else 'false')
 
     def play_bad_apple(self, _ui) -> None:
-        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger)
+        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=False)
         if downloader_file is None:
             return None
 

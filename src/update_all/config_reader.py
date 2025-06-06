@@ -58,7 +58,7 @@ class ConfigReader:
 
         config.curl_ssl = valid_max_length(KENV_CURL_SSL, self._env[KENV_CURL_SSL], 50).strip()
         config.commit = valid_max_length(KENV_COMMIT, self._env[KENV_COMMIT], 50).strip()
-        config.start_time = time.time()
+        config.start_time = time.monotonic()
         config.local_test_run = strtobool(self._env.get(KENV_LOCAL_TEST_RUN).strip().lower())
         config.transition_service_only = strtobool(self._env[KENV_TRANSITION_SERVICE_ONLY].strip().lower())
 
