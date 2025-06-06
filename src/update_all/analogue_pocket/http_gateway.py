@@ -504,10 +504,10 @@ COPY_BUFSIZE = 1024 * 1024 if is_windows else 64 * 1024
 
 
 def write_incoming_stream(in_stream: Any, target_path: str, timeout: int):
-    start_time = time.time()
+    start_time = time.monotonic()
     with open(target_path, 'wb') as out_file:
         while True:
-            elapsed_time = time.time() - start_time
+            elapsed_time = time.monotonic() - start_time
             if elapsed_time > timeout:
                 raise TimeoutError(f"Copy operation timed out after {timeout} seconds")
 
