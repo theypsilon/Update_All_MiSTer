@@ -47,9 +47,9 @@ class CursesRuntime(UiRuntime):
         return self._window
 
     def read_key(self) -> Union[Key, int]:
-        time_before_read = time.time()
+        time_before_read = time.monotonic()
         key = self.window.getch()
-        time_after_read = time.time()
+        time_after_read = time.monotonic()
 
         wait_time = time_after_read - time_before_read
         if wait_time < self._key_ignore_time and self._last_key_pressed == key:
