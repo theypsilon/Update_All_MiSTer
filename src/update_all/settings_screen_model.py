@@ -32,7 +32,7 @@ def settings_screen_model(): return {
     },
     "variables": {
         # Global variables
-        "update_all_version": {"default": "2.3"},
+        "update_all_version": {"default": "2.3.1"},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},

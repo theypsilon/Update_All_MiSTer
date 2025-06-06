@@ -65,7 +65,7 @@ class PrintLogger(Logger):
 
     def bench(self, label):
         if self._start_time is not None:
-            self._do_print('%s| %s' % (str(datetime.timedelta(seconds=time.time() - self._start_time))[0:-4], label), sep='', end='\n', file=sys.stdout, flush=True)
+            self._do_print('%s| %s' % (str(datetime.timedelta(seconds=time.monotonic() - self._start_time))[0:-4], label), sep='', end='\n', file=sys.stdout, flush=True)
 
     def finalize(self):
         pass
