@@ -119,11 +119,6 @@ with zipfile.ZipFile('mad_db.json.zip') as z:
     if bad_file is not None:
         raise Exception('Zip is wrong:', bad_file)
 
-fetch_file('downloader_bin.sh', 'https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/downloader_bin/downloader_bin')
-
-with open('.gitattributes', 'w', encoding='utf-8') as f:
-    f.write('downloader_bin.sh binary\n')
-
 fetch_file('update_all_latest_log.sh', 'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/master/src/update_all/log_viewer.py')
 
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
@@ -141,11 +136,6 @@ new_db['files'] = {
         'size': os.path.getsize('pocket_firmware_details.json'),
         'hash': hash_file('pocket_firmware_details.json'),
     },
-    'Scripts/downloader_bin.sh': {
-        'size': os.path.getsize('downloader_bin.sh'),
-        'hash': hash_file('downloader_bin.sh'),
-        'tags': [0],
-    },
     'Scripts/update_all.sh': {
         'size': os.path.getsize('update_all.sh'),
         'hash': hash_file('update_all.sh'),
@@ -153,13 +143,14 @@ new_db['files'] = {
     'Scripts/update_all_latest_log.sh': {
         'size': os.path.getsize('update_all_latest_log.sh'),
         'hash': hash_file('update_all_latest_log.sh'),
-        'tags': [1],
+        'tags': [0],
     }
 }
 new_db['tag_dictionary'] = {
-    'downloaderbin': 0,
-    'updatealllatestlog': 1,
+    'updatealllatestlog': 0
 }
+if 'tags_dictionary' in new_db:
+    new_db.pop('tags_dictionary')
 new_db['folders'] = {}
 for file_path in new_db['files']:
     for parent in Path(file_path).parents:
@@ -192,7 +183,7 @@ subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
 subprocess.run(['git', 'reset'], check=True)
 subprocess.run(['git', 'add', '.gitattributes'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
-subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'downloader_bin.sh'], check=True)
+subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
 commit_id = subprocess.getoutput("git rev-parse HEAD")
 

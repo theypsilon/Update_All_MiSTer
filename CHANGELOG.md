@@ -4,7 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.3.1 - 2025-06-06
+
+### Added
+- Updated Arcade Organizer [documentation](docs/arcade_organizer.md) within the new `docs/` folder and linked it in the [README.md](README.md).
+- Update All DB now also updates the launcher `downloader.sh`.
+
+### Changed
+- Update All now runs Downloader through the new `downloader_bin` when is present in the system.
+- Using a more precise time function to avoid spurious time errors (time.monotonic).
+- Using the BIOS DB from ajgowans instead.
+- Fixed typo that prevented Downloader from filtering out the `update_all_latest_log` script.
+- Increased the reboot wait time to 5 seconds from 3 after a firmware update has been detected.
+
+### Removed
+- `downloader_bin` is no longer installed as a standalone script, since it is now integrated in Downloader.
+
 ## Version 2.3 - 2025-05-16
+
 ### Added
 - Built-in Log Viewer screen which shows at the end of the run. You may use it to scroll up and down through the run output. It can be disabled but is on by default.
 - `update_all_latest_log.sh` Script is installed with Update All database. It opens the Log Viewer screen with the log from the latest run of Update All.
@@ -47,6 +64,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Optimized build process, which now uses less space and is faster to unzip and run.
 - The initial output lines of Update All have been optimized by eliminating some unnecessary waits, resulting in a quicker startup.
 - The local store of Update All is now saved in a JSON file instead of a ZIP, making loading and saving processes much faster.
+- Using the Arcade ROMs DB from zakk4223 instead.
 - Enhanced debug script with additional capabilities for maintainers.
 
 ### Removed

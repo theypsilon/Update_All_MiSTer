@@ -28,6 +28,7 @@ class SpyOsUtils(OsUtils):
         self.calls_to_sleep = []
         self.calls_to_execute_process = []
         self.calls_to_download = []
+        self.calls_to_make_executable = []
 
     def sync(self):
         self.calls_to_sync += 1
@@ -49,3 +50,6 @@ class SpyOsUtils(OsUtils):
     def download(self, url) -> Optional[bytes]:
         self.calls_to_download.append(url)
         return bytes()
+
+    def make_executable(self, file_path: str) -> None:
+        self.calls_to_make_executable.append(file_path)

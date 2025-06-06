@@ -51,6 +51,7 @@ FILE_MiSTer_ini: Final[str] = 'MiSTer.ini'
 FOLDER_scripts: Final[str] = 'Scripts'
 FOLDER_scripts_config_lc: Final[str] = 'scripts/.config'
 FILE_downloader_temp_ini: Final[str] = '/tmp/downloader_temp.ini'
+FILE_downloader_run_signal: Final[str] = '/tmp/downloader_run_signal'
 
 # Reboot files
 FILE_downloader_needs_reboot_after_linux_update: Final[str] = '/tmp/downloader_needs_reboot_after_linux_update'
@@ -115,12 +116,15 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION: Final[str] = "2.3"
-MISTER_DOWNLOADER_VERSION: Final[str] = "2.1"
+UPDATE_ALL_VERSION: Final[str] = "2.3.1"
+MISTER_DOWNLOADER_VERSION: Final[str] = "2.2"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"
 DOWNLOADER_URL: Final[str] = "https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/latest/dont_download.zip"
 DOWNLOADER_INI_STANDARD_PATH: Final[str] = "downloader.ini"
 DOWNLOADER_STORE_STANDARD_PATH: Final[str] = "Scripts/.config/downloader/downloader.json"
 DOWNLOADER_LATEST_ZIP_PATH: Final[str] = "Scripts/.config/downloader/downloader_latest.zip"
+DOWNLOADER_LATEST_BIN_PATH: Final[str] = "Scripts/.config/downloader/downloader_bin"
+DOWNLOADER_LATEST_BIN_PYTHON_COMPATIBLE : Final[str] = "/usr/bin/python3.9"
+DOWNLOADER_BIN_LOG: Final[str] = ""
 TEST_UNSTABLE_SPINNER_FIRMWARE_MD5: Final[str] = "b76bc57d75afce8b1040bc4d225ea3aa"
