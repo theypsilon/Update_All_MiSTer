@@ -23,6 +23,7 @@ import json
 import tempfile
 import re
 import zipfile
+import filecmp
 from abc import ABC, abstractmethod
 from pathlib import Path
 from update_all.config import AllowDelete
@@ -73,6 +74,10 @@ class FileSystem(ABC):
 
     @abstractmethod
     def is_folder(self, path):
+        """interface"""
+
+    @abstractmethod
+    def compare_files(self, source, target) -> bool:
         """interface"""
 
     @abstractmethod
@@ -200,6 +205,9 @@ class _FileSystem(FileSystem):
 
     def is_folder(self, path):
         return os.path.isdir(self._path(path))
+
+    def compare_files(self, source, target) -> bool:
+        return filecmp.cmp(self._path(source), self._path(target), shallow=False)
 
     def read_file_contents(self, path):
         with open(self._path(path), 'r') as f:

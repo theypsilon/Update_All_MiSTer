@@ -143,6 +143,19 @@ class _FileSystem(ProductionFileSystem):
 
         return any(entry.lower().startswith(path) for entry in entries)
 
+    def compare_files(self, source, target) -> bool:
+        source_file = self._path(source)
+        target_file = self._path(target)
+
+        if source_file not in self._state.files or target_file not in self._state.files:
+            return False
+
+        source_description = self._state.files[source_file]
+        target_description = self._state.files[target_file]
+
+        return (source_description['hash'] == target_description['hash'] and
+                source_description['size'] == target_description['size'])
+
     def read_file_contents(self, path):
         return self._state.files[self._path(path)]['content']
 

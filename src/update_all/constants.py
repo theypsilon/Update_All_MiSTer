@@ -52,6 +52,8 @@ FOLDER_scripts: Final[str] = 'Scripts'
 FOLDER_scripts_config_lc: Final[str] = 'scripts/.config'
 FILE_downloader_temp_ini: Final[str] = '/tmp/downloader_temp.ini'
 FILE_downloader_run_signal: Final[str] = '/tmp/downloader_run_signal'
+FILE_downloader_launcher_update_script: Final[str] = 'Scripts/update.sh'
+FILE_downloader_launcher_downloader_script: Final[str] = 'Scripts/downloader.sh'
 
 # Reboot files
 FILE_downloader_needs_reboot_after_linux_update: Final[str] = '/tmp/downloader_needs_reboot_after_linux_update'

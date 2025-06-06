@@ -34,7 +34,7 @@ from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_m
     MEDIA_FAT, \
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, FILE_update_all_pyz, \
     EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update, \
-    FILE_downloader_run_signal
+    FILE_downloader_run_signal, FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
@@ -162,6 +162,7 @@ class UpdateAllService:
 
             update_all_mtime = self._get_mtime()
             self._run_downloader()
+            self._sync_downloader_launcher()
 
             if run_pass == UpdateAllServicePass.NewRun and update_all_mtime is not None:
                 new_update_all_mtime = self._get_mtime()
@@ -313,6 +314,16 @@ class UpdateAllService:
             return 1
 
         return self._os_utils.execute_process(downloader_file, env)
+
+    def _sync_downloader_launcher(self) -> None:
+        if not self._file_system.is_file(FILE_downloader_launcher_downloader_script) or not self._file_system.is_file(FILE_downloader_launcher_update_script):
+            return
+
+        if self._file_system.compare_files(FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script):
+            return
+
+        self._file_system.copy(FILE_downloader_launcher_update_script, FILE_downloader_launcher_downloader_script)
+        self._logger.print(f"Updated {FILE_downloader_launcher_downloader_script} launcher.")
 
     def _run_pocket_tools(self) -> None:
         if not is_pocket_mounted():
