@@ -62,11 +62,12 @@ class LinuxOsUtils(OsUtils):
         subprocess.run(['reboot', 'now'], shell=False, stderr=subprocess.STDOUT)
 
     def execute_process(self, launcher, env) -> int:
+        subprocess.run(['chmod', '+x', launcher], check=True, stderr=subprocess.STDOUT)
         proc = subprocess.Popen(
-            ['python3', '-u', launcher],
+            [launcher],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            env=env,
+            env={'PYTHONUNBUFFERED': '1', **env},
             bufsize=1,
             text=True
         )
