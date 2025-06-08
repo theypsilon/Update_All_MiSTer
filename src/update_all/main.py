@@ -19,6 +19,7 @@
 
 import traceback
 import sys
+import locale
 from update_all.local_repository import LocalRepository
 from update_all.logger import FileLoggerDecorator, PrintLogger
 from update_all.other import GenericProvider
@@ -26,6 +27,7 @@ from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllServ
 
 
 def main(env):
+    locale.setlocale(locale.LC_CTYPE, "")
     local_repository_provider = GenericProvider[LocalRepository]()
     logger = FileLoggerDecorator(PrintLogger(), local_repository_provider)
     # noinspection PyBroadException
