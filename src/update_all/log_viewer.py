@@ -21,7 +21,7 @@ import os
 
 def clamp(v, lo, hi): return max(lo, min(v, hi))
 def clip_range(start: int, length: int, limit: int) -> tuple[int, int]:
-    length = clamp(length, 1, limit - 1)
+    length = clamp(length, 1, limit)
     return clamp(start, 0, limit - length), length
 
 class LogViewer:
@@ -72,16 +72,16 @@ class LogViewer:
                 self.mindex = len(document) - self.frame_end
 
             def addstr(self, y: int, x: int, text: str, attr: int):
-                x, length = clip_range(x, len(text), self.mcols)
-                self.window.addstr(clamp(y, 0, self.mlines), x, text[:length], attr)
+                x, length = clip_range(x, len(text), self.mcols - 1)
+                self.window.addstr(clamp(y, 0, self.mlines - 1), x, text[:length], attr)
 
             def vline(self, y: int, x: int, attr: int, length: int):
                 y, length = clip_range(y, length, self.mlines)
-                self.window.vline(y, clamp(x, 0, self.mcols), attr, length)
+                self.window.vline(y, clamp(x, 0, self.mcols - 1), attr, length)
 
             def hline(self, y: int, x: int, attr: int, length: int):
                 x, length = clip_range(x, length, self.mcols)
-                self.window.hline(clamp(y, 0, self.mlines), x, attr, length)
+                self.window.hline(clamp(y, 0, self.mlines - 1), x, attr, length)
 
             def draw_hud(self, hud_message: str, hud_percent: str, top: bool=True) -> None:
                 if top:
