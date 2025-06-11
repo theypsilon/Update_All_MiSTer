@@ -70,7 +70,7 @@ class LinuxOsUtils(OsUtils):
     def execute_process(self, launcher, env) -> int:
         try:
             env = {**os.environ.copy(), **env, 'PYTHONUNBUFFERED': '1'}
-            self._logger.debug('Executing launcher', launcher, 'with env: ', env)
+            self._logger.debug('Executing launcher', launcher, ' with env: ', env)
             proc = subprocess.Popen(
                 [launcher],
                 stdout=subprocess.PIPE,

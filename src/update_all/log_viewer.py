@@ -19,6 +19,11 @@
 
 import os
 
+def clamp(v, lo, hi): return max(lo, min(v, hi))
+def clip_range(start: int, length: int, limit: int) -> tuple[int, int]:
+    length = clamp(length, 1, limit)
+    return clamp(start, 0, limit - length), length
+
 class LogViewer:
     def show(self, file_path: str) -> bool:
         if not os.path.exists(file_path):
@@ -55,6 +60,18 @@ class LogViewer:
                         document.append(tail + nl)
             return document
 
+        def print_str(window: curses.window, y: int, x: int, text: str, attr: int) -> None:
+            x, length = clip_range(x, len(text), curses.COLS - 1)
+            window.addstr(clamp(y, 0, curses.LINES - 1), x, text[:length], attr)
+
+        def print_vline(window: curses.window, y: int, x: int, attr: int, length: int) -> None:
+            y, length = clip_range(y, length, curses.LINES - 1)
+            window.vline(y, clamp(x, 0, curses.COLS - 1), attr, length)
+
+        def print_hline(window: curses.window, y: int, x: int, attr: int, length: int) -> None:
+            x, length = clip_range(x, length, curses.COLS - 1)
+            window.hline(clamp(y, 0, curses.LINES - 1), x, attr, length)
+
         def draw_hud(window: curses.window, maxw: int, hud_message: str, hud_percent: str, top: bool=True) -> None:
             if top:
                 y_text, y_line = 0, 1
@@ -63,17 +80,17 @@ class LogViewer:
                 y_text, y_line = curses.LINES - 1, curses.LINES - 2
                 corner_left, corner_right, tee = curses.ACS_ULCORNER, curses.ACS_URCORNER, curses.ACS_TTEE
 
-            window.addstr(y_text, int(maxw / 2 - len(hud_message) / 2), hud_message, curses.A_NORMAL)
-            window.addstr(y_text, maxw - 5, '   %', curses.A_NORMAL)
-            window.addstr(y_text, maxw - len(hud_percent) - 1, hud_percent, curses.A_NORMAL)
+            print_str(window, y_text, int(maxw / 2 - len(hud_message) / 2), hud_message, curses.A_NORMAL)
+            print_str(window, y_text, maxw - 5, '   %', curses.A_NORMAL)
+            print_str(window, y_text, maxw - len(hud_percent) - 1, hud_percent, curses.A_NORMAL)
 
             for x in (0, maxw - 6, maxw - 1):
-                window.vline(y_text, x, curses.ACS_VLINE, 1)
+                print_vline(window, y_text, x, curses.ACS_VLINE, 1)
 
-            window.hline(y_line, 0, corner_left, 1)
-            window.hline(y_line, 1, curses.ACS_HLINE, maxw - 1)
-            window.hline(y_line, maxw - 6, tee, 1)
-            window.hline(y_line, maxw - 1, corner_right, 1)
+            print_hline(window, y_line, 0, corner_left, 1)
+            print_hline(window, y_line, 1, curses.ACS_HLINE, maxw - 1)
+            print_hline(window, y_line, maxw - 6, tee, 1)
+            print_hline(window, y_line, maxw - 1, corner_right, 1)
 
         def loader(screen: curses.window):
             window = screen.subwin(0, 0)
@@ -106,9 +123,9 @@ class LogViewer:
                         page = document
 
                     for i, line in enumerate(page):
-                        window.addstr(i + frame_start, 0, line, curses.A_NORMAL)
+                        print_str(window, i + frame_start, 0, line, curses.A_NORMAL)
 
-                    hud_message = 'Press UP/DOWN LEFT/RIGHT to navigate, and any other button to EXIT'
+                    hud_message = 'Press UP/DOWN LEFT/RIGHT to navigate, and any other button to EXITPress UP/DOWN LEFT/RIGHT to navigate, and any other button to EXIT'
                     hud_percent = f'{100 - (int(index * 100 / max_index))}%'
                     draw_hud(window, maxw, hud_message, hud_percent, top=True)
                     draw_hud(window, maxw, hud_message, hud_percent, top=False)
@@ -135,9 +152,10 @@ class LogViewer:
         try:
             curses.wrapper(loader)
             return True
-        except Exception as e:
+        except Exception:
+            import traceback
             print("Error:")
-            print(e)
+            traceback.print_exc()
             return False
 
 

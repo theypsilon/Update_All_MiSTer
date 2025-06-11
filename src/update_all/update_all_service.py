@@ -182,18 +182,22 @@ class UpdateAllService:
         return self._exit_code
 
     def _test_routine(self) -> None:
-        if os.environ.get('TEST_LOG_VIEWER', 'false') == 'true':
+        test_routine = os.environ.get('TEST_ROUTINE', None)
+        if test_routine is None:
+            return
+
+        if test_routine == 'LOG_VIEWER':
             self._log_viewer.show(FILE_update_all_log if self._file_system.is_file(FILE_update_all_log) else 'test_log_viewer.log')
-            exit(0)
-        elif os.environ.get('TEST_SETTINGS_SCREEN', 'false') == 'true':
+        elif test_routine == 'SETTINGS_SCREEN':
             self._settings_screen.load_test_menu()
-            exit(0)
-        elif os.environ.get('TEST_POCKET_FIRMWARE_UPDATE', 'false') == 'true':
+        elif test_routine == 'POCKET_FIRMWARE_UPDATE':
             pocket_firmware_update(self._config_provider.get().curl_ssl, self._local_repository, self._logger)
-            exit(0)
-        elif os.environ.get('TEST_POCKET_BACKUP', 'false') == 'true':
+        elif test_routine == 'POCKET_BACKUP':
             pocket_backup(self._logger)
-            exit(0)
+        else:
+            self._logger.print(f"Test routine '{test_routine}' not implemented!")
+
+        exit(0)
 
     def _show_intro(self) -> None:
         self._logger.print()
@@ -450,7 +454,7 @@ class UpdateAllService:
 
     def _show_interactive_summary(self) -> None:
         if self._config_provider.get().log_viewer:
-            self._log_viewer.show(os.path.join('/media/fat', FILE_update_all_log))
+            self._log_viewer.show(self._file_system.resolve(FILE_update_all_log))
 
     def _reboot_if_needed(self) -> None:
         config = self._config_provider.get()

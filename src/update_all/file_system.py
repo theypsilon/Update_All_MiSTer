@@ -198,7 +198,7 @@ class _FileSystem(FileSystem):
         return ClosableValue(name, lambda: self._unique_temp_filenames.remove(name))
 
     def resolve(self, path):
-        return str(Path(path).resolve())
+        return str(Path(self._path(path)).resolve())
 
     def is_file(self, path):
         return os.path.isfile(self._path(path))
