@@ -21,7 +21,7 @@ import os
 
 def clamp(v, lo, hi): return max(lo, min(v, hi))
 def clip_range(start: int, length: int, limit: int) -> tuple[int, int]:
-    length = clamp(length, 1, limit)
+    length = clamp(length, 1, limit - 1)
     return clamp(start, 0, limit - length), length
 
 class LogViewer:
@@ -39,58 +39,110 @@ class LogViewer:
         def strip_ansi(line: str) -> str:
             return ansi_sgr.sub('', line)
 
-        def create_document(maxw: int) -> list[str]:
+        def create_document(max_cols: int) -> list[str]:
             document = []
             for raw in itertools.dropwhile(lambda ln: ln != "\n", file_content):   # Skips the first debug lines
                 no_ansi = strip_ansi(raw)
                 nl = '\n' if no_ansi.endswith('\n') else ''
                 line = no_ansi.rstrip('\n')
 
-                if len(line) <= maxw:
+                if len(line) <= max_cols:
                     document.append(line + nl)
                 else:
-                    full_chunks = len(line) // maxw
+                    full_chunks = len(line) // max_cols
                     for i in range(full_chunks):
-                        chunk = line[i * maxw:(i + 1) * maxw]
+                        chunk = line[i * max_cols:(i + 1) * max_cols]
                         document.append(chunk + nl)
 
-                    rem = len(line) % maxw
+                    rem = len(line) % max_cols
                     if rem:
                         tail = line[-rem:]
                         document.append(tail + nl)
             return document
 
-        def print_str(window: curses.window, y: int, x: int, text: str, attr: int) -> None:
-            x, length = clip_range(x, len(text), curses.COLS - 1)
-            window.addstr(clamp(y, 0, curses.LINES - 1), x, text[:length], attr)
+        class ViewerGui:
+            def __init__(self, window: curses.window, max_cols: int, max_lines: int, document: list[str]):
+                self.window = window
+                self.mcols = max_cols
+                self.mlines = max_lines
+                self.document = document
+                hud_size = 2
+                self.frame_start = hud_size
+                self.frame_end = max_lines - hud_size * 2
+                self.mindex = len(document) - self.frame_end
 
-        def print_vline(window: curses.window, y: int, x: int, attr: int, length: int) -> None:
-            y, length = clip_range(y, length, curses.LINES - 1)
-            window.vline(y, clamp(x, 0, curses.COLS - 1), attr, length)
+            def addstr(self, y: int, x: int, text: str, attr: int):
+                x, length = clip_range(x, len(text), self.mcols)
+                self.window.addstr(clamp(y, 0, self.mlines), x, text[:length], attr)
 
-        def print_hline(window: curses.window, y: int, x: int, attr: int, length: int) -> None:
-            x, length = clip_range(x, length, curses.COLS - 1)
-            window.hline(clamp(y, 0, curses.LINES - 1), x, attr, length)
+            def vline(self, y: int, x: int, attr: int, length: int):
+                y, length = clip_range(y, length, self.mlines)
+                self.window.vline(y, clamp(x, 0, self.mcols), attr, length)
 
-        def draw_hud(window: curses.window, maxw: int, hud_message: str, hud_percent: str, top: bool=True) -> None:
-            if top:
-                y_text, y_line = 0, 1
-                corner_left, corner_right, tee = curses.ACS_LLCORNER, curses.ACS_LRCORNER, curses.ACS_BTEE
-            else:
-                y_text, y_line = curses.LINES - 1, curses.LINES - 2
-                corner_left, corner_right, tee = curses.ACS_ULCORNER, curses.ACS_URCORNER, curses.ACS_TTEE
+            def hline(self, y: int, x: int, attr: int, length: int):
+                x, length = clip_range(x, length, self.mcols)
+                self.window.hline(clamp(y, 0, self.mlines), x, attr, length)
 
-            print_str(window, y_text, int(maxw / 2 - len(hud_message) / 2), hud_message, curses.A_NORMAL)
-            print_str(window, y_text, maxw - 5, '   %', curses.A_NORMAL)
-            print_str(window, y_text, maxw - len(hud_percent) - 1, hud_percent, curses.A_NORMAL)
+            def draw_hud(self, hud_message: str, hud_percent: str, top: bool=True) -> None:
+                if top:
+                    y_text, y_line = 0, 1
+                    corner_left, corner_right, tee = curses.ACS_LLCORNER, curses.ACS_LRCORNER, curses.ACS_BTEE
+                else:
+                    y_text, y_line = self.mlines - 1, self.mlines - 2
+                    corner_left, corner_right, tee = curses.ACS_ULCORNER, curses.ACS_URCORNER, curses.ACS_TTEE
 
-            for x in (0, maxw - 6, maxw - 1):
-                print_vline(window, y_text, x, curses.ACS_VLINE, 1)
+                self.addstr(y_text, int(self.mcols / 2 - len(hud_message) / 2), hud_message, curses.A_NORMAL)
+                self.addstr(y_text, self.mcols - 5, '   %', curses.A_NORMAL)
+                self.addstr(y_text, self.mcols - len(hud_percent) - 1, hud_percent, curses.A_NORMAL)
 
-            print_hline(window, y_line, 0, corner_left, 1)
-            print_hline(window, y_line, 1, curses.ACS_HLINE, maxw - 1)
-            print_hline(window, y_line, maxw - 6, tee, 1)
-            print_hline(window, y_line, maxw - 1, corner_right, 1)
+                for x in (0, self.mcols - 6, self.mcols - 1):
+                    self.vline(y_text, x, curses.ACS_VLINE, 1)
+
+                self.hline(y_line, 0, corner_left, 1)
+                self.hline(y_line, 1, curses.ACS_HLINE, self.mcols - 1)
+                self.hline(y_line, self.mcols - 6, tee, 1)
+                self.hline(y_line, self.mcols - 1, corner_right, 1)
+
+            def loop(self):
+                index = 0
+                last_index = None
+                viewing = True
+
+                while viewing:
+                    if last_index is None or last_index != index:
+                        last_index = index
+
+                        if len(self.document) > self.mlines:
+                            page = self.document[len(self.document) - index - self.frame_end:len(self.document) - index]
+                        else:
+                            page = self.document
+
+                        for i, line in enumerate(page):
+                            self.addstr(i + self.frame_start, 0, line, curses.A_NORMAL)
+
+                        hud_message = 'Press UP/DOWN LEFT/RIGHT to navigate, and any other button to EXIT'
+                        hud_percent = f'{100 - (int(index * 100 / self.mindex))}%'
+                        self.draw_hud(hud_message, hud_percent, top=True)
+                        self.draw_hud(hud_message, hud_percent, top=False)
+
+                    key = self.window.getch()
+                    if key == curses.KEY_UP:
+                        index += 1
+                    elif key == curses.KEY_DOWN:
+                        index -= 1
+                    elif key == curses.KEY_LEFT or key == curses.KEY_PPAGE:
+                        index += self.mlines
+                    elif key == curses.KEY_RIGHT or key == curses.KEY_NPAGE:
+                        index -= self.mlines
+                    elif key != -1:
+                        viewing = False
+
+                    if index < 0:
+                        index = 0
+                    elif index > self.mindex:
+                        index = self.mindex
+
+                    curses.doupdate()
 
         def loader(screen: curses.window):
             window = screen.subwin(0, 0)
@@ -100,55 +152,8 @@ class LogViewer:
             window.nodelay(True)
             window.timeout(50)
             window.clear()
-            viewing = True
-            hud_size = 2
-            index = 0
-            maxw = curses.COLS
 
-            document = create_document(maxw)
-
-            frame_start = hud_size
-            frame_end = curses.LINES - hud_size * 2
-
-            max_index = len(document) - frame_end
-            last_index = None
-
-            while viewing:
-                if last_index is None or last_index != index:
-                    last_index = index
-
-                    if len(document) > curses.LINES:
-                        page = document[len(document) - index - frame_end:len(document) - index]
-                    else:
-                        page = document
-
-                    for i, line in enumerate(page):
-                        print_str(window, i + frame_start, 0, line, curses.A_NORMAL)
-
-                    hud_message = 'Press UP/DOWN LEFT/RIGHT to navigate, and any other button to EXITPress UP/DOWN LEFT/RIGHT to navigate, and any other button to EXIT'
-                    hud_percent = f'{100 - (int(index * 100 / max_index))}%'
-                    draw_hud(window, maxw, hud_message, hud_percent, top=True)
-                    draw_hud(window, maxw, hud_message, hud_percent, top=False)
-
-                key = window.getch()
-                if key == curses.KEY_UP:
-                    index += 1
-                elif key == curses.KEY_DOWN:
-                    index -= 1
-                elif key == curses.KEY_LEFT or key == curses.KEY_PPAGE:
-                    index += curses.LINES
-                elif key == curses.KEY_RIGHT or key == curses.KEY_NPAGE:
-                    index -= curses.LINES
-                elif key != -1:
-                    viewing = False
-
-                if index < 0:
-                    index = 0
-                elif index > max_index:
-                    index = max_index
-
-                curses.doupdate()
-
+            ViewerGui(window, curses.COLS, curses.LINES, create_document(curses.COLS)).loop()
         try:
             curses.wrapper(loader)
             return True
