@@ -44,23 +44,18 @@ class CountdownImpl(Countdown):
         self._logger = logger
 
     def execute_count(self, count) -> CountdownOutcome:
-        try:
-            os_specifics = make_os_specifics()
-            os_specifics.initialize()
+        os_specifics = make_os_specifics()
+        os_specifics.initialize()
 
-            char = Value('i', 0)
-            ends = Value('i', 0)
+        char = Value('i', 0)
+        ends = Value('i', 0)
 
-            child_process = Process(target=read_characters, args=(char, ends, os_specifics.context()), daemon=True)
+        child_process = Process(target=read_characters, args=(char, ends, os_specifics.context()), daemon=True)
 
-            self._logger.print()
-            self._logger.print(f" {bold('*')}Press <{bold('UP')}>, To enter the SETTINGS screen.")
-            self._logger.print(f" {bold('*')}Press <{bold('DOWN')}>, To continue now.")
-            self._logger.print()
-        except Exception as e:
-            self._logger.debug(e)
-            self._logger.debug('Recovering error by suspending the countdown.')
-            return CountdownOutcome.CONTINUE
+        self._logger.print()
+        self._logger.print(f" {bold('*')}Press <{bold('UP')}>, To enter the SETTINGS screen.")
+        self._logger.print(f" {bold('*')}Press <{bold('DOWN')}>, To continue now.")
+        self._logger.print()
 
         result = CountdownOutcome.CONTINUE
 

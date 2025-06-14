@@ -196,6 +196,7 @@ class UpdateAllService:
             pocket_backup(self._logger)
         else:
             self._logger.print(f"Test routine '{test_routine}' not implemented!")
+            return
 
         exit(0)
 
@@ -224,10 +225,21 @@ class UpdateAllService:
 
     def _countdown_for_settings_screen(self) -> None:
         self._print_sequence()
-        outcome = self._countdown.execute_count(self._store_provider.get().get_countdown_time())
+        try:
+            outcome = self._countdown.execute_count(self._store_provider.get().get_countdown_time())
+        except Exception as e:
+            self._logger.debug(e)
+            self._logger.debug('Recovering from error by suspending countdown.')
+            outcome = CountdownOutcome.CONTINUE
+
         if outcome == CountdownOutcome.SETTINGS_SCREEN:
             self._logger.debug('Loading Settings Screen main menu.')
-            self._settings_screen.load_main_menu()
+            try:
+                self._settings_screen.load_main_menu()
+            except Exception as e:
+                self._logger.debug(e)
+                self._logger.debug('Recovering from error by suspending settings screen.')
+
             self._logger.print(CLEAR_SCREEN, end='')
             self._print_sequence()
         elif outcome == CountdownOutcome.CONTINUE:
@@ -454,7 +466,11 @@ class UpdateAllService:
 
     def _show_interactive_summary(self) -> None:
         if self._config_provider.get().log_viewer:
-            self._log_viewer.show(self._file_system.resolve(FILE_update_all_log))
+            try:
+                self._log_viewer.show(self._file_system.resolve(FILE_update_all_log))
+            except Exception as e:
+                self._logger.debug(e)
+                self._logger.debug('Recovering from error by suspending log viewer.')
 
     def _reboot_if_needed(self) -> None:
         config = self._config_provider.get()

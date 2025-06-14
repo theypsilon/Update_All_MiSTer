@@ -154,20 +154,19 @@ class LogViewer:
             window.clear()
 
             ViewerGui(window, curses.COLS, curses.LINES, create_document(curses.COLS)).loop()
-        try:
-            curses.wrapper(loader)
-            return True
-        except Exception:
-            import traceback
-            print("Error:")
-            traceback.print_exc()
-            return False
 
+        curses.wrapper(loader)
+        return True
 
 if __name__ == "__main__":
-    import sys
+    import sys, curses
     log_path = sys.argv[1] if len(sys.argv) > 1 else '/media/fat/Scripts/.config/update_all/update_all.log'
-    success = LogViewer().show(log_path)
+    try:
+        success = LogViewer().show(log_path)
+    except curses.error as e:
+        success = False
+        print('Your current terminal could not open a UI. Is it configured correctly?')
+
     if not success:
         print("Failed to display the log file: " + log_path)
         sys.exit(1)
