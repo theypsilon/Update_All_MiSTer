@@ -230,22 +230,24 @@ class UpdateAllService:
         except Exception as e:
             self._logger.debug(e)
             self._logger.debug('Recovering from error by suspending countdown.')
-            outcome = CountdownOutcome.CONTINUE
+            return
 
-        if outcome == CountdownOutcome.SETTINGS_SCREEN:
-            self._logger.debug('Loading Settings Screen main menu.')
-            try:
-                self._settings_screen.load_main_menu()
-            except Exception as e:
-                self._logger.debug(e)
-                self._logger.debug('Recovering from error by suspending settings screen.')
-
-            self._logger.print(CLEAR_SCREEN, end='')
-            self._print_sequence()
-        elif outcome == CountdownOutcome.CONTINUE:
+        if outcome == CountdownOutcome.CONTINUE:
+            return
+        elif outcome == CountdownOutcome.SETTINGS_SCREEN:
             pass
         else:
             raise NotImplementedError('No possible countdown outcome')
+
+        self._logger.debug('Loading Settings Screen main menu.')
+        try:
+            self._settings_screen.load_main_menu()
+        except Exception as e:
+            self._logger.debug(e)
+            self._logger.debug('Recovering from error by suspending settings screen.')
+
+        self._logger.print(CLEAR_SCREEN, end='')
+        self._print_sequence()
 
     def _pre_run_tweaks(self):
         config = self._config_provider.get()
