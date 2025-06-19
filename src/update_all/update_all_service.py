@@ -159,6 +159,7 @@ class UpdateAllService:
             self._test_routine()
             self._show_intro()
             self._countdown_for_settings_screen()
+            self._print_sequence()
             self._pre_run_tweaks()
 
             update_all_mtime = self._get_mtime()
@@ -245,9 +246,9 @@ class UpdateAllService:
         except Exception as e:
             self._logger.debug(e)
             self._logger.debug('Recovering from error by suspending settings screen.')
+            return
 
         self._logger.print(CLEAR_SCREEN, end='')
-        self._print_sequence()
 
     def _pre_run_tweaks(self):
         config = self._config_provider.get()
@@ -446,7 +447,7 @@ class UpdateAllService:
             self._logger.print(f"Success! More details at: {FILE_update_all_log}")
 
         self._logger.print()
-        days_since_epoch = int(self._end_time // 86400) +1
+        days_since_epoch = int(time.time() // 86400)
         supporter_of_the_day = supporter_plus_patrons[days_since_epoch % len(supporter_plus_patrons)]
         longer_msg = f'Today\'s shoutout is for {supporter_of_the_day}! - Join us at patreon.com/theypsilon'
         if len(longer_msg) <= 80:
