@@ -123,6 +123,16 @@ fetch_file('update_all_latest_log.sh', 'https://raw.githubusercontent.com/theyps
 
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
 
+subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
+subprocess.run(['git', 'reset'], check=True)
+subprocess.run(['git', 'add', '.gitattributes'], check=True)
+subprocess.run(['git', 'commit', '-m', '-'], check=True)
+
+subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
+
+subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json'], check=True)
+subprocess.run(['git', 'commit', '-m', '-'], check=True)
+
 new_db['files'] = {
     'Scripts/.config/update_all/update_all.pyz': {
         'size': os.path.getsize('update_all.pyz'),
@@ -177,14 +187,6 @@ print("There are changes to push.")
 print('old_db', old_db)
 print('new_db', new_db)
 
-subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
-
-subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
-subprocess.run(['git', 'reset'], check=True)
-subprocess.run(['git', 'add', '.gitattributes'], check=True)
-subprocess.run(['git', 'commit', '-m', '-'], check=True)
-subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json'], check=True)
-subprocess.run(['git', 'commit', '-m', '-'], check=True)
 commit_id = subprocess.getoutput("git rev-parse HEAD")
 
 for k, v in new_db['files'].items():
