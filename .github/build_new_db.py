@@ -178,14 +178,20 @@ for file_path, desc in new_db['files'].items():
         set_new_db('no')
         exit(1)
 
+print('New db:')
+print(json.dumps(new_db, indent=4))
+print()
+
 if nested_match(old_db, new_db):
     print("Nothing to be updated.")
     set_new_db('no')
     exit(0)
 
 print("There are changes to push.")
-print('old_db', old_db)
-print('new_db', new_db)
+print()
+print('Old db:')
+print(json.dumps(old_db, indent=4))
+print()
 
 commit_id = subprocess.getoutput("git rev-parse HEAD")
 
