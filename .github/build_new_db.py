@@ -178,7 +178,7 @@ for file_path, desc in new_db['files'].items():
         set_new_db('no')
         exit(1)
 
-print('New db:')
+print('Candidate db:')
 print(json.dumps(new_db, indent=4))
 print()
 
@@ -188,10 +188,6 @@ if nested_match(old_db, new_db):
     exit(0)
 
 print("There are changes to push.")
-print()
-print('Old db:')
-print(json.dumps(old_db, indent=4))
-print()
 
 commit_id = subprocess.getoutput("git rev-parse HEAD")
 
@@ -201,6 +197,12 @@ for k, v in new_db['files'].items():
 
 new_db['timestamp'] = int(time.time())
 save_json(new_db, 'update_all_db.json')
+
+print('New db:')
+print(json.dumps(new_db, indent=4))
+print('Old db:')
+print(json.dumps(old_db, indent=4))
+print()
 
 subprocess.run(['git', 'add', 'update_all_db.json'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
