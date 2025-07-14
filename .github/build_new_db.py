@@ -95,6 +95,11 @@ for description in old_db['files'].values():
     if 'url' in description:
         description.pop('url')
 
+subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
+subprocess.run(['git', 'reset'], check=True)
+subprocess.run(['git', 'add', '.gitattributes'], check=True)
+subprocess.run(['git', 'commit', '-m', '-'], check=True)
+
 new_db = copy.deepcopy(old_db)
 
 subprocess.run(["gh", "release", "download", "-p", "update_all.pyz", "-p", "update_all.pyz.sha256"], check=True)
@@ -122,11 +127,6 @@ with zipfile.ZipFile('mad_db.json.zip') as z:
 fetch_file('update_all_latest_log.sh', 'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/master/src/update_all/log_viewer.py')
 
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
-
-subprocess.run(['git', 'checkout', '--orphan', 'db'], check=True)
-subprocess.run(['git', 'reset'], check=True)
-subprocess.run(['git', 'add', '.gitattributes'], check=True)
-subprocess.run(['git', 'commit', '-m', '-'], check=True)
 
 subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
 
