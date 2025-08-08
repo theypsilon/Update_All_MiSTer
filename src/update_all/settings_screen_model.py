@@ -599,6 +599,18 @@ def settings_screen_model(): return {
                         }]
                     }
                 },
+                {
+                    "title": "6 Alt Cores",
+                    "description": "{ajgowans/alt-cores:enabled}",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "ajgowans/alt-cores"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Alt Cores",
+                            "text": ["Modified versions of some cores. Folder: Other"],
+                        }]
+                    }
+                },
             ]
         },
         "tools_and_scripts_menu": {
