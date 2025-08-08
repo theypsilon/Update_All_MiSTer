@@ -511,6 +511,7 @@ def settings_screen_model(): return {
                 "unofficial_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "agg23_db": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MikeS11/YC_Builds-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "ajgowans/alt-cores:enabled": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
