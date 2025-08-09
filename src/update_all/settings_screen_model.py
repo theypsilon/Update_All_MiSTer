@@ -547,10 +547,9 @@ def settings_screen_model(): return {
                             "ui": "message",
                             "header": "theypsilon Unofficial Distribution",
                             "text": [
-                                "Some unofficial and early-access cores, such as:",
+                                "Some unofficial and early-access cores:",
                                 "- zx48 (ZX Spectrum) from Kyp",
-                                "- Nemesis from GX400 Friends",
-                                "- Teenage Mutant Ninja Turtles from Wicker Waka"
+                                "- Nemesis from GX400 Friends"
                             ],
                         }]
                     }
@@ -608,7 +607,9 @@ def settings_screen_model(): return {
                         "info": [{
                             "ui": "message",
                             "header": "Alt Cores",
-                            "text": ["Modified versions of some cores. Folder: Other"],
+                            "text": [
+                                "Modified versions of some cores. Folder: Other"
+                            ],
                         }]
                     }
                 },
