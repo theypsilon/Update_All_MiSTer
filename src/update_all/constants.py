@@ -20,7 +20,7 @@ from enum import unique, Enum
 from typing import Final
 
 # From patreon.com/theypsilon
-supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', 'Corey Willis', 'Thomas Williams', 'Tom-Neverwinter')
+supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', 'Corey Willis', "The Sentinel's Playground Team", 'Thomas Williams', 'Tom-Neverwinter')
 
 # Default options
 DEFAULT_CURL_SSL_OPTIONS: Final[str] = ''
