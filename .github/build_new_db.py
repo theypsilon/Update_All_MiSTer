@@ -135,12 +135,12 @@ timeline_token = os.environ.get('TIMELINE_TOKEN')
 if not timeline_token:
     raise Exception('TIMELINE_TOKEN environment variable is not set')
 
-fetch_file('timeline_view_plus.json.enc', 'https://raw.githubusercontent.com/theypsilon/Timeline_MiSTer/refs/heads/main/artis/timeline_view_long.json.enc', timeline_token)
-fetch_file('timeline_view_short.json', 'https://raw.githubusercontent.com/theypsilon/Timeline_MiSTer/refs/heads/main/artis/timeline_view_short.json', timeline_token)
+fetch_file('timeline_plus.enc', 'https://raw.githubusercontent.com/theypsilon/Timeline_MiSTer/refs/heads/main/artis/timeline_view_long.json.enc', timeline_token)
+fetch_file('timeline.json', 'https://raw.githubusercontent.com/theypsilon/Timeline_MiSTer/refs/heads/main/artis/timeline_view_short.json', timeline_token)
 
 subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
 
-subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'timeline_view_plus.json.enc', 'timeline_view_short.json'], check=True)
+subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'timeline_plus.enc', 'timeline.json'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
 
 new_db['files'] = {
@@ -156,14 +156,14 @@ new_db['files'] = {
         'size': os.path.getsize('pocket_firmware_details.json'),
         'hash': hash_file('pocket_firmware_details.json'),
     },
-    'Scripts/.config/update_all/timeline_view_plus.json.enc': {
-        'size': os.path.getsize('timeline_view_plus.json.enc'),
-        'hash': hash_file('timeline_view_plus.json.enc'),
+    'Scripts/.config/update_all/timeline_plus.enc': {
+        'size': os.path.getsize('timeline_plus.enc'),
+        'hash': hash_file('timeline_plus.enc'),
         'tags': [1]
     },
-    'Scripts/.config/update_all/timeline_view_short.json': {
-        'size': os.path.getsize('timeline_view_short.json'),
-        'hash': hash_file('timeline_view_short.json'),
+    'Scripts/.config/update_all/timeline.json': {
+        'size': os.path.getsize('timeline.json'),
+        'hash': hash_file('timeline.json'),
         'tags': [1]
     },
     'Scripts/update_all.sh': {
