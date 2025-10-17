@@ -111,8 +111,11 @@ if hashsum != expected_hashsum:
     print(f'hash missmatch: {hashsum} != {expected_hashsum}')
     exit(1)
 
-def fetch_file(path: str, url: str) -> None:
-    response = requests.get(url)
+def fetch_file(path: str, url: str, auth_token: str = None) -> None:
+    headers = {}
+    if auth_token:
+        headers['Authorization'] = f'token {auth_token}'
+    response = requests.get(url, headers=headers)
     response.raise_for_status()
     with open(path, 'wb') as res_file:
         res_file.write(response.content)
@@ -127,6 +130,13 @@ with zipfile.ZipFile('mad_db.json.zip') as z:
 fetch_file('update_all_latest_log.sh', 'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/master/src/update_all/log_viewer.py')
 
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
+
+timeline_token = os.environ.get('TIMELINE_TOKEN')
+if not timeline_token:
+    raise Exception('TIMELINE_TOKEN environment variable is not set')
+
+fetch_file('timeline_view_plus.json.enc', 'https://raw.githubusercontent.com/theypsilon/Timeline_MiSTer/refs/heads/main/artis/timeline_view_long.json.enc', timeline_token)
+fetch_file('timeline_view_short.json', 'https://raw.githubusercontent.com/theypsilon/Timeline_MiSTer/refs/heads/main/artis/timeline_view_short.json', timeline_token)
 
 subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
 
@@ -146,6 +156,16 @@ new_db['files'] = {
         'size': os.path.getsize('pocket_firmware_details.json'),
         'hash': hash_file('pocket_firmware_details.json'),
     },
+    'Scripts/.config/update_all/timeline_view_plus.json.enc': {
+        'size': os.path.getsize('timeline_view_plus.json.enc'),
+        'hash': hash_file('timeline_view_plus.json.enc'),
+        'tags': [1]
+    },
+    'Scripts/.config/update_all/timeline_view_short.json': {
+        'size': os.path.getsize('timeline_view_short.json'),
+        'hash': hash_file('timeline_view_short.json'),
+        'tags': [1]
+    },
     'Scripts/update_all.sh': {
         'size': os.path.getsize('update_all.sh'),
         'hash': hash_file('update_all.sh'),
@@ -157,7 +177,8 @@ new_db['files'] = {
     }
 }
 new_db['tag_dictionary'] = {
-    'updatealllatestlog': 0
+    'updatealllatestlog': 0,
+    'updatealltimeline': 1
 }
 if 'tags_dictionary' in new_db:
     new_db.pop('tags_dictionary')

@@ -31,6 +31,7 @@ jobs:
         python3 .github/build_new_db.py
       env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TIMELINE_TOKEN: ${{ secrets.TIMELINE_TOKEN }}
 
     - name: Release new DB
       if : steps.build_new_db.outputs.new_db == 'yes'
