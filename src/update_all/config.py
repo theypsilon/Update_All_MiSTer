@@ -20,7 +20,8 @@ from dataclasses import dataclass, field
 from enum import unique, IntEnum
 from typing import Set
 
-from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, MEDIA_FAT
+from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, MEDIA_FAT, FILE_patreon_key, \
+    FILE_timeline_short, FILE_timeline_plus, COMMAND_STANDARD
 
 
 @dataclass
@@ -32,6 +33,10 @@ class Config:
     curl_ssl: str = DEFAULT_CURL_SSL_OPTIONS
     commit: str = DEFAULT_COMMIT
     local_test_run: bool = False
+    patreon_key_path: str = FILE_patreon_key
+    timeline_short_path: str = FILE_timeline_short
+    timeline_plus_path: str = FILE_timeline_plus
+    command: str = COMMAND_STANDARD
 
     # General options
     base_path: str = MEDIA_FAT
@@ -58,12 +63,12 @@ class Config:
     rannysnice_wallpapers_filter: str = 'ar16-9'
 
     # Misc Options
-    wait_time_for_reading: int = 2
     countdown_time: int = 15
     autoreboot: bool = True
     pocket_firmware_update: bool = False
     pocket_backup: bool = False
     log_viewer: bool = True
+    timeline_after_logs: bool = True
 
 
 @unique

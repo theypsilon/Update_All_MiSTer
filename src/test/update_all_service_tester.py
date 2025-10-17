@@ -25,11 +25,13 @@ from test.spy_os_utils import SpyOsUtils
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.config_reader import ConfigReader
+from update_all.encryption import Encryption
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl, EnvironmentSetupResult
 from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, \
     KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, \
-    KENV_TRANSITION_SERVICE_ONLY, \
-    DEFAULT_TRANSITION_SERVICE_ONLY, KENV_LOCAL_TEST_RUN, DEFAULT_LOCAL_TEST_RUN
+    KENV_TRANSITION_SERVICE_ONLY, FILE_patreon_key, COMMAND_STANDARD, FILE_timeline_short, KENV_TIMELINE_PLUS_PATH, \
+    DEFAULT_TRANSITION_SERVICE_ONLY, KENV_LOCAL_TEST_RUN, DEFAULT_LOCAL_TEST_RUN, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
+    KENV_TIMELINE_SHORT_PATH, FILE_timeline_plus
 from update_all.countdown import Countdown
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
@@ -38,10 +40,11 @@ from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer
 from update_all.os_utils import OsUtils
-from update_all.other import Checker, GenericProvider
+from update_all.other import GenericProvider
 from update_all.settings_screen import SettingsScreen
 from update_all.settings_screen_printer import SettingsScreenPrinter, SettingsScreenThemeManager
 from update_all.store_migrator import StoreMigrator, make_new_local_store
+from update_all.timeline import Timeline
 from update_all.transition_service import TransitionService
 from update_all.ui_engine import UiContext, UiRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
@@ -55,7 +58,11 @@ def default_env():
         KENV_LOCATION_STR: DEFAULT_LOCATION_STR,
         KENV_DEBUG: DEFAULT_DEBUG,
         KENV_LOCAL_TEST_RUN: DEFAULT_LOCAL_TEST_RUN,
-        KENV_TRANSITION_SERVICE_ONLY: DEFAULT_TRANSITION_SERVICE_ONLY
+        KENV_TRANSITION_SERVICE_ONLY: DEFAULT_TRANSITION_SERVICE_ONLY,
+        KENV_PATREON_KEY_PATH: FILE_patreon_key,
+        KENV_COMMAND: COMMAND_STANDARD,
+        KENV_TIMELINE_SHORT_PATH: FILE_timeline_short,
+        KENV_TIMELINE_PLUS_PATH: FILE_timeline_plus,
     }
 
 
@@ -119,10 +126,14 @@ class UiRuntimeStub(UiRuntime):
     def resume(self) -> None: pass
 
 
-class CheckerTester(Checker):
-    def __init__(self, file_system: FileSystem = None):
-        super().__init__(file_system or FileSystemFactory().create_for_system_scope())
+class EncryptionTester(Encryption):
+    def __init__(self, config_provider: GenericProvider[Config] = None):
+        super().__init__(NoLogger(), config_provider or GenericProvider[Config]())
 
+
+class TimelineTester(Timeline):
+    def __init__(self, file_system: FileSystem = None):
+        super().__init__(NoLogger(), GenericProvider[Config](), file_system or FileSystemFactory().create_for_system_scope(), EncryptionTester())
 
 class SettingsScreenTester(SettingsScreen):
     def __init__(self, config_provider: GenericProvider[Config] = None,
@@ -131,7 +142,7 @@ class SettingsScreenTester(SettingsScreen):
                  os_utils: OsUtils = None,
                  settings_screen_printer: SettingsScreenPrinter = None,
                  ui_runtime: UiRuntime = None,
-                 checker: Checker = None,
+                 encryption: Encryption = None,
                  local_repository: LocalRepository = None,
                  store_provider: GenericProvider[LocalStore] = None,
                  ao_service: ArcadeOrganizerService = None):
@@ -146,7 +157,7 @@ class SettingsScreenTester(SettingsScreen):
             os_utils=os_utils or SpyOsUtils(),
             settings_screen_printer=settings_screen_printer or SettingsScreenPrinterStub(),
             ui_runtime=ui_runtime or UiRuntimeStub(),
-            checker=checker or CheckerTester(file_system=file_system),
+            encryption=encryption or EncryptionTester(),
             local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system),
             store_provider=store_provider or GenericProvider[LocalStore](),
             ao_service=ao_service or ArcadeOrganizerServiceStub()
@@ -253,13 +264,14 @@ class UpdateAllServiceTester(UpdateAllService):
             os_utils=os_utils,
             countdown=countdown or CountdownStub(),
             settings_screen=settings_screen,
-            checker=CheckerTester(),
+            encryption=EncryptionTester(),
             store_provider=store_provider or GenericProvider[LocalStore](),
             ini_repository=self.ini_repository,
             environment_setup=environment_setup,
             ao_service=ao_service,
             local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system),
-            log_viewer=LogViewerTester()
+            log_viewer=LogViewerTester(file_system),
+            timeline=TimelineTester(file_system)
         )
 
 class ArcadeOrganizerServiceStub(ArcadeOrganizerService):

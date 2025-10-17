@@ -18,6 +18,7 @@
 import datetime
 import enum
 import os
+import tempfile
 import time
 from typing import List, Optional
 
@@ -29,17 +30,19 @@ from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
 from update_all.databases import Database
 from update_all.downloader_utils import prepare_latest_downloader
+from update_all.encryption import Encryption, EncryptionResult
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_mister_downloader_needs_reboot, \
     MEDIA_FAT, \
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, FILE_update_all_pyz, \
     EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update, \
-    FILE_downloader_run_signal, FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script
+    FILE_downloader_run_signal, FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script, \
+    COMMAND_TIMELINE, COMMAND_LATEST_LOG
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
-from update_all.log_viewer import LogViewer
-from update_all.other import Checker, GenericProvider
+from update_all.log_viewer import LogViewer, view_document, create_log_document
+from update_all.other import GenericProvider
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils, LinuxOsUtils
 from update_all.settings_screen import SettingsScreen
@@ -50,6 +53,7 @@ from update_all.migrations import migrations
 from update_all.local_repository import LocalRepository
 from update_all.file_system import FileSystemFactory, FileSystem
 from update_all.config_reader import ConfigReader
+from update_all.timeline import Timeline
 from update_all.transition_service import TransitionService
 
 
@@ -74,10 +78,10 @@ class UpdateAllServiceFactory:
         store_migrator = StoreMigrator(migrations(), self._logger)
         local_repository = LocalRepository(config_provider, self._logger, file_system, store_migrator)
         self._local_repository_provider.initialize(local_repository)
-        checker = Checker(file_system=file_system)
         transition_service = TransitionService(logger=self._logger, file_system=file_system, os_utils=os_utils, ini_repository=ini_repository)
         printer = SettingsScreenStandardCursesPrinter()
         ao_service = ArcadeOrganizerService(self._logger)
+        encryption = Encryption(self._logger, config_provider)
         settings_screen = SettingsScreen(
             logger=self._logger,
             config_provider=config_provider,
@@ -85,11 +89,11 @@ class UpdateAllServiceFactory:
             ini_repository=ini_repository,
             os_utils=os_utils,
             settings_screen_printer=printer,
-            checker=checker,
             local_repository=local_repository,
             store_provider=store_provider,
             ui_runtime=printer,
-            ao_service=ao_service
+            ao_service=ao_service,
+            encryption=encryption
         )
         environment_setup = EnvironmentSetupImpl(
             config_reader=config_reader,
@@ -98,6 +102,7 @@ class UpdateAllServiceFactory:
             local_repository=local_repository,
             store_provider=store_provider
         )
+        timeline = Timeline(self._logger, config_provider, file_system, encryption)
         return UpdateAllService(
             config_provider,
             self._logger,
@@ -105,13 +110,14 @@ class UpdateAllServiceFactory:
             os_utils,
             CountdownImpl(self._logger),
             settings_screen,
-            checker=checker,
             store_provider=store_provider,
             ini_repository=ini_repository,
             environment_setup=environment_setup,
             ao_service=ao_service,
             local_repository=local_repository,
-            log_viewer=LogViewer()
+            log_viewer=LogViewer(file_system),
+            encryption=encryption,
+            timeline=timeline
         )
 
 
@@ -122,30 +128,33 @@ class UpdateAllService:
                  os_utils: OsUtils,
                  countdown: Countdown,
                  settings_screen: SettingsScreen,
-                 checker: Checker,
                  store_provider: GenericProvider[LocalStore],
                  ini_repository: IniRepository,
                  environment_setup: EnvironmentSetup,
                  ao_service: ArcadeOrganizerService,
                  log_viewer: LogViewer,
-                 local_repository: LocalRepository):
+                 local_repository: LocalRepository,
+                 encryption: Encryption,
+                 timeline: Timeline):
         self._config_provider = config_provider
         self._logger = logger
         self._file_system = file_system
         self._os_utils = os_utils
         self._countdown = countdown
         self._settings_screen = settings_screen
-        self._checker = checker
         self._store_provider = store_provider
         self._ini_repository = ini_repository
         self._environment_setup = environment_setup
         self._ao_service = ao_service
         self._local_repository = local_repository
         self._log_viewer = log_viewer
+        self._encryption = encryption
+        self._timeline = timeline
         self._exit_code = 0
         self._end_time = 0.0
         self._error_reports: List[str] = []
         self._temp_launchers: List[str] = []
+        self._timeline_after_log_doc: List[str] = []
 
     def full_run(self, run_pass: UpdateAllServicePass) -> int:
         if run_pass == UpdateAllServicePass.Continue:
@@ -155,6 +164,14 @@ class UpdateAllService:
             env_result = self._environment_setup.setup_environment()
             if env_result.requires_early_exit:
                 return EXIT_CODE_REQUIRES_EARLY_EXIT
+
+            command = self._config_provider.get().command
+            if command == COMMAND_TIMELINE:
+                self._download_update_all_db_and_show_interactive_timeline()
+                return self._exit_code
+            elif command == COMMAND_LATEST_LOG:
+                self._show_log_viewer_with_latest_log()
+                return self._exit_code
 
             self._test_routine()
             self._show_intro()
@@ -178,7 +195,7 @@ class UpdateAllService:
         self._cleanup()
         self._show_outro()
         self._finalize_log()
-        self._show_interactive_summary()
+        self._show_interactive_log_viewer_and_timeline()
         self._reboot_if_needed()
         return self._exit_code
 
@@ -187,14 +204,28 @@ class UpdateAllService:
         if test_routine is None:
             return
 
-        if test_routine == 'LOG_VIEWER':
-            self._log_viewer.show(FILE_update_all_log if self._file_system.is_file(FILE_update_all_log) else 'test_log_viewer.log')
+        if test_routine == 'TIMELINE':
+            log_doc = create_log_document(FILE_update_all_log if self._file_system.is_file(FILE_update_all_log) else 'test_log_viewer.log')
+            timeline_doc = self._timeline.load_timeline_doc(env_check_skip=True)
+
+            total_doc = [*log_doc, *timeline_doc]
+            index = len(total_doc) - len(log_doc)
+            if index > 2:
+                index -= 2
+
+            view_document(total_doc, {}, index)
         elif test_routine == 'SETTINGS_SCREEN':
             self._settings_screen.load_test_menu()
         elif test_routine == 'POCKET_FIRMWARE_UPDATE':
             pocket_firmware_update(self._config_provider.get().curl_ssl, self._local_repository, self._logger)
         elif test_routine == 'POCKET_BACKUP':
             pocket_backup(self._logger)
+        elif test_routine == 'DECRYPT':
+            self._logger.bench('DECRYPT START!')
+            with tempfile.NamedTemporaryFile() as temp_file:
+                self._encryption.decrypt_file('/media/fat/myfile.txt.enc', temp_file.name)
+                self._logger.print('DECRYPT: ', temp_file.read().decode('utf-8', errors='replace'))
+            self._logger.bench('DECRYPT DONE.')
         else:
             self._logger.print(f"Test routine '{test_routine}' not implemented!")
             return
@@ -208,7 +239,7 @@ class UpdateAllService:
         self._logger.print("                        ---------------------------------")
         self._logger.print(f"                          - Powered by Downloader {MISTER_DOWNLOADER_VERSION} -")
         self._logger.print()
-        if self._checker.available_code < 2:
+        if self._encryption.validate_key() != EncryptionResult.Success:
             self._logger.print()
             self._logger.print("               ╔═════════════════════════════════════════════════╗              ")
             self._logger.print("               ║  Become a patron to unlock exclusive features!  ║              ")
@@ -465,15 +496,69 @@ class UpdateAllService:
             self._logger.print("You should reboot")
             self._logger.print()
 
+        if config.timeline_after_logs:
+            # Needs to be done here we want to collect logs before finalize
+            try:
+                self._timeline_after_log_doc = self._timeline.load_timeline_doc()
+            except Exception as e:
+                self._logger.debug(e)
+                self._logger.debug('Recovering from error by suspending timeline generation after logs.')
+                self._timeline_after_log_doc = []
+
         self._logger.finalize()
 
-    def _show_interactive_summary(self) -> None:
-        if self._config_provider.get().log_viewer:
+    def _show_interactive_log_viewer_and_timeline(self) -> None:
+        config = self._config_provider.get()
+        if config.log_viewer or config.timeline_after_logs:
             try:
-                self._log_viewer.show(self._file_system.resolve(FILE_update_all_log))
+                log_doc = self._log_viewer.load_log_document() if config.log_viewer else []
+                timeline_doc = self._timeline_after_log_doc
+                if len(log_doc) > 0 and len(timeline_doc) > 0:
+                    log_doc.append("\n")
+                    log_doc.append("=" * 80 + "\n")
+                    log_doc.append("\n")
+                    log_doc.append("               GO DOWN TO CHECK A SUMMARY OF WHAT'S BEEN UPDATED!!              \n")
+                    log_doc.append("\n")
+
+                total_doc = [*log_doc, *timeline_doc]
+                index = len(total_doc) - len(log_doc)
+                if index > 5:
+                    index -= 5
+
+                if len(total_doc) > 0:
+                    self._log_viewer.show(total_doc, index)
             except Exception as e:
                 self._logger.debug(e)
                 self._logger.debug('Recovering from error by suspending log viewer.')
+
+    def _show_log_viewer_with_latest_log(self) -> None:
+        try:
+            self._log_viewer.show(self._log_viewer.load_log_document(), 0)
+        except Exception as e:
+            self._logger.debug(e)
+            self._logger.print("Could not load the latest log. Please try again after running Update All.")
+
+        self._logger.finalize()
+
+    def _download_update_all_db_and_show_interactive_timeline(self) -> None:
+        from update_all.databases import AllDBs
+
+        config = self._config_provider.get()
+        timeline_log = f'{config.base_system_path}/Scripts/.config/downloader/timeline_download.log'
+        timeline_ini = '/tmp/timeline_downloader.ini'
+        self._file_system.unlink(timeline_ini)
+        return_code = self._execute_downloader(config, timeline_ini, False, timeline_log, AllDBs.UPDATE_ALL_MISTER)
+        if return_code != 0:
+            self._exit_code = 10
+            self._error_reports.append(timeline_log)
+
+        timeline_doc = self._timeline.load_timeline_doc(env_check_skip=True)
+        if len(timeline_doc) > 0:
+            view_document(timeline_doc, {}, len(timeline_doc))
+        else:
+            self._logger.print('No timeline entries found. Try again later!')
+
+        self._logger.finalize()
 
     def _reboot_if_needed(self) -> None:
         config = self._config_provider.get()
@@ -529,4 +614,3 @@ class UpdateAllService:
         self._logger.print("#==============================================================================#")
         self._logger.print("################################################################################")
         self._logger.print()
-        self._os_utils.sleep(self._store_provider.get().get_wait_time_for_reading())
