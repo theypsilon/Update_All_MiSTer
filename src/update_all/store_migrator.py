@@ -53,7 +53,6 @@ def make_new_local_store(store_migrator):
     return {
         'migration_version': store_migrator.latest_migration_version(),
         'theme': 'Blue Installer',
-        'wait_time_for_reading': default_config.wait_time_for_reading,
         'countdown_time': default_config.countdown_time,
         'log_viewer': default_config.log_viewer,
         'autoreboot': default_config.autoreboot,
@@ -63,7 +62,8 @@ def make_new_local_store(store_migrator):
         'names_sort_code': default_config.names_sort_code,
         'introduced_arcade_names_txt': False,
         'pocket_firmware_update': default_config.pocket_firmware_update,
-        'pocket_backup': default_config.pocket_backup
+        'pocket_backup': default_config.pocket_backup,
+        'timeline_after_logs': default_config.timeline_after_logs,
     }
 
 

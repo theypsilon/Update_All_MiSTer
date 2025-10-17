@@ -184,13 +184,11 @@ class TestSettingsScreenSaving(unittest.TestCase):
     def test_save__when_selecting_theme___writes_changes_on_local_store(self):
         sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
 
-        ui.set_value('wait_time_for_reading', '69')
         ui.set_value('ui_theme', 'Cyan Night')
 
         sut.calculate_needs_save(ui)
         sut.save(ui)
 
-        self.assertEqual(69, fs.files[store_json.lower()]['json']['wait_time_for_reading'])
         self.assertEqual('Cyan Night', fs.files[store_json.lower()]['json']['theme'])
 
     def test_save__after_loading_from_store_json_zip___keeps_same_non_default_value_on_new_store_json_file(self):

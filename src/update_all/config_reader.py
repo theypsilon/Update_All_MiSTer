@@ -22,9 +22,10 @@ from typing import Dict
 
 from update_all.config import Config
 from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, \
-    KENV_DEBUG, KENV_TRANSITION_SERVICE_ONLY, KENV_LOCAL_TEST_RUN
+    KENV_DEBUG, KENV_TRANSITION_SERVICE_ONLY, KENV_LOCAL_TEST_RUN, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
+    KENV_TIMELINE_SHORT_PATH, KENV_TIMELINE_PLUS_PATH
 from update_all.databases import DB_ID_NAMES_TXT, names_locale_by_db_url, model_variables_by_db_id, \
-    AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_URL_JTPREMIUM_DEPRECATED, DB_URL_MISTERSAM_FILES_DEPRECATED
+    AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_URL_JTPREMIUM_DEPRECATED
 from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
 from update_all.local_store import LocalStore
@@ -61,6 +62,10 @@ class ConfigReader:
         config.start_time = time.monotonic()
         config.local_test_run = strtobool(self._env.get(KENV_LOCAL_TEST_RUN).strip().lower())
         config.transition_service_only = strtobool(self._env[KENV_TRANSITION_SERVICE_ONLY].strip().lower())
+        config.patreon_key_path = self._env[KENV_PATREON_KEY_PATH].strip()
+        config.command = self._env.get(KENV_COMMAND, config.command).strip().upper()
+        config.timeline_short_path = self._env.get(KENV_TIMELINE_SHORT_PATH, config.timeline_short_path).strip()
+        config.timeline_plus_path = self._env.get(KENV_TIMELINE_PLUS_PATH, config.timeline_plus_path).strip()
 
         self._logger.configure(config)
 
@@ -116,12 +121,12 @@ class ConfigReader:
         self._logger.debug('config: ' + json.dumps(config, default=lambda o: str(o) if isinstance(o, Path) or isinstance(o, set) else o.__dict__, indent=4))
 
     def fill_config_with_local_store(self, config: Config, store: LocalStore):
-        config.wait_time_for_reading = store.get_wait_time_for_reading()
         config.countdown_time = store.get_countdown_time()
         config.autoreboot = store.get_autoreboot()
         config.pocket_firmware_update = store.get_pocket_firmware_update()
         config.pocket_backup = store.get_pocket_backup()
         config.log_viewer = store.get_log_viewer()
+        config.timeline_after_logs = store.get_timeline_after_logs()
         self._logger.debug('store: ' + json.dumps(store.unwrap_props(), indent=4))
 
 
