@@ -127,13 +127,13 @@ class UiRuntimeStub(UiRuntime):
 
 
 class EncryptionTester(Encryption):
-    def __init__(self, config_provider: GenericProvider[Config] = None):
-        super().__init__(NoLogger(), config_provider or GenericProvider[Config]())
+    def __init__(self, config_provider: GenericProvider[Config] = None, file_system: FileSystem = None):
+        super().__init__(NoLogger(), config_provider or GenericProvider[Config](), file_system or FileSystemFactory().create_for_system_scope())
 
 
 class TimelineTester(Timeline):
     def __init__(self, file_system: FileSystem = None):
-        super().__init__(NoLogger(), GenericProvider[Config](), file_system or FileSystemFactory().create_for_system_scope(), EncryptionTester())
+        super().__init__(NoLogger(), GenericProvider[Config](), file_system or FileSystemFactory().create_for_system_scope(), EncryptionTester(file_system=file_system))
 
 class SettingsScreenTester(SettingsScreen):
     def __init__(self, config_provider: GenericProvider[Config] = None,
@@ -157,7 +157,7 @@ class SettingsScreenTester(SettingsScreen):
             os_utils=os_utils or SpyOsUtils(),
             settings_screen_printer=settings_screen_printer or SettingsScreenPrinterStub(),
             ui_runtime=ui_runtime or UiRuntimeStub(),
-            encryption=encryption or EncryptionTester(),
+            encryption=encryption or EncryptionTester(file_system=file_system),
             local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system),
             store_provider=store_provider or GenericProvider[LocalStore](),
             ao_service=ao_service or ArcadeOrganizerServiceStub()

@@ -24,6 +24,7 @@ from enum import unique, Enum
 from functools import cache
 
 from update_all.config import Config
+from update_all.file_system import FileSystem
 from update_all.logger import Logger
 from update_all.other import GenericProvider
 
@@ -39,9 +40,10 @@ class EncryptionResult(Enum):
 
 
 class Encryption:
-    def __init__(self, logger: Logger, config_provider: GenericProvider[Config]):
+    def __init__(self, logger: Logger, config_provider: GenericProvider[Config], file_system: FileSystem):
         self._logger = logger
         self._config_provider = config_provider
+        self._file_system = file_system
         self._check_env = True
 
     def skip_environment_check(self):
@@ -54,7 +56,8 @@ class Encryption:
             return result
 
         try:
-            with open(self._config_provider.get().patreon_key_path, 'rb') as key_file:
+            patreon_key_path = self._file_system.download_target_path(self._config_provider.get().patreon_key_path)
+            with open(patreon_key_path, 'rb') as key_file:
                 fingerprint_result = hashlib.md5(key_file.read()).hexdigest()
         except Exception as e:
             self._print_invalid_patreon_key_message()
@@ -84,7 +87,7 @@ class Encryption:
                 "enc", "-aes-256-cbc", "-d",
                 "-in", input_path,
                 "-out", output_path,
-                "-kfile", self._config_provider.get().patreon_key_path,
+                "-kfile", self._file_system.download_target_path(self._config_provider.get().patreon_key_path),
                 "-nosalt", "-iter", "1"
             ],
                 check=True,
@@ -113,13 +116,14 @@ class Encryption:
             self._logger.debug("Encryption: Not running on MiSTer, abort.")
             return EncryptionResult.ImproperEnvironment
 
-        if not os.path.isfile(self._config_provider.get().patreon_key_path):
-            self._logger.debug(f"Encryption: Patreon Key file '{self._config_provider.get().patreon_key_path}' does not exist.")
+        patreon_key_path = self._file_system.download_target_path(self._config_provider.get().patreon_key_path)
+        if not os.path.isfile(patreon_key_path):
+            self._logger.debug(f"Encryption: Patreon Key file '{patreon_key_path}' does not exist.")
             return EncryptionResult.MissingKey
 
-        if os.path.getsize(self._config_provider.get().patreon_key_path) != 32:
+        if os.path.getsize(patreon_key_path) != 32:
             self._print_invalid_patreon_key_message()
-            self._logger.debug(f"Encryption: Patreon Key file '{self._config_provider.get().patreon_key_path}' has invalid size.")
+            self._logger.debug(f"Encryption: Patreon Key file '{patreon_key_path}' has invalid size.")
             return EncryptionResult.InvalidKey
 
         return EncryptionResult.Success

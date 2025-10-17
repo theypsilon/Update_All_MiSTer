@@ -37,9 +37,9 @@ class Timeline:
 
     def load_timeline_doc(self, env_check_skip: bool = False) -> list[str]:
         config = self._config_provider.get()
-        patreon_key = config.patreon_key_path
-        timeline_file = config.timeline_short_path
-        timeline_plus_file = config.timeline_plus_path
+
+        timeline_file = self._file_system.download_target_path(config.timeline_short_path)
+        timeline_plus_file = self._file_system.download_target_path(config.timeline_plus_path)
 
         timeline_plus_model = None
         timeline_model = None
@@ -70,7 +70,7 @@ class Timeline:
             timeline_doc.append("\n")
             timeline_doc.append("[!!] This Timeline only covers the latest 7 days of updates [!!]\n")
             timeline_doc.append("\n")
-            if self._file_system.is_file(patreon_key):
+            if self._file_system.is_file(config.patreon_key_path):
                 timeline_doc.append("Your Patreon Key is expired since 2025-10-17!\n")
                 timeline_doc.append("Get a new Patreon Key at www.patreon.com/theypsilon\n")
                 timeline_doc.append("And you'll unlock an extended Timeline of 12 months!\n")

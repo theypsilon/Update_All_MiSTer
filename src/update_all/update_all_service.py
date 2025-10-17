@@ -81,7 +81,7 @@ class UpdateAllServiceFactory:
         transition_service = TransitionService(logger=self._logger, file_system=file_system, os_utils=os_utils, ini_repository=ini_repository)
         printer = SettingsScreenStandardCursesPrinter()
         ao_service = ArcadeOrganizerService(self._logger)
-        encryption = Encryption(self._logger, config_provider)
+        encryption = Encryption(self._logger, config_provider, file_system)
         settings_screen = SettingsScreen(
             logger=self._logger,
             config_provider=config_provider,
