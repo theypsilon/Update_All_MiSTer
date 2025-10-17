@@ -140,7 +140,7 @@ fetch_file('timeline_view_short.json', 'https://raw.githubusercontent.com/theyps
 
 subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
 
-subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json'], check=True)
+subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'timeline_view_plus.json.enc', 'timeline_view_short.json'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
 
 new_db['files'] = {
