@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.4 - 2025-10-17
+
+### Added
+- New Timeline feature, which allows users to see a chronological list of updates applied to their MiSTer.
+- Timeline is included in the log viewer screen. It can be disabled in the Patrons menu or by adding `!update_all_timeline` to the custom filters.
+- Timeline is also added as a standalone script, "update_all_timeline", which can be selected in the Scripts menu. This script can also be removed by adding `!update_all_timeline` to the custom filters.
+
+### Changed
+- Speed improvements outside the Downloader's execution.
+- New Patreon Key is required.
+- Linux updating fixes.
+- Improved updating of the Downloader launcher.
+- Fixed locale issues.
+- Various fixes and improvements on the Log Viewer. It now works in different resolutions without flickering.
+- Fixed "Supporter of the Day" section not working correctly in some cases.
+- Other minor improvements.
+
+### Removed
+- Removed wait line for reading option, as the log viewer removes any need for human reading waits.
+- Removed "Bad Apple DB" gimmick from the Patrons menu. You may still see it here: https://www.youtube.com/watch?v=Mp8AGtR_p5w or run it manually by setting an empty `downloader.ini` with:
+```ini
+   [bad_apple_db]
+   db_url = https://github.com/theypsilon/BadAppleDB_MiSTer/releases/download/v1/bad_apple_full_res_db.json.zip
+   #db_url = https://github.com/theypsilon/BadAppleDB_MiSTer/releases/download/v1/bad_apple_half_res_db.json.zip
+```
+
 ## Version 2.3.1 - 2025-06-06
 
 ### Added

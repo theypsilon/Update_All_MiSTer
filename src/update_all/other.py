@@ -93,27 +93,3 @@ class GenericProvider(Generic[TObject]):
         if self._object is None:
             raise Exception(f"{self.__orig_class__.__args__[0].__name__} must be initialized before calling this method.")
         return self._object
-
-
-class Checker:
-    def __init__(self, file_system):
-        self._file_system = file_system
-
-    @cached_property
-    def available_code(self) -> int:
-        path = ''.join([chr(ord(c) - i - 3) for i, c in enumerate(_parameters[0])])
-        if not self._file_system.is_file(path):
-            return -1
-
-        file_size = os.path.getsize(self._file_system.download_target_path(path))
-        if file_size != _parameters[1]:
-            return 0
-
-        file_md5 = hashlib.md5(self._file_system.read_file_binary(path)).hexdigest()
-        if file_md5 != _parameters[2]:
-            return 1
-
-        return 2
-
-
-_parameters = ['Vgwow||9|qoupsCx', 16384, "00e9f6acaec74650ddd38a14334ebaef"]

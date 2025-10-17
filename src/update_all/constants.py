@@ -20,9 +20,9 @@ from enum import unique, Enum
 from typing import Final
 
 # From patreon.com/theypsilon
-supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', 'Corey Willis', "The Sentinel's Playground Team", 'Thomas Williams', 'Tom-Neverwinter')
+supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', 'Corey Willis', 'Thomas Williams')
 
-# Default options
+# Default options (not in other options)
 DEFAULT_CURL_SSL_OPTIONS: Final[str] = ''
 DEFAULT_COMMIT: Final[str] = 'unknown'
 DEFAULT_LOCATION_STR: Final[str] = 'MiSTer'
@@ -40,11 +40,15 @@ FILE_update_all_storage: Final[str] = 'Scripts/.config/update_all/update_all.jso
 FILE_update_all_log: Final[str] = 'Scripts/.config/update_all/update_all.log'
 FILE_pocket_firmware_details_json: Final[str] = "Scripts/.config/update_all/pocket_firmware_details.json"
 FILE_arcade_database_mad_db_json_zip: Final[str] = "Scripts/.config/update_all/mad_db.json.zip"
+FILE_timeline_short: Final[str] = "Scripts/.config/update_all/timeline.json"
+FILE_timeline_plus: Final[str] = "Scripts/.config/update_all/timeline_plus.enc"
 FILE_update_all_ini: Final[str] = 'Scripts/update_all.ini'
 FILE_update_jtcores_ini: Final[str] = 'Scripts/update_jtcores.ini'
 FILE_update_jtcores_sh: Final[str] = 'Scripts/update_jtcores.sh'
 FILE_update_names_txt_ini: Final[str] = 'Scripts/update_names-txt.ini'
 FILE_update_names_txt_sh: Final[str] = 'Scripts/update_names-txt.sh'
+FILE_patreon_key: Final[str] = '/media/fat/Scripts/update_all.patreonkey'
+FILE_names_txt: Final[str] = 'names.txt'
 FILE_MiSTer: Final[str] = 'MiSTer'
 FILE_MiSTer_delme: Final[str] = '.MiSTer.delme'
 FILE_MiSTer_ini: Final[str] = 'MiSTer.ini'
@@ -94,9 +98,13 @@ K_START_TIME: Final[str] = 'start_time'
 
 # Update All old options
 K_COUNTDOWN_TIME: Final[str] = "countdown_time"
-K_WAIT_TIME_FOR_READING: Final[str] = "wait_time_for_reading"
 K_AUTOREBOOT: Final[str] = "autoreboot"
 K_KEEP_USBMOUNT_CONF: Final[str] = "keep_usbmount_conf"
+
+# Commands
+COMMAND_STANDARD: Final[str] = 'STANDARD'
+COMMAND_TIMELINE: Final[str] = 'TIMELINE'
+COMMAND_LATEST_LOG: Final[str] = 'LATEST_LOG'
 
 
 # Env
@@ -106,6 +114,10 @@ KENV_LOCATION_STR: Final[str] = 'LOCATION_STR'
 KENV_DEBUG: Final[str] = 'DEBUG'
 KENV_TRANSITION_SERVICE_ONLY: Final[str] = 'TRANSITION_SERVICE_ONLY'
 KENV_LOCAL_TEST_RUN: Final[str] = 'LOCAL_TEST_RUN'
+KENV_PATREON_KEY_PATH: Final[str] = 'PATREON_KEY_PATH'
+KENV_COMMAND: Final[str] = 'COMMAND'
+KENV_TIMELINE_SHORT_PATH: Final[str] = 'TIMELINE_SHORT_PATH'
+KENV_TIMELINE_PLUS_PATH: Final[str] = 'TIMELINE_PLUS_PATH'
 
 # Exit codes
 EXIT_CODE_REQUIRES_EARLY_EXIT: Final[int] = 1
@@ -118,7 +130,7 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION: Final[str] = "2.3.1"
+UPDATE_ALL_VERSION: Final[str] = "2.4"
 MISTER_DOWNLOADER_VERSION: Final[str] = "2.2"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"

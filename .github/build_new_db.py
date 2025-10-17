@@ -127,7 +127,8 @@ with zipfile.ZipFile('mad_db.json.zip') as z:
     if bad_file is not None:
         raise Exception('Zip is wrong:', bad_file)
 
-fetch_file('update_all_latest_log.sh', 'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/master/src/update_all/log_viewer.py')
+fetch_file('update_all_latest_log.sh', 'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/master/src/update_all_latest_log.sh')
+fetch_file('update_all_timeline.sh', 'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/master/src/update_all_timeline.sh')
 
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
 
@@ -140,7 +141,7 @@ fetch_file('timeline.json', 'https://raw.githubusercontent.com/theypsilon/Timeli
 
 subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
 
-subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'timeline_plus.enc', 'timeline.json'], check=True)
+subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all_timeline.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'timeline_plus.enc', 'timeline.json'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
 
 new_db['files'] = {
@@ -174,6 +175,11 @@ new_db['files'] = {
         'size': os.path.getsize('update_all_latest_log.sh'),
         'hash': hash_file('update_all_latest_log.sh'),
         'tags': [0],
+    },
+    'Scripts/update_all_timeline.sh': {
+        'size': os.path.getsize('update_all_timeline.sh'),
+        'hash': hash_file('update_all_timeline.sh'),
+        'tags': [1],
     }
 }
 new_db['tag_dictionary'] = {

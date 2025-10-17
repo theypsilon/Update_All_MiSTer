@@ -32,7 +32,7 @@ def settings_screen_model(): return {
     },
     "variables": {
         # Global variables
-        "update_all_version": {"default": "2.3.1"},
+        "update_all_version": {"default": "2.4"},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -224,7 +224,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "8 Patrons Menu",
-                    "description": "Taito Spinner, Themes, etc... [2022.12.07]",
+                    "description": "Timeline, Themes, etc... [2025.10.17]",
                     "actions": {"ok": [
                         {"type": "calculate_has_right_available_code"},
                         {
@@ -237,7 +237,7 @@ def settings_screen_model(): return {
                                 "text": [
                                     "This menu contains exclusive content for patrons only.",
                                     " ",
-                                    "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock early access and experimental options.",
+                                    "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock premium options.",
                                     " ",
                                     "Thank you so much for your support!",
                                 ],
@@ -250,12 +250,12 @@ def settings_screen_model(): return {
                                         "Other key contributors:",
                                         " ·@Ace@ ~ko-fi.com/ace9921~ - Arcade cores",
                                         " ·@Artemio@ ~patreon.com/aurbina~ - Testing tools",
-                                        " ·@atrac17@ ~patreon.com/atrac17~ - Arcade cores",
-                                        " ·@d0pefish@ ~ko-fi.com/d0pefish~ - mt32pi author",
-                                        " ·@FPGAZumSpass@ ~patreon.com/FPGAZumSpass~ - Console & Computer cores",
+                                        " ·@Coin-Op@ ~patreon.com/atrac17~ - Arcade cores",
                                         " ·@furrtek@ ~patreon.com/furrtek~ - Reverse engineering hardware",
-                                        " ·@GoLEm FPGA@ ~patreon.com/golem_fpga~ - Firmware rewrite",
+                                        " ·@JimmyStones@ ~ko-fi.com/jimmystones~ - Arcade cores",
                                         " ·@JOTEGO@ ~patreon.com/jotego~ - Arcade & Console cores",
+                                        " ·@1FPGA@ ~patreon.com/1fpga~ - Firmware rewrite",
+                                        " ·@Pierco@ ~ko-fi.com/pierco~ - Arcade cores",
                                         " ·@Srg320@ ~patreon.com/srg320~ - Console cores",
                                         " ·@theypsilon@ ~patreon.com/theypsilon~ - Updaters & Other Tools",
                                         " ·@wizzo@ ~patreon.com/wizzo~ - Tools & scripts",
@@ -823,7 +823,6 @@ def settings_screen_model(): return {
             "header": "System Options",
             "variables": {
                 "autoreboot": {"group": ["ua_ini", "store"], "default": "true", "values": ["false", "true"]},
-                "wait_time_for_reading": {"group": ["ua_ini", "store"], "default": "2", "values": ["2", "0", "30"]},
                 "countdown_time": {"group": ["ua_ini", "store"], "default": "15", "values": ["15", "4", "60"]},
                 "log_viewer": {"group": "store", "default": "true", "values": ["false", "true"]},
             },
@@ -834,17 +833,12 @@ def settings_screen_model(): return {
                     "actions": {"ok": [{"type": "rotate_variable", "target": "autoreboot"}]}
                 },
                 {
-                    "title": "2 Pause (between updaters)",
-                    "description": "{wait_time_for_reading}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "wait_time_for_reading"}]}
-                },
-                {
-                    "title": "3 Countdown Timer",
+                    "title": "2 Countdown Timer",
                     "description": "{countdown_time}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "countdown_time"}]}
                 },
                 {
-                    "title": "4 Log Viewer",
+                    "title": "3 Log Viewer",
                     "description": "Scrollable Screen: {log_viewer:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "log_viewer"}]}
                 }
@@ -913,29 +907,13 @@ def settings_screen_model(): return {
                 "is_test_spinner_firmware_applied": {"default": "false", "values": ["false", "true"]},
                 "ui_theme": {"group": "store", "default": "Blue Installer", "values": ["Blue Installer", "Cyan Night", "Japan", "Aquamarine", "Clean Wall"]},
                 "firmware_needs_reboot": {"default": "false", "values": ["false", "true"]},
+                "timeline_after_logs": {"group": "store", "default": "true", "values": ["true", "false"]},
             },
             "entries": [
                 {
-                    "title": "1 Play Bad Apple Database",
-                    "description": "",
-                    "actions": {
-                        "ok": [{
-                            "ui": "confirm",
-                            "header": "This will take time",
-                            "preselected_action": "No",
-                            "text": [
-                                "The Bad Apple Database is an animation that takes around 4 minutes to finish.",
-                                " ",
-                                "You can't interrupt it by pressing any button. You'd have to reboot your MiSTer if you don't want to wait for the animation to end.",
-                                " ",
-                                "Do you really want to play it now?"
-                            ],
-                            "actions": [
-                                {"title": "Yes", "type": "fixed", "fixed": [{"type": "play_bad_apple"}, {"type": "navigate", "target": "back"}]},
-                                {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
-                            ],
-                        }],
-                    }
+                    "title": "1 Show Timeline after Logs",
+                    "description": "{timeline_after_logs:yesno}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "timeline_after_logs"}]}
                 },
                 {
                     "title": "2 {is_test_spinner_firmware_applied:spinner_option}",
@@ -1412,7 +1390,7 @@ def _try_access_patrons_menu(): return [
             "text": [
                 "This menu contains exclusive content for patrons only.",
                 " ",
-                "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock early access and experimental options.",
+                "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock premium options.",
                 " ",
                 "Thank you so much for your support!",
             ],

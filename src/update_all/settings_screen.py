@@ -26,11 +26,12 @@ from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABL
     ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, STANDARD_UI_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
 from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs
 from update_all.downloader_utils import prepare_latest_downloader
+from update_all.encryption import Encryption, EncryptionResult
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
-from update_all.other import Checker, GenericProvider
+from update_all.other import GenericProvider
 from update_all.logger import Logger, CollectorLoggerDecorator
 from update_all.os_utils import OsUtils
 from update_all.settings_screen_model import settings_screen_model
@@ -43,19 +44,19 @@ from update_all.ui_model_utilities import gather_variable_declarations, dynamic_
 class SettingsScreen(UiApplication):
     def __init__(self, logger: Logger, config_provider: GenericProvider[Config], file_system: FileSystem,
                  ini_repository: IniRepository, os_utils: OsUtils, settings_screen_printer: SettingsScreenPrinter,
-                 checker: Checker, local_repository: LocalRepository, store_provider: GenericProvider[LocalStore],
-                 ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService):
+                 local_repository: LocalRepository, store_provider: GenericProvider[LocalStore],
+                 ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService, encryption: Encryption):
         self._logger = logger
         self._config_provider = config_provider
         self._file_system = file_system
         self._ini_repository = ini_repository
         self._os_utils = os_utils
         self._settings_screen_printer = settings_screen_printer
-        self._checker = checker
         self._local_repository = local_repository
         self._store_provider = store_provider
         self._ui_runtime = ui_runtime
         self._ao_service = ao_service
+        self._encryption = encryption
         self._original_firmware = None
         self._theme_manager = None
 
@@ -97,11 +98,11 @@ class SettingsScreen(UiApplication):
             ui.set_value(variable, 'true' if db_ids[variable] in config.databases else 'false')
 
         local_store = self._store_provider.get()
-        ui_theme = local_store.get_theme() if self._checker.available_code > 1 else STANDARD_UI_THEME
+        ui_theme = local_store.get_theme() if self._encryption.validate_key() == EncryptionResult.Success else STANDARD_UI_THEME
         ui.set_value('ui_theme', ui_theme)
-        ui.set_value('wait_time_for_reading', str(local_store.get_wait_time_for_reading()))
         ui.set_value('countdown_time', str(local_store.get_countdown_time()))
         ui.set_value('log_viewer', str(local_store.get_log_viewer()).lower())
+        ui.set_value('timeline_after_logs', str(local_store.get_timeline_after_logs()).lower())
         ui.set_value('autoreboot', str(local_store.get_autoreboot()).lower())
         ui.set_value('pocket_firmware_update', str(local_store.get_pocket_firmware_update()).lower())
         ui.set_value('pocket_backup', str(local_store.get_pocket_backup()).lower())
@@ -126,7 +127,8 @@ class SettingsScreen(UiApplication):
             'calculate_has_right_available_code': lambda effect: self.calculate_has_right_available_code(ui),
             'calculate_is_test_spinner_firmware_applied': lambda effect: self.calculate_is_test_spinner_firmware_applied(ui),
             'test_unstable_spinner_firmware': lambda effect: self.test_unstable_spinner_firmware(ui),
-            'play_bad_apple': lambda effect: self.play_bad_apple(ui), 'save': lambda effect: self.save(ui),
+#            'play_bad_apple': lambda effect: self.play_bad_apple(ui),  @TODO: To be removed
+            'save': lambda effect: self.save(ui),
             'prepare_exit_dont_save_and_run': lambda effect: self.prepare_exit_dont_save_and_run(ui),
             'calculate_file_exists': lambda effect: self.calculate_file_exists(ui, effect),
             'remove_file': lambda effect: self.remove_file(ui, effect),
@@ -153,7 +155,7 @@ class SettingsScreen(UiApplication):
         if firmware_md5 is not None:
             self._original_firmware = firmware_md5
 
-        ui.set_value('has_right_available_code', 'true' if self._checker.available_code > 1 else 'false')
+        ui.set_value('has_right_available_code', 'true' if self._encryption.validate_key() == EncryptionResult.Success else 'false')
 
         self._set_spinner_options(ui)
 
@@ -230,9 +232,9 @@ class SettingsScreen(UiApplication):
 
         local_store = self._store_provider.get()
         local_store.set_theme(ui.get_value('ui_theme'))
-        local_store.set_wait_time_for_reading(temp_config.wait_time_for_reading)
         local_store.set_countdown_time(temp_config.countdown_time)
         local_store.set_log_viewer(temp_config.log_viewer)
+        local_store.set_timeline_after_logs(temp_config.timeline_after_logs)
         local_store.set_autoreboot(temp_config.autoreboot)
         local_store.set_pocket_firmware_update(temp_config.pocket_firmware_update)
         local_store.set_pocket_backup(temp_config.pocket_backup)
