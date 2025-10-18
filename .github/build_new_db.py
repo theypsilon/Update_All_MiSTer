@@ -148,43 +148,48 @@ new_db['files'] = {
     'Scripts/.config/update_all/update_all.pyz': {
         'size': os.path.getsize('update_all.pyz'),
         'hash': hash_file('update_all.pyz'),
+        'tags': [2],
     },
     'Scripts/.config/update_all/mad_db.json.zip': {
         'size': os.path.getsize('mad_db.json.zip'),
         'hash': hash_file('mad_db.json.zip'),
+        'tags': [2],
     },
     'Scripts/.config/update_all/pocket_firmware_details.json': {
         'size': os.path.getsize('pocket_firmware_details.json'),
         'hash': hash_file('pocket_firmware_details.json'),
+        'tags': [2],
     },
     'Scripts/.config/update_all/timeline_plus.enc': {
         'size': os.path.getsize('timeline_plus.enc'),
         'hash': hash_file('timeline_plus.enc'),
-        'tags': [1]
+        'tags': [2, 1]
     },
     'Scripts/.config/update_all/timeline.json': {
         'size': os.path.getsize('timeline.json'),
         'hash': hash_file('timeline.json'),
-        'tags': [1]
+        'tags': [2, 1]
     },
     'Scripts/update_all.sh': {
         'size': os.path.getsize('update_all.sh'),
         'hash': hash_file('update_all.sh'),
+        'tags': [2],
     },
     'Scripts/update_all_latest_log.sh': {
         'size': os.path.getsize('update_all_latest_log.sh'),
         'hash': hash_file('update_all_latest_log.sh'),
-        'tags': [0],
+        'tags': [2, 0],
     },
     'Scripts/update_all_timeline.sh': {
         'size': os.path.getsize('update_all_timeline.sh'),
         'hash': hash_file('update_all_timeline.sh'),
-        'tags': [1],
+        'tags': [2, 1],
     }
 }
 new_db['tag_dictionary'] = {
     'updatealllatestlog': 0,
-    'updatealltimeline': 1
+    'updatealltimeline': 1,
+    'scripts': 2
 }
 if 'tags_dictionary' in new_db:
     new_db.pop('tags_dictionary')
