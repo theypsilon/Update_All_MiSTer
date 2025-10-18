@@ -156,6 +156,10 @@ class FileSystem(ABC):
         """interface"""
 
     @abstractmethod
+    def file_size(self, path):
+        """interface"""
+
+    @abstractmethod
     def save_json_on_zip(self, db, path):
         """interface"""
 
@@ -356,6 +360,9 @@ class _FileSystem(FileSystem):
         else:
             raise Exception('File type "%s" not supported' % suffix)
 
+    def file_size(self, path: str):
+        return os.path.getsize(self._path(path))
+
     def save_json_on_zip(self, db, path):
         json_name = Path(path).stem
         zip_path = Path(self._path(path)).absolute()
@@ -424,4 +431,4 @@ def _load_json_from_zip(path):
 
 def _load_json(file_path):
     with open(file_path, "r") as f:
-        return json.loads(f.read())
+        return json.load(f)

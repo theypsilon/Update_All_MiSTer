@@ -38,30 +38,25 @@ class Timeline:
     def load_timeline_doc(self, env_check_skip: bool = False) -> list[str]:
         config = self._config_provider.get()
 
-        timeline_file = self._file_system.download_target_path(config.timeline_short_path)
-        timeline_plus_file = self._file_system.download_target_path(config.timeline_plus_path)
-
         timeline_plus_model = None
         timeline_model = None
-        if not self._file_system.is_file(timeline_plus_file):
-            self._logger.debug('timeline_plus_file does not exist:', timeline_plus_file)
+        if not self._file_system.is_file(config.timeline_plus_path):
+            self._logger.debug('timeline_plus_path does not exist:', config.timeline_plus_path)
         else:
             with tempfile.NamedTemporaryFile() as temp_file:
                 if env_check_skip:
                     self._logger.debug('Skipping environment check for timeline decryption')
                     self._encryption.skip_environment_check()
-                decrypt_result = self._encryption.decrypt_file(timeline_plus_file, temp_file.name)
+                decrypt_result = self._encryption.decrypt_file(config.timeline_plus_path, temp_file.name)
                 if decrypt_result == EncryptionResult.Success:
-                    with open(temp_file.name, 'r') as f:
-                        timeline_plus_model = json.load(f)
+                    timeline_plus_model = self._file_system.load_dict_from_file(temp_file.name, '.json')
                 else:
                     self._logger.debug(f'Could not decrypt timeline_plus_file: {decrypt_result}')
         if timeline_plus_model is None:
-            if not self._file_system.is_file(timeline_file):
-                self._logger.debug('timeline_file does not exist:', timeline_file)
+            if not self._file_system.is_file(config.timeline_short_path):
+                self._logger.debug('timeline_short_path does not exist:', config.timeline_short_path)
             else:
-                with open(timeline_file, 'r') as f:
-                    timeline_model = json.load(f)
+                timeline_model = self._file_system.load_dict_from_file(config.timeline_short_path, '.json')
 
         names_dict = self._load_names_dict(FILE_names_txt)
 

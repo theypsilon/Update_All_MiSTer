@@ -41,7 +41,7 @@ from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_m
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
-from update_all.log_viewer import LogViewer, view_document, create_log_document
+from update_all.log_viewer import LogViewer, create_log_document
 from update_all.other import GenericProvider
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils, LinuxOsUtils
@@ -213,7 +213,7 @@ class UpdateAllService:
             if index > 2:
                 index -= 2
 
-            view_document(total_doc, {}, index)
+            self._log_viewer.show(total_doc, {}, index)
         elif test_routine == 'SETTINGS_SCREEN':
             self._settings_screen.load_test_menu()
         elif test_routine == 'POCKET_FIRMWARE_UPDATE':
@@ -526,14 +526,14 @@ class UpdateAllService:
                     index -= 5
 
                 if len(total_doc) > 0:
-                    self._log_viewer.show(total_doc, index)
+                    self._log_viewer.show(total_doc, {}, index)
             except Exception as e:
                 self._logger.debug(e)
                 self._logger.debug('Recovering from error by suspending log viewer.')
 
     def _show_log_viewer_with_latest_log(self) -> None:
         try:
-            self._log_viewer.show(self._log_viewer.load_log_document(), 0)
+            self._log_viewer.show(self._log_viewer.load_log_document(), {}, 0)
         except Exception as e:
             self._logger.debug(e)
             self._logger.print("Could not load the latest log. Please try again after running Update All.")
@@ -554,7 +554,7 @@ class UpdateAllService:
 
         timeline_doc = self._timeline.load_timeline_doc(env_check_skip=True)
         if len(timeline_doc) > 0:
-            view_document(timeline_doc, {}, len(timeline_doc))
+            self._log_viewer.show(timeline_doc, {}, len(timeline_doc))
         else:
             self._logger.print('No timeline entries found. Try again later!')
 

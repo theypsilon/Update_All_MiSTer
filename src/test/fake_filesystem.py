@@ -299,6 +299,9 @@ class _FileSystem(ProductionFileSystem):
         else:
             raise UnreachableException('Should not reach this!')
 
+    def file_size(self, path):
+        return self._state.files[self._path(path)]['size']
+
     def save_json_on_zip(self, db, path):
         if self._path(path) not in self._state.files:
             self.touch(path)

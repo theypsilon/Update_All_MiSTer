@@ -18,6 +18,7 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 import os
+from typing import Optional
 
 from update_all.constants import FILE_update_all_log
 from update_all.file_system import FileSystem
@@ -48,8 +49,8 @@ class LogViewer:
     def __init__(self, file_system: FileSystem):
         self._file_system = file_system
 
-    def show(self, doc: list[str], initial_index: int = 0) -> bool:
-        view_document(doc, {}, initial_index)
+    def show(self, doc: list[str], popup_dict: Optional[dict[str, str]] = None, initial_index: int = 0) -> bool:
+        view_document(doc, popup_dict or {}, initial_index)
         return True
 
     def load_log_document(self) -> list[str]:

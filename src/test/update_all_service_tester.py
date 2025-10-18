@@ -234,8 +234,8 @@ class EnvironmentSetupStub(EnvironmentSetup):
 
 
 class LogViewerTester(LogViewer):
-    def show(self, file_path: str) -> None:
-        pass
+    def show(self, file_path: str, popup_dict: Optional[dict[str, str]] = None, initial_index: int = 0) -> bool:
+        return True
 
 class UpdateAllServiceTester(UpdateAllService):
     def __init__(self, environment_setup: EnvironmentSetup = None,

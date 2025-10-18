@@ -16,14 +16,13 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-import os
 import subprocess
 import platform
-import hashlib
 from enum import unique, Enum
 from functools import cache
 
 from update_all.config import Config
+from update_all.constants import MD5_patreon_key
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
 from update_all.other import GenericProvider
@@ -56,18 +55,16 @@ class Encryption:
             return result
 
         try:
-            patreon_key_path = self._file_system.download_target_path(self._config_provider.get().patreon_key_path)
-            with open(patreon_key_path, 'rb') as key_file:
-                fingerprint_result = hashlib.md5(key_file.read()).hexdigest()
+            fingerprint_result = self._file_system.hash(self._config_provider.get().patreon_key_path)
         except Exception as e:
             self._print_invalid_patreon_key_message()
             self._logger.debug(f"Encryption: Patreon Key validation failed with error")
             self._logger.debug(e)
             return EncryptionResult.InvalidKey
 
-        if fingerprint_result != _EXPECTED_FINGERPRINT:
+        if fingerprint_result != MD5_patreon_key:
             self._print_invalid_patreon_key_message()
-            self._logger.debug(f"Encryption: Expected '{_EXPECTED_FINGERPRINT}', got '{fingerprint_result}'.")
+            self._logger.debug(f"Encryption: Expected '{MD5_patreon_key}', got '{fingerprint_result}'.")
             return EncryptionResult.InvalidKey
 
         return EncryptionResult.Success
@@ -77,7 +74,7 @@ class Encryption:
         if result != EncryptionResult.Success:
             return result
 
-        if not os.path.isfile(input_path):
+        if not self._file_system.is_file(input_path):
             self._logger.debug(f"Encryption: Input file '{input_path}' does not exist.")
             return EncryptionResult.MissingInput
 
@@ -85,8 +82,8 @@ class Encryption:
             subprocess.run([
                 'openssl',
                 "enc", "-aes-256-cbc", "-d",
-                "-in", input_path,
-                "-out", output_path,
+                "-in", self._file_system.download_target_path(input_path),
+                "-out", self._file_system.download_target_path(output_path),
                 "-kfile", self._file_system.download_target_path(self._config_provider.get().patreon_key_path),
                 "-nosalt", "-iter", "1"
             ],
@@ -112,16 +109,16 @@ class Encryption:
 
     @cache
     def _common_checks(self) -> EncryptionResult:
-        if self._check_env and (platform.system() != 'Linux' or  not os.path.isfile('/MiSTer.version')):
+        if self._check_env and (platform.system() != 'Linux' or not self._file_system.is_file('/MiSTer.version')):
             self._logger.debug("Encryption: Not running on MiSTer, abort.")
             return EncryptionResult.ImproperEnvironment
 
-        patreon_key_path = self._file_system.download_target_path(self._config_provider.get().patreon_key_path)
-        if not os.path.isfile(patreon_key_path):
+        patreon_key_path = self._config_provider.get().patreon_key_path
+        if not self._file_system.is_file(patreon_key_path):
             self._logger.debug(f"Encryption: Patreon Key file '{patreon_key_path}' does not exist.")
             return EncryptionResult.MissingKey
 
-        if os.path.getsize(patreon_key_path) != 32:
+        if self._file_system.file_size(patreon_key_path) != 32:
             self._print_invalid_patreon_key_message()
             self._logger.debug(f"Encryption: Patreon Key file '{patreon_key_path}' has invalid size.")
             return EncryptionResult.InvalidKey
@@ -130,5 +127,3 @@ class Encryption:
 
     def _print_invalid_patreon_key_message(self):
         self._logger.print(f"ERROR: Patreon Key validation failed, did you get the latest one?")
-
-_EXPECTED_FINGERPRINT = "d384da73fcfb4a7c5b133b346f5d338e"
