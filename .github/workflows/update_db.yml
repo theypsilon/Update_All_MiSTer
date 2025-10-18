@@ -9,6 +9,8 @@ on:
         required: false
         type: string
   workflow_dispatch:
+  repository_dispatch:
+    types: [timeline-updated]
 
 jobs:
   update_db:
