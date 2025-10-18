@@ -172,8 +172,7 @@ new_db['files'] = {
     },
     'Scripts/update_all.sh': {
         'size': os.path.getsize('update_all.sh'),
-        'hash': hash_file('update_all.sh'),
-        'tags': [2],
+        'hash': hash_file('update_all.sh')
     },
     'Scripts/update_all_latest_log.sh': {
         'size': os.path.getsize('update_all_latest_log.sh'),
