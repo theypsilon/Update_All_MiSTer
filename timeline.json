@@ -1,0 +1,51 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Taito F2 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Taito F2 MRA: Euro Champ '92, + 10 alts",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "MegaCD",
+              "type": "standalone"
+            },
+            {
+              "name": "NES",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1760145821,
+        1760195846,
+        1760202940,
+        1760363502,
+        1760367148,
+        1760449910,
+        1760618615,
+        1760636859
+      ],
+      "title": "Files updated in the LATEST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "rbf_reverse_mappings": 1439,
+    "total_file_updates": 2032,
+    "unique_files": 1380
+  }
+}
