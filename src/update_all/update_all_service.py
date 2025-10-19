@@ -28,7 +28,7 @@ from update_all.analogue_pocket.utils import is_pocket_mounted
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
-from update_all.databases import Database
+from update_all.databases import Database, AllDBs
 from update_all.downloader_utils import prepare_latest_downloader
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
@@ -37,7 +37,7 @@ from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_m
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, FILE_update_all_pyz, \
     EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update, \
     FILE_downloader_run_signal, FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script, \
-    COMMAND_TIMELINE, COMMAND_LATEST_LOG
+    COMMAND_TIMELINE, COMMAND_LATEST_LOG, FILE_timeline_short
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
@@ -312,13 +312,13 @@ class UpdateAllService:
         if update_linux and arcade_organizer:
             update_linux = False
 
+        self._draw_separator()
         return_code = self._execute_downloader(config, self._ini_repository.downloader_ini_path_tweaked_by_config(config), update_linux, None, None)
         if return_code != 0:
             self._exit_code = 10
             self._error_reports.append('Scripts/.config/downloader/downloader.log')
 
-    def _execute_downloader(self, config: Config, downloader_ini_path: str, update_linux: bool, logfile: Optional[str], default_db: Optional[Database]) -> int:
-        self._draw_separator()
+    def _execute_downloader(self, config: Config, downloader_ini_path: str, update_linux: bool, logfile: Optional[str], default_db: Optional[Database], quiet: bool = False) -> int:
         env = {
             'DOWNLOADER_INI_PATH': downloader_ini_path,
             'ALLOW_REBOOT': '0',
@@ -330,16 +330,20 @@ class UpdateAllService:
         if default_db is not None:
             env['DEFAULT_DB_ID'] = default_db.db_id
             env['DEFAULT_DB_URL'] = default_db.db_url
-            self._logger.print('Running ' + default_db.title)
-        else:
-            self._logger.print('Running MiSTer Downloader')
+
+        if not quiet:
+            if default_db is None:
+                self._logger.print('Running MiSTer Downloader')
+            else:
+                self._logger.print('Running ' + default_db.title)
 
         downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=True)
         if downloader_file is None:
             return 1
 
         self._temp_launchers.append(downloader_file)
-        self._logger.print()
+        if not quiet:
+            self._logger.print()
 
         if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
             env['DEFAULT_BASE_PATH'] = config.base_path
@@ -347,7 +351,7 @@ class UpdateAllService:
         if config.not_mister:
             env['DEBUG'] = 'true'
 
-        return_code = self._os_utils.execute_process(downloader_file, env)
+        return_code = self._os_utils.execute_process(downloader_file, env, quiet)
         if not self._file_system.is_file(FILE_downloader_run_signal):
             return return_code
 
@@ -358,7 +362,7 @@ class UpdateAllService:
             return 1
 
         self._temp_launchers.append(downloader_file)
-        return_code = self._os_utils.execute_process(downloader_file, env)
+        return_code = self._os_utils.execute_process(downloader_file, env, quiet)
         if not self._file_system.is_file(FILE_downloader_run_signal):
             return return_code
 
@@ -369,7 +373,7 @@ class UpdateAllService:
             return 1
 
         self._temp_launchers.append(downloader_file)
-        return self._os_utils.execute_process(downloader_file, env)
+        return self._os_utils.execute_process(downloader_file, env, quiet)
 
     def _sync_downloader_launcher(self) -> None:
         if not self._file_system.is_file(FILE_downloader_launcher_downloader_script) or not self._file_system.is_file(FILE_downloader_launcher_update_script):
@@ -439,6 +443,7 @@ class UpdateAllService:
             return
 
         linux_db = Database(db_id='theypsilon/LinuxDB', db_url='https://raw.githubusercontent.com/theypsilon/LinuxDB_MiSTer/db/linuxdb.json', title='Linux Update')
+        self._draw_separator()
         return_code = self._execute_downloader(config, '/tmp/linux_update.ini', True, f'{config.base_system_path}/Scripts/.config/downloader/update_linux.log', linux_db)
         if return_code != 0:
             self._exit_code = 11
@@ -541,24 +546,24 @@ class UpdateAllService:
         self._logger.finalize()
 
     def _download_update_all_db_and_show_interactive_timeline(self) -> None:
-        from update_all.databases import AllDBs
-
         config = self._config_provider.get()
         timeline_log = f'{config.base_system_path}/Scripts/.config/downloader/timeline_download.log'
         timeline_ini = '/tmp/timeline_downloader.ini'
         self._file_system.unlink(timeline_ini)
-        return_code = self._execute_downloader(config, timeline_ini, False, timeline_log, AllDBs.UPDATE_ALL_MISTER)
+        return_code = self._execute_downloader(config, timeline_ini, False, timeline_log, AllDBs.UPDATE_ALL_MISTER, quiet=True)
+        self._logger.print()
         if return_code != 0:
-            self._exit_code = 10
-            self._error_reports.append(timeline_log)
+            self._logger.print('The Timeline data could not be updated because of an internet connection problem. Try again later to see an updated Timeline.')
 
         timeline_doc = self._timeline.load_timeline_doc(env_check_skip=True)
         if len(timeline_doc) > 0:
+            self._logger.print('Showing interactive Update Timeline viewer:')
             self._log_viewer.show(timeline_doc, {}, len(timeline_doc))
         else:
             self._logger.print('No timeline entries found. Try again later!')
 
         self._logger.finalize()
+        self._logger.print(''.join(timeline_doc))
 
     def _reboot_if_needed(self) -> None:
         config = self._config_provider.get()

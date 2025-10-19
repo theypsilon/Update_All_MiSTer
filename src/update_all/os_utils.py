@@ -37,7 +37,7 @@ class OsUtils(ABC):
     def reboot(self) -> None:
         """send reboot signal to the OS"""
 
-    def execute_process(self, launcher, env) -> int:
+    def execute_process(self, launcher, env, quiet: bool = False) -> int:
         """execute launcher process with subprocess and the given env. output gets redirected to stdout"""
 
     def read_command_output(self, cmd, env) -> [int, str]:
@@ -67,10 +67,11 @@ class LinuxOsUtils(OsUtils):
     def make_executable(self, file_path: str) -> None:
         subprocess.run(['chmod', '+x', file_path], check=True, stderr=subprocess.STDOUT)
 
-    def execute_process(self, launcher, env) -> int:
+    def execute_process(self, launcher, env, quiet: bool = False) -> int:
         try:
             env = {**os.environ.copy(), **env, 'PYTHONUNBUFFERED': '1'}
-            self._logger.debug('Executing launcher', launcher, ' with env: ', env)
+            self._logger.debug('Executing launcher', launcher, ' with env: ', env, ' quiet=', quiet)
+
             proc = subprocess.Popen(
                 [launcher],
                 stdout=subprocess.PIPE,
@@ -95,12 +96,14 @@ class LinuxOsUtils(OsUtils):
                     try:
                         output = pipe.read(4096)
                         if output:
+                            if quiet: output = '.'
                             self._logger.print(output, end='', flush=True)
                     except BlockingIOError:
                         continue
 
             for pipe in [proc.stdout, proc.stderr]:
                 for line in pipe.readlines():
+                    if quiet: line = '.'
                     self._logger.print(line, end='', flush=True)
 
             return proc.returncode

@@ -39,8 +39,8 @@ class SpyOsUtils(OsUtils):
     def sleep(self, seconds):
         self.calls_to_sleep.append(seconds)
 
-    def execute_process(self, launcher, env):
-        self.calls_to_execute_process.append((launcher, env))
+    def execute_process(self, launcher, env,quiet: bool = False):
+        self.calls_to_execute_process.append((launcher, env, quiet))
         return 0
 
     def read_command_output(self, cmd, env):

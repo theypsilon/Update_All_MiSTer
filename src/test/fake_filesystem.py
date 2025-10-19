@@ -302,6 +302,9 @@ class _FileSystem(ProductionFileSystem):
     def file_size(self, path):
         return self._state.files[self._path(path)]['size']
 
+    def file_mtime(self, path):
+        return self._state.files[self._path(path)].get('mtime', 0.0)
+
     def save_json_on_zip(self, db, path):
         if self._path(path) not in self._state.files:
             self.touch(path)
