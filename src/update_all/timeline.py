@@ -114,9 +114,6 @@ class Timeline:
 def create_timeline_doc(model, names_dict: dict[str, str]):
     doc = []
     sections = model.get("sections", [])
-    if not sections:
-        doc.append('Timeline is empty.')
-        return doc
 
     doc.append("=" * 80 + "\n")
     doc.append("================================================================================\n")
@@ -143,6 +140,10 @@ def create_timeline_doc(model, names_dict: dict[str, str]):
     doc.append("################################################################################\n")
     doc.append("#" * 80 + "\n")
     doc.append("\n")
+
+    if not sections:
+        doc.append(model.get("summary", {}).get("no_sections_msg", "Timeline is empty."))
+        return doc
 
     for section in sections:
         add_doc_section(doc, section, names_dict)
