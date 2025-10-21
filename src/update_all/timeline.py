@@ -142,7 +142,7 @@ def create_timeline_doc(model, names_dict: dict[str, str]):
     doc.append("\n")
 
     if not sections:
-        doc.append(model.get("summary", {}).get("no_sections_msg", "Timeline is empty."))
+        doc.extend(model.get("summary", {}).get("no_sections_msg", ["Timeline is empty."]))
         return doc
 
     for section in sections:
