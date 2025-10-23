@@ -40,9 +40,7 @@ class Timeline:
 
         timeline_plus_model = None
         timeline_model = None
-        if not self._file_system.is_file(config.timeline_plus_path):
-            self._logger.debug('timeline_plus_path does not exist:', config.timeline_plus_path)
-        else:
+        if self._file_system.is_file(config.timeline_plus_path):
             with tempfile.NamedTemporaryFile() as temp_file:
                 if env_check_skip:
                     self._logger.debug('Skipping environment check for timeline decryption')
@@ -50,13 +48,17 @@ class Timeline:
                 decrypt_result = self._encryption.decrypt_file(config.timeline_plus_path, temp_file.name)
                 if decrypt_result == EncryptionResult.Success:
                     timeline_plus_model = self._file_system.load_dict_from_file(temp_file.name, '.json')
+                elif decrypt_result == EncryptionResult.MissingKey:
+                    pass
+                elif decrypt_result == EncryptionResult.InvalidKey:
+                    self._logger.debug("Your Patreon Key is expired.")
+                elif decrypt_result == EncryptionResult.ImproperEnvironment:
+                    self._logger.debug('Please run Update All on MiSTer to load the Extended Update Timeline.')
                 else:
                     self._logger.debug(f'Could not decrypt timeline_plus_file: {decrypt_result}')
-        if timeline_plus_model is None:
-            if not self._file_system.is_file(config.timeline_short_path):
-                self._logger.debug('timeline_short_path does not exist:', config.timeline_short_path)
-            else:
-                timeline_model = self._file_system.load_dict_from_file(config.timeline_short_path, '.json')
+
+        if timeline_plus_model is None and self._file_system.is_file(config.timeline_short_path):
+            timeline_model = self._file_system.load_dict_from_file(config.timeline_short_path, '.json')
 
         names_dict = self._load_names_dict(FILE_names_txt)
 
