@@ -1,0 +1,31 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "PCXT",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2025-10-25",
+      "timestamps": [
+        1761390958
+      ],
+      "title": "Files updated TODAY (2025-10-25)",
+      "type": "today"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1439,
+    "total_file_updates": 2033,
+    "unique_files": 1380
+  }
+}
