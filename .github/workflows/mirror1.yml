@@ -12,11 +12,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: actions/setup-python@v5
       with:
-        enable-cache: true
-      
-    - run: uv sync --python 3.14
+        python-version: '3.14'
 
     - name: Generate Mirror Branch 1
       run: |
@@ -25,3 +23,4 @@ jobs:
         python3 .github/gen_mirror.py 1
       env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
