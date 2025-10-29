@@ -1,0 +1,27 @@
+name: Mirror 1
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+jobs:
+  gen_mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+      
+    - run: uv sync --python 3.14
+
+    - name: Generate Mirror Branch 1
+      run: |
+        git config --global user.email "theypsilon@gmail.com"
+        git config --global user.name "The CI/CD Bot"
+        python3 .github/gen_mirror.py 1
+      env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
