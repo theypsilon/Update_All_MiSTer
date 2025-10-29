@@ -16,7 +16,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from update_all.databases import AllDBs, all_dbs_list
 
 # Mirror configuration
-SOURCE_DOMAIN = 'raw.githubusercontent.com'
+SOURCE_DOMAINS = [
+    'raw.githubusercontent.com',
+    'github.com',
+    'www.github.com'
+]
 MIRROR_DOMAIN = 'mirror1.undefinedproxy.com'
 MIRROR_BRANCH = 'mirror-1'
 
@@ -144,8 +148,8 @@ def process_database(db, temp_path):
         json_filename = filename
 
     # Replace URLs in JSON
-    print(f"   🔁 Replacing URLs ({SOURCE_DOMAIN} → {MIRROR_DOMAIN})...")
-    modified_json = replace_urls_in_json(json_data, SOURCE_DOMAIN, MIRROR_DOMAIN)
+    print(f"   🔁 Replacing URLs (GitHub domains → {MIRROR_DOMAIN})...")
+    modified_json = replace_urls_in_json(json_data, SOURCE_DOMAINS, MIRROR_DOMAIN)
 
     # Save the modified JSON in the org/repo/branch subdirectory
     output_path = db_dir / json_filename
@@ -194,14 +198,20 @@ def extract_json_from_zip(zip_content):
         os.unlink(tmp_zip_path)
 
 
-def replace_urls_in_json(obj, source_domain, target_domain):
-    """Recursively replace URLs in JSON object."""
+def replace_urls_in_json(obj, source_domains, target_domain):
+    """Recursively replace URLs in JSON object.
+
+    Replaces all occurrences of source_domains with target_domain.
+    """
     if isinstance(obj, dict):
-        return {k: replace_urls_in_json(v, source_domain, target_domain) for k, v in obj.items()}
+        return {k: replace_urls_in_json(v, source_domains, target_domain) for k, v in obj.items()}
     elif isinstance(obj, list):
-        return [replace_urls_in_json(item, source_domain, target_domain) for item in obj]
+        return [replace_urls_in_json(item, source_domains, target_domain) for item in obj]
     elif isinstance(obj, str):
-        return obj.replace(source_domain, target_domain)
+        result = obj
+        for source_domain in source_domains:
+            result = result.replace(source_domain, target_domain)
+        return result
     else:
         return obj
 
