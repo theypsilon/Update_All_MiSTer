@@ -64,34 +64,65 @@ def main():
 
 
 def parse_github_url(url):
-    """Parse GitHub raw URL to extract full path after domain.
+    """Parse GitHub URL to extract full path and raw download URL.
 
-    Expected format: https://raw.githubusercontent.com/<full_path>
-    Returns: full_path or None if not a valid GitHub raw URL
+    Handles:
+    - https://raw.githubusercontent.com/<org>/<repo>/<branch>/<path>
+    - https://github.com/<org>/<repo>/blob/<branch>/<path>
+    - https://www.github.com/<org>/<repo>/blob/<branch>/<path>
+
+    Returns: (full_path, download_url) or (None, None) if not a valid GitHub URL
     """
-    prefix = 'https://raw.githubusercontent.com/'
-    if not url.startswith(prefix):
-        return None
+    # Handle raw.githubusercontent.com URLs
+    raw_prefix = 'https://raw.githubusercontent.com/'
+    if url.startswith(raw_prefix):
+        full_path = url[len(raw_prefix):]
+        return full_path, url
 
-    # Extract everything after https://raw.githubusercontent.com/
-    return url[len(prefix):]
+    # Handle github.com URLs (with or without www)
+    for prefix in ['https://github.com/', 'https://www.github.com/']:
+        if url.startswith(prefix):
+            # Remove prefix
+            path = url[len(prefix):]
+
+            # Expected format: org/repo/blob/branch/path/to/file
+            # Need to convert to: org/repo/branch/path/to/file
+            parts = path.split('/')
+            if len(parts) >= 4 and parts[2] in ['blob', 'raw']:
+                # Remove 'blob' or 'raw' from the path
+                org = parts[0]
+                repo = parts[1]
+                branch = parts[3]
+                file_path = '/'.join(parts[4:]) if len(parts) > 4 else ''
+
+                # Construct the full path (what will be used for directory structure)
+                full_path = f"{org}/{repo}/{branch}/{file_path}" if file_path else f"{org}/{repo}/{branch}"
+
+                # Construct the raw download URL
+                raw_url = f"https://raw.githubusercontent.com/{full_path}"
+
+                return full_path, raw_url
+
+            return None, None
+
+    return None, None
 
 
 def process_database(db, temp_path):
     """Process a single database: download, transform URLs, and save."""
     url = db.db_url
 
-    # Parse URL to get full path - skip if not a GitHub URL
-    full_path = parse_github_url(url)
+    # Parse URL to get full path and download URL - skip if not a GitHub URL
+    full_path, download_url = parse_github_url(url)
     if not full_path:
         print(f"   ⏭️  Skipping non-GitHub URL")
         return []
 
-    is_zipped = url.endswith('.zip')
+    is_zipped = download_url.endswith('.zip')
 
     # Download the file
-    print(f"   ⬇️  Downloading...")
-    content = download_url(url)
+    print(f"   ⬇️  Downloading from: {download_url}")
+    content = download_url_content(download_url)
 
     # Extract directory and filename from full path
     path_parts = full_path.split('/')
@@ -135,7 +166,7 @@ def process_database(db, temp_path):
     return [result_path]
 
 
-def download_url(url):
+def download_url_content(url):
     """Download content from URL."""
     try:
         with urlopen(url, timeout=30) as response:
