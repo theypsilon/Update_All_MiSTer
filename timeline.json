@@ -1,0 +1,65 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "Downloader",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2025-11-01",
+      "timestamps": [
+        1762014146
+      ],
+      "title": "Files updated TODAY (2025-11-01)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Taito F2 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Taito F2 MRAs: Crayon Shinchan Orato Asobo, Quiz Chikyu Bouei Gun, Quiz Crayon Shinchan, Quiz H.Q., Quiz Jinsei Gekijoh, Quiz Quest - Hime to Yuusha no Monogatari, Quiz Torimonochou",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "PCXT",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1761390958,
+        1761535291,
+        1761553778,
+        1761627069
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1446,
+    "total_file_updates": 2041,
+    "unique_files": 1387
+  }
+}
