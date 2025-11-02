@@ -383,7 +383,7 @@ class SettingsScreen(UiApplication):
 
         self._logger.print()
         logger = CollectorLoggerDecorator(self._logger)
-        installed = pocket_firmware_update(self._config_provider.get().curl_ssl, self._local_repository, logger)
+        installed = pocket_firmware_update(self._config_provider.get().curl_ssl, self._local_repository, logger, self._config_provider.get().http_config)
 
         logs = list(logger.prints)
         logs.append('')

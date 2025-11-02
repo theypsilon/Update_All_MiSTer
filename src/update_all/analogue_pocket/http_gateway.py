@@ -16,13 +16,14 @@
 # You can download the latest version of this tool from:
 # https://github.com/MiSTer-devel/Downloader_MiSTer
 
+import socket
 import ssl
 import sys
 import threading
 import time
 from contextlib import contextmanager
 from email.utils import parsedate_to_datetime
-from typing import Type, Tuple, Any, Optional, Generator, List, Dict, Union, Protocol, TypeVar, Generic
+from typing import Type, Tuple, Any, Optional, Generator, List, Dict, Union, Protocol, TypeVar, Generic, TypedDict
 from urllib.parse import urlparse, ParseResult, urlunparse
 from http.client import HTTPConnection, HTTPSConnection, HTTPResponse, HTTPException
 from types import TracebackType
@@ -36,12 +37,20 @@ class HttpLogger(Protocol):
     def debug(self, *args: Any) -> None: ...
 
 
+class HttpConfig(TypedDict):
+    http_proxy: Optional[ParseResult]
+    https_proxy: Optional[ParseResult]
+    http_proxy_headers: Optional[Dict[str, str]]
+    https_proxy_headers: Optional[Dict[str, str]]
+
+
 class HttpGateway:
-    def __init__(self, ssl_ctx: ssl.SSLContext, timeout: float, logger: Optional[HttpLogger] = None) -> None:
+    def __init__(self, ssl_ctx: ssl.SSLContext, timeout: float, logger: Optional[HttpLogger] = None, config: Optional[dict[str, Any]] = None) -> None:
         now = time.monotonic()
         self._ssl_ctx = ssl_ctx
         self._timeout = timeout
         self._logger = logger
+        self._config = config
         self._connections: Dict[_QueueId, _ConnectionQueue] = {}
         self._connections_lock = threading.Lock()
         self._clean_timeout_connections_timer = now
@@ -73,13 +82,14 @@ class HttpGateway:
         if self._logger is not None: self._logger.debug(f'^^^^ {method} {url}')
         url = self._process_url(url)
         parsed_url = urlparse(url)
-        if parsed_url.scheme not in {'http', 'https'}: raise HttpGatewayException(f"URL '{url}' has wrong scheme '{parsed_url.scheme}'.")
+        scheme_code = _scheme_dict.get(parsed_url.scheme, -1)
+        if scheme_code == -1: raise HttpGatewayException(f"URL '{url}' has wrong scheme '{parsed_url.scheme}'.")
         final_url, conn = self._request(
             url,
             parsed_url,
             method,
             body,
-            headers or _default_headers,
+            self._make_headers(headers, is_http=scheme_code==0),
         )
         if self._logger is not None: self._logger.debug(f'HTTP {conn.response.status}: {final_url}\n'
                                                         f'1st byte @ {time.monotonic() - now:.3f}s\nvvvv\n')
@@ -88,6 +98,13 @@ class HttpGateway:
         finally:
             conn.finish_response()
             if self._logger is not None: self._logger.print(f'|||| Done: {final_url} ({time.monotonic() - now:.3f}s)')
+
+    def _make_headers(self, headers: Any, is_http: bool) -> dict[str, str]:
+        if is_http and self._config and self._config['http_proxy_headers']:
+            headers = headers if isinstance(headers, dict) else {}
+            return {**_default_headers, **headers, **self._config['http_proxy_headers']}
+        else:
+            return {**_default_headers, **headers} if isinstance(headers, dict) else _default_headers
 
     def cleanup(self) -> None:
         self._out_of_service = True
@@ -107,6 +124,9 @@ class HttpGateway:
             if self._out_of_service: raise HttpGatewayException(f'{HttpGateway.__name__} out of service.')
             try:
                 conn.do_request(method, str(urlunparse(parsed_url)), body, headers)
+            except (TimeoutError, socket.timeout) as e:
+                conn.kill()
+                raise e
             except (HTTPException, OSError) as e:
                 conn.kill()
                 if retry >= 10: raise e
@@ -166,8 +186,9 @@ class HttpGateway:
     def _take_connection(self, queue_id: '_QueueId') -> '_Connection':
         with self._connections_lock:
             if queue_id not in self._connections:
-                self._connections[queue_id] = _ConnectionQueue(queue_id, self._timeout, self._ssl_ctx, self._logger)
-            return self._connections[queue_id].pull()
+                self._connections[queue_id] = _ConnectionQueue(queue_id, self._timeout, self._ssl_ctx, self._logger, self._config)
+            queue = self._connections[queue_id]
+        return queue.pull()
 
     def _clean_timeout_connections(self, now: float) -> None:
         if now - self._clean_timeout_connections_timer < 30.0:
@@ -238,7 +259,54 @@ class HttpGateway:
 
         return size != len(self._redirects_swap)
 
-_default_headers = {'Connection': 'keep-alive', 'Keep-Alive': 'timeout=120'}
+
+_scheme_dict = {
+    'http': 0,
+    'https': 1
+}
+
+def http_config(http_proxy: Optional[str], https_proxy: Optional[str]) -> HttpConfig:
+    config: HttpConfig = {
+        "http_proxy": None,
+        "https_proxy": None,
+        "http_proxy_headers": None,
+        "https_proxy_headers": None
+    }
+
+    if not http_proxy and not https_proxy: return config
+
+    if http_proxy:
+        parsed = urlparse(http_proxy)
+        if parsed.hostname and parsed.scheme in ('http', 'https'):
+            config['http_proxy'] = parsed
+            auth_header = _make_proxy_auth_header(parsed)
+            if auth_header:
+                config['http_proxy_headers'] = {'Proxy-Authorization': auth_header}
+
+    if not https_proxy and http_proxy:
+        https_proxy = http_proxy
+
+    if https_proxy:
+        parsed = urlparse(https_proxy)
+        if parsed.hostname and parsed.scheme in ('http', 'https'):
+            config['https_proxy'] = parsed
+            auth_header = _make_proxy_auth_header(parsed)
+            if auth_header:
+                config['https_proxy_headers'] = {'Proxy-Authorization': auth_header}
+
+    return config
+
+
+def _make_proxy_auth_header(proxy: ParseResult) -> Optional[str]:
+    if proxy.username and proxy.password:
+        import base64
+        credentials = f"{proxy.username}:{proxy.password}"
+        encoded = base64.b64encode(credentials.encode()).decode('ascii')
+        return f"Basic {encoded}"
+    return None
+
+USER_AGENT = 'Downloader/2.X (Linux; theypsilon@gmail.com)'
+_default_headers = {'User-Agent': USER_AGENT, 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=120'}
 
 
 _QueueId = Tuple[str, str]
@@ -266,15 +334,15 @@ def _redirect(input_arg: T, res_dict: Dict[T, _Redirect[T]], lock: threading.Loc
 
 
 class _Connection:
-    def __init__(self, conn_id: int, http: HTTPConnection, connection_queue: '_ConnectionQueue', logger: Optional[HttpLogger]) -> None:
+    def __init__(self, conn_id: int, http: HTTPConnection, connection_queue: '_ConnectionQueue', logger: Optional[HttpLogger], timeout: float) -> None:
         self.id = conn_id
         self._http = http
         self._connection_queue = connection_queue
         self._logger = logger
-        self._timeout: float = http.timeout if http.timeout is not None else 120.0
+        self._timeout: float = timeout
         self._last_use_time: float = 0.0
         self._uses: int = 0
-        self._max_uses: float = sys.float_info.max
+        self._max_uses: int = sys.maxsize
         self._response: Optional[Union[HTTPResponse, '_FinishedResponse']] = None
         self._response_headers = _ResponseHeaders(logger)
 
@@ -284,6 +352,7 @@ class _Connection:
 
     def do_request(self, method: str, url: str, body: Any, headers: Any) -> None:
         self._http.request(method, url, headers=headers, body=body)
+        self._http.sock.settimeout(self._timeout)
         self._uses += 1
         self._response = self._http.getresponse()
         self._response_headers.set_headers(self._response.getheaders(), self._response.version)
@@ -306,8 +375,11 @@ class _Connection:
         return self._response_headers
 
     def finish_response(self) -> None:
-        if self._close_response() and self._uses < self._max_uses:
-            self._connection_queue.push(self)
+        if self._close_response():
+            if self._uses < self._max_uses:
+                self._connection_queue.push(self)
+            else:
+                self._http.close()
 
     def _close_response(self) -> bool:
         if isinstance(self._response, _FinishedResponse):
@@ -340,23 +412,33 @@ class _FinishedResponse: pass
 
 
 class _ConnectionQueue:
-    def __init__(self, queue_id: _QueueId, timeout: float, ctx: ssl.SSLContext, logger: Optional[HttpLogger]) -> None:
+    def __init__(self, queue_id: _QueueId, timeout: float, ctx: ssl.SSLContext, logger: Optional[HttpLogger], config: Optional[dict[str, Any]]) -> None:
         self.id = queue_id
         self._timeout = timeout
         self._ctx = ctx
         self._logger = logger
+        self._config = config
         self._queue: List[_Connection] = []
         self._queue_swap: List[_Connection] = []
         self._lock = threading.Lock()
         self._last_conn_id = -1
+        self._queue_cleared = False
 
     def pull(self) -> _Connection:
         with self._lock:
-            if len(self._queue) == 0:
+            if len(self._queue) > 0:
+                return self._queue.pop()
+            else:
                 self._last_conn_id += 1
-                http_conn = create_http_connection(self.id[0], self.id[1], self._timeout, self._ctx)
-                return _Connection(conn_id=self._last_conn_id, http=http_conn, connection_queue=self, logger=self._logger)
-            return self._queue.pop()
+                conn_id = self._last_conn_id
+
+        http_conn = create_http_connection(self.id[0], self.id[1], self._ctx, self._config)
+        with self._lock:
+            if self._queue_cleared:
+                http_conn.close()
+                raise HttpGatewayException('Connection queue is already cleared.')
+
+        return _Connection(conn_id=conn_id, http=http_conn, connection_queue=self, logger=self._logger, timeout=self._timeout)
 
     def push(self, connection: _Connection) -> None:
         with self._lock:
@@ -364,6 +446,7 @@ class _ConnectionQueue:
 
     def clear_all(self) -> int:
         with self._lock:
+            self._queue_cleared = True
             size = len(self._queue)
             for connection in self._queue:
                 connection.kill()
@@ -388,10 +471,29 @@ class _ConnectionQueue:
             return expired_count
 
 
-def create_http_connection(scheme: str, netloc: str, timeout: float, ctx: ssl.SSLContext) -> HTTPConnection:
-    if scheme == 'http': return HTTPConnection(netloc, timeout=timeout)
-    elif scheme == 'https': return HTTPSConnection(netloc, timeout=timeout, context=ctx)
-    else: raise HttpGatewayException(f"Scheme {scheme} not supported")
+def create_http_connection(scheme: str, netloc: str, ctx: ssl.SSLContext, config: Optional[dict[str, Any]]) -> HTTPConnection:
+    if scheme == 'http':
+        if config and config['http_proxy']:
+            proxy = config['http_proxy']
+            proxy_host = proxy.hostname
+            proxy_port = proxy.port or 80
+            if proxy.scheme == 'https':
+                return HTTPSConnection(proxy_host, proxy_port, timeout=15, context=ctx)
+            return HTTPConnection(proxy_host, proxy_port, timeout=15)
+        return HTTPConnection(netloc, timeout=15)
+
+    elif scheme == 'https':
+        if config and config['https_proxy']:
+            proxy = config['https_proxy']
+            proxy_host = proxy.hostname
+            proxy_port = proxy.port or (443 if proxy.scheme == 'https' else 80)
+            conn = HTTPSConnection(proxy_host, proxy_port, timeout=15, context=ctx)
+            conn.set_tunnel(netloc, 443, headers=config.get('https_proxy_headers'))
+            return conn
+        return HTTPSConnection(netloc, timeout=15, context=ctx)
+
+    else:
+        raise HttpGatewayException(f"Scheme {scheme} not supported")
 
 
 class _ResponseHeaders:
@@ -426,15 +528,14 @@ class _ResponseHeaders:
                     return new_url, None
 
                 age = self._headers.get('age', 0)
-                try:
-                    age = int(age)
-                except Exception as e:
-                    if self._logger is not None: self._logger.debug(f"Could not parse Age from {age}", e)
-                    age = 0
+                if age != 0:
+                    try:
+                        age = int(age)
+                    except Exception as e:
+                        if self._logger is not None: self._logger.debug(f"Could not parse Age from {age}", e)
+                        age = 0
 
                 return new_url, time.monotonic() + max_age - age
-
-            pass
 
         expires = self._headers.get('expires', None)
         if expires is not None:
@@ -498,9 +599,10 @@ class _ParamsParser:
         if self._logger is not None: self._logger.debug(f"ERROR! Could not parse str from: {value}")
         return None
 
+
 import os
 is_windows = os.name == 'nt'
-COPY_BUFSIZE = 1024 * 1024 if is_windows else 64 * 1024
+COPY_BUFSIZE = 256 * 1024 if is_windows else 128 * 1024
 
 
 def write_incoming_stream(in_stream: Any, target_path: str, timeout: int):
@@ -515,3 +617,38 @@ def write_incoming_stream(in_stream: Any, target_path: str, timeout: int):
             if not buf:
                 break
             out_file.write(buf)
+
+
+import hashlib
+def write_stream_to_data(in_stream: Any, calc_md5: bool, timeout: int, /) -> Tuple[bytes, str]:
+    start_time = time.monotonic()
+    data = bytearray()
+    md5_hasher = hashlib.md5() if calc_md5 is not None else None
+    while True:
+        elapsed_time = time.monotonic() - start_time
+        if elapsed_time > timeout:
+            raise TimeoutError(f"Copy operation timed out after {timeout} seconds.")
+
+        chunk = in_stream.read(COPY_BUFSIZE)
+        if not chunk:
+            break
+        data.extend(chunk)
+
+        if not calc_md5:
+            continue
+
+        md5_hasher.update(chunk)
+
+    return bytes(data), md5_hasher.hexdigest() if calc_md5 else ''
+
+def fetch(url: str, method: Optional[str] = None, body: Any = None, headers: Any = None, ssl_ctx: Optional[ssl.SSLContext] = None, timeout: Optional[float] = None, logger: Optional[HttpLogger] = None, config: Optional[HttpConfig] = None) -> tuple[int, bytes]:
+    timeout = timeout or 300
+    gw = HttpGateway(
+        ssl_ctx=ssl_ctx or ssl.create_default_context(),
+        timeout=timeout,
+        logger=logger,
+        config=config
+    )
+    with gw.open(url, method, body, headers) as (final_url, in_stream):
+        data, _ = write_stream_to_data(in_stream, False, timeout)
+        return in_stream.status, data

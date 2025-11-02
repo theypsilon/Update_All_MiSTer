@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.4.1 - 2025-11-02
+
+### Added
+- Built-in support for custom HTTP Proxy. Add the `http_proxy` entry to downloader.ini as explained in Downloader's [README.md file](https://github.com/MiSTer-devel/Downloader_MiSTer?tab=readme-ov-file#options). The environment variables `http_proxy` and `https_proxy` are also supported and take precedence, but `no_proxy` is not yet supported.
+
+### Changelog
+- Fixed a bug where the Log Viewer could no longer be disabled.
+
+
 ## Version 2.4 - 2025-10-17
 
 ### Added

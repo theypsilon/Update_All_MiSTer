@@ -217,7 +217,7 @@ class UpdateAllService:
         elif test_routine == 'SETTINGS_SCREEN':
             self._settings_screen.load_test_menu()
         elif test_routine == 'POCKET_FIRMWARE_UPDATE':
-            pocket_firmware_update(self._config_provider.get().curl_ssl, self._local_repository, self._logger)
+            pocket_firmware_update(self._config_provider.get().curl_ssl, self._local_repository, self._logger, self._config_provider.get().http_config)
         elif test_routine == 'POCKET_BACKUP':
             pocket_backup(self._logger)
         elif test_routine == 'DECRYPT':
@@ -393,7 +393,7 @@ class UpdateAllService:
             self._draw_separator()
             self._logger.print('Installing Analogue Pocket Firmware')
             self._logger.print()
-            if pocket_firmware_update(self._config_provider.get().curl_ssl, self._local_repository, self._logger):
+            if pocket_firmware_update(self._config_provider.get().curl_ssl, self._local_repository, self._logger, self._config_provider.get().http_config):
                 self._logger.print()
                 self._logger.print('Your Pocket firmware is on the latest version.')
             else:
@@ -426,7 +426,7 @@ class UpdateAllService:
         self._logger.print("Running Arcade Organizer")
         self._logger.print()
 
-        success = self._ao_service.run_arcade_organizer_organize_all_mras(self._ao_service.make_arcade_organizer_config(f'{config.base_path}/{ARCADE_ORGANIZER_INI}'))
+        success = self._ao_service.run_arcade_organizer_organize_all_mras(self._ao_service.make_arcade_organizer_config(f'{config.base_path}/{ARCADE_ORGANIZER_INI}', http_proxy=config.http_proxy))
         if success is False:
             self._exit_code = 12
             self._error_reports.append('Arcade Organizer')
@@ -501,7 +501,7 @@ class UpdateAllService:
             self._logger.print("You should reboot")
             self._logger.print()
 
-        if config.timeline_after_logs:
+        if config.log_viewer and config.timeline_after_logs:
             # Needs to be done here we want to collect logs before finalize
             try:
                 self._timeline_after_log_doc = self._timeline.load_timeline_doc()
@@ -514,7 +514,7 @@ class UpdateAllService:
 
     def _show_interactive_log_viewer_and_timeline(self) -> None:
         config = self._config_provider.get()
-        if config.log_viewer or config.timeline_after_logs:
+        if config.log_viewer:
             try:
                 log_doc = self._log_viewer.load_log_document() if config.log_viewer else []
                 timeline_doc = self._timeline_after_log_doc

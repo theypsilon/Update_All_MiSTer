@@ -119,6 +119,10 @@ KENV_PATREON_KEY_PATH: Final[str] = 'PATREON_KEY_PATH'
 KENV_COMMAND: Final[str] = 'COMMAND'
 KENV_TIMELINE_SHORT_PATH: Final[str] = 'TIMELINE_SHORT_PATH'
 KENV_TIMELINE_PLUS_PATH: Final[str] = 'TIMELINE_PLUS_PATH'
+KENV_HTTP_PROXY: Final[str] = 'HTTP_PROXY'
+KENV_LC_HTTP_PROXY: Final[str] = 'http_proxy'
+KENV_HTTPS_PROXY: Final[str] = 'HTTPS_PROXY'
+KENV_LC_HTTPS_PROXY: Final[str] = 'https_proxy'
 
 # Exit codes
 EXIT_CODE_REQUIRES_EARLY_EXIT: Final[int] = 1
@@ -131,8 +135,8 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION: Final[str] = "2.4"
-MISTER_DOWNLOADER_VERSION: Final[str] = "2.2"
+UPDATE_ALL_VERSION: Final[str] = "2.4.1"
+MISTER_DOWNLOADER_VERSION: Final[str] = "2.2.1"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"
 DOWNLOADER_URL: Final[str] = "https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/latest/dont_download.zip"

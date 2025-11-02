@@ -18,8 +18,9 @@
 
 from dataclasses import dataclass, field
 from enum import unique, IntEnum
-from typing import Set
+from typing import Set, Optional
 
+from update_all.analogue_pocket.http_gateway import HttpConfig
 from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, MEDIA_FAT, FILE_patreon_key, \
     FILE_timeline_short, FILE_timeline_plus, COMMAND_STANDARD
 
@@ -37,6 +38,8 @@ class Config:
     timeline_short_path: str = FILE_timeline_short
     timeline_plus_path: str = FILE_timeline_plus
     command: str = COMMAND_STANDARD
+    http_proxy: str = ''
+    http_config: Optional[HttpConfig] = None
 
     # General options
     base_path: str = MEDIA_FAT

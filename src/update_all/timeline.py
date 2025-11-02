@@ -23,7 +23,6 @@ from update_all.logger import Logger
 from update_all.other import GenericProvider
 
 import tempfile
-import json
 from typing import Any
 
 
@@ -91,7 +90,6 @@ class Timeline:
         names_dict = {}
 
         if self._file_system.is_file(names_path) is False:
-            self._logger.debug(f"Names file {names_path} does not exist, skipping name mappings")
             return names_dict
 
         try:

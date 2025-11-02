@@ -16,12 +16,12 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-import ssl
 from pathlib import Path
 import glob
 import os
+from typing import Optional
 
-from update_all.analogue_pocket.http_gateway import HttpGateway, write_incoming_stream
+from update_all.analogue_pocket.http_gateway import HttpGateway, write_incoming_stream, HttpConfig
 from update_all.analogue_pocket.utils import pocket_mount
 from update_all.file_system import hash_file
 from update_all.local_repository import LocalRepository
@@ -29,7 +29,7 @@ from update_all.logger import Logger
 from update_all.os_utils import context_from_curl_ssl
 
 
-def pocket_firmware_update(curl_ssl: str, local_repository: LocalRepository, logger: Logger):
+def pocket_firmware_update(curl_ssl: str, local_repository: LocalRepository, logger: Logger, http_config: Optional[HttpConfig] = None):
     ssl_ctx, ssl_err = context_from_curl_ssl(curl_ssl)
     if ssl_err is not None:
         logger.debug(ssl_err)
@@ -69,15 +69,15 @@ def pocket_firmware_update(curl_ssl: str, local_repository: LocalRepository, log
 
     logger.print(f'Updating Analogue Pocket firmware to version {firmware_info["version"]}...')
 
-    with HttpGateway(ssl_ctx=ssl_ctx, timeout=180, logger=None) as http:
-        with http.open(firmware_info['url'], 'GET') as (final_url, in_stream):
-            if in_stream.status != 200:
-                logger.print(f'ERROR! Bad http status!: {in_stream.status}')
-                return False
+    http = HttpGateway(ssl_ctx=ssl_ctx, timeout=180, logger=None, config=http_config)
+    with http.open(firmware_info['url'], 'GET') as (final_url, in_stream):
+        if in_stream.status != 200:
+            logger.print(f'ERROR! Bad http status!: {in_stream.status}')
+            return False
 
-            logger.debug(f'Downloading from {final_url} to {target_file}...')
-            logger.print(f'Downloading firmware to {target_file}...')
-            write_incoming_stream(in_stream, str(target_file), timeout=180)
+        logger.debug(f'Downloading from {final_url} to {target_file}...')
+        logger.print(f'Downloading firmware to {target_file}...')
+        write_incoming_stream(in_stream, str(target_file), timeout=180)
 
     if not target_file.exists():
         logger.print(f'ERROR! Missing file {firmware_info["file"]}')

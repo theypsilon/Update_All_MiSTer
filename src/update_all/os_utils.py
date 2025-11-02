@@ -24,6 +24,7 @@ import os
 from abc import ABC
 from typing import Optional, Tuple
 
+from update_all.analogue_pocket.http_gateway import fetch
 from update_all.config import Config
 from update_all.other import GenericProvider
 from update_all.logger import Logger
@@ -120,40 +121,23 @@ class LinuxOsUtils(OsUtils):
         time.sleep(seconds)
 
     def download(self, url) -> Optional[bytes]:
-        try:
-            return subprocess.check_output(self._curl_command(url))
-        except subprocess.CalledProcessError as e:
-            self._logger.debug(e)
-            if e.returncode in _curl_connection_error_codes:
-                self._logger.print(f"Connection error: {_curl_connection_error_codes[e.returncode]}")
-            else:
-                self._logger.print(f"An error occurred, please try again later.")
+        ssl_ctx, ssl_err = context_from_curl_ssl(self._config_provider.get().curl_ssl)
+        if ssl_err is not None:
+            self._logger.debug(ssl_err)
+            self._logger.print('WARNING! Ignoring SSL parameters...')
             return None
 
-    def _curl_command(self, url):
-        curl_ssl = self._config_provider.get().curl_ssl
-        curl_command = ["curl", "-s", "-L"]
-        if curl_ssl != "":
-            curl_command.extend(curl_ssl.split())
-        if '--retry' not in curl_ssl:
-            curl_command.extend(["--retry", "3"])
-        if '--connect-timeout' not in curl_ssl:
-            curl_command.extend(["--connect-timeout", "30"])
-        if '--max-time' not in curl_ssl:
-            curl_command.extend(["--max-time", "300"])
-        curl_command.append(url)
-        return curl_command
+        try:
+            status, data = fetch(url, ssl_ctx=ssl_ctx, timeout=180, config=self._config_provider.get().http_config)
+            if status != 200:
+                self._logger.print(f'ERROR! Bad http status!: {status}')
+                return None
 
-
-_curl_connection_error_codes = {
-    5: "Couldn't resolve proxy",
-    6: "Couldn't resolve host",
-    7: "Failed to connect to host",
-    28: "Connection timeout",
-    35: "SSL connect error",
-    52: "Server didn't reply with any data",
-    56: "Failure with receiving network data",
-}
+            return data
+        except Exception as e:
+            self._logger.debug(e)
+            self._logger.print(f"An error occurred, please try again later.")
+            return None
 
 
 def context_from_curl_ssl(curl_ssl) -> Tuple[ssl.SSLContext, Optional[Exception]]:

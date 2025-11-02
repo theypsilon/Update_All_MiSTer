@@ -20,6 +20,7 @@ import time
 from pathlib import Path
 from typing import Dict
 
+from update_all.analogue_pocket.http_gateway import http_config
 from update_all.config import Config
 from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, \
     KENV_DEBUG, KENV_TRANSITION_SERVICE_ONLY, KENV_LOCAL_TEST_RUN, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
@@ -50,6 +51,7 @@ class ConfigReader:
             config.base_system_path = mister_section.get_string('base_system_path', config.base_path)
             config.paths_from_downloader_ini = mister_section.has('base_path')
             config.verbose = mister_section.get_bool('verbose', False)
+            config.http_proxy = mister_section.get_string('http_proxy', '').strip()
         else:
             config.base_path = str(calculate_base_path(self._env))
             config.base_system_path = config.base_path
@@ -66,6 +68,12 @@ class ConfigReader:
         config.command = self._env.get(KENV_COMMAND, config.command).strip().upper()
         config.timeline_short_path = self._env.get(KENV_TIMELINE_SHORT_PATH, config.timeline_short_path).strip()
         config.timeline_plus_path = self._env.get(KENV_TIMELINE_PLUS_PATH, config.timeline_plus_path).strip()
+
+        if self._env['HTTP_PROXY'] or self._env['HTTPS_PROXY']:
+            config.http_config = http_config(http_proxy=self._env['HTTP_PROXY'], https_proxy=self._env['HTTPS_PROXY'])
+            config.http_proxy = self._env['HTTP_PROXY'] or self._env['HTTPS_PROXY']  # @TODO: Remove this line when this is not used by the Arcade Organizer or any other part
+        elif config.http_proxy != '':
+            config.http_config = http_config(http_proxy=config.http_proxy, https_proxy=None)
 
         self._logger.configure(config)
 

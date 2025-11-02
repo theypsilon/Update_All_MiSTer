@@ -31,7 +31,7 @@ from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OP
     KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, \
     KENV_TRANSITION_SERVICE_ONLY, FILE_patreon_key, COMMAND_STANDARD, FILE_timeline_short, KENV_TIMELINE_PLUS_PATH, \
     DEFAULT_TRANSITION_SERVICE_ONLY, KENV_LOCAL_TEST_RUN, DEFAULT_LOCAL_TEST_RUN, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
-    KENV_TIMELINE_SHORT_PATH, FILE_timeline_plus
+    KENV_TIMELINE_SHORT_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, KENV_HTTPS_PROXY
 from update_all.countdown import Countdown
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
@@ -63,6 +63,8 @@ def default_env():
         KENV_COMMAND: COMMAND_STANDARD,
         KENV_TIMELINE_SHORT_PATH: FILE_timeline_short,
         KENV_TIMELINE_PLUS_PATH: FILE_timeline_plus,
+        KENV_HTTP_PROXY: '',
+        KENV_HTTPS_PROXY: ''
     }
 
 

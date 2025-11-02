@@ -32,7 +32,7 @@ def settings_screen_model(): return {
     },
     "variables": {
         # Global variables
-        "update_all_version": {"default": "2.4"},
+        "update_all_version": {"default": "2.4.1"},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -911,7 +911,7 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Show Timeline after Logs",
+                    "title": "1 Show Timeline in Log Viewer",
                     "description": "{timeline_after_logs:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "timeline_after_logs"}]}
                 },

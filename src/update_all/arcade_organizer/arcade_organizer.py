@@ -131,7 +131,7 @@ class ArcadeOrganizerService:
     def __init__(self, printer: 'Logger'):
         self._printer = printer
 
-    def make_arcade_organizer_config(self, ini_file_str: str):
+    def make_arcade_organizer_config(self, ini_file_str: str, http_proxy: str = ''):
         ini_file_path = Path(ini_file_str)
         ini_parser = IniParser(ini_file_path)
         ini_parser.initialize()
@@ -275,6 +275,10 @@ class ArcadeOrganizerService:
             180: "Horizontal (180)",
             270: "Vertical (CCW)",
         }
+
+        # @TODO: Remove once MAD_DB can't have URLs
+        if http_proxy != '':
+            config['http_proxy'] = http_proxy
 
         return config
 
@@ -427,6 +431,12 @@ class Infrastructure:
                 self._os_errors.append((mra_path, e))
 
     def download_mad_db_zip(self):
+        # @TODO: Enable this in the next version after the deprecation and remove the deprecated section.
+        # if self._config['MAD_DB'].startswith('http'):
+        #     self._printer.print("MAD_DB can't be a URL, please wrap your custom MAD_DB in a Downloader database instead.")
+        #     self._printer.print("You may create your own DB easily with github.com/theypsilon/DB-Template_MiSTer")
+        #     return None
+
         if not self._config['MAD_DB'].startswith('http'):
             self._printer.print("Using local Mister Arcade Descriptions database")
             src = self._config['MAD_DB']
@@ -443,8 +453,17 @@ class Infrastructure:
                 return self._tmp_data_zip_path
 
         self._printer.print("Downloading Mister Arcade Descriptions database")
+        # @TODO: Uncomment this in the next version, and add the deprecation to the changelog
+        # self._printer.print("WARNING: Setting up MAD_DB as an url is deprecated!")
+        # self._printer.print("WARNING: Please wrap your custom MAD_DB in a Downloader database instead.")
+        # self._printer.print("WARNING: You may create your own DB easily with github.com/theypsilon/DB-Template_MiSTer")
+
+        env = os.environ.copy()
+        if 'http_proxy' in self._config:
+            env['http_proxy'] = self._config['http_proxy']
+
         zip_output = subprocess.run('curl %s %s -o %s %s' % (self._config['CURL_RETRY'], self._config['SSL_SECURITY_OPTION'], self._config['TMP_DATA_ZIP'], self._config['MAD_DB']), shell=True,
-                                    stderr=subprocess.DEVNULL)
+                                    stderr=subprocess.DEVNULL, env=env)
 
         if zip_output.returncode != 0 or not self._tmp_data_zip_path.is_file():
             self._printer.print("Couldn't download %s : Network Problem" % self._config['MAD_DB'])
@@ -452,7 +471,7 @@ class Infrastructure:
             return None
 
         md5_output = subprocess.run('curl %s %s %s.md5' % (self._config['CURL_RETRY'], self._config['SSL_SECURITY_OPTION'], self._config['MAD_DB']), shell=True, stderr=subprocess.DEVNULL,
-                                    stdout=subprocess.PIPE)
+                                    stdout=subprocess.PIPE, env=env)
         if md5_output.returncode != 0:
             self._printer.print("Couldn't download %s.md5 : Network Problem" % self._config['MAD_DB'])
             self._printer.print()
