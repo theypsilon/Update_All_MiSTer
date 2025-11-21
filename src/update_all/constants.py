@@ -136,7 +136,7 @@ class PathType(Enum):
 
 # Update All old constants
 UPDATE_ALL_VERSION: Final[str] = "2.4.1"
-MISTER_DOWNLOADER_VERSION: Final[str] = "2.2.1"
+MISTER_DOWNLOADER_VERSION: Final[str] = "2.3"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"
 DOWNLOADER_URL: Final[str] = "https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/latest/dont_download.zip"
