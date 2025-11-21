@@ -24,66 +24,112 @@ LATEST_SCRIPT_PATH="/media/fat/Scripts/.config/update_all/update_all.pyz"
 CACERT_PEM_0="/etc/ssl/certs/cacert.pem"
 CACERT_PEM_1="/media/fat/Scripts/.config/downloader/cacert.pem"
 
-if (( $(date +%Y) < 2000 )) ; then
-    NTP_SERVER="0.pool.ntp.org"
-    echo "Syncing date and time with $NTP_SERVER"
-    echo
-    if ntpdate -s -b -u $NTP_SERVER ; then
+# NTP SETUP
+if (( 10#$(date +%Y) < 2000 )) ; then
+    NTP_SERVERS=(
+        "time.apple.com"
+        "time.amazonaws.cn"
+        "ntp.ntsc.ac.cn"
+        "cn.pool.ntp.org"
+        "ntp.aliyun.com"
+        "ntp.tencent.com"
+        "ntp.rt.ru"
+    )
+    NTP_CONF="/etc/ntp.conf"
+    for server in "${NTP_SERVERS[@]}"; do
+        if ! grep -qF "${server}" "${NTP_CONF}"; then
+            echo "server $server iburst" >> "${NTP_CONF}"
+        fi
+    done
+    NTP_PID="/var/run/ntpd.pid"
+    start-stop-daemon -K -p "${NTP_PID}"
+    rm -f "${NTP_PID}"
+    start-stop-daemon -S -q -p "${NTP_PID}" -x "/usr/sbin/ntpd" -- -g -p "${NTP_PID}"
+    connected=0
+    for ((i=1; i<=10; i++)); do
+        if ntpq -c "rv 0" 2>&1 | grep -qiE "connection refused|sync_unspec" ; then
+            printf "."
+            sleep 3
+        else
+            connected=1
+            break
+        fi
+    done
+    printf "\n"
+    if (( connected )); then
         echo "Date and time is:"
-        echo "$(date)"
+        date
         echo
     elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
-	      echo "Unable to sync."
+        echo "Unable to sync."
         echo "Please, try again later."
         exit 1
     fi
 fi
 
+# CERTS SETUP
 if [ -s "${CACERT_PEM_1}" ] ; then
     export SSL_CERT_FILE="${CACERT_PEM_1}"
 elif [ -s "${CACERT_PEM_0}" ] ; then
     export SSL_CERT_FILE="${CACERT_PEM_0}"
 elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
     set +e
-    dialog --keep-window --title "Bad Certificates" --defaultno \
-        --yesno "CA certificates need to be fixed, do you want me to fix them?\n\nNOTE: This operation will delete files at /etc/ssl/certs" \
-        7 65
-    DIALOG_RET=$?
+    curl "https://github.com" > /dev/null 2>&1
+    CURL_RET=$?
     set -e
 
-    if [[ "${DIALOG_RET}" != "0" ]] ; then
-        echo "No secure connection is possible without fixing the certificates."
-        exit 1
-    fi
+    case $CURL_RET in
+      0)
+        ;;
+      *)
+        if ! which dialog > /dev/null 2>&1 ; then
+            echo "ERROR: CURL returned error code ${CURL_RET}."
+            exit $CURL_RET
+        fi
 
-    RO_ROOT="false"
-    if mount | grep "on / .*[(,]ro[,$]" -q ; then
-        RO_ROOT="true"
-    fi
-    [ "${RO_ROOT}" == "true" ] && mount / -o remount,rw
-    rm /etc/ssl/certs/* 2> /dev/null || true
-    echo
-    echo "Installing cacert.pem from https://curl.se"
-    curl --insecure --location -o /tmp/cacert.pem "https://curl.se/ca/cacert.pem"
-    curl --insecure --location -o /tmp/cacert.pem.sha256 "https://curl.se/ca/cacert.pem.sha256"
+        set +e
+        dialog --keep-window --title "Bad Certificates" --defaultno \
+            --yesno "CA certificates need to be fixed, do you want me to fix them?\n\nNOTE: This operation will delete files at /etc/ssl/certs" \
+            7 65
+        DIALOG_RET=$?
+        set -e
 
-    DOWNLOAD_SHA256=$(cat /tmp/cacert.pem.sha256 | awk '{print $1}')
-    CALCULATED_SHA256=$(sha256sum /tmp/cacert.pem | awk '{print $1}')
+        if [[ "${DIALOG_RET}" != "0" ]] ; then
+            echo "No secure connection is possible without fixing the certificates."
+            exit 1
+        fi
 
-    if [[ "${DOWNLOAD_SHA256}" == "${CALCULATED_SHA256}" ]]; then
-        mv /tmp/cacert.pem "${CACERT_PEM_0}"
-        sync
-    else
-        echo "Checksum validation for downloaded CA certificate failed."
-        echo "Please try again later."
-        exit 0
-    fi
+        RO_ROOT="false"
+        if mount | grep "on / .*[(,]ro[,$]" -q ; then
+            RO_ROOT="true"
+        fi
+        [ "${RO_ROOT}" == "true" ] && mount / -o remount,rw
+        rm /etc/ssl/certs/* 2> /dev/null || true
+        echo
+        echo "Installing cacert.pem from https://curl.se"
+        curl --insecure --location -o /tmp/cacert.pem "https://curl.se/ca/cacert.pem"
+        curl --insecure --location -o /tmp/cacert.pem.sha256 "https://curl.se/ca/cacert.pem.sha256"
 
-    [ "${RO_ROOT}" == "true" ] && mount / -o remount,ro
+        DOWNLOAD_SHA256=$(cat /tmp/cacert.pem.sha256 | awk '{print $1}')
+        CALCULATED_SHA256=$(sha256sum /tmp/cacert.pem | awk '{print $1}')
 
-    export SSL_CERT_FILE="${CACERT_PEM_0}"
+        if [[ "${DOWNLOAD_SHA256}" == "${CALCULATED_SHA256}" ]]; then
+            mv /tmp/cacert.pem "${CACERT_PEM_0}"
+            sync
+        else
+            echo "Checksum validation for downloaded CA certificate failed."
+            echo "Please try again later."
+            exit 0
+        fi
+
+        [ "${RO_ROOT}" == "true" ] && mount / -o remount,ro
+
+        export SSL_CERT_FILE="${CACERT_PEM_0}"
+        ;;
+    esac
 fi
 
+# LAUNCHER
 download_file() {
     local DOWNLOAD_PATH="${1}"
     local DOWNLOAD_URL="${2}"
