@@ -38,13 +38,13 @@ if (( 10#$(date +%Y) < 2000 )) ; then
     NTP_CONF="/etc/ntp.conf"
     for server in "${NTP_SERVERS[@]}"; do
         if ! grep -qF "${server}" "${NTP_CONF}"; then
-            echo "server $server iburst" >> "${NTP_CONF}"
+            echo "server $server iburst" >> "${NTP_CONF}" 2>/dev/null || true
         fi
     done
     NTP_PID="/var/run/ntpd.pid"
-    start-stop-daemon -K -p "${NTP_PID}"
-    rm -f "${NTP_PID}"
-    start-stop-daemon -S -q -p "${NTP_PID}" -x "/usr/sbin/ntpd" -- -g -p "${NTP_PID}"
+    start-stop-daemon -K -p "${NTP_PID}" || true
+    rm -f "${NTP_PID}" || true
+    start-stop-daemon -S -q -p "${NTP_PID}" -x "/usr/sbin/ntpd" -- -g -p "${NTP_PID}" || true
     connected=0
     for ((i=1; i<=10; i++)); do
         if ntpq -c "rv 0" 2>&1 | grep -qiE "connection refused|sync_unspec" ; then
