@@ -1,0 +1,101 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "Downloader",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2025-11-29",
+      "timestamps": [
+        1764385389
+      ],
+      "title": "Files updated TODAY (2025-11-29)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Battle Zone MRAs: Battle Zone rev 2, Bradley Trainer, Red Baron, + 2 alts",
+              "type": "standalone"
+            },
+            {
+              "name": "Cave MRAs: Gaia Crusaders, Thunder Heroes, + 1 alt",
+              "type": "standalone"
+            },
+            {
+              "name": "Crazy Kong MRAs: 3 alts",
+              "type": "standalone"
+            },
+            {
+              "name": "Pacman MRAs: 17 alts",
+              "type": "standalone"
+            },
+            {
+              "name": "Space Invaders MRA: Polaris",
+              "type": "standalone"
+            },
+            {
+              "name": "Tecmo MRA: 1 alt",
+              "type": "standalone"
+            },
+            {
+              "name": "atarisys 1 MRAs: Indiana Jones, Marble Madness, Peter Pack Rat, Road Blasters, Road Runner",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "Enterprise",
+              "type": "standalone"
+            },
+            {
+              "name": "TK2000",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "MiSTer_example.ini",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1763792982,
+        1763929414,
+        1764098351,
+        1764102317,
+        1764109309,
+        1764258245,
+        1764260858
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1446,
+    "total_file_updates": 2044,
+    "unique_files": 1390
+  }
+}
