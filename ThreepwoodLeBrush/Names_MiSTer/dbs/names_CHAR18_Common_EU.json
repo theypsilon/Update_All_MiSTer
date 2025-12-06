@@ -1,0 +1,18 @@
+{
+  "base_files_url": "",
+  "db_files": [],
+  "db_id": "names_txt",
+  "db_url": "https://mirror1.undefinedproxy.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Common_EU.json",
+  "default_options": {},
+  "files": {
+    "names.txt": {
+      "hash": "2ff7b9c0865622353ef4a2f454a6af6b",
+      "reboot": true,
+      "size": 6818,
+      "url": "https://mirror1.undefinedproxy.com/ThreepwoodLeBrush/Names_MiSTer/3831047b995979502f051b5b8df47568a60f97de/names_CHAR18_Common_EU.txt"
+    }
+  },
+  "folders": {},
+  "timestamp": 1751222641,
+  "zips": {}
+}
