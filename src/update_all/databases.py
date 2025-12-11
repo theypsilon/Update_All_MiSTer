@@ -112,7 +112,7 @@ def changed_db_ids() -> Dict[str, str]:
 
 def removed_db_ids() -> dict[str, str]:
     return {
-        'n64_dev': 'https://raw.githubusercontent.com/RobertPeip/Mister64/db/db.json.zip'
+        'n64_dev': 'https://raw.githubusercontent.com/RobertPeip/Mister64/db/db.json.zip',
         'RGarciaLago/Wallpaper_Collection': 'https://raw.githubusercontent.com/RGarciaLago/Wallpaper_Collection/db/db.json.zip'
     }
 
