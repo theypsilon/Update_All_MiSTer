@@ -96,7 +96,6 @@ class AllDBs:
 
     # WALLPAPERS
     RANNYSNICE_WALLPAPERS = Database(db_id='Ranny-Snice/Ranny-Snice-Wallpapers', db_url='https://raw.githubusercontent.com/Ranny-Snice/Ranny-Snice-Wallpapers/db/db.json.zip', title='Ranny Snice Wallpapers')
-    RGARCIALAGO_WALLPAPER_COLLECTION = Database(db_id='RGarciaLago/Wallpaper_Collection', db_url='https://raw.githubusercontent.com/RGarciaLago/Wallpaper_Collection/db/db.json.zip', title='RGarciaLago Wallpaper Collection (by different authors)')
 
 
 @cache
@@ -114,6 +113,7 @@ def changed_db_ids() -> Dict[str, str]:
 def removed_db_ids() -> dict[str, str]:
     return {
         'n64_dev': 'https://raw.githubusercontent.com/RobertPeip/Mister64/db/db.json.zip'
+        'RGarciaLago/Wallpaper_Collection': 'https://raw.githubusercontent.com/RGarciaLago/Wallpaper_Collection/db/db.json.zip'
     }
 
 

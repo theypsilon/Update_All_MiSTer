@@ -678,7 +678,6 @@ def settings_screen_model(): return {
             "variables": {
                 "Ranny-Snice/Ranny-Snice-Wallpapers": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "uberyoji_mister_boot_roms_mgl": {"group": "db", "default": "false", "values": ["false", "true"]},
-                "RGarciaLago/Wallpaper_Collection": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "Dinierto/MiSTer-GBA-Borders": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "rannysnice_wallpapers_filter": {"group": "rannysnice_wallpapers", "default": "ar16-9", "values": ["ar16-9", "ar4-3", "all"]},
             },
@@ -716,15 +715,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "5 RGarciaLago Wallpaper Col.",
-                    "description": "{RGarciaLago/Wallpaper_Collection:enabled} Wallpapers from different authors",
-                    "actions": {
-                        "ok": [{"type": "rotate_variable", "target": "RGarciaLago/Wallpaper_Collection"}],
-                        "toggle": [{"type": "rotate_variable", "target": "RGarciaLago/Wallpaper_Collection"}],
-                    }
-                },
-                {
-                    "title": "6 Dinierto GBA Borders",
+                    "title": "5 Dinierto GBA Borders",
                     "description": "{Dinierto/MiSTer-GBA-Borders:enabled} Borders for the GBA Core",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
