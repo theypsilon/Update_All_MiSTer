@@ -1,5 +1,5 @@
 #!/bin/python
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,12 @@
 import os
 from typing import Optional
 
+from update_all.colors_curses import init_colors, make_color_theme, colors
 from update_all.constants import FILE_update_all_log
+from update_all.encryption import Encryption, EncryptionResult
 from update_all.file_system import FileSystem
+from update_all.local_store import LocalStore
+from update_all.other import GenericProvider
 
 
 def clamp(v, lo, hi): return max(lo, min(v, hi))
@@ -46,11 +50,13 @@ def create_log_document(file_path: str) -> list[str]:
 
 
 class LogViewer:
-    def __init__(self, file_system: FileSystem):
+    def __init__(self, file_system: FileSystem, store_provider: GenericProvider[LocalStore], encryption: Encryption):
         self._file_system = file_system
+        self._store_provider = store_provider
+        self._encryption = encryption
 
     def show(self, doc: list[str], popup_dict: Optional[dict[str, str]] = None, initial_index: int = 0) -> bool:
-        view_document(doc, popup_dict or {}, initial_index)
+        view_document(doc, popup_dict or {}, initial_index, self._store_provider.get().get_theme() if self._encryption.validate_key() == EncryptionResult.Success else None)
         return True
 
     def load_log_document(self) -> list[str]:
@@ -89,8 +95,12 @@ def adjust_popup_dict(popup_dict: dict[int, list[str]], max_cols: int) -> dict[i
 import curses
 
 
-def view_document(document: list[str], popup_dict: dict[int, list[str]], initial_index: int) -> None:
+def view_document(document: list[str], popup_dict: dict[int, list[str]], initial_index: int, theme: Optional[str]) -> None:
     def loader(screen: curses.window):
+        if theme is not None and theme != 'none':
+            init_colors()
+            make_color_theme(theme).viewer()
+
         window = screen.subwin(0, 0)
         window.keypad(True)
         curses.cbreak()
@@ -125,15 +135,15 @@ class ViewerGui:
 
     def addstr(self, y: int, x: int, text: str, attr: int):
         x, length = clip_range(x, len(text), self.mcols - 1)
-        self.window.addstr(clamp(y, 0, self.mlines - 1), x, text[:length], attr)
+        self.window.addstr(clamp(y, 0, self.mlines - 1), x, text[:length], attr | curses.color_pair(colors.COMMON_TEXT_COLOR))
 
     def vline(self, y: int, x: int, attr: int, length: int):
         y, length = clip_range(y, length, self.mlines)
-        self.window.vline(y, clamp(x, 0, self.mcols - 1), attr, length)
+        self.window.vline(y, clamp(x, 0, self.mcols - 1), attr | curses.color_pair(colors.COMMON_TEXT_COLOR), length)
 
     def hline(self, y: int, x: int, attr: int, length: int):
         x, length = clip_range(x, length, self.mcols)
-        self.window.hline(clamp(y, 0, self.mlines - 1), x, attr, length)
+        self.window.hline(clamp(y, 0, self.mlines - 1), x, attr | curses.color_pair(colors.COMMON_TEXT_COLOR), length)
 
     def draw_hud(self, hud_message: str, hud_percent: str, top: bool=True) -> None:
         if top:
@@ -159,6 +169,8 @@ class ViewerGui:
         index = self.initial_index
         last_index = None
         viewing = True
+
+        self.window.bkgd(' ', curses.color_pair(colors.BOX_BACKGROUND_COLOR))
 
         while viewing:
             if last_index is None or last_index != index:

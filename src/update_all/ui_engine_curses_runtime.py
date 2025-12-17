@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 import curses
 import os
 import time
-from typing import Callable, Union, Optional
+from typing import Callable, Union
 
 from update_all.ui_engine import UiRuntime
 from update_all.ui_model_utilities import Key

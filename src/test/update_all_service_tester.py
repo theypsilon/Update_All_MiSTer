@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ from update_all.log_viewer import LogViewer
 from update_all.os_utils import OsUtils
 from update_all.other import GenericProvider
 from update_all.settings_screen import SettingsScreen
-from update_all.settings_screen_printer import SettingsScreenPrinter, SettingsScreenThemeManager
+from update_all.settings_screen_printer import SettingsScreenPrinter, ColorThemeManager
 from update_all.store_migrator import StoreMigrator, make_new_local_store
 from update_all.timeline import Timeline
 from update_all.transition_service import TransitionService
@@ -113,11 +113,11 @@ class IniRepositoryTester(IniRepository):
 
 
 class SettingsScreenPrinterStub(SettingsScreenPrinter):
-    def __init__(self, factory: UiDialogDrawerFactory = None, theme_manager: SettingsScreenThemeManager = None):
+    def __init__(self, factory: UiDialogDrawerFactory = None, theme_manager: ColorThemeManager = None):
         self._factory = factory or MagicMock()
         self._theme_manager = theme_manager or MagicMock()
 
-    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
+    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, ColorThemeManager]:
         return self._factory, self._theme_manager
 
 
@@ -258,6 +258,7 @@ class UpdateAllServiceTester(UpdateAllService):
         environment_setup = environment_setup or EnvironmentSetupTester(file_system=file_system, os_utils=os_utils, config_provider=config_provider)
         settings_screen = settings_screen or SettingsScreenTester(config_provider=config_provider, file_system=file_system, os_utils=os_utils, ao_service=ao_service)
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
+        encryption = EncryptionTester()
 
         super().__init__(
             config_provider=config_provider,
@@ -266,13 +267,13 @@ class UpdateAllServiceTester(UpdateAllService):
             os_utils=os_utils,
             countdown=countdown or CountdownStub(),
             settings_screen=settings_screen,
-            encryption=EncryptionTester(),
+            encryption=encryption,
             store_provider=store_provider or GenericProvider[LocalStore](),
             ini_repository=self.ini_repository,
             environment_setup=environment_setup,
             ao_service=ao_service,
             local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system),
-            log_viewer=LogViewerTester(file_system),
+            log_viewer=LogViewerTester(file_system, store_provider, encryption),
             timeline=TimelineTester(file_system)
         )
 

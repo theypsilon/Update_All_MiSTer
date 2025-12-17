@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,19 +18,19 @@
 import curses
 from typing import Tuple, Union
 
-from update_all.settings_screen_printer import SettingsScreenPrinter, SettingsScreenThemeManager
+from update_all.settings_screen_printer import SettingsScreenPrinter, ColorThemeManager
 from update_all.ui_engine import Interpolator
 from update_all.ui_engine_curses_runtime import CursesRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory, UiDialogDrawer
 from update_all.ui_model_utilities import Key
 
 
-class SettingsScreenTrivialCursesPrinter(CursesRuntime, SettingsScreenPrinter, SettingsScreenThemeManager, UiDialogDrawerFactory, UiDialogDrawer):
+class SettingsScreenTrivialCursesPrinter(CursesRuntime, SettingsScreenPrinter, ColorThemeManager, UiDialogDrawerFactory, UiDialogDrawer):
     _interpolator: Interpolator
     _index_horizontal = 0
     _index_vertical = 0
 
-    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
+    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, ColorThemeManager]:
         curses.start_color()
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
 

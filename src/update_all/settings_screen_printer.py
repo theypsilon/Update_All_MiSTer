@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,11 +21,11 @@ from typing import Tuple
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 
 
-class SettingsScreenThemeManager(abc.ABC):
+class ColorThemeManager(abc.ABC):
     def set_theme(self, new_theme: str) -> None:
         """"Sets the theme for all drawers created or to be created"""
 
 
 class SettingsScreenPrinter(abc.ABC):
-    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, SettingsScreenThemeManager]:
+    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, ColorThemeManager]:
         """Creates instances of DialogDrawerFactory"""

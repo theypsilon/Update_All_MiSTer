@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -37,7 +37,6 @@ class EnvironmentSetup(ABC):
 
 
 class EnvironmentSetupImpl(EnvironmentSetup):
-
     def __init__(self, config_reader: ConfigReader,
                  config_provider: GenericProvider[Config],
                  transition_service: TransitionService,
