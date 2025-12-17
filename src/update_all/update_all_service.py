@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -63,6 +63,7 @@ class UpdateAllServicePass(enum.Enum):
     Continue = 1
     NewRunNonStop = 2
 
+
 class UpdateAllServiceFactory:
     def __init__(self, logger: Logger, local_repository_provider: GenericProvider[LocalRepository]):
         self._logger = logger
@@ -115,7 +116,7 @@ class UpdateAllServiceFactory:
             environment_setup=environment_setup,
             ao_service=ao_service,
             local_repository=local_repository,
-            log_viewer=LogViewer(file_system),
+            log_viewer=LogViewer(file_system, store_provider, encryption),
             encryption=encryption,
             timeline=timeline
         )
