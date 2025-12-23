@@ -97,9 +97,8 @@ import curses
 
 def view_document(document: list[str], popup_dict: dict[int, list[str]], initial_index: int, theme: Optional[str]) -> None:
     def loader(screen: curses.window):
-        if theme is not None and theme != 'none':
-            init_colors()
-            make_color_theme(theme).viewer()
+        init_colors()
+        make_color_theme(theme).viewer()
 
         window = screen.subwin(0, 0)
         window.keypad(True)
