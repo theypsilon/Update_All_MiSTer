@@ -295,13 +295,11 @@ class UpdateAllService:
             config.update_linux = False
             config.autoreboot = False
 
-    @staticmethod
-    def _get_mtime() -> Optional[float]:
-        mtime_path = os.path.join('/media/fat', FILE_update_all_pyz)
-        if not os.path.exists(mtime_path):
+    def _get_mtime(self) -> Optional[float]:
+        if not self._file_system.is_file(FILE_update_all_pyz):
             return None
 
-        return os.path.getmtime(mtime_path)
+        return self._file_system.file_mtime(FILE_update_all_pyz)
 
     def _run_downloader(self) -> None:
         config = self._config_provider.get()

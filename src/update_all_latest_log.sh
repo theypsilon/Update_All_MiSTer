@@ -19,18 +19,19 @@
 
 set -euo pipefail
 
-LATEST_SCRIPT_PATH="/media/fat/Scripts/.config/update_all/update_all.pyz"
-RUN_SCRIPT_PATH="/tmp/update_all.sh"
+LOCATION_STR="${LOCATION_STR:-/media/fat}"
+LATEST_TOOL_PATH="${LOCATION_STR}/Scripts/.config/update_all/update_all.pyz"
+RUN_TOOL_PATH="/tmp/update_all.sh"
 
-if [ ! -s "${LATEST_SCRIPT_PATH}" ] ; then
+if [ ! -s "${LATEST_TOOL_PATH}" ] ; then
     echo "Run Update All first and try again."
     exit 1
 fi
 
-cp "${LATEST_SCRIPT_PATH}" "${RUN_SCRIPT_PATH}"
-chmod +x "${RUN_SCRIPT_PATH}"
+cp "${LATEST_TOOL_PATH}" "${RUN_TOOL_PATH}"
+chmod +x "${RUN_TOOL_PATH}"
 
 export COMMAND=latest_log
 
-${RUN_SCRIPT_PATH}
+${RUN_TOOL_PATH}
 
