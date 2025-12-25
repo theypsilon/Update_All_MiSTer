@@ -19,12 +19,13 @@
 
 set -euo pipefail
 
+LOCATION_STR="${LOCATION_STR:-/media/fat}"
 RUN_TOOL_PATH="/tmp/update_all.sh"
 REMOTE_TOOL_URL="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
-LATEST_TOOL_PATH="/media/fat/Scripts/.config/update_all/update_all.pyz"
-MIRROR_FILE_PATH="/media/fat/Scripts/update_all.mirror"
+LATEST_TOOL_PATH="${LOCATION_STR}/Scripts/.config/update_all/update_all.pyz"
+MIRROR_FILE_PATH="${LOCATION_STR}/Scripts/update_all.mirror"
 CACERT_PEM_0="/etc/ssl/certs/cacert.pem"
-CACERT_PEM_1="/media/fat/Scripts/.config/downloader/cacert.pem"
+CACERT_PEM_1="${LOCATION_STR}/Scripts/.config/downloader/cacert.pem"
 
 # NTP SETUP
 if (( 10#$(date +%Y) < 2000 )) ; then
