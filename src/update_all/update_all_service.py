@@ -28,7 +28,7 @@ from update_all.analogue_pocket.utils import is_pocket_mounted
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
-from update_all.databases import Database, AllDBs
+from update_all.databases import Database, AllDBs, all_dbs
 from update_all.downloader_utils import prepare_latest_downloader
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
@@ -77,7 +77,7 @@ class UpdateAllServiceFactory:
         ini_repository = IniRepository(self._logger, file_system=file_system, os_utils=os_utils)
         config_reader = ConfigReader(self._logger, env, ini_repository=ini_repository)
         store_migrator = StoreMigrator(migrations(), self._logger)
-        local_repository = LocalRepository(config_provider, self._logger, file_system, store_migrator)
+        local_repository = LocalRepository(self._logger, file_system, store_migrator)
         self._local_repository_provider.initialize(local_repository)
         transition_service = TransitionService(logger=self._logger, file_system=file_system, os_utils=os_utils, ini_repository=ini_repository)
         printer = SettingsScreenStandardCursesPrinter()
@@ -97,6 +97,7 @@ class UpdateAllServiceFactory:
             encryption=encryption
         )
         environment_setup = EnvironmentSetupImpl(
+            logger=self._logger,
             config_reader=config_reader,
             config_provider=config_provider,
             transition_service=transition_service,
@@ -277,7 +278,7 @@ class UpdateAllService:
             self._settings_screen.load_main_menu()
         except Exception as e:
             self._logger.debug(e)
-            self._logger.debug('Recovering from error by suspending settings screen.')
+            self._logger.print('Recovering from error by suspending settings screen.\n')
             return
 
         self._logger.print(CLEAR_SCREEN, end='')
@@ -304,7 +305,7 @@ class UpdateAllService:
 
     def _run_downloader(self) -> None:
         config = self._config_provider.get()
-        if len(active_databases(config)) == 0:
+        if len(active_databases(config)) == 0 or config.skip_downloader:
             return
 
         update_linux = config.update_linux
@@ -551,7 +552,8 @@ class UpdateAllService:
         timeline_log = f'{config.base_system_path}/Scripts/.config/downloader/timeline_download.log'
         timeline_ini = '/tmp/timeline_downloader.ini'
         self._file_system.unlink(timeline_ini)
-        return_code = self._execute_downloader(config, timeline_ini, False, timeline_log, AllDBs.UPDATE_ALL_MISTER, quiet=True)
+        db_defs = all_dbs(config.mirror)
+        return_code = self._execute_downloader(config, timeline_ini, False, timeline_log, db_defs.UPDATE_ALL_MISTER, quiet=True)
         self._logger.print()
         if return_code != 0:
             self._logger.print('The Timeline data could not be updated because of an internet connection problem. Try again later to see an updated Timeline.')

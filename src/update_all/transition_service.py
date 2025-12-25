@@ -20,16 +20,14 @@ from typing import Dict
 from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
-from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, AllDBs, DB_ID_NAMES_TXT, \
-    DB_ID_ARCADE_NAMES_TXT, all_dbs_list, DB_ID_COIN_OP_COLLECTION_DEPRECATED, \
-    changed_db_ids, removed_db_ids
+from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, \
+    DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ALL_DB_IDS
 from update_all.ini_parser import IniParser
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils
-from update_all.other import GenericProvider
 from update_all.settings_screen_model import settings_screen_model
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string
 
@@ -53,7 +51,7 @@ class TransitionService:
         return self._file_checks[file]
 
     def from_not_existing_downloader_ini(self, config: Config):
-        if self._file_exists(self._ini_repository.downloader_ini_standard_path()):
+        if self._file_exists(self._ini_repository.downloader_ini_standard_path()) or config.skip_downloader:
             return
 
         if self._file_exists(FILE_update_all_ini):
@@ -63,21 +61,24 @@ class TransitionService:
         self._logger.print()
 
         config.databases.add(DB_ID_DISTRIBUTION_MISTER)
-        config.databases.add(AllDBs.COIN_OP_COLLECTION.db_id)
-        config.databases.add(AllDBs.JTCORES.db_id)
+        config.databases.add(ALL_DB_IDS['COIN_OP_COLLECTION'])
+        config.databases.add(ALL_DB_IDS['JTCORES'])
         self._ini_repository.write_downloader_ini(config)
 
         self._logger.print('A new file "downloader.ini" has been created with default DBs:')
-        self._logger.print(f'  - Added DB with id [{AllDBs.UPDATE_ALL_MISTER.db_id}]')
+        self._logger.print(f'  - Added DB with id [{ALL_DB_IDS["UPDATE_ALL_MISTER"]}]')
         self._logger.print(f'  - Added DB with id [{DB_ID_DISTRIBUTION_MISTER}]')
-        self._logger.print(f'  - Added DB with id [{AllDBs.JTCORES.db_id}]')
-        self._logger.print(f'  - Added DB with id [{AllDBs.COIN_OP_COLLECTION.db_id}]')
+        self._logger.print(f'  - Added DB with id [{ALL_DB_IDS["JTCORES"]}]')
+        self._logger.print(f'  - Added DB with id [{ALL_DB_IDS["COIN_OP_COLLECTION"]}]')
         self._logger.print()
         self._logger.print('Waiting 10 seconds...')
         self._os_utils.sleep(10.0)
         self._created_downloader_ini = True
 
     def from_update_all_1(self, config: Config, store: LocalStore):
+        if config.skip_downloader:
+            return
+
         changes = []
 
         if self._file_exists(self._ini_repository.downloader_ini_standard_path()):
@@ -122,7 +123,7 @@ class TransitionService:
         self._os_utils.sleep(10.0)
 
     def from_just_names_txt_enabled_to_arcade_names_txt_enabled(self, config: Config, store: LocalStore):
-        if store.get_introduced_arcade_names_txt():
+        if store.get_introduced_arcade_names_txt() or config.skip_downloader:
             return
 
         store.set_introduced_arcade_names_txt(True)
@@ -206,9 +207,10 @@ class TransitionService:
             return
 
         needs_save = []
+        db_defs = all_dbs(config.mirror)
 
-        db_counts = Counter(db.db_id for db in all_dbs_list())
-        unique_dbs = [db for db in all_dbs_list() if db_counts[db.db_id] == 1]
+        db_counts = Counter(db.db_id for db in db_defs.all_dbs_list())
+        unique_dbs = [db for db in db_defs.all_dbs_list() if db_counts[db.db_id] == 1]
         for db in unique_dbs:
             db_id = db.db_id.lower()
             if db_id in downloader_ini:
@@ -268,11 +270,11 @@ class TransitionService:
 
 
     def from_no_update_all_mister_db_to_adding_it(self, config: Config, downloader_ini: Dict[str, IniParser]):
-        if AllDBs.UPDATE_ALL_MISTER.db_id in downloader_ini:
+        if ALL_DB_IDS['UPDATE_ALL_MISTER'] in downloader_ini or config.skip_downloader:
             return
 
         self._ini_repository.write_downloader_ini(config)
-        self._logger.print(f'Adding DB with id [{AllDBs.UPDATE_ALL_MISTER.db_id}] to downloader.ini.')
+        self._logger.print(f'Adding DB with id [{ALL_DB_IDS["UPDATE_ALL_MISTER"]}] to downloader.ini.')
         self._logger.print()
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)

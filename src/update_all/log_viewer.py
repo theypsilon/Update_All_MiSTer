@@ -21,7 +21,7 @@ import os
 from typing import Optional
 
 from update_all.colors_curses import init_colors, make_color_theme, colors
-from update_all.constants import FILE_update_all_log
+from update_all.constants import FILE_update_all_log, STANDARD_UI_THEME
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
@@ -56,7 +56,8 @@ class LogViewer:
         self._encryption = encryption
 
     def show(self, doc: list[str], popup_dict: Optional[dict[str, str]] = None, initial_index: int = 0) -> bool:
-        view_document(doc, popup_dict or {}, initial_index, self._store_provider.get().get_theme() if self._encryption.validate_key() == EncryptionResult.Success else None)
+        ui_theme = self._store_provider.get().get_theme() if self._encryption.validate_key() == EncryptionResult.Success else STANDARD_UI_THEME
+        view_document(doc, popup_dict or {}, initial_index, ui_theme)
         return True
 
     def load_log_document(self) -> list[str]:

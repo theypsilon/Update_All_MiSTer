@@ -24,7 +24,7 @@ from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
     ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, STANDARD_UI_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
-from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs
+from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs, all_dbs, ALL_DB_IDS
 from update_all.downloader_utils import prepare_latest_downloader
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.ini_repository import IniRepository
@@ -98,8 +98,9 @@ class SettingsScreen(UiApplication):
             ui.set_value(variable, 'true' if db_ids[variable] in config.databases else 'false')
 
         local_store = self._store_provider.get()
-        ui_theme = local_store.get_theme() if self._encryption.validate_key() == EncryptionResult.Success else STANDARD_UI_THEME
-        ui.set_value('ui_theme', ui_theme)
+        ui.set_value('ui_theme', local_store.get_theme())
+        mirror = local_store.get_mirror()
+        # @TODO (mirror) ui.set_value('mirror', mirror if mirror else config.mirror)
         ui.set_value('countdown_time', str(local_store.get_countdown_time()))
         ui.set_value('log_viewer', str(local_store.get_log_viewer()).lower())
         ui.set_value('timeline_after_logs', str(local_store.get_timeline_after_logs()).lower())
@@ -107,7 +108,7 @@ class SettingsScreen(UiApplication):
         ui.set_value('pocket_firmware_update', str(local_store.get_pocket_firmware_update()).lower())
         ui.set_value('pocket_backup', str(local_store.get_pocket_backup()).lower())
 
-        if AllDBs.JTCORES.db_id not in config.databases:
+        if ALL_DB_IDS['JTCORES'] not in config.databases:
             ui.set_value('download_beta_cores', str(local_store.get_download_beta_cores()).lower())
 
         if DB_ID_NAMES_TXT not in config.databases:
@@ -116,6 +117,7 @@ class SettingsScreen(UiApplication):
             ui.set_value('names_sort_code', local_store.get_names_sort_code())
 
         drawer_factory, theme_manager = self._settings_screen_printer.initialize_screen()
+        ui_theme = local_store.get_theme() if self._encryption.validate_key() == EncryptionResult.Success else STANDARD_UI_THEME
         theme_manager.set_theme(ui_theme)
 
         pocket_firmware = self._local_repository.pocket_firmware_info()
@@ -230,17 +232,11 @@ class SettingsScreen(UiApplication):
         if self._does_arcade_oganizer_need_save(ui):
             needs_save_file_set.add("update_arcade-organizer.ini")
 
-        local_store = self._store_provider.get()
-        local_store.set_theme(ui.get_value('ui_theme'))
-        local_store.set_countdown_time(temp_config.countdown_time)
-        local_store.set_log_viewer(temp_config.log_viewer)
-        local_store.set_timeline_after_logs(temp_config.timeline_after_logs)
-        local_store.set_autoreboot(temp_config.autoreboot)
-        local_store.set_pocket_firmware_update(temp_config.pocket_firmware_update)
-        local_store.set_pocket_backup(temp_config.pocket_backup)
+        temp_store = self._store_provider.get().clone()
+        self._fill_store(temp_store, ui, temp_config)
 
-        if local_store.needs_save():
-            needs_save_file_set.add(f"Internals ({', '.join(local_store.changed_fields())})")
+        if temp_store.needs_save():
+            needs_save_file_set.add(f"Internals ({', '.join(temp_store.changed_fields())})")
 
         if len(needs_save_file_set) > 0:
             needs_save_file_list = "  - " + "\n  - ".join(sorted(needs_save_file_set))
@@ -270,7 +266,8 @@ class SettingsScreen(UiApplication):
         self._ini_repository.write_downloader_ini(config)
 
         local_store = self._store_provider.get()
-        if AllDBs.JTCORES.db_id in config.databases:
+        self._fill_store(local_store, ui, config)
+        if ALL_DB_IDS['JTCORES'] in config.databases:
             local_store.set_download_beta_cores(config.download_beta_cores)
 
         if DB_ID_NAMES_TXT in config.databases:
@@ -280,6 +277,16 @@ class SettingsScreen(UiApplication):
 
         if local_store.needs_save():
             self._local_repository.save_store(local_store)
+
+    def _fill_store(self, store: LocalStore, ui: UiContext, config: Config):
+        store.set_theme(ui.get_value('ui_theme'))
+        store.set_countdown_time(config.countdown_time)
+        store.set_log_viewer(config.log_viewer)
+        store.set_timeline_after_logs(config.timeline_after_logs)
+        store.set_autoreboot(config.autoreboot)
+        store.set_pocket_firmware_update(config.pocket_firmware_update)
+        store.set_pocket_backup(config.pocket_backup)
+        # @TODO (mirror) store.set_mirror(ui.get_value('mirror'))
 
     def _does_arcade_oganizer_need_save(self, ui: UiContext):
         arcade_organizer_ini = self._ini_repository.get_arcade_organizer_ini()
@@ -313,7 +320,7 @@ class SettingsScreen(UiApplication):
 
             config.databases.add(db_ids[variable])
 
-        config.databases.add(AllDBs.UPDATE_ALL_MISTER.db_id)
+        config.databases.add(ALL_DB_IDS['UPDATE_ALL_MISTER'])
 
     @cached_property
     def _all_config_variables(self):

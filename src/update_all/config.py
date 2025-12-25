@@ -18,12 +18,27 @@
 
 from dataclasses import dataclass, field
 from enum import unique, IntEnum
-from typing import Set, Optional
+from typing import Set, Optional, TypedDict
 
 from update_all.analogue_pocket.http_gateway import HttpConfig
 from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, MEDIA_FAT, FILE_patreon_key, \
     FILE_timeline_short, FILE_timeline_plus, COMMAND_STANDARD
 
+
+class EnvDict(TypedDict):
+    CURL_SSL: str
+    COMMIT: str
+    LOCATION_STR: str
+    DEBUG: str
+    TRANSITION_SERVICE_ONLY: str
+    SKIP_DOWNLOADER: str
+    PATREON_KEY_PATH: str
+    COMMAND: str
+    TIMELINE_SHORT_PATH: str
+    TIMELINE_PLUS_PATH: str
+    HTTP_PROXY: Optional[str]
+    HTTPS_PROXY: Optional[str]
+    MIRROR_ID: str
 
 @dataclass
 class Config:
@@ -33,7 +48,7 @@ class Config:
     # From the environment
     curl_ssl: str = DEFAULT_CURL_SSL_OPTIONS
     commit: str = DEFAULT_COMMIT
-    local_test_run: bool = False
+    skip_downloader: bool = False
     patreon_key_path: str = FILE_patreon_key
     timeline_short_path: str = FILE_timeline_short
     timeline_plus_path: str = FILE_timeline_plus
@@ -53,6 +68,7 @@ class Config:
     transition_service_only: bool = False
 
     # Global Updating Toggles
+    mirror: str = ''
     databases: Set[str] = field(default_factory=lambda: set())
     arcade_organizer: bool = False
 
@@ -72,7 +88,6 @@ class Config:
     pocket_backup: bool = False
     log_viewer: bool = True
     timeline_after_logs: bool = True
-
 
 @unique
 class AllowDelete(IntEnum):

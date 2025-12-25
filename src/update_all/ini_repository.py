@@ -24,8 +24,7 @@ from typing import Optional, Dict, List, Tuple, Any
 
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini, DOWNLOADER_STORE_STANDARD_PATH
-from update_all.databases import AllDBs, Database, db_distribution_mister_by_encc_forks, \
-    db_jtcores_by_download_beta_cores, db_names_txt_by_locale, dbs_to_model_variables_pairs, db_arcade_names_txt_by_locale, DB_ID_DISTRIBUTION_MISTER
+from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS
 from update_all.file_system import FileSystem
 from update_all.ini_parser import IniParser
 from update_all.logger import Logger
@@ -293,7 +292,7 @@ class IniRepository:
 
         mister_filter = ini['mister']['filter'].strip().lower() if 'mister' in ini and 'filter' in ini['mister'] else ''
 
-        for db_id, filter_addition, filter_active in [(AllDBs.ARCADE_ROMS.db_id, '!hbmame', config.hbmame_filter)]:
+        for db_id, filter_addition, filter_active in [(ALL_DB_IDS['ARCADE_ROMS'], '!hbmame', config.hbmame_filter)]:
             if db_id not in config.databases:
                 continue
 
@@ -317,13 +316,13 @@ class IniRepository:
                 if len(ini[lower_id]['filter']) == 0:
                     del ini[lower_id]['filter']
 
-        for db_id, filter_addition in [(AllDBs.RANNYSNICE_WALLPAPERS.db_id, config.rannysnice_wallpapers_filter)]:
+        for db_id, filter_addition in [(ALL_DB_IDS['RANNYSNICE_WALLPAPERS'], config.rannysnice_wallpapers_filter)]:
             if db_id not in config.databases:
                 continue
 
             ini[db_id.lower()]['filter'] = filter_addition
 
-        for db_id, beta_cores_active in [(AllDBs.JTCORES.db_id, config.download_beta_cores)]:
+        for db_id, beta_cores_active in [(ALL_DB_IDS['JTCORES'], config.download_beta_cores)]:
             if db_id not in config.databases or not beta_cores_active:
                 continue
 
@@ -339,7 +338,7 @@ class IniRepository:
         before = json.dumps(ini)
 
         self._add_new_downloader_ini_changes(ini, config)
-        ordered_ini: OrderedDict[str, Dict[str, str]] = into_ordered_ini_dict(ini, [DB_ID_DISTRIBUTION_MISTER], [AllDBs.UPDATE_ALL_MISTER.db_id])
+        ordered_ini: OrderedDict[str, Dict[str, str]] = into_ordered_ini_dict(ini, [DB_ID_DISTRIBUTION_MISTER], [ALL_DB_IDS['UPDATE_ALL_MISTER']])
         after = json.dumps(ordered_ini)
 
         if before == after:
@@ -446,14 +445,15 @@ class IniAst:
 
 
 def candidate_databases(config: Config) -> List[Tuple[str, Database]]:
+    dbs_def = all_dbs(config.mirror)
     configurable_dbs = {
-        'main_updater': db_distribution_mister_by_encc_forks(config.encc_forks),
-        'jotego_updater': db_jtcores_by_download_beta_cores(config.download_beta_cores),
-        'names_txt_updater': db_names_txt_by_locale(config.names_region, config.names_char_code, config.names_sort_code),
-        'arcade_names_txt': db_arcade_names_txt_by_locale(config.names_region)
+        'main_updater': dbs_def.db_distribution_mister_by_encc_forks(config.encc_forks),
+        'jotego_updater': dbs_def.db_jtcores_by_download_beta_cores(config.download_beta_cores),
+        'names_txt_updater': dbs_def.db_names_txt_by_locale(config.names_region, config.names_char_code, config.names_sort_code),
+        'arcade_names_txt': dbs_def.db_arcade_names_txt_by_locale(config.names_region)
     }
     result = []
-    for variable, dbs in dbs_to_model_variables_pairs():
+    for variable, dbs in dbs_def.dbs_to_model_variables_pairs():
         if variable in configurable_dbs:
             result.append((variable, configurable_dbs[variable]))
             continue

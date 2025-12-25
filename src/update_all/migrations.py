@@ -20,7 +20,7 @@ from update_all.store_migrator import Migration
 
 
 def migrations() -> list[Migration]:
-    return [migration_v1, migration_v2, migration_v3, migration_v4]
+    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5]
 
 def migration_v1(local_store) -> None:
     """create arcade_names_txt field"""
@@ -44,3 +44,8 @@ def migration_v4(local_store) -> None:
     """create timeline_after_logs field"""
 
     local_store['timeline_after_logs'] = True
+
+def migration_v5(local_store) -> None:
+    """create timeline_after_logs field"""
+
+    local_store['mirror'] = ''

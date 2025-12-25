@@ -18,8 +18,6 @@
 
 from typing import TypedDict, Union
 from urllib.parse import urlparse
-from update_all.config import Config
-from update_all.other import GenericProvider
 from update_all.constants import FILE_update_all_zipped_storage, FILE_update_all_log, FILE_update_all_storage, \
     FILE_pocket_firmware_details_json
 from update_all.local_store import LocalStore
@@ -36,8 +34,7 @@ class FirmwareInfo(TypedDict):
 
 class LocalRepository:
 
-    def __init__(self, config_provider: GenericProvider[Config], logger, file_system, store_migrator):
-        self._config_provider = config_provider
+    def __init__(self, logger, file_system, store_migrator):
         self._logger = logger
         self._file_system = file_system
         self._store_migrator = store_migrator

@@ -20,7 +20,7 @@ def exports(env=None): return " ".join(f"export {key}={value};" for key, value i
 def scp_file(src, dest, **kwargs): _ssh_pass('scp', [scp_path(src), scp_path(dest)], **kwargs)
 def exec_ssh(cmd, env=None, **kwargs): return _ssh_pass('ssh', [f'root@{mister_ip()}', f'{exports(env)}{cmd}'], **kwargs)
 def run_build(**kwargs): send_build(env={"SKIP_REMOVALS": "true"}), exec_ssh(f'/media/fat/update_all.sh --no-continue', **kwargs)
-def local_run(env=None): subprocess.run(['python3', './src/__main__.py'], env={**({} if env is None else env), 'LOCAL_TEST_RUN': 'true'}, check=True)
+def local_run(env=None): subprocess.run(['python3', './src/__main__.py'], env={**({} if env is None else env), 'LOCATION_STR': '.local_drv'}, check=True)
 def run_launcher(**kwargs): send_build(**kwargs), exec_ssh(f'/media/fat/Scripts/update_all.sh', **kwargs)
 def store_push(**kwargs): scp_file('update_all.json', '/media/fat/Scripts/.config/update_all/update_all.json', **kwargs)
 def store_pull(**kwargs): scp_file('/media/fat/Scripts/.config/update_all/update_all.json', 'update_all.json', **kwargs)
