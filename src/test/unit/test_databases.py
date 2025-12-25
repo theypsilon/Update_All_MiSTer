@@ -18,18 +18,23 @@
 import unittest
 
 from update_all.config import Config
-from update_all.databases import all_dbs_list
+from update_all.databases import all_dbs, ids_sequence, ALL_DB_IDS, AllDBs, Database
 from update_all.ini_repository import candidate_databases
 
 
 class TestDatabases(unittest.TestCase):
 
     def test_candidate_databases_are_as_many_as_different_db_ids_in_all_dbs(self) -> None:
-        self.assertEqual(len(all_db_ids()), len(candidate_dbs()))
+        self.assertEqual(len(ids_sequence()), len(candidate_dbs()))
 
     def test_candidate_database_ids_are_identical_to_the_different_db_ids_in_all_dbs(self) -> None:
-        self.assertSetEqual(all_db_ids(), {db.db_id for k, db in candidate_dbs()})
+        self.assertSetEqual(set(ids_sequence()), {db.db_id for k, db in candidate_dbs()})
 
+    def test_names_locale_by_db_url___on_wrong_db_url___returns_names_char18_common_jp_locale(self):
+        self.assertEqual(names_locale_by_db_url(all_dbs('').NAMES_CHAR18_COMMON_JP_TXT.db_url), names_locale_by_db_url('wrong'))
+
+    def test_names_locale_by_db_url___on_names_char18_common_jp_db_url___returns_proper_region_value(self):
+        self.assertEqual('JP', names_locale_by_db_url(all_dbs('').NAMES_CHAR18_COMMON_JP_TXT.db_url)[0])
 
 def candidate_dbs(): return candidate_databases(Config())
-def all_db_ids(): return {v.db_id for v in all_dbs_list()}
+def names_locale_by_db_url(db_url: str) -> tuple[str, str, str]: return all_dbs('').names_locale_by_db_url(db_url)

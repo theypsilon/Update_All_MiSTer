@@ -53,6 +53,7 @@ def make_new_local_store(store_migrator):
     return {
         'migration_version': store_migrator.latest_migration_version(),
         'theme': 'Blue Installer',
+        'mirror': default_config.mirror,
         'countdown_time': default_config.countdown_time,
         'log_viewer': default_config.log_viewer,
         'autoreboot': default_config.autoreboot,

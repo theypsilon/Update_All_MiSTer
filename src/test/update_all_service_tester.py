@@ -30,10 +30,10 @@ from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl,
 from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, \
     KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, \
     KENV_TRANSITION_SERVICE_ONLY, FILE_patreon_key, COMMAND_STANDARD, FILE_timeline_short, KENV_TIMELINE_PLUS_PATH, \
-    DEFAULT_TRANSITION_SERVICE_ONLY, KENV_LOCAL_TEST_RUN, DEFAULT_LOCAL_TEST_RUN, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
-    KENV_TIMELINE_SHORT_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, KENV_HTTPS_PROXY
+    DEFAULT_TRANSITION_SERVICE_ONLY, KENV_SKIP_DOWNLOADER, DEFAULT_SKIP_DOWNLOADER, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
+    KENV_TIMELINE_SHORT_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID
 from update_all.countdown import Countdown
-from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs
+from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs, all_dbs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
@@ -57,14 +57,15 @@ def default_env():
         KENV_COMMIT: DEFAULT_COMMIT,
         KENV_LOCATION_STR: DEFAULT_LOCATION_STR,
         KENV_DEBUG: DEFAULT_DEBUG,
-        KENV_LOCAL_TEST_RUN: DEFAULT_LOCAL_TEST_RUN,
+        KENV_SKIP_DOWNLOADER: DEFAULT_SKIP_DOWNLOADER,
         KENV_TRANSITION_SERVICE_ONLY: DEFAULT_TRANSITION_SERVICE_ONLY,
         KENV_PATREON_KEY_PATH: FILE_patreon_key,
         KENV_COMMAND: COMMAND_STANDARD,
         KENV_TIMELINE_SHORT_PATH: FILE_timeline_short,
         KENV_TIMELINE_PLUS_PATH: FILE_timeline_plus,
         KENV_HTTP_PROXY: '',
-        KENV_HTTPS_PROXY: ''
+        KENV_HTTPS_PROXY: '',
+        KENV_MIRROR_ID: ''
     }
 
 
@@ -88,9 +89,8 @@ class StoreMigratorTester(StoreMigrator):
 
 
 class LocalRepositoryTester(LocalRepository):
-    def __init__(self, config_provider: GenericProvider[Config] = None, file_system: FileSystem = None, store_migrator: StoreMigrator = None):
+    def __init__(self, file_system: FileSystem = None, store_migrator: StoreMigrator = None):
         super().__init__(
-            config_provider=config_provider or GenericProvider[Config](),
             logger=NoLogger(),
             file_system=file_system or FileSystemFactory().create_for_system_scope(),
             store_migrator=store_migrator or StoreMigratorTester()
@@ -160,7 +160,7 @@ class SettingsScreenTester(SettingsScreen):
             settings_screen_printer=settings_screen_printer or SettingsScreenPrinterStub(),
             ui_runtime=ui_runtime or UiRuntimeStub(),
             encryption=encryption or EncryptionTester(file_system=file_system),
-            local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system),
+            local_repository=local_repository or LocalRepositoryTester(file_system=file_system),
             store_provider=store_provider or GenericProvider[LocalStore](),
             ao_service=ao_service or ArcadeOrganizerServiceStub()
         )
@@ -195,7 +195,7 @@ def ensure_str_lists(this: List[any]) -> List[str]:
 
 def default_databases(add: List[str] = None, sub: List[str] = None) -> Set[str]:
     sub = ensure_str_lists(sub or [])
-    return {value for value in {DB_ID_DISTRIBUTION_MISTER, AllDBs.JTCORES.db_id, AllDBs.COIN_OP_COLLECTION.db_id, AllDBs.UPDATE_ALL_MISTER.db_id} if value not in sub} | set(ensure_str_lists(add or []))
+    return {value for value in {DB_ID_DISTRIBUTION_MISTER, all_dbs('').JTCORES.db_id, all_dbs('').COIN_OP_COLLECTION.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id} if value not in sub} | set(ensure_str_lists(add or []))
 
 
 class TransitionServiceTester(TransitionService):
@@ -222,9 +222,9 @@ class EnvironmentSetupTester(EnvironmentSetupImpl):
         store_provider = store_provider or GenericProvider[LocalStore]()
 
         transition_service = transition_service or TransitionServiceTester(file_system=file_system, os_utils=os_utils)
-        local_repository = local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system)
+        local_repository = local_repository or LocalRepositoryTester(file_system=file_system)
 
-        super().__init__(config_reader, config_provider, transition_service, local_repository, store_provider)
+        super().__init__(NoLogger(), config_reader, config_provider, transition_service, local_repository, store_provider)
 
 
 class EnvironmentSetupStub(EnvironmentSetup):
@@ -272,7 +272,7 @@ class UpdateAllServiceTester(UpdateAllService):
             ini_repository=self.ini_repository,
             environment_setup=environment_setup,
             ao_service=ao_service,
-            local_repository=local_repository or LocalRepositoryTester(config_provider=config_provider, file_system=file_system),
+            local_repository=local_repository or LocalRepositoryTester(file_system=file_system),
             log_viewer=LogViewerTester(file_system, store_provider, encryption),
             timeline=TimelineTester(file_system)
         )

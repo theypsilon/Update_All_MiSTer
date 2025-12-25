@@ -16,7 +16,7 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 from typing import Dict, Union, List
-
+import copy
 
 class LocalStore:
     def __init__(self, props: Dict[str, Union[str, int, bool]]):
@@ -29,6 +29,8 @@ class LocalStore:
 
     def set_theme(self, theme: str) -> None: self.generic_set('theme', theme)
     def get_theme(self) -> str: return self._props['theme']
+    def set_mirror(self, mirror: str) -> None: self.generic_set('mirror', mirror)
+    def get_mirror(self) -> str: return self._props['mirror']
     def set_countdown_time(self, countdown_time: int) -> None: self.generic_set('countdown_time', countdown_time)
     def get_countdown_time(self) -> int: return self._props['countdown_time']
     def set_log_viewer(self, log_viewer: bool) -> None: self.generic_set('log_viewer', log_viewer)
@@ -57,6 +59,9 @@ class LocalStore:
 
     def unwrap_props(self):
         return self._props
+
+    def clone(self):
+        return LocalStore(copy.deepcopy(self._props))
 
     def needs_save(self) -> bool:
         return len(self._dirty) > 0

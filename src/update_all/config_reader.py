@@ -16,17 +16,13 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import json
-import time
 from pathlib import Path
 from typing import Dict
 
 from update_all.analogue_pocket.http_gateway import http_config
-from update_all.config import Config
-from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, \
-    KENV_DEBUG, KENV_TRANSITION_SERVICE_ONLY, KENV_LOCAL_TEST_RUN, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
-    KENV_TIMELINE_SHORT_PATH, KENV_TIMELINE_PLUS_PATH
-from update_all.databases import DB_ID_NAMES_TXT, names_locale_by_db_url, model_variables_by_db_id, \
-    AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_URL_JTPREMIUM_DEPRECATED
+from update_all.config import Config, EnvDict
+from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, KENV_DEBUG
+from update_all.databases import DB_ID_NAMES_TXT, model_variables_by_db_id, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS
 from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
 from update_all.local_store import LocalStore
@@ -35,7 +31,7 @@ from update_all.other import strtobool
 
 
 class ConfigReader:
-    def __init__(self, logger: Logger, env: dict[str, str], ini_repository: IniRepository):
+    def __init__(self, logger: Logger, env: EnvDict, ini_repository: IniRepository):
         self._logger = logger
         self._env = env
         self._ini_repository = ini_repository
@@ -44,30 +40,32 @@ class ConfigReader:
         self._ini_repository.initialize_downloader_ini_base_path(str(calculate_base_path(self._env)))
         return {k: IniParser(v) for k, v in self._ini_repository.get_downloader_ini().items()}
 
-    def fill_config_with_environment_and_mister_section(self, config: Config, downloader_ini: Dict[str, IniParser]):
+    def fill_config_with_mister_section(self, config: Config, downloader_ini: Dict[str, IniParser]):
         if 'mister' in downloader_ini:
             mister_section = downloader_ini['mister']
             config.base_path = mister_section.get_string('base_path', config.base_path)
             config.base_system_path = mister_section.get_string('base_system_path', config.base_path)
             config.paths_from_downloader_ini = mister_section.has('base_path')
-            config.verbose = mister_section.get_bool('verbose', False)
-            config.http_proxy = mister_section.get_string('http_proxy', '').strip()
-        else:
-            config.base_path = str(calculate_base_path(self._env))
-            config.base_system_path = config.base_path
+            config.verbose = mister_section.get_bool('verbose', config.verbose)
+            if http_proxy := mister_section.get_string('http_proxy', ''):
+                config.http_proxy = http_proxy
+                config.http_config = http_config(http_proxy=http_proxy, https_proxy=None)
 
+    def fill_config_with_environment(self, config: Config):
         if is_debug_enabled(self._env):
             config.verbose = True
 
-        config.curl_ssl = valid_max_length(KENV_CURL_SSL, self._env[KENV_CURL_SSL], 50).strip()
-        config.commit = valid_max_length(KENV_COMMIT, self._env[KENV_COMMIT], 50).strip()
-        config.start_time = time.monotonic()
-        config.local_test_run = strtobool(self._env.get(KENV_LOCAL_TEST_RUN).strip().lower())
-        config.transition_service_only = strtobool(self._env[KENV_TRANSITION_SERVICE_ONLY].strip().lower())
-        config.patreon_key_path = self._env[KENV_PATREON_KEY_PATH].strip()
-        config.command = self._env.get(KENV_COMMAND, config.command).strip().upper()
-        config.timeline_short_path = self._env.get(KENV_TIMELINE_SHORT_PATH, config.timeline_short_path).strip()
-        config.timeline_plus_path = self._env.get(KENV_TIMELINE_PLUS_PATH, config.timeline_plus_path).strip()
+        config.base_path = str(calculate_base_path(self._env))
+        config.base_system_path = config.base_path
+        config.curl_ssl = valid_max_length(KENV_CURL_SSL, self._env['CURL_SSL'], 50).strip()
+        config.commit = valid_max_length(KENV_COMMIT, self._env['COMMIT'], 50).strip()
+        config.skip_downloader = strtobool(self._env.get('SKIP_DOWNLOADER').strip().lower())
+        config.transition_service_only = strtobool(self._env['TRANSITION_SERVICE_ONLY'].strip().lower())
+        config.patreon_key_path = self._env['PATREON_KEY_PATH'].strip()
+        config.command = self._env.get('COMMAND', config.command).strip().upper()
+        config.timeline_short_path = self._env.get('TIMELINE_SHORT_PATH', config.timeline_short_path).strip()
+        config.timeline_plus_path = self._env.get('TIMELINE_PLUS_PATH', config.timeline_plus_path).strip()
+        config.mirror = self._env.get('MIRROR_ID', config.mirror).strip().lower()
 
         if self._env['HTTP_PROXY'] or self._env['HTTPS_PROXY']:
             config.http_config = http_config(http_proxy=self._env['HTTP_PROXY'], https_proxy=self._env['HTTPS_PROXY'])
@@ -75,66 +73,58 @@ class ConfigReader:
         elif config.http_proxy != '':
             config.http_config = http_config(http_proxy=config.http_proxy, https_proxy=None)
 
-        self._logger.configure(config)
-
         if not is_mister_environment(self._env):
             config.not_mister = True
 
-        self._logger.debug('env: ' + json.dumps(self._env, indent=4))
-
-    def fill_config_with_ini_files(self, config: Config, downloader_ini: Dict[str, IniParser]) -> None:
+    def fill_config_with_database_sections(self, config: Config, downloader_ini: Dict[str, IniParser]) -> None:
         for db_id, variable in model_variables_by_db_id().items():
             is_present = db_id.lower() in downloader_ini
             config.__setattr__(variable, is_present)
             if is_present:
                 config.databases.add(db_id)
 
-        config.databases.add(AllDBs.UPDATE_ALL_MISTER.db_id)
+        db_defs = all_dbs(config.mirror)
+        config.databases.add(ALL_DB_IDS['UPDATE_ALL_MISTER'])
 
         if DB_ID_DISTRIBUTION_MISTER in downloader_ini:
             parser = downloader_ini[DB_ID_DISTRIBUTION_MISTER]
-            db_url = parser.get_string('db_url', AllDBs.MISTER_DEVEL_DISTRIBUTION_MISTER.db_url).strip().lower()
-        
-            if db_url == AllDBs.MISTER_DB9_DISTRIBUTION_MISTER.db_url.lower():
-                config.encc_forks = 'db9'
-            elif db_url == AllDBs.MISTER_AITORGOMEZ_DISTRIBUTION_MISTER.db_url.lower():
-                config.encc_forks = 'aitorgomez'
-            else:
-                config.encc_forks = 'devel'
+            config.encc_forks = db_defs.encc_forks_by_distribution_mister_db_url(parser.get_string('db_url', None))
 
-        if AllDBs.JTCORES.db_id in downloader_ini:
-            parser = downloader_ini[AllDBs.JTCORES.db_id]
-            jt_db_url = parser.get_string('db_url', AllDBs.JTCORES.db_url).strip().lower()
-            jt_filter = parser.get_string('filter', None)
-            if jt_db_url == DB_URL_JTPREMIUM_DEPRECATED.lower():
-                config.download_beta_cores = True
-            elif jt_filter is not None and '!jtbeta' not in jt_filter.replace(' ', '').lower():
+        if ALL_DB_IDS['JTCORES'] in downloader_ini:
+            parser = downloader_ini[ALL_DB_IDS['JTCORES']]
+            if db_defs.should_download_beta_cores(parser.get_string('db_url', None), parser.get_string('filter', None)):
                 config.download_beta_cores = True
 
         if DB_ID_NAMES_TXT in downloader_ini:
             parser = downloader_ini[DB_ID_NAMES_TXT]
-            config.names_region, config.names_char_code, config.names_sort_code = names_locale_by_db_url(parser.get_string('db_url', AllDBs.NAMES_CHAR18_COMMON_JP_TXT.db_url).strip())
+            (config.names_region,
+             config.names_char_code,
+             config.names_sort_code) = db_defs.names_locale_by_db_url(parser.get_string('db_url', None))
 
-        if AllDBs.ARCADE_ROMS.db_id in downloader_ini:
-            parser = downloader_ini[AllDBs.ARCADE_ROMS.db_id]
+        if ALL_DB_IDS['ARCADE_ROMS'] in downloader_ini:
+            parser = downloader_ini[ALL_DB_IDS['ARCADE_ROMS']]
             config.hbmame_filter = '!hbmame' in parser.get_string('filter', '')
 
-        if AllDBs.RANNYSNICE_WALLPAPERS.db_id.lower() in downloader_ini:
-            parser = downloader_ini[AllDBs.RANNYSNICE_WALLPAPERS.db_id.lower()]
+        if ALL_DB_IDS['RANNYSNICE_WALLPAPERS'].lower() in downloader_ini:
+            parser = downloader_ini[ALL_DB_IDS['RANNYSNICE_WALLPAPERS'].lower()]
             rannysnice_wallpapers_filter = parser.get_string('filter', '').replace('-', '').replace('_', '').lower()
             config.rannysnice_wallpapers_filter = 'ar16-9' if 'ar169' in rannysnice_wallpapers_filter else 'ar4-3' if 'ar43' in rannysnice_wallpapers_filter else 'all'
 
         config.arcade_organizer = self._ini_repository.get_arcade_organizer_ini().get_bool('arcade_organizer', config.arcade_organizer)
 
-        self._logger.debug('config: ' + json.dumps(config, default=lambda o: str(o) if isinstance(o, Path) or isinstance(o, set) else o.__dict__, indent=4))
-
     def fill_config_with_local_store(self, config: Config, store: LocalStore):
+        if mirror := store.get_mirror():
+            config.mirror = mirror
         config.countdown_time = store.get_countdown_time()
         config.autoreboot = store.get_autoreboot()
         config.pocket_firmware_update = store.get_pocket_firmware_update()
         config.pocket_backup = store.get_pocket_backup()
         config.log_viewer = store.get_log_viewer()
         config.timeline_after_logs = store.get_timeline_after_logs()
+
+    def debug_log(self, config: Config, store: LocalStore):
+        self._logger.debug('env: ' + json.dumps(self._env, indent=4))
+        self._logger.debug('config: ' + json.dumps(config, default=lambda o: str(o) if isinstance(o, Path) or isinstance(o, set) else o.__dict__, indent=4))
         self._logger.debug('store: ' + json.dumps(store.unwrap_props(), indent=4))
 
 

@@ -24,6 +24,7 @@ def settings_screen_model(): return {
         "encc_forks": {"devel": "MiSTer-devel", "db9": "MiSTer-DB9", "aitorgomez": "AitorGomez Fork"},
         "encc_forks_description": {"devel": "Official Cores from MiSTer-devel", "db9": "DB9 / SNAC8 forks with ENCC", "aitorgomez": "AitorGomez Fork"},
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
+# @TODO (mirror)       "mirror": {"": "Off.", "off": "Off.", "mysticalrealm": "Mystical Realm"},
         "bool_flag_presence_text": {
             "0": "Ignore them entirely",
             "1": "Place them only on its {0} folder",
@@ -816,6 +817,7 @@ def settings_screen_model(): return {
                 "autoreboot": {"group": ["ua_ini", "store"], "default": "true", "values": ["false", "true"]},
                 "countdown_time": {"group": ["ua_ini", "store"], "default": "15", "values": ["15", "4", "60"]},
                 "log_viewer": {"group": "store", "default": "true", "values": ["false", "true"]},
+# @TODO (mirror)                "mirror": {"group": "store", "default": "off", "values": ["off", "mysticalrealm"]},
             },
             "entries": [
                 {
@@ -832,7 +834,12 @@ def settings_screen_model(): return {
                     "title": "3 Log Viewer",
                     "description": "Scrollable Screen: {log_viewer:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "log_viewer"}]}
-                }
+                },
+                # {
+                #     "title": "4 Mirror",
+                #     "description": "{mirror}",
+                #     "actions": {"ok": [{"type": "rotate_variable", "target": "mirror"}]}
+                # }
             ]
         },
         "rannysnice_wallpapers_menu": {

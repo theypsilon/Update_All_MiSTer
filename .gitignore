@@ -2,6 +2,7 @@ downloader.ini
 delme
 .venv
 .idea
+.local_drv
 __pycache__
 mister.ip
 build

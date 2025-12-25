@@ -19,8 +19,10 @@
 
 set -euo pipefail
 
-RUN_SCRIPT_PATH="/tmp/update_all.sh"
-LATEST_SCRIPT_PATH="/media/fat/Scripts/.config/update_all/update_all.pyz"
+RUN_TOOL_PATH="/tmp/update_all.sh"
+REMOTE_TOOL_URL="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
+LATEST_TOOL_PATH="/media/fat/Scripts/.config/update_all/update_all.pyz"
+MIRROR_FILE_PATH="/media/fat/Scripts/update_all.mirror"
 CACERT_PEM_0="/etc/ssl/certs/cacert.pem"
 CACERT_PEM_1="/media/fat/Scripts/.config/downloader/cacert.pem"
 
@@ -155,27 +157,42 @@ download_file() {
 
 echo -n "Launching Update All"
 
-rm ${RUN_SCRIPT_PATH} 2> /dev/null || true
+rm ${RUN_TOOL_PATH} 2> /dev/null || true
 
-if [ -s "${LATEST_SCRIPT_PATH}" ] ; then
-    cp "${LATEST_SCRIPT_PATH}" "${RUN_SCRIPT_PATH}"
+if [ -s "${MIRROR_FILE_PATH}" ] ; then
+    TEMP_MIRROR_TOOL_URL=$(grep -o '"mirror_tool_url"[[:space:]]*:[[:space:]]*"[^"]*"' "${MIRROR_FILE_PATH}" | cut -d'"' -f4 || true)
+    TEMP_MIRROR_ID=$(grep -o '"mirror_id"[[:space:]]*:[[:space:]]*"[^"]*"' "${MIRROR_FILE_PATH}" | cut -d'"' -f4 || true)
+
+    if [ -n "${TEMP_MIRROR_TOOL_URL}" ] && [ -n "${TEMP_MIRROR_ID}" ] ; then
+        export MIRROR_TOOL_URL="${TEMP_MIRROR_TOOL_URL}"
+        export MIRROR_ID="${TEMP_MIRROR_ID}"
+    else
+        echo "WARNING: ${MIRROR_FILE_PATH} is invalid."
+        echo "         Please replace it with a valid mirror file."
+        echo "         Falling back to default download source."
+        echo
+    fi
+fi
+
+if [ -s "${LATEST_TOOL_PATH}" ] ; then
+    cp "${LATEST_TOOL_PATH}" "${RUN_TOOL_PATH}"
 else
-    download_file "${RUN_SCRIPT_PATH}" "https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
+    download_file "${RUN_TOOL_PATH}" "${MIRROR_TOOL_URL:-${REMOTE_TOOL_URL}}"
     echo -n "!"
 fi
 
 echo ; echo
-chmod +x "${RUN_SCRIPT_PATH}"
+chmod +x "${RUN_TOOL_PATH}"
 
 set +e
-${RUN_SCRIPT_PATH}
+${RUN_TOOL_PATH}
 UA_RET=$?
 set -e
 
-if [[ ${UA_RET} -eq 2 ]] && [ -s "${LATEST_SCRIPT_PATH}" ] ; then
-    cp "${LATEST_SCRIPT_PATH}" "${RUN_SCRIPT_PATH}"
+if [[ ${UA_RET} -eq 2 ]] && [ -s "${LATEST_TOOL_PATH}" ] ; then
+    cp "${LATEST_TOOL_PATH}" "${RUN_TOOL_PATH}"
     set +e
-    ${RUN_SCRIPT_PATH} --continue
+    ${RUN_TOOL_PATH} --continue
     UA_RET=$?
     set -e
 fi
@@ -185,6 +202,6 @@ if [[ ${UA_RET} -ne 0 ]] ; then
     exit 1
 fi
 
-rm ${RUN_SCRIPT_PATH} 2> /dev/null || true
+rm ${RUN_TOOL_PATH} 2> /dev/null || true
 
 exit 0

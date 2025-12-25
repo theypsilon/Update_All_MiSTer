@@ -43,7 +43,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.calculate_needs_save(ui)
         self.assertEqual('', ui.get_value('needs_save_file_list'))
         self.assertEqual('false', ui.get_value('needs_save'))
-        self.assertEqual(state.files[downloader_ini]['content'], default_downloader_ini_content())
+        self.assertEqual(default_downloader_ini_content(), state.files[downloader_ini]['content'])
 
     def test_calculate_needs_save___on_empty_downloader_ini_file___returns_no_changes(self) -> None:
         sut, ui, state = tester(files={downloader_ini: {'content': ''}})
@@ -191,7 +191,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
 
         self.assertEqual('Cyan Night', fs.files[store_json.lower()]['json']['theme'])
 
-    def test_save__after_loading_from_store_json_zip___keeps_same_non_default_value_on_new_store_json_file(self):
+    def test_save___after_loading_from_store_json_zip___keeps_same_non_default_value_on_new_store_json_file(self):
         local_store = make_new_local_store(StoreMigratorTester())
         default_theme = local_store['theme']
         local_store['theme'] = 'Cyan Night'
