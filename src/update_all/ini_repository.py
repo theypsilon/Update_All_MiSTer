@@ -403,7 +403,7 @@ class IniAst:
         self._add_line(f'[{section}]\n')
 
     def process(self, lines: List[str]) -> None:
-        header_regex = re.compile('\s*\[([-_/a-zA-Z0-9]+)\].*', re.I)
+        header_regex = re.compile(r'\s*\[([-_/a-zA-Z0-9]+)\].*', re.I)
 
         for line in lines:
             match = header_regex.match(line)

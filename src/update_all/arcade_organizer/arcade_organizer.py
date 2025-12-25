@@ -719,7 +719,7 @@ class Infrastructure:
             shutil.rmtree(parent)
 
     def _remove_broken_symlinks(self, directory):
-        output = subprocess.run('find "%s/" -xtype l -exec rm \{\} \;' % directory, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        output = subprocess.run(r'find "%s/" -xtype l -exec rm {} \;' % directory, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         if output.returncode != 0:
             self._printer.print("Couldn't clean broken symlinks at " + directory)
             self._printer.print(output.stderr.decode())
