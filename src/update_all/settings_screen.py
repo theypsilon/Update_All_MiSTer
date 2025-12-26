@@ -362,7 +362,8 @@ class SettingsScreen(UiApplication):
             return ''
 
     def calculate_arcade_organizer_folders(self, ui: UiContext) -> None:
-        ao_config = self._ao_service.make_arcade_organizer_config(f'{self._config_provider.get().base_path}/{ARCADE_ORGANIZER_INI}')
+        config = self._config_provider.get()
+        ao_config = self._ao_service.make_arcade_organizer_config(f'{config.base_path}/{ARCADE_ORGANIZER_INI}', config.base_path, config.http_proxy)
         folders, success = self._ao_service.run_arcade_organizer_print_orgdir_folders(ao_config)
 
         ui.set_value('has_arcade_organizer_folders', 'true' if success and len(folders) > 0 else 'false')

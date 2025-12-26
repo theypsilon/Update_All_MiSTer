@@ -131,15 +131,15 @@ class ArcadeOrganizerService:
     def __init__(self, printer: 'Logger'):
         self._printer = printer
 
-    def make_arcade_organizer_config(self, ini_file_str: str, http_proxy: str = ''):
+    def make_arcade_organizer_config(self, ini_file_str: str, base_path: str, http_proxy: str = ''):
         ini_file_path = Path(ini_file_str)
         ini_parser = IniParser(ini_file_path)
         ini_parser.initialize()
 
         config = dict()
-        config['MAD_DB'] = os.getenv('MAD_DB', '/media/fat/' + FILE_arcade_database_mad_db_json_zip)
-        config['MRADIR'] = ini_parser.get_string('MRADIR', "/media/fat/_Arcade/")
-        config['ORGDIR'] = ini_parser.get_string('ORGDIR', "/media/fat/_Arcade/_Organized")
+        config['MAD_DB'] = os.getenv('MAD_DB', f'{base_path}/{FILE_arcade_database_mad_db_json_zip}')
+        config['MRADIR'] = ini_parser.get_string('MRADIR', f"{base_path}/_Arcade/")
+        config['ORGDIR'] = ini_parser.get_string('ORGDIR', f"{base_path}/_Arcade/_Organized")
         config['SKIPALTS'] = ini_parser.get_bool('SKIPALTS', True)
         config['VERBOSE'] = ini_parser.get_bool('VERBOSE', False)
         config['AZ_DIR'] = ini_parser.get_bool('AZ_DIR', True)
@@ -203,17 +203,17 @@ class ArcadeOrganizerService:
 
         ###############################
 
-        CACHE_ARCADE_ORGANIZER_PATH = "/media/fat/Scripts/.cache/arcade-organizer"
-        CONFIG_ARCADE_ORGANIZER_PATH = "/media/fat/Scripts/.config/arcade-organizer"
+        CACHE_ARCADE_ORGANIZER_PATH = f"{base_path}/Scripts/.cache/arcade-organizer"
+        CONFIG_ARCADE_ORGANIZER_PATH = f"{base_path}/Scripts/.config/arcade-organizer"
         if Path(CACHE_ARCADE_ORGANIZER_PATH).is_dir():
-            Path("/media/fat/Scripts/.config").mkdir(parents=True, exist_ok=True)
+            Path(f"{base_path}/Scripts/.config").mkdir(parents=True, exist_ok=True)
             shutil.move(CACHE_ARCADE_ORGANIZER_PATH, CONFIG_ARCADE_ORGANIZER_PATH)
 
         config['ARCADE_ORGANIZER_VERSION'] = "2.0"
-        config['ARCADE_ORGANIZER_WORK_PATH'] = os.getenv('ARCADE_ORGANIZER_WORK_PATH', "/media/fat/Scripts/.config/arcade-organizer")
-        names_txt_file = os.getenv('ARCADE_ORGANIZER_NAMES_TXT', "/media/fat/Scripts/.config/arcade_names/arcade_names.txt")
-        if names_txt_file == "/media/fat/names.txt":
-            names_txt_file = "/media/fat/Scripts/.config/arcade_names/arcade_names.txt"
+        config['ARCADE_ORGANIZER_WORK_PATH'] = os.getenv('ARCADE_ORGANIZER_WORK_PATH', f"{base_path}/Scripts/.config/arcade-organizer")
+        names_txt_file = os.getenv('ARCADE_ORGANIZER_NAMES_TXT', f"{base_path}/Scripts/.config/arcade_names/arcade_names.txt")
+        if names_txt_file == f"{base_path}/names.txt":
+            names_txt_file = f"{base_path}/Scripts/.config/arcade_names/arcade_names.txt"
         config['ARCADE_ORGANIZER_NAMES_TXT'] = Path(names_txt_file)
         config['CACHED_DATA_ZIP'] = Path("%s/data.zip" % config['ARCADE_ORGANIZER_WORK_PATH'])
         config['ORGDIR_FOLDERS_FILE'] = Path("%s/orgdir-folders" % config['ARCADE_ORGANIZER_WORK_PATH'])
@@ -1252,8 +1252,8 @@ def check_pass_errors(errors: List[str], printer: Logger) -> bool:
     return True
 
 
-def show_help(ao_service: ArcadeOrganizerService):
-    config = ao_service.make_arcade_organizer_config(guess_arcade_organizer_ini_file())
+def show_help(ao_service: ArcadeOrganizerService, base_path: str):
+    config = ao_service.make_arcade_organizer_config(guess_arcade_organizer_ini_file(), base_path, '')
     with Printer(config) as printer:
         printer.print("Invalid arguments.")
         printer.print("Usage: %s --print-orgdir-folders" % sys.argv[0])
@@ -1263,8 +1263,10 @@ def show_help(ao_service: ArcadeOrganizerService):
 
 def run_arcade_organizer_cli():
     success: bool
+    base_path = os.getenv('LOCATION_STR', '/media/fat')
 
-    config = ArcadeOrganizerService.make_arcade_organizer_config(None, guess_arcade_organizer_ini_file())
+    ao_service = ArcadeOrganizerService(None)
+    config = ao_service.make_arcade_organizer_config(guess_arcade_organizer_ini_file(), base_path, '')
     with Printer(config) as printer:
         ao_service = ArcadeOrganizerService(printer)
         if len(sys.argv) == 2 and sys.argv[1] == "--print-orgdir-folders":
@@ -1276,7 +1278,7 @@ def run_arcade_organizer_cli():
             success = ao_service.run_arcade_organizer_print_ini_options(config)
 
         elif len(sys.argv) != 1:
-            show_help(ao_service)
+            show_help(ao_service, base_path)
             success = False
 
         else:

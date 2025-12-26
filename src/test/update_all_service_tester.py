@@ -281,7 +281,7 @@ class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
     def __init__(self):
         super().__init__(NoLogger())
 
-    def make_arcade_organizer_config(self, ini_file_str: str, http_proxy: str = '') -> Dict[str, Any]:
+    def make_arcade_organizer_config(self, ini_file_str: str, base_path: str, http_proxy: str = '') -> Dict[str, Any]:
         return {}
 
     def run_arcade_organizer_organize_all_mras(self, config: Dict[str, Any]) -> bool:
