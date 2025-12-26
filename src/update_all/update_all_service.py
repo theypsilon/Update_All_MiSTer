@@ -426,7 +426,7 @@ class UpdateAllService:
         self._logger.print("Running Arcade Organizer")
         self._logger.print()
 
-        success = self._ao_service.run_arcade_organizer_organize_all_mras(self._ao_service.make_arcade_organizer_config(f'{config.base_path}/{ARCADE_ORGANIZER_INI}', http_proxy=config.http_proxy))
+        success = self._ao_service.run_arcade_organizer_organize_all_mras(self._ao_service.make_arcade_organizer_config(f'{config.base_path}/{ARCADE_ORGANIZER_INI}', config.base_path, config.http_proxy))
         if success is False:
             self._exit_code = 12
             self._error_reports.append('Arcade Organizer')
