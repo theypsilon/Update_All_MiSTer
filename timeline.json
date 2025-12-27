@@ -1,0 +1,60 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "Downloader",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2025-12-27",
+      "timestamps": [
+        1766843398
+      ],
+      "title": "Files updated TODAY (2025-12-27)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "Ondra_SPO186",
+              "type": "standalone"
+            },
+            {
+              "name": "PCXT",
+              "type": "standalone"
+            },
+            {
+              "name": "PMD85",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1766343266,
+        1766344685,
+        1766497059,
+        1766558212
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1446,
+    "total_file_updates": 2052,
+    "unique_files": 1388
+  }
+}
