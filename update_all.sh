@@ -26,18 +26,44 @@ LATEST_TOOL_PATH="${LOCATION_STR}/Scripts/.config/update_all/update_all.pyz"
 MIRROR_FILE_PATH="${LOCATION_STR}/Scripts/update_all.mirror"
 CACERT_PEM_0="/etc/ssl/certs/cacert.pem"
 CACERT_PEM_1="${LOCATION_STR}/Scripts/.config/downloader/cacert.pem"
+CACERT_PEM_INSTALL_URL="https://curl.se/ca/cacert.pem"
+CACERT_PEM_SIG_URL="https://curl.se/ca/cacert.pem.sha256"
+NTP_SERVERS=(
+    "time.apple.com"
+    "time.amazonaws.cn"
+    "ntp.ntsc.ac.cn"
+    "cn.pool.ntp.org"
+    "ntp.aliyun.com"
+    "ntp.tencent.com"
+    "ntp.rt.ru"
+)
+
+# MIRROR SETUP
+if [ -s "${MIRROR_FILE_PATH}" ] ; then
+    TEMP_MIRROR_TOOL_URL=$(grep -o '"mirror_tool_url"[[:space:]]*:[[:space:]]*"[^"]*"' "${MIRROR_FILE_PATH}" | cut -d'"' -f4 || true)
+    TEMP_MIRROR_ID=$(grep -o '"mirror_id"[[:space:]]*:[[:space:]]*"[^"]*"' "${MIRROR_FILE_PATH}" | cut -d'"' -f4 || true)
+    TEMP_EXTRA_NTP_SERVERS=$(grep -o '"extra_ntp_servers"[[:space:]]*:[[:space:]]*"[^"]*"' "${MIRROR_FILE_PATH}" | cut -d'"' -f4 || true)
+
+    if [ -n "${TEMP_MIRROR_TOOL_URL}" ] && [ -n "${TEMP_MIRROR_ID}" ] ; then
+        export MIRROR_TOOL_URL="${TEMP_MIRROR_TOOL_URL}"
+        export MIRROR_ID="${TEMP_MIRROR_ID}"
+        REMOTE_TOOL_URL="${MIRROR_TOOL_URL}"
+    else
+        echo "WARNING: ${MIRROR_FILE_PATH} is invalid."
+        echo "         Please replace it with a valid mirror file."
+        echo "         Falling back to default download source."
+        echo
+    fi
+
+    if [ -n "${TEMP_EXTRA_NTP_SERVERS}" ] ; then
+        EXTRA_NTP_SERVERS=()
+        IFS=',' read -ra EXTRA_NTP_SERVERS <<< "${TEMP_EXTRA_NTP_SERVERS// /}" || true
+        NTP_SERVERS=("${EXTRA_NTP_SERVERS[@]}" "${NTP_SERVERS[@]}")
+    fi
+fi
 
 # NTP SETUP
 if (( 10#$(date +%Y) < 2000 )) ; then
-    NTP_SERVERS=(
-        "time.apple.com"
-        "time.amazonaws.cn"
-        "ntp.ntsc.ac.cn"
-        "cn.pool.ntp.org"
-        "ntp.aliyun.com"
-        "ntp.tencent.com"
-        "ntp.rt.ru"
-    )
     NTP_CONF="/etc/ntp.conf"
     for server in "${NTP_SERVERS[@]}"; do
         if ! grep -qF "${server}" "${NTP_CONF}"; then
@@ -77,7 +103,7 @@ elif [ -s "${CACERT_PEM_0}" ] ; then
     export SSL_CERT_FILE="${CACERT_PEM_0}"
 elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
     set +e
-    curl "https://github.com" > /dev/null 2>&1
+    curl "${REMOTE_TOOL_URL}" > /dev/null 2>&1
     CURL_RET=$?
     set -e
 
@@ -109,9 +135,9 @@ elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
         [ "${RO_ROOT}" == "true" ] && mount / -o remount,rw
         rm /etc/ssl/certs/* 2> /dev/null || true
         echo
-        echo "Installing cacert.pem from https://curl.se"
-        curl --insecure --location -o /tmp/cacert.pem "https://curl.se/ca/cacert.pem"
-        curl --insecure --location -o /tmp/cacert.pem.sha256 "https://curl.se/ca/cacert.pem.sha256"
+        echo "Installing cacert.pem from ${CACERT_PEM_INSTALL_URL}"
+        curl --insecure --location -o /tmp/cacert.pem "${CACERT_PEM_INSTALL_URL}"
+        curl --insecure --location -o /tmp/cacert.pem.sha256 "${CACERT_PEM_SIG_URL}"
 
         DOWNLOAD_SHA256=$(cat /tmp/cacert.pem.sha256 | awk '{print $1}')
         CALCULATED_SHA256=$(sha256sum /tmp/cacert.pem | awk '{print $1}')
@@ -156,33 +182,16 @@ download_file() {
     esac
 }
 
-echo -n "Launching Update All"
-
 rm ${RUN_TOOL_PATH} 2> /dev/null || true
-
-if [ -s "${MIRROR_FILE_PATH}" ] ; then
-    TEMP_MIRROR_TOOL_URL=$(grep -o '"mirror_tool_url"[[:space:]]*:[[:space:]]*"[^"]*"' "${MIRROR_FILE_PATH}" | cut -d'"' -f4 || true)
-    TEMP_MIRROR_ID=$(grep -o '"mirror_id"[[:space:]]*:[[:space:]]*"[^"]*"' "${MIRROR_FILE_PATH}" | cut -d'"' -f4 || true)
-
-    if [ -n "${TEMP_MIRROR_TOOL_URL}" ] && [ -n "${TEMP_MIRROR_ID}" ] ; then
-        export MIRROR_TOOL_URL="${TEMP_MIRROR_TOOL_URL}"
-        export MIRROR_ID="${TEMP_MIRROR_ID}"
-    else
-        echo "WARNING: ${MIRROR_FILE_PATH} is invalid."
-        echo "         Please replace it with a valid mirror file."
-        echo "         Falling back to default download source."
-        echo
-    fi
-fi
 
 if [ -s "${LATEST_TOOL_PATH}" ] ; then
     cp "${LATEST_TOOL_PATH}" "${RUN_TOOL_PATH}"
 else
-    download_file "${RUN_TOOL_PATH}" "${MIRROR_TOOL_URL:-${REMOTE_TOOL_URL}}"
-    echo -n "!"
+    echo "${REMOTE_TOOL_URL}" ; echo
+    download_file "${RUN_TOOL_PATH}" "${REMOTE_TOOL_URL}"
 fi
 
-echo ; echo
+echo "Launching Update All" ; echo
 chmod +x "${RUN_TOOL_PATH}"
 
 set +e
