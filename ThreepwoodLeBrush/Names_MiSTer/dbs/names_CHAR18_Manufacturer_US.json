@@ -1,0 +1,18 @@
+{
+  "base_files_url": "",
+  "db_files": [],
+  "db_id": "names_txt",
+  "db_url": "https://mirror1.undefinedproxy.com/ThreepwoodLeBrush/Names_MiSTer/dbs/names_CHAR18_Manufacturer_US.json",
+  "default_options": {},
+  "files": {
+    "names.txt": {
+      "hash": "3267561f908b8ec2fe087d926e9f4cd2",
+      "reboot": true,
+      "size": 7515,
+      "url": "https://mirror1.undefinedproxy.com/ThreepwoodLeBrush/Names_MiSTer/9b93121fe7551d8418bced1b24995ec8b739e7e5/names_CHAR18_Manufacturer_US.txt"
+    }
+  },
+  "folders": {},
+  "timestamp": 1766430028,
+  "zips": {}
+}
