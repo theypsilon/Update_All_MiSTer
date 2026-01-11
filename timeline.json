@@ -1,0 +1,85 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "SNK_Triple Z80 Core",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-01-11",
+      "timestamps": [
+        1768116578
+      ],
+      "title": "Files updated TODAY (2026-01-11)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Inferno Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Joust 2 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Bank Panic MRA: Combat Hawk",
+              "type": "standalone"
+            },
+            {
+              "name": "Inferno MRA: Inferno",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "PCXT",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "N64",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1767527254,
+        1767561663,
+        1767562599,
+        1767634097,
+        1767764742,
+        1768044774,
+        1768080048
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1446,
+    "total_file_updates": 2056,
+    "unique_files": 1386
+  }
+}
