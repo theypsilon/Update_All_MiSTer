@@ -109,3 +109,7 @@ Released under the [GPL v3 License](LICENSE).
 ## Warning
 
 MiSTer Scripts are run with root access in a pretty powerful device that has internet access. Be careful and do proper research before running any script on your device.
+
+
+### Powered by
+[![PyCharm logo](https://resources.jetbrains.com/storage/products/company/brand/logos/PyCharm.svg)](https://jb.gg/OpenSourceSupport)
