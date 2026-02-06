@@ -31,7 +31,8 @@ from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OP
     KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, \
     KENV_TRANSITION_SERVICE_ONLY, FILE_patreon_key, COMMAND_STANDARD, FILE_timeline_short, KENV_TIMELINE_PLUS_PATH, \
     DEFAULT_TRANSITION_SERVICE_ONLY, KENV_SKIP_DOWNLOADER, DEFAULT_SKIP_DOWNLOADER, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
-    KENV_TIMELINE_SHORT_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID
+    KENV_TIMELINE_SHORT_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID, \
+    KENV_RETROACCOUNT_FEATURE_FLAG, KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount
 from update_all.countdown import Countdown
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs, all_dbs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
@@ -46,6 +47,7 @@ from update_all.settings_screen_printer import SettingsScreenPrinter, ColorTheme
 from update_all.store_migrator import StoreMigrator, make_new_local_store
 from update_all.timeline import Timeline
 from update_all.transition_service import TransitionService
+from update_all.retroaccount import RetroAccountService
 from update_all.ui_engine import UiContext, UiRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllService
@@ -65,7 +67,9 @@ def default_env():
         KENV_TIMELINE_PLUS_PATH: FILE_timeline_plus,
         KENV_HTTP_PROXY: '',
         KENV_HTTPS_PROXY: '',
-        KENV_MIRROR_ID: ''
+        KENV_MIRROR_ID: '',
+        KENV_RETROACCOUNT_FEATURE_FLAG: 'false',
+        KENV_RETROACCOUNT_DOMAIN: DOMAIN_default_retroaccount,
     }
 
 
@@ -224,7 +228,7 @@ class EnvironmentSetupTester(EnvironmentSetupImpl):
         transition_service = transition_service or TransitionServiceTester(file_system=file_system, os_utils=os_utils)
         local_repository = local_repository or LocalRepositoryTester(file_system=file_system)
 
-        super().__init__(NoLogger(), config_reader, config_provider, transition_service, local_repository, store_provider)
+        super().__init__(NoLogger(), config_reader, config_provider, transition_service, local_repository, store_provider, file_system)
 
 
 class EnvironmentSetupStub(EnvironmentSetup):
@@ -274,7 +278,8 @@ class UpdateAllServiceTester(UpdateAllService):
             ao_service=ao_service,
             local_repository=local_repository or LocalRepositoryTester(file_system=file_system),
             log_viewer=LogViewerTester(file_system, store_provider, encryption),
-            timeline=TimelineTester(file_system)
+            timeline=TimelineTester(file_system),
+            retroaccount=RetroAccountServiceTester()
         )
 
 class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
@@ -292,3 +297,15 @@ class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
 
     def run_arcade_organizer_print_ini_options(self, config: Dict[str, Any]) -> bool:
         return True
+
+
+class RetroAccountServiceTester(RetroAccountService):
+    def __init__(self, file_system: FileSystem = None, config_provider: GenericProvider[Config] = None):
+        super().__init__(
+            NoLogger(),
+            file_system or FileSystemFactory().create_for_system_scope(),
+            config_provider or GenericProvider[Config]()
+        )
+
+    def validate_user_session(self) -> None:
+        pass

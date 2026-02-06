@@ -20,6 +20,7 @@ import enum
 import os
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor, Future
 from typing import List, Optional
 
 from update_all.analogue_pocket.firmware_update import pocket_firmware_update
@@ -55,6 +56,7 @@ from update_all.file_system import FileSystemFactory, FileSystem
 from update_all.config_reader import ConfigReader
 from update_all.timeline import Timeline
 from update_all.transition_service import TransitionService
+from update_all.retroaccount import RetroAccountService
 
 
 @enum.unique
@@ -102,9 +104,11 @@ class UpdateAllServiceFactory:
             config_provider=config_provider,
             transition_service=transition_service,
             local_repository=local_repository,
-            store_provider=store_provider
+            store_provider=store_provider,
+            file_system=file_system
         )
         timeline = Timeline(self._logger, config_provider, file_system, encryption)
+        retroaccount = RetroAccountService(self._logger, file_system, config_provider)
         return UpdateAllService(
             config_provider,
             self._logger,
@@ -119,7 +123,8 @@ class UpdateAllServiceFactory:
             local_repository=local_repository,
             log_viewer=LogViewer(file_system, store_provider, encryption),
             encryption=encryption,
-            timeline=timeline
+            timeline=timeline,
+            retroaccount=retroaccount
         )
 
 
@@ -137,7 +142,8 @@ class UpdateAllService:
                  log_viewer: LogViewer,
                  local_repository: LocalRepository,
                  encryption: Encryption,
-                 timeline: Timeline):
+                 timeline: Timeline,
+                 retroaccount: RetroAccountService):
         self._config_provider = config_provider
         self._logger = logger
         self._file_system = file_system
@@ -152,11 +158,14 @@ class UpdateAllService:
         self._log_viewer = log_viewer
         self._encryption = encryption
         self._timeline = timeline
+        self._retroaccount = retroaccount
         self._exit_code = 0
         self._end_time = 0.0
         self._error_reports: List[str] = []
         self._temp_launchers: List[str] = []
         self._timeline_after_log_doc: List[str] = []
+        self._executor: Optional[ThreadPoolExecutor] = None
+        self._session_validation_future: Optional[Future] = None
 
     def full_run(self, run_pass: UpdateAllServicePass) -> int:
         if run_pass == UpdateAllServicePass.Continue:
@@ -176,6 +185,7 @@ class UpdateAllService:
                 return self._exit_code
 
             self._test_routine()
+            self._start_background_jobs()
             self._show_intro()
             self._countdown_for_settings_screen()
             self._print_sequence()
@@ -233,6 +243,10 @@ class UpdateAllService:
             return
 
         exit(0)
+
+    def _start_background_jobs(self) -> None:
+        self._executor = ThreadPoolExecutor(max_workers=1)
+        self._session_validation_future = self._executor.submit(self._retroaccount.validate_user_session)
 
     def _show_intro(self) -> None:
         self._logger.print()
@@ -450,6 +464,10 @@ class UpdateAllService:
             self._error_reports.append('Scripts/.config/downloader/update_linux.log')
 
     def _cleanup(self) -> None:
+        if self._executor is not None:
+            self._executor.shutdown(wait=True)
+            self._executor = None
+
         for file in self._temp_launchers:
             if self._file_system.is_file(file):
                 self._file_system.unlink(file, verbose=False)

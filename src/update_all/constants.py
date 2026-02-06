@@ -33,6 +33,18 @@ DEFAULT_SKIP_DOWNLOADER: Final[str] = 'false'
 MISTER_ENVIRONMENT: Final[str] = 'mister'
 STANDARD_UI_THEME: Final[str] = 'Blue Installer'
 
+# RetroAccount
+FILE_retroaccount_feature_flag: Final[str] = 'Scripts/update_all.retroaccount.feature-flag'
+FILE_retroaccount_user_json: Final[str] = 'Scripts/.config/retroaccount/user.json'
+FILE_retroaccount_device_id: Final[str] = 'Scripts/.config/retroaccount/device.id'
+KENV_RETROACCOUNT_FEATURE_FLAG: Final[str] = 'RETROACCOUNT_FEATURE_FLAG'
+KENV_RETROACCOUNT_DOMAIN: Final[str] = 'RETROACCOUNT_DOMAIN'
+K_RETROACCOUNT_DOMAIN: Final[str] = 'retroaccount_domain'
+DOMAIN_default_retroaccount: Final[str] = "https://retroaccount.com"
+API_retroaccount_access_mister: Final[str] = '/api/auth/mister'
+API_retroaccount_token_poll: Final[str] = '/api/auth/token'
+API_retroaccount_create_login_code: Final[str] = '/api/auth/device/code'
+
 # Downloader files
 FILE_update_all_pyz: Final[str] = 'Scripts/.config/update_all/update_all.pyz'
 FILE_update_all_zipped_storage: Final[str] = 'Scripts/.config/update_all/update_all.json.zip'

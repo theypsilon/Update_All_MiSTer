@@ -22,7 +22,7 @@ from typing import Set, Optional, TypedDict
 
 from update_all.analogue_pocket.http_gateway import HttpConfig
 from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, MEDIA_FAT, FILE_patreon_key, \
-    FILE_timeline_short, FILE_timeline_plus, COMMAND_STANDARD
+    FILE_timeline_short, FILE_timeline_plus, COMMAND_STANDARD, DOMAIN_default_retroaccount
 
 
 class EnvDict(TypedDict):
@@ -39,6 +39,8 @@ class EnvDict(TypedDict):
     HTTP_PROXY: Optional[str]
     HTTPS_PROXY: Optional[str]
     MIRROR_ID: str
+    RETROACCOUNT_FEATURE_FLAG: str
+    RETROACCOUNT_DOMAIN: str
 
 @dataclass
 class Config:
@@ -55,6 +57,8 @@ class Config:
     command: str = COMMAND_STANDARD
     http_proxy: str = ''
     http_config: Optional[HttpConfig] = None
+    retroaccount_feature_flag: bool = False
+    retroaccount_domain: str = DOMAIN_default_retroaccount
 
     # General options
     base_path: str = MEDIA_FAT

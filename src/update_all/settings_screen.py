@@ -23,7 +23,8 @@ from update_all.analogue_pocket.pocket_backup import pocket_backup
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
-    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, STANDARD_UI_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
+    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, STANDARD_UI_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme, \
+    FILE_retroaccount_user_json
 from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs, all_dbs, ALL_DB_IDS
 from update_all.downloader_utils import prepare_latest_downloader
 from update_all.encryption import Encryption, EncryptionResult
@@ -61,7 +62,13 @@ class SettingsScreen(UiApplication):
         self._theme_manager = None
 
     def load_main_menu(self) -> None:
-        self._load_menu_entry('main_menu')
+        if not self._config_provider.get().retroaccount_feature_flag:
+            menu = 'main_menu'
+        elif self._file_system.is_file(FILE_retroaccount_user_json):
+            menu = 'main_menu_retroaccount_account'
+        else:
+            menu = 'main_menu_retroaccount_login'
+        self._load_menu_entry(menu)
 
     def load_test_menu(self) -> None:
         self._load_menu_entry('test_menu')
@@ -141,6 +148,7 @@ class SettingsScreen(UiApplication):
             'apply_theme': lambda effect: self.apply_theme(ui),
             'pocket_firmware_update': lambda effect: self.pocket_firmware_update(ui),
             'pocket_backup': lambda effect: self.pocket_backup(ui),
+            'login_retroaccount': lambda effect: self.login_retroaccount(ui),
         })
 
         self._theme_manager = theme_manager
@@ -427,3 +435,6 @@ class SettingsScreen(UiApplication):
         ui.set_value('pocket_backup_result_header', header)
 
         self._ui_runtime.resume()
+
+    def login_retroaccount(self, ui: UiContext) -> None:
+        pass

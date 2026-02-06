@@ -20,6 +20,7 @@ from dataclasses import dataclass
 import time
 
 from update_all.config import Config
+from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
 from update_all.logger import Logger
 from update_all.other import GenericProvider
@@ -44,13 +45,15 @@ class EnvironmentSetupImpl(EnvironmentSetup):
                  config_provider: GenericProvider[Config],
                  transition_service: TransitionService,
                  local_repository: LocalRepository,
-                 store_provider: GenericProvider[LocalStore]):
+                 store_provider: GenericProvider[LocalStore],
+                 file_system: FileSystem):
         self._logger = logger
         self._config_reader = config_reader
         self._config_provider = config_provider
         self._transition_service = transition_service
         self._local_repository = local_repository
         self._store_provider = store_provider
+        self._file_system = file_system
 
     def setup_environment(self) -> EnvironmentSetupResult:
         config = Config()
@@ -77,5 +80,6 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         if local_store.needs_save():
             self._local_repository.save_store(local_store)
 
+        self._config_reader.read_retroaccount_feature_flag_file(config, self._file_system)
         self._config_reader.debug_log(config, local_store)
         return EnvironmentSetupResult(requires_early_exit=config.transition_service_only)

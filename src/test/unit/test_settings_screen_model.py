@@ -122,7 +122,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual(non_target_formatters, intersection)
 
     def test_navigate_targets_except_main_menus_are_items_or_special_navigate_targets(self):
-        navigate_targets = gather_navigate_targets(self.model) | {'main_menu', 'test_menu'}
+        navigate_targets = gather_navigate_targets(self.model) | {'main_menu', 'main_menu_retroaccount_login', 'main_menu_retroaccount_account', 'test_menu'}
         section_names = set(gather_section_names(self.model)) | set(special_navigate_targets())
 
         self.assertGreaterEqual(len(section_names), 1)

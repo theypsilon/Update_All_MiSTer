@@ -158,193 +158,9 @@ def settings_screen_model(): return {
                 },
             ]
         },
-        "main_menu": {
-            "ui": "menu",
-            "header": "Update All {update_all_version} Settings",
-            "variables": {
-                "coin_op_collection_downloader": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
-            },
-            "hotkeys": [{"keys": [27], "action": _try_abort()}],
-            "actions": [
-                {"title": "Select", "type": "symbol", "symbol": "ok"},
-                {"title": "Toggle",  "type": "symbol", "symbol": "toggle"},
-                {"title": "Abort", "type": "fixed", "fixed": _try_abort()}
-            ],
-            "entries": [
-                {
-                    "title": "1 Main Distribution",
-                    "description": "{main_updater:enabled} Main MiSTer cores from {encc_forks}",
-                    "actions": {
-                        "ok": [{"type": "navigate", "target": "main_distribution_menu"}],
-                        "toggle": [{"type": "rotate_variable", "target": "main_updater"}],
-                    }
-                },
-                {
-                    "title": "2 JTCORES for MiSTer",
-                    "description": "{jotego_updater:enabled} Cores by Jotego Team ({download_beta_cores})",
-                    "actions": {
-                        "ok": [{"type": "navigate", "target": "jtcores_menu"}],
-                        "toggle": [{"type": "rotate_variable", "target": "jotego_updater"}],
-                    }
-                },
-                {
-                    "title": "3 Coin-Op Collection",
-                    "description": "{coin_op_collection_downloader:enabled} Cores by Coin-Op Collection Org",
-                    "actions": {
-                        "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
-                        "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
-                    }
-                },
-                {},  # separator
-                {
-                    "title": "4 Other Cores",
-                    "description": "LLAPI, Unofficials, Y/C Builds...",
-                    "actions": {
-                        "ok": [{"type": "navigate", "target": "other_cores_menu"}],
-                    }
-                },
-                {
-                    "title": "5 Tools & Scripts",
-                    "description": "Names TXT, Arcade Organizer, Scripts...",
-                    "actions": {
-                        "ok": [{"type": "navigate", "target": "tools_and_scripts_menu"}],
-                    }
-                },
-                {
-                    "title": "6 Extra Content",
-                    "description": "ROMs, BIOS & Wallpapers",
-                    "actions": {
-                        "ok": [{"type": "navigate", "target": "extra_content_menu"}],
-                    }
-                },
-                {},  # separator
-                {
-                    "title": "7 Analogue Pocket",
-                    "description": "Firmware Update & Backups",
-                    "actions": {"ok": [{"type": "navigate", "target": "analogue_pocket_menu"}]}
-                },
-                {
-                    "title": "8 Patrons Menu",
-                    "description": "Timeline, Themes, etc... [2025.10.17]",
-                    "actions": {"ok": [
-                        {"type": "calculate_has_right_available_code"},
-                        {
-                            "type": "condition",
-                            "variable": "has_right_available_code",
-                            "true": [{"type": "navigate", "target": "patrons_menu"}],
-                            "false": [{
-                                "ui": "message",
-                                "header": "Patreon Key not found!",
-                                "text": [
-                                    "This menu contains exclusive content for patrons only.",
-                                    " ",
-                                    "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock premium options.",
-                                    " ",
-                                    "Thank you so much for your support!",
-                                ],
-                                "effects": [{
-                                    "ui": "message",
-                                    "header": "Support MiSTer",
-                                    "text": [
-                                        "Consider supporting @Alexey Melnikov@ aka @'Sorgelig'@ for his invaluable work as the main maintainer of the MiSTer Project: ~patreon.com/FPGAMiSTer~",
-                                        " ",
-                                        "Other key contributors:",
-                                        " ·@Ace@ ~ko-fi.com/ace9921~ - Arcade cores",
-                                        " ·@Artemio@ ~patreon.com/aurbina~ - Testing tools",
-                                        " ·@Coin-Op@ ~patreon.com/atrac17~ - Arcade cores",
-                                        " ·@furrtek@ ~patreon.com/furrtek~ - Reverse engineering hardware",
-                                        " ·@JimmyStones@ ~ko-fi.com/jimmystones~ - Arcade cores",
-                                        " ·@JOTEGO@ ~patreon.com/jotego~ - Arcade & Console cores",
-                                        " ·@1FPGA@ ~patreon.com/1fpga~ - Firmware rewrite",
-                                        " ·@Pierco@ ~ko-fi.com/pierco~ - Arcade cores",
-                                        " ·@Srg320@ ~patreon.com/srg320~ - Console cores",
-                                        " ·@theypsilon@ ~patreon.com/theypsilon~ - Updaters & Other Tools",
-                                        " ·@wizzo@ ~patreon.com/wizzo~ - Tools & scripts",
-                                        " ",
-                                        "Your favorite open-source projects require your support to keep evolving!"
-                                    ]
-                                }],
-                            }]
-                        }
-                    ]}
-                },
-                {
-                    "title": "9 System Options",
-                    "description": "",
-                    "actions": {"ok": [{"type": "navigate", "target": "system_options_menu"}]}
-                },
-                {},  # separator
-                {
-                    "title": "SAVE",
-                    "description": "Writes all changes to the INI file/s",
-                    "actions": {"ok": [
-                        {"type": "calculate_needs_save"},
-                        {
-                            "type": "condition",
-                            "variable": "needs_save",
-                            "true": [{
-                                "ui": "confirm",
-                                "header": "Are you sure?",
-                                "text": [
-                                    "Following files will be overwritten with your changes:",
-                                    "{needs_save_file_list}"
-                                ],
-                                "preselected_action": "No",
-                                "actions": [
-                                    {
-                                        "title": "Yes",
-                                        "type": "fixed",
-                                        "fixed": [{"type": "save"}, {"type": "navigate", "target": "back"}]
-                                    },
-                                    {
-                                        "title": "No",
-                                        "type": "fixed",
-                                        "fixed": [{"type": "navigate", "target": "back"}]
-                                    }
-                                ],
-                            }],
-                            "false": [{"ui": "message", "text": ["No changes to save"]}]
-                        }
-                    ]}
-                },
-                {
-                    "title": "EXIT and RUN UPDATE ALL",
-                    "description": "",
-                    "actions": {"ok": [
-                        {"type": "calculate_needs_save"},
-                        {
-                            "type": "condition",
-                            "variable": "needs_save",
-                            "true": [{
-                                "ui": "confirm",
-                                "header": "INI file/s were not saved",
-                                "text": [
-                                    "Do you really want to run Update All without saving your changes?",
-                                    "(current changes will apply only for this run)",
-                                ],
-                                "actions": [
-                                    {
-                                        "title": "Yes",
-                                        "type": "fixed",
-                                        "fixed": [
-                                            {"type": "prepare_exit_dont_save_and_run"},
-                                            {"type": "navigate", "target": "exit_and_run"}
-                                        ]
-                                    },
-                                    {
-                                        "title": "No",
-                                        "type": "fixed",
-                                        "fixed": [{"type": "navigate", "target": "back"}]
-                                    }
-                                ],
-                            }],
-                            "false": [{"type": "navigate", "target": "exit_and_run"}]
-                        },
-                        {"type": "navigate", "target": "exit_and_run"}
-                    ]}
-                }
-            ]
-        },
+        "main_menu": _main_menu(retroaccount='no'),
+        "main_menu_retroaccount_login": _main_menu(retroaccount='login'),
+        "main_menu_retroaccount_account": _main_menu(retroaccount='account'),
         "main_distribution_menu": {
             "type": "dialog_sub_menu",
             "header": "Main Distribution Settings",
@@ -1373,6 +1189,252 @@ def settings_screen_model(): return {
             ]
         },
     }
+}
+
+
+def _retroaccount_account_entry(): return {
+    "title": "8 Patrons Menu",
+    "description": "Timeline, Themes, etc... [2025.10.17]",
+    "actions": {"ok": [
+        {"type": "calculate_has_right_available_code"},
+        {
+            "type": "condition",
+            "variable": "has_right_available_code",
+            "true": [{"type": "navigate", "target": "patrons_menu"}],
+            "false": [{
+                "ui": "message",
+                "header": "Patreon Key not found!",
+                "text": [
+                    "This menu contains exclusive content for patrons only.",
+                    " ",
+                    "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock premium options.",
+                    " ",
+                    "Thank you so much for your support!",
+                ],
+                "effects": [{
+                    "ui": "message",
+                    "header": "Support MiSTer",
+                    "text": [
+                        "Consider supporting @Alexey Melnikov@ aka @'Sorgelig'@ for his invaluable work as the main maintainer of the MiSTer Project: ~patreon.com/FPGAMiSTer~",
+                        " ",
+                        "Other key contributors:",
+                        " ·@Ace@ ~ko-fi.com/ace9921~ - Arcade cores",
+                        " ·@Artemio@ ~patreon.com/aurbina~ - Testing tools",
+                        " ·@Coin-Op@ ~patreon.com/atrac17~ - Arcade cores",
+                        " ·@furrtek@ ~patreon.com/furrtek~ - Reverse engineering hardware",
+                        " ·@JimmyStones@ ~ko-fi.com/jimmystones~ - Arcade cores",
+                        " ·@JOTEGO@ ~patreon.com/jotego~ - Arcade & Console cores",
+                        " ·@1FPGA@ ~patreon.com/1fpga~ - Firmware rewrite",
+                        " ·@Pierco@ ~ko-fi.com/pierco~ - Arcade cores",
+                        " ·@Srg320@ ~patreon.com/srg320~ - Console cores",
+                        " ·@theypsilon@ ~patreon.com/theypsilon~ - Updaters & Other Tools",
+                        " ·@wizzo@ ~patreon.com/wizzo~ - Tools & scripts",
+                        " ",
+                        "Your favorite open-source projects require your support to keep evolving!"
+                    ]
+                }],
+            }]
+        }
+    ]}
+}
+
+
+def _retroaccount_login_entry(): return {
+    "title": "8 Login",
+    "description": "Login to RetroAccount",
+    "actions": {"ok": [{"type": "login_retroaccount"}]}
+}
+
+
+def _patrons_menu_entry(): return {
+    "title": "8 Patrons Menu",
+    "description": "Timeline, Themes, etc... [2025.10.17]",
+    "actions": {"ok": [
+        {"type": "calculate_has_right_available_code"},
+        {
+            "type": "condition",
+            "variable": "has_right_available_code",
+            "true": [{"type": "navigate", "target": "patrons_menu"}],
+            "false": [{
+                "ui": "message",
+                "header": "Patreon Key not found!",
+                "text": [
+                    "This menu contains exclusive content for patrons only.",
+                    " ",
+                    "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock premium options.",
+                    " ",
+                    "Thank you so much for your support!",
+                ],
+                "effects": [{
+                    "ui": "message",
+                    "header": "Support MiSTer",
+                    "text": [
+                        "Consider supporting @Alexey Melnikov@ aka @'Sorgelig'@ for his invaluable work as the main maintainer of the MiSTer Project: ~patreon.com/FPGAMiSTer~",
+                        " ",
+                        "Other key contributors:",
+                        " ·@Ace@ ~ko-fi.com/ace9921~ - Arcade cores",
+                        " ·@Artemio@ ~patreon.com/aurbina~ - Testing tools",
+                        " ·@Coin-Op@ ~patreon.com/atrac17~ - Arcade cores",
+                        " ·@furrtek@ ~patreon.com/furrtek~ - Reverse engineering hardware",
+                        " ·@JimmyStones@ ~ko-fi.com/jimmystones~ - Arcade cores",
+                        " ·@JOTEGO@ ~patreon.com/jotego~ - Arcade & Console cores",
+                        " ·@1FPGA@ ~patreon.com/1fpga~ - Firmware rewrite",
+                        " ·@Pierco@ ~ko-fi.com/pierco~ - Arcade cores",
+                        " ·@Srg320@ ~patreon.com/srg320~ - Console cores",
+                        " ·@theypsilon@ ~patreon.com/theypsilon~ - Updaters & Other Tools",
+                        " ·@wizzo@ ~patreon.com/wizzo~ - Tools & scripts",
+                        " ",
+                        "Your favorite open-source projects require your support to keep evolving!"
+                    ]
+                }],
+            }]
+        }
+    ]}
+}
+
+
+def _main_menu(retroaccount): return {
+    "ui": "menu",
+    "header": "Update All {update_all_version} Settings",
+    "variables": {
+        "coin_op_collection_downloader": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
+    },
+    "hotkeys": [{"keys": [27], "action": _try_abort()}],
+    "actions": [
+        {"title": "Select", "type": "symbol", "symbol": "ok"},
+        {"title": "Toggle",  "type": "symbol", "symbol": "toggle"},
+        {"title": "Abort", "type": "fixed", "fixed": _try_abort()}
+    ],
+    "entries": [
+        {
+            "title": "1 Main Distribution",
+            "description": "{main_updater:enabled} Main MiSTer cores from {encc_forks}",
+            "actions": {
+                "ok": [{"type": "navigate", "target": "main_distribution_menu"}],
+                "toggle": [{"type": "rotate_variable", "target": "main_updater"}],
+            }
+        },
+        {
+            "title": "2 JTCORES for MiSTer",
+            "description": "{jotego_updater:enabled} Cores by Jotego Team ({download_beta_cores})",
+            "actions": {
+                "ok": [{"type": "navigate", "target": "jtcores_menu"}],
+                "toggle": [{"type": "rotate_variable", "target": "jotego_updater"}],
+            }
+        },
+        {
+            "title": "3 Coin-Op Collection",
+            "description": "{coin_op_collection_downloader:enabled} Cores by Coin-Op Collection Org",
+            "actions": {
+                "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
+                "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
+            }
+        },
+        {},  # separator
+        {
+            "title": "4 Other Cores",
+            "description": "LLAPI, Unofficials, Y/C Builds...",
+            "actions": {
+                "ok": [{"type": "navigate", "target": "other_cores_menu"}],
+            }
+        },
+        {
+            "title": "5 Tools & Scripts",
+            "description": "Names TXT, Arcade Organizer, Scripts...",
+            "actions": {
+                "ok": [{"type": "navigate", "target": "tools_and_scripts_menu"}],
+            }
+        },
+        {
+            "title": "6 Extra Content",
+            "description": "ROMs, BIOS & Wallpapers",
+            "actions": {
+                "ok": [{"type": "navigate", "target": "extra_content_menu"}],
+            }
+        },
+        {},  # separator
+        {
+            "title": "7 Analogue Pocket",
+            "description": "Firmware Update & Backups",
+            "actions": {"ok": [{"type": "navigate", "target": "analogue_pocket_menu"}]}
+        },
+        _retroaccount_account_entry() if retroaccount == 'account' else _retroaccount_login_entry() if retroaccount == 'login' else _patrons_menu_entry(),
+        {
+            "title": "9 System Options",
+            "description": "",
+            "actions": {"ok": [{"type": "navigate", "target": "system_options_menu"}]}
+        },
+        {},  # separator
+        {
+            "title": "SAVE",
+            "description": "Writes all changes to the INI file/s",
+            "actions": {"ok": [
+                {"type": "calculate_needs_save"},
+                {
+                    "type": "condition",
+                    "variable": "needs_save",
+                    "true": [{
+                        "ui": "confirm",
+                        "header": "Are you sure?",
+                        "text": [
+                            "Following files will be overwritten with your changes:",
+                            "{needs_save_file_list}"
+                        ],
+                        "preselected_action": "No",
+                        "actions": [
+                            {
+                                "title": "Yes",
+                                "type": "fixed",
+                                "fixed": [{"type": "save"}, {"type": "navigate", "target": "back"}]
+                            },
+                            {
+                                "title": "No",
+                                "type": "fixed",
+                                "fixed": [{"type": "navigate", "target": "back"}]
+                            }
+                        ],
+                    }],
+                    "false": [{"ui": "message", "text": ["No changes to save"]}]
+                }
+            ]}
+        },
+        {
+            "title": "EXIT and RUN UPDATE ALL",
+            "description": "",
+            "actions": {"ok": [
+                {"type": "calculate_needs_save"},
+                {
+                    "type": "condition",
+                    "variable": "needs_save",
+                    "true": [{
+                        "ui": "confirm",
+                        "header": "INI file/s were not saved",
+                        "text": [
+                            "Do you really want to run Update All without saving your changes?",
+                            "(current changes will apply only for this run)",
+                        ],
+                        "actions": [
+                            {
+                                "title": "Yes",
+                                "type": "fixed",
+                                "fixed": [
+                                    {"type": "prepare_exit_dont_save_and_run"},
+                                    {"type": "navigate", "target": "exit_and_run"}
+                                ]
+                            },
+                            {
+                                "title": "No",
+                                "type": "fixed",
+                                "fixed": [{"type": "navigate", "target": "back"}]
+                            }
+                        ],
+                    }],
+                    "false": [{"type": "navigate", "target": "exit_and_run"}]
+                },
+                {"type": "navigate", "target": "exit_and_run"}
+            ]}
+        }
+    ]
 }
 
 

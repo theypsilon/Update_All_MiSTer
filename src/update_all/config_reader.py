@@ -20,8 +20,11 @@ from pathlib import Path
 from typing import Dict
 
 from update_all.analogue_pocket.http_gateway import http_config
+from update_all.file_system import FileSystem
 from update_all.config import Config, EnvDict
-from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, KENV_DEBUG
+from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, KENV_DEBUG, \
+    KENV_RETROACCOUNT_FEATURE_FLAG, KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, \
+    FILE_retroaccount_feature_flag, K_RETROACCOUNT_DOMAIN
 from update_all.databases import DB_ID_NAMES_TXT, model_variables_by_db_id, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS
 from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
@@ -66,7 +69,8 @@ class ConfigReader:
         config.timeline_short_path = self._env.get('TIMELINE_SHORT_PATH', config.timeline_short_path).strip()
         config.timeline_plus_path = self._env.get('TIMELINE_PLUS_PATH', config.timeline_plus_path).strip()
         config.mirror = self._env.get('MIRROR_ID', config.mirror).strip().lower()
-
+        config.retroaccount_feature_flag = strtobool(self._env.get(KENV_RETROACCOUNT_FEATURE_FLAG, 'false').strip().lower())
+        config.retroaccount_domain = self._env.get(KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount).strip().rstrip('/')
         if self._env['HTTP_PROXY'] or self._env['HTTPS_PROXY']:
             config.http_config = http_config(http_proxy=self._env['HTTP_PROXY'], https_proxy=self._env['HTTPS_PROXY'])
             config.http_proxy = self._env['HTTP_PROXY'] or self._env['HTTPS_PROXY']  # @TODO: Remove this line when this is not used by the Arcade Organizer or any other part
@@ -121,6 +125,20 @@ class ConfigReader:
         config.pocket_backup = store.get_pocket_backup()
         config.log_viewer = store.get_log_viewer()
         config.timeline_after_logs = store.get_timeline_after_logs()
+
+    def read_retroaccount_feature_flag_file(self, config: Config, file_system: FileSystem) -> None:
+        if not file_system.is_file(FILE_retroaccount_feature_flag):
+            return
+
+        config.retroaccount_feature_flag = True
+        try:
+            content = file_system.read_file_contents(FILE_retroaccount_feature_flag).strip()
+            if content:
+                data = json.loads(content)
+                if K_RETROACCOUNT_DOMAIN in data:
+                    config.retroaccount_domain = str(data[K_RETROACCOUNT_DOMAIN]).strip().rstrip('/')
+        except (json.JSONDecodeError, Exception) as e:
+            self._logger.debug(f'Could not parse retroaccount feature flag file as JSON: {e}')
 
     def debug_log(self, config: Config, store: LocalStore):
         self._logger.debug('env: ' + json.dumps(self._env, indent=4))
