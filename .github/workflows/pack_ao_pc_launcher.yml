@@ -1,0 +1,76 @@
+name: Pack Arcade Organizer PC Launcher
+
+on:
+  push:
+    paths:
+      - 'src/arcade_organizer_pc_launcher.py'
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            python-cmd: python3
+          - os: windows-latest
+            python-cmd: python
+          - os: macos-latest
+            python-cmd: python
+
+    steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - uses: actions/checkout@v4
+
+    - name: Build update_all.pyz
+      shell: bash
+      run: |
+        rm -rf build || true
+        mkdir -p build/src
+        cp src/__main__.py build/src/__main__.py
+        cp -r src/update_all/ build/src/update_all
+        find build/src -type f ! -name '*.py' -exec rm -f {} +
+        find build/src -exec touch -t 202108231405 {} +
+        ${{ matrix.python-cmd }} -m zipapp build/src -o build/update_all.pyz -p "/usr/bin/env python3"
+      env:
+        SOURCE_DATE_EPOCH: '0'
+
+    - name: PC Launcher Test on ${{ matrix.os }}
+      shell: bash
+      run: |
+        mkdir -p _Arcade
+        cp src/arcade_organizer_pc_launcher.py arcade_organizer_pc_launcher.py
+        ${{ matrix.python-cmd }} arcade_organizer_pc_launcher.py
+      env:
+        UPDATE_ALL_SOURCE: build/update_all.pyz
+        PC_LAUNCHER_NO_WAIT: '1'
+
+  pack:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Pack Arcade Organizer PC Launcher
+      run: |
+        set -euo pipefail
+
+        git config --global user.email "theypsilon@gmail.com"
+        git config --global user.name "The CI/CD Bot"
+
+        cp src/arcade_organizer_pc_launcher.py arcade_organizer_pc_launcher.py
+        zip "MiSTer_Arcade_Organizer_PC_Launcher.zip" arcade_organizer_pc_launcher.py
+
+        git checkout --orphan ao-pc-launcher
+        git reset
+        git add MiSTer_Arcade_Organizer_PC_Launcher.zip
+        git commit -m "Arcade Organizer PC Launcher"
+        git push --force origin ao-pc-launcher

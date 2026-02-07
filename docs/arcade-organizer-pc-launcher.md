@@ -13,7 +13,7 @@ Typically, you would place it in the root of your MiSTer SD card, so that you ca
 
 ## Get the launcher
 
-Download [`arcade_organizer_pc_launcher.py`](https://github.com/theypsilon/Update_All_MiSTer/blob/master/src/arcade_organizer_pc_launcher.py) and place it at the root of your MiSTer file tree (e.g. the SD card root).
+Download this [ZIP file](https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/ao-pc-launcher/MiSTer_Arcade_Organizer_PC_Launcher.zip) and extract the file `arcade_organizer_pc_launcher.py` to the location where you plan to organize your files. For example, the root of your MiSTer SD card.
 
 ## How to run the launcher on Windows?
 
