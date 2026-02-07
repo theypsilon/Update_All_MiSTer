@@ -1,0 +1,210 @@
+{
+  "db_id": "uberyoji_mister_boot_roms_mgl",
+  "timestamp": 1711222476,
+  "files": {
+    "|games/Gameboy/mister-boot.gb": {
+      "hash": "4cdf301d898ba7e87e086879d46fa1f5",
+      "size": 32768,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-boot.gb",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "|games/MegaDrive/mister-boot.md": {
+      "hash": "db6cabad069010368214b032d714efe5",
+      "size": 131072,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-boot.md",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "|games/NES/mister-boot.nes": {
+      "hash": "a7e23a042d97b5659742d002f76fa503",
+      "size": 262160,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-boot.nes",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "|games/SMS/mister-boot.sms": {
+      "hash": "f5535d9934332f52d5760a403547057d",
+      "size": 32768,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-boot.sms",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "|games/SNES/mister-boot.sfc": {
+      "hash": "8bbf9ff1db725b5d96ec8f001467494e",
+      "size": 262144,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-boot.sfc",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "|games/TGFX16/mister-boot.pce": {
+      "hash": "8c66c17a94a8fffa95abd611092079ed",
+      "size": 131072,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-boot.pce",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "|games/S32X/mister-boot.32x": {
+      "hash": "ebd43a0ffc4c55612857493d6f9256dc",
+      "size": 262144,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-boot.32x",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "|games/GBA/mister-boot.gba": {
+      "hash": "52b04e81635c1beb586af88eb5e2187e",
+      "size": 20800,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-boot.gba",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "|games/PSX/mister-boot.chd": {
+      "hash": "1edb003ad9748b2514808c3bbd493b3f",
+      "size": 61394,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-boot.chd",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "|games/PSX/mister-demo.chd": {
+      "hash": "3fe71b0873cf43534b942f57418795cc",
+      "size": 27881619,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-demo.chd",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "|games/N64/mister-boot.z64": {
+      "hash": "3f32ee03ff43cde1f66817969ab4da3f",
+      "size": 1052672,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/mister-boot.z64",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "_Console (autoboot)/NEC PC Engine.mgl": {
+      "hash": "67ed9c24781f3af316feeb52ade0e8d0",
+      "size": 152,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/NEC.PC.Engine.mgl",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "_Console (autoboot)/Nintendo Gameboy.mgl": {
+      "hash": "8626bddb62b2fb8e2fd43706102d2b8a",
+      "size": 146,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/Nintendo.Gameboy.mgl",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "_Console (autoboot)/Nintendo NES.mgl": {
+      "hash": "e0b9c9bb7d47a4e4b01beea7c57b422e",
+      "size": 143,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/Nintendo.NES.mgl",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "_Console (autoboot)/Nintendo SNES.mgl": {
+      "hash": "ee7b487cf4a7caddf06df54c995f3329",
+      "size": 144,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/Nintendo.SNES.mgl",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "_Console (autoboot)/SEGA 32X.mgl": {
+      "hash": "dcaf26ffdd59e4ef4cb897241e62fc7f",
+      "size": 144,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/SEGA.32X.mgl",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "_Console (autoboot)/SEGA Genesis.mgl": {
+      "hash": "6a1e9cc224a29cba55bf85dac433fc5e",
+      "size": 148,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/SEGA.Genesis.mgl",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "_Console (autoboot)/SEGA Master System.mgl": {
+      "hash": "559e3f227b3915000a2fe6dd0a8f7074",
+      "size": 143,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/SEGA.Master.System.mgl",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "_Console (autoboot)/Nintendo GBA.mgl": {
+      "hash": "41a9b4f534034beb8b436a40d80fd9bc",
+      "size": 143,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/Nintendo.GBA.mgl",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "_Console (autoboot)/Sony PlayStation.mgl": {
+      "hash": "4d305925161b4f2da6406d034080b802",
+      "size": 143,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/Sony.PlayStation.mgl",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    },
+    "_Console (autoboot)/Nintendo 64.mgl": {
+      "hash": "7b85463ea145d970bf9e184d20da1e47",
+      "size": 143,
+      "url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/Nintendo.64.mgl",
+      "tags": [],
+      "overwrite": true,
+      "reboot": false
+    }
+  },
+  "folders": {
+    "|games/Gameboy/": {
+      "tags": []
+    },
+    "|games/NES/": {
+      "tags": []
+    },
+    "|games/SNES/": {
+      "tags": []
+    },
+    "|games/MegaDrive/": {
+      "tags": []
+    },
+    "|games/SMS/": {
+      "tags": []
+    },
+    "|games/S32X/": {
+      "tags": []
+    },
+    "|games/TGFX16/": {
+      "tags": []
+    },
+    "|games/GBA/": {
+      "tags": []
+    },
+    "|games/PSX/": {
+      "tags": []
+    },
+    "|games/N64/": {
+      "tags": []
+    },
+    "_Console (autoboot)": {
+      "tags": []
+    }
+  },
+  "base_files_url": "https://mirror1.undefinedproxy.com/uberyoji/mister-boot-roms/releases/download/v.0.18/"
+}

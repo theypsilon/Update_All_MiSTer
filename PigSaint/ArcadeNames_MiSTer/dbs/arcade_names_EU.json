@@ -1,0 +1,21 @@
+{
+  "base_files_url": "",
+  "db_files": [],
+  "db_id": "arcade_names_txt",
+  "db_url": "https://mirror1.undefinedproxy.com/PigSaint/ArcadeNames_MiSTer/dbs/arcade_names_EU.json",
+  "default_options": {},
+  "files": {
+    "Scripts/.config/arcade_names/arcade_names.txt": {
+      "hash": "36d2733784f3077fdbf9df46f463d84b",
+      "size": 10155,
+      "url": "https://mirror1.undefinedproxy.com/PigSaint/ArcadeNames_MiSTer/0e438283458859ffc853fef3ba5048807d79474a/arcade_names_EU.txt"
+    }
+  },
+  "folders": {
+    "Scripts": {},
+    "Scripts/.config": {},
+    "Scripts/.config/arcade_names": {}
+  },
+  "timestamp": 1700128123,
+  "zips": {}
+}

@@ -1,0 +1,138 @@
+{
+  "db_id": "mrext/all",
+  "timestamp": 1769084554,
+  "files": {
+    "Scripts/lastplayed.sh": {
+      "hash": "f445618e0de3ec6095fa3447170e32aa",
+      "size": 3435904,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/mrext/releases/download/v20240629-1/lastplayed.sh",
+      "reboot": false,
+      "tags": [
+        "lastplayed"
+      ]
+    },
+    "Scripts/launchseq.sh": {
+      "hash": "a8bf22a8c270b7d7d5d61007215cfcf5",
+      "size": 2853208,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/mrext/releases/download/v20240629-1/launchseq.sh",
+      "reboot": false,
+      "tags": [
+        "launchseq"
+      ]
+    },
+    "Scripts/launchsync.sh": {
+      "hash": "79dd283205bc541108ad9ab5ec0d8515",
+      "size": 4445140,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/mrext/releases/download/v20240629-1/launchsync.sh",
+      "reboot": false,
+      "tags": [
+        "launchsync"
+      ]
+    },
+    "Scripts/playlog.sh": {
+      "hash": "96b336487544fc4b700d25d97320b795",
+      "size": 7436300,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/mrext/releases/download/v20240629-1/playlog.sh",
+      "reboot": false,
+      "tags": [
+        "playlog"
+      ]
+    },
+    "Scripts/random.sh": {
+      "hash": "af5d1de53148a29aa45037592f7e4b29",
+      "size": 3045708,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/mrext/releases/download/v20240629-1/random.sh",
+      "reboot": false,
+      "tags": [
+        "random"
+      ]
+    },
+    "Scripts/remote.sh": {
+      "hash": "80a51512449dedc935a42e5b5fc98abb",
+      "size": 7939456,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/mrext/releases/download/v20240629-1/remote.sh",
+      "reboot": true,
+      "tags": [
+        "remote"
+      ]
+    },
+    "Scripts/search.sh": {
+      "hash": "48995f717ac03b9550703a16ab9a4696",
+      "size": 4010488,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/mrext/releases/download/v20240629-1/search.sh",
+      "reboot": false,
+      "tags": [
+        "search"
+      ]
+    },
+    "Scripts/pocketbackup.sh": {
+      "hash": "148e98551ca2bd5401f5b1f5c6082780",
+      "size": 10802,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/mrext/releases/download/v20240629-1/pocketbackup.sh",
+      "reboot": false,
+      "tags": [
+        "pocketbackup"
+      ]
+    },
+    "Scripts/bgm.sh": {
+      "hash": "dcf9e21ad87ba4ccecdf07c20b4f67fd",
+      "size": 32636,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/mrext/raw/main/releases/external/bgm.sh",
+      "reboot": false,
+      "tags": [
+        "bgm"
+      ]
+    },
+    "Scripts/favorites.sh": {
+      "hash": "b4044b204abb332007065d81118b3c65",
+      "size": 35724,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/MiSTer_Favorites/main/favorites.sh",
+      "reboot": false,
+      "tags": [
+        "favorites"
+      ]
+    },
+    "Scripts/gamesmenu.sh": {
+      "hash": "2cd28985b7db4f37c11b55911f0e6f22",
+      "size": 15203,
+      "url": "https://mirror1.undefinedproxy.com/wizzomafizzo/mrext/raw/main/releases/external/gamesmenu.sh",
+      "reboot": false,
+      "tags": [
+        "gamesmenu"
+      ]
+    }
+  },
+  "folders": {
+    "Scripts/": {}
+  },
+  "zips": {
+    "tapto": {
+      "contents_file": {
+        "hash": "02f261e14f19195d647b7da18756f645",
+        "size": 16630026,
+        "url": "https://mirror1.undefinedproxy.com/ZaparooProject/zaparoo-core/releases/download/v2.9.0/zaparoo-mister_arm-2.9.0.zip"
+      },
+      "description": "Extracting Zaparoo release",
+      "internal_summary": {
+        "files": {
+          "Scripts/zaparoo.sh": {
+            "hash": "e2228c439d6b44fd25f46ae8872dbd20",
+            "size": 45648920,
+            "reboot": true,
+            "tags": [
+              "tapto"
+            ],
+            "zip_id": "tapto",
+            "zip_path": "zaparoo.sh"
+          }
+        },
+        "folders": {
+          "Scripts/": {
+            "zip_id": "tapto"
+          }
+        }
+      },
+      "kind": "extract_single_files"
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "v": 1,
+  "db_id": "agg23_db",
+  "timestamp": 1769657911,
+  "files": {
+    "_Console/GameAndWatch_20230630.rbf": {
+      "hash": "0e9a2dd421a781733d01816f430733ba",
+      "size": 3155876,
+      "url": "https://mirror1.undefinedproxy.com/agg23/mister-repository/master/gameandwatch/_Console/GameAndWatch_20230630.rbf",
+      "tags": [
+        "gameandwatch",
+        "console"
+      ]
+    },
+    "_Other/Tamagotchi.mgl": {
+      "hash": "54b26a7195323f63146443e3004a18b9",
+      "size": 137,
+      "url": "https://mirror1.undefinedproxy.com/agg23/mister-repository/master/tamagotchi/_Other/Tamagotchi.mgl",
+      "tags": [
+        "tamagotchi",
+        "other"
+      ]
+    },
+    "_Other/cores/Tamagotchi_20230427.rbf": {
+      "hash": "5e7eb429f758c17bdc2c4afb8d9b74af",
+      "size": 3276452,
+      "url": "https://mirror1.undefinedproxy.com/agg23/mister-repository/master/tamagotchi/_Other/cores/Tamagotchi_20230427.rbf",
+      "tags": [
+        "tamagotchi",
+        "other"
+      ]
+    },
+    "games/Tamagotchi/README.md": {
+      "hash": "b726585513fbae552d4c8d798023af93",
+      "size": 212,
+      "url": "https://mirror1.undefinedproxy.com/agg23/mister-repository/master/tamagotchi/games/Tamagotchi/README.md",
+      "tags": [
+        "tamagotchi",
+        "games"
+      ],
+      "path": "pext"
+    },
+    "games/Tamagotchi/background_gen2.bin": {
+      "hash": "8c4bb0f6921828d47948eccfa538ed2c",
+      "size": 259200,
+      "url": "https://mirror1.undefinedproxy.com/agg23/mister-repository/master/tamagotchi/games/Tamagotchi/background_gen2.bin",
+      "tags": [
+        "tamagotchi",
+        "games"
+      ],
+      "path": "pext"
+    },
+    "games/Tamagotchi/boot1.rom": {
+      "hash": "02f93e5fc224045d2213b5e0fe87f58b",
+      "size": 259200,
+      "url": "https://mirror1.undefinedproxy.com/agg23/mister-repository/master/tamagotchi/games/Tamagotchi/boot1.rom",
+      "tags": [
+        "tamagotchi",
+        "games"
+      ],
+      "path": "pext"
+    },
+    "games/Tamagotchi/boot2.rom": {
+      "hash": "e37f7d2c0e555660e258ac13b1f4c780",
+      "size": 20000,
+      "url": "https://mirror1.undefinedproxy.com/agg23/mister-repository/master/tamagotchi/games/Tamagotchi/boot2.rom",
+      "tags": [
+        "tamagotchi",
+        "games"
+      ],
+      "path": "pext"
+    }
+  },
+  "folders": {
+    "_Console": {
+      "tags": [
+        "console"
+      ]
+    },
+    "games/Game and Watch": {
+      "tags": [
+        "gameandwatch",
+        "games"
+      ],
+      "path": "pext"
+    },
+    "games": {
+      "tags": [
+        "games"
+      ],
+      "path": "pext"
+    },
+    "_Other/cores": {
+      "tags": [
+        "other"
+      ]
+    },
+    "_Other": {
+      "tags": [
+        "other"
+      ]
+    },
+    "games/Tamagotchi": {
+      "tags": [
+        "tamagotchi",
+        "games"
+      ],
+      "path": "pext"
+    }
+  }
+}
