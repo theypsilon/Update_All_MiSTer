@@ -56,6 +56,7 @@ def make_new_local_store(store_migrator):
         'mirror': default_config.mirror,
         'countdown_time': default_config.countdown_time,
         'log_viewer': default_config.log_viewer,
+        'use_settings_screen_theme_in_log_viewer': default_config.use_settings_screen_theme_in_log_viewer,
         'autoreboot': default_config.autoreboot,
         'download_beta_cores': default_config.download_beta_cores,
         'names_region': default_config.names_region,

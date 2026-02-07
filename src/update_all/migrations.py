@@ -46,6 +46,7 @@ def migration_v4(local_store) -> None:
     local_store['timeline_after_logs'] = True
 
 def migration_v5(local_store) -> None:
-    """create timeline_after_logs field"""
+    """create mirror setting and log viewer theme flag fields"""
 
-    local_store['mirror'] = ''
+    local_store['mirror'] = ''  # Selected mirror ID ('' / 'off' = no mirror)
+    local_store['use_settings_screen_theme_in_log_viewer'] = True  # Allow log viewer to use Settings Screen theme

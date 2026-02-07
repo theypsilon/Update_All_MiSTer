@@ -35,6 +35,8 @@ class LocalStore:
     def get_countdown_time(self) -> int: return self._props['countdown_time']
     def set_log_viewer(self, log_viewer: bool) -> None: self.generic_set('log_viewer', log_viewer)
     def get_log_viewer(self) -> bool: return self._props['log_viewer']
+    def set_use_settings_screen_theme_in_log_viewer(self, use_settings_screen_theme_in_log_viewer: bool) -> None: self.generic_set('use_settings_screen_theme_in_log_viewer', use_settings_screen_theme_in_log_viewer)
+    def get_use_settings_screen_theme_in_log_viewer(self) -> bool: return self._props['use_settings_screen_theme_in_log_viewer']
     def set_timeline_after_logs(self, timeline_after_logs: bool) -> None: self.generic_set('timeline_after_logs', timeline_after_logs)
     def get_timeline_after_logs(self) -> bool: return self._props['timeline_after_logs']
     def set_autoreboot(self, autoreboot: bool) -> None: self.generic_set('autoreboot', autoreboot)

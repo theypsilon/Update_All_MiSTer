@@ -423,6 +423,7 @@ class _ConnectionQueue:
         self._lock = threading.Lock()
         self._last_conn_id = -1
         self._queue_cleared = False
+        self._all_connections: List[_Connection] = []  # Track all connections (idle and active)
 
     def pull(self) -> _Connection:
         with self._lock:
@@ -433,12 +434,13 @@ class _ConnectionQueue:
                 conn_id = self._last_conn_id
 
         http_conn = create_http_connection(self.id[0], self.id[1], self._ctx, self._config)
+        conn = _Connection(conn_id=conn_id, http=http_conn, connection_queue=self, logger=self._logger, timeout=self._timeout)
         with self._lock:
             if self._queue_cleared:
                 http_conn.close()
                 raise HttpGatewayException('Connection queue is already cleared.')
-
-        return _Connection(conn_id=conn_id, http=http_conn, connection_queue=self, logger=self._logger, timeout=self._timeout)
+            self._all_connections.append(conn)
+        return conn
 
     def push(self, connection: _Connection) -> None:
         with self._lock:
@@ -447,11 +449,11 @@ class _ConnectionQueue:
     def clear_all(self) -> int:
         with self._lock:
             self._queue_cleared = True
-            size = len(self._queue)
-            for connection in self._queue:
+            size = len(self._all_connections)
+            for connection in self._all_connections:
                 connection.kill()
 
-            self._queue, self._queue_swap = self._queue_swap, self._queue
+            self._all_connections.clear()
             self._queue.clear()
             return size
 
@@ -527,7 +529,7 @@ class _ResponseHeaders:
                 if max_age <= 0:
                     return new_url, None
 
-                age = self._headers.get('age', 0)
+                age: int = self._headers.get('age', 0)  # type: ignore[assignment]  # str will be converted to int
                 if age != 0:
                     try:
                         age = int(age)
@@ -554,7 +556,7 @@ class _ResponseHeaders:
         is_keep_alive = (self._version == 10 and connection == 'keep-alive') or (self._version >= 11 and connection != 'close')
         return is_keep_alive
 
-    def keep_alive_params(self) -> Tuple[Optional[float], Optional[float]]:
+    def keep_alive_params(self) -> Tuple[Optional[int], Optional[int]]:
         keep_alive_header = self._headers.get('keep-alive', None)
         if keep_alive_header is None: return None, None
         self._params_parser.parse(keep_alive_header)
@@ -623,7 +625,7 @@ import hashlib
 def write_stream_to_data(in_stream: Any, calc_md5: bool, timeout: int, /) -> Tuple[bytes, str]:
     start_time = time.monotonic()
     data = bytearray()
-    md5_hasher = hashlib.md5() if calc_md5 is not None else None
+    md5_hasher = hashlib.md5() if calc_md5 else None
     while True:
         elapsed_time = time.monotonic() - start_time
         if elapsed_time > timeout:
@@ -641,14 +643,38 @@ def write_stream_to_data(in_stream: Any, calc_md5: bool, timeout: int, /) -> Tup
 
     return bytes(data), md5_hasher.hexdigest() if calc_md5 else ''
 
-def fetch(url: str, method: Optional[str] = None, body: Any = None, headers: Any = None, ssl_ctx: Optional[ssl.SSLContext] = None, timeout: Optional[float] = None, logger: Optional[HttpLogger] = None, config: Optional[HttpConfig] = None) -> tuple[int, bytes]:
+_RETRYABLE_STATUS_CODES = frozenset({408, 429, 500, 502, 503, 504})
+
+
+def fetch(url: str, method: Optional[str] = None, body: Any = None, headers: Any = None, ssl_ctx: Optional[ssl.SSLContext] = None, timeout: Optional[float] = None, logger: Optional[HttpLogger] = None, config: Optional[HttpConfig] = None, retry: int = 3) -> tuple[int, bytes]:
     timeout = timeout or 300
-    gw = HttpGateway(
+    with HttpGateway(
         ssl_ctx=ssl_ctx or ssl.create_default_context(),
         timeout=timeout,
         logger=logger,
         config=config
-    )
-    with gw.open(url, method, body, headers) as (final_url, in_stream):
-        data, _ = write_stream_to_data(in_stream, False, timeout)
-        return in_stream.status, data
+    ) as gw:
+        last_exception: Optional[Exception] = None
+        last_status = 0
+        last_data = b''
+        for attempt in range(1 + retry):
+            try:
+                with gw.open(url, method, body, headers) as (final_url, in_stream):
+                    data, _ = write_stream_to_data(in_stream, False, timeout)
+                    last_status = in_stream.status
+                    last_data = data
+                    if last_status not in _RETRYABLE_STATUS_CODES:
+                        return last_status, last_data
+            except (TimeoutError, socket.timeout, OSError, HTTPException) as e:
+                last_exception = e
+
+            if attempt < retry:
+                delay = min(1 << attempt, 600)
+                if logger is not None:
+                    logger.debug(f'Retry {attempt + 1}/{retry} for {url} in {delay}s')
+                time.sleep(delay)
+
+        if last_status != 0:
+            return last_status, last_data
+
+        raise last_exception

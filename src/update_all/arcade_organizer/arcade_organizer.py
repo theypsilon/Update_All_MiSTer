@@ -13,8 +13,6 @@
 #
 # You should have received a copy of the GNU General Public License
 
-import sys
-import subprocess
 import traceback
 from pathlib import Path
 import configparser
@@ -26,12 +24,15 @@ import datetime
 import difflib
 import shutil
 import json
+import zipfile
 import xml.etree.cElementTree as ET
 from enum import IntEnum, unique
 from typing import List, Dict, Any, Tuple
 
+from update_all.analogue_pocket.http_gateway import fetch, http_config as make_http_config
 from update_all.constants import FILE_arcade_database_mad_db_json_zip
 from update_all.logger import Logger
+from update_all.os_utils import context_from_curl_ssl
 from update_all.other import strtobool
 
 
@@ -109,22 +110,6 @@ def to_ini(value):
     if value is None:
         return ''
     return value
-
-
-def guess_arcade_organizer_ini_file() -> str:
-    original_script_path = subprocess.run('ps | grep "^ *%s " | grep -o "[^ ]*$"' % os.getppid(), shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE).stdout.decode().strip()
-    if original_script_path == '-bash':
-        original_script_path = sys.argv[0]
-    try:
-        ini_file_str = Path(original_script_path).with_suffix('.ini').absolute()
-    except ValueError as _:
-        ini_file_str = 'wrong_ini_file'
-
-    env_inifile = os.getenv('INI_FILE', None)
-    if env_inifile is not None:
-        ini_file_str = env_inifile
-
-    return ini_file_str
 
 
 class ArcadeOrganizerService:
@@ -218,8 +203,7 @@ class ArcadeOrganizerService:
         config['CACHED_DATA_ZIP'] = Path("%s/data.zip" % config['ARCADE_ORGANIZER_WORK_PATH'])
         config['ORGDIR_FOLDERS_FILE'] = Path("%s/orgdir-folders" % config['ARCADE_ORGANIZER_WORK_PATH'])
         config['SSL_SECURITY_OPTION'] = os.getenv('SSL_SECURITY_OPTION', '--insecure')
-        config['CURL_RETRY'] = '--max-time 30 --show-error'
-        config['TMP_DATA_ZIP'] = "/tmp/data.zip"
+        config['TMP_DATA_ZIP'] = os.path.join(config['ARCADE_ORGANIZER_WORK_PATH'], 'tmp_data.zip')
 
         #####Organized Directories#####
         config['ORGDIR_09'] = "%s/_1 0-9" % config['ORGDIR']
@@ -316,30 +300,6 @@ class ArcadeOrganizerService:
 
 def lineno():
     return getframeinfo(currentframe().f_back).lineno
-
-class Printer:
-    def __init__(self, config):
-        self._config = config
-
-    def __enter__(self):
-        try:
-            self._logfile = open(self._config['ARCADE_ORGANIZER_WORK_PATH'] + "/issues.log", "w")
-        except:
-            pass
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        try:
-            self._logfile.close()
-        except:
-            pass
-
-    def print(self, *args, sep='', end='\n', flush=False):
-        print(*args, sep=sep, end=end, flush=flush)
-        try:
-            print(*args, sep=sep, end=end, file=self._logfile, flush=flush)
-        except:
-            pass
 
 
 def between_chars(char, left, right):
@@ -458,35 +418,50 @@ class Infrastructure:
         # self._printer.print("WARNING: Please wrap your custom MAD_DB in a Downloader database instead.")
         # self._printer.print("WARNING: You may create your own DB easily with github.com/theypsilon/DB-Template_MiSTer")
 
-        env = os.environ.copy()
+        ssl_option = self._config.get('SSL_SECURITY_OPTION', '--insecure')
+        ssl_ctx, ssl_err = context_from_curl_ssl(ssl_option)
+        if ssl_err is not None:
+            self._printer.print("SSL context warning: %s" % ssl_err)
+
+        gw_config = None
         if 'http_proxy' in self._config:
-            env['http_proxy'] = self._config['http_proxy']
+            gw_config = make_http_config(http_proxy=self._config['http_proxy'], https_proxy=None)
 
-        zip_output = subprocess.run('curl %s %s -o %s %s' % (self._config['CURL_RETRY'], self._config['SSL_SECURITY_OPTION'], self._config['TMP_DATA_ZIP'], self._config['MAD_DB']), shell=True,
-                                    stderr=subprocess.DEVNULL, env=env)
-
-        if zip_output.returncode != 0 or not self._tmp_data_zip_path.is_file():
-            self._printer.print("Couldn't download %s : Network Problem" % self._config['MAD_DB'])
+        try:
+            status, zip_data = fetch(self._config['MAD_DB'], ssl_ctx=ssl_ctx, timeout=30, config=gw_config)
+        except Exception as e:
+            self._printer.print("Couldn't download %s : %s" % (self._config['MAD_DB'], e))
             self._printer.print()
             return None
 
-        md5_output = subprocess.run('curl %s %s %s.md5' % (self._config['CURL_RETRY'], self._config['SSL_SECURITY_OPTION'], self._config['MAD_DB']), shell=True, stderr=subprocess.DEVNULL,
-                                    stdout=subprocess.PIPE, env=env)
-        if md5_output.returncode != 0:
-            self._printer.print("Couldn't download %s.md5 : Network Problem" % self._config['MAD_DB'])
+        if status != 200:
+            self._printer.print("Couldn't download %s : HTTP %d" % (self._config['MAD_DB'], status))
             self._printer.print()
-            self._tmp_data_zip_path.unlink()
             return None
 
-        md5hash = md5_output.stdout.splitlines()[0].decode()
+        try:
+            md5_status, md5_data = fetch(self._config['MAD_DB'] + '.md5', ssl_ctx=ssl_ctx, timeout=30, config=gw_config)
+        except Exception as e:
+            self._printer.print("Couldn't download %s.md5 : %s" % (self._config['MAD_DB'], e))
+            self._printer.print()
+            return None
+
+        if md5_status != 200:
+            self._printer.print("Couldn't download %s.md5 : HTTP %d" % (self._config['MAD_DB'], md5_status))
+            self._printer.print()
+            return None
+
+        md5hash = md5_data.decode().splitlines()[0].strip()
         self._printer.print("MD5 Hash: %s" % md5hash)
         self._printer.print()
-        with open(self._config['TMP_DATA_ZIP'], 'rb') as tmp_data_zip:
-            if hashlib.md5(tmp_data_zip.read()).hexdigest() != md5hash:
-                self._printer.print("Corrupted database downloaded : Network Problem")
-                self._printer.print()
-                self._tmp_data_zip_path.unlink()
-                return None
+
+        if hashlib.md5(zip_data).hexdigest() != md5hash:
+            self._printer.print("Corrupted database downloaded : Network Problem")
+            self._printer.print()
+            return None
+
+        with open(self._config['TMP_DATA_ZIP'], 'wb') as f:
+            f.write(zip_data)
 
         return self._tmp_data_zip_path
 
@@ -555,7 +530,10 @@ class Infrastructure:
         org_cores = Path("%s/cores" % self._config['ORGDIR'])
         mra_cores = Path("%s/cores" % self._config['MRADIR'])
         if mra_rp not in org_rp.parents and not org_cores.is_dir() and mra_cores.is_dir():
-            os.symlink(str(mra_cores.absolute()), str(org_cores.absolute()))
+            if self._config['NO_SYMLINKS']:
+                shutil.copytree(str(mra_cores.absolute()), str(org_cores.absolute()))
+            else:
+                os.symlink(str(mra_cores.absolute()), str(org_cores.absolute()))
             orgdir_folders_file = self._config['ORGDIR_FOLDERS_FILE']
             with orgdir_folders_file.open("a") as f:
                 f.write(str(org_cores) + "\n")
@@ -671,12 +649,14 @@ class Infrastructure:
         return fields
 
     def read_mad_db(self):
-        if self._config['CACHED_DATA_ZIP'].is_file():
-            output = subprocess.run("unzip -p %s" % self._config['CACHED_DATA_ZIP'], shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
-            if output.returncode == 0:
-                return json.loads(output.stdout.decode())
-
-            self._printer.print("Error while reading %s from %s" % (self._config['MAD_DB'], self._config['CACHED_DATA_ZIP']))
+        cached = self._config['CACHED_DATA_ZIP']
+        if cached.is_file():
+            try:
+                with zipfile.ZipFile(str(cached), 'r') as zf:
+                    name = zf.namelist()[0]
+                    return json.loads(zf.read(name))
+            except Exception as e:
+                self._printer.print("Error while reading %s from %s: %s" % (self._config['MAD_DB'], cached, e))
 
         return {}
 
@@ -719,10 +699,15 @@ class Infrastructure:
             shutil.rmtree(parent)
 
     def _remove_broken_symlinks(self, directory):
-        output = subprocess.run(r'find "%s/" -xtype l -exec rm {} \;' % directory, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-        if output.returncode != 0:
+        try:
+            for entry in os.scandir(directory):
+                if entry.is_dir(follow_symlinks=False):
+                    self._remove_broken_symlinks(entry.path)
+                elif entry.is_symlink() and not os.path.exists(entry.path):
+                    os.remove(entry.path)
+        except Exception as e:
             self._printer.print("Couldn't clean broken symlinks at " + directory)
-            self._printer.print(output.stderr.decode())
+            self._printer.print(str(e))
 
 
 class ArcadeOrganizer:
@@ -1250,43 +1235,3 @@ def check_pass_errors(errors: List[str], printer: Logger) -> bool:
             return False
 
     return True
-
-
-def show_help(ao_service: ArcadeOrganizerService, base_path: str):
-    config = ao_service.make_arcade_organizer_config(guess_arcade_organizer_ini_file(), base_path, '')
-    with Printer(config) as printer:
-        printer.print("Invalid arguments.")
-        printer.print("Usage: %s --print-orgdir-folders" % sys.argv[0])
-        printer.print("       %s --print-ini-options" % sys.argv[0])
-        printer.print("       %s" % sys.argv[0])
-
-
-def run_arcade_organizer_cli():
-    success: bool
-    base_path = os.getenv('LOCATION_STR', '/media/fat')
-
-    ao_service = ArcadeOrganizerService(None)
-    config = ao_service.make_arcade_organizer_config(guess_arcade_organizer_ini_file(), base_path, '')
-    with Printer(config) as printer:
-        ao_service = ArcadeOrganizerService(printer)
-        if len(sys.argv) == 2 and sys.argv[1] == "--print-orgdir-folders":
-            folders, success = ao_service.run_arcade_organizer_print_orgdir_folders(config)
-            for directory in folders:
-                printer.print(directory)
-
-        elif len(sys.argv) == 2 and sys.argv[1] == "--print-ini-options":
-            success = ao_service.run_arcade_organizer_print_ini_options(config)
-
-        elif len(sys.argv) != 1:
-            show_help(ao_service, base_path)
-            success = False
-
-        else:
-            success = ao_service.run_arcade_organizer_organize_all_mras(config)
-
-        if not success:
-            sys.exit(1)
-
-
-if __name__ == '__main__':
-    run_arcade_organizer_cli()

@@ -291,6 +291,7 @@ class UpdateAllService:
         try:
             self._settings_screen.load_main_menu()
         except Exception as e:
+            self._logger.print()
             self._logger.debug(e)
             self._logger.print('Recovering from error by suspending settings screen.\n')
             return

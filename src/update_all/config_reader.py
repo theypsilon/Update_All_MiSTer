@@ -124,6 +124,7 @@ class ConfigReader:
         config.pocket_firmware_update = store.get_pocket_firmware_update()
         config.pocket_backup = store.get_pocket_backup()
         config.log_viewer = store.get_log_viewer()
+        config.use_settings_screen_theme_in_log_viewer = store.get_use_settings_screen_theme_in_log_viewer()
         config.timeline_after_logs = store.get_timeline_after_logs()
 
     def read_retroaccount_feature_flag_file(self, config: Config, file_system: FileSystem) -> None:

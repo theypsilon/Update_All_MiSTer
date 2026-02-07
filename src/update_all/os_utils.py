@@ -18,8 +18,11 @@
 
 import subprocess
 import time
-import select
-import fcntl
+try:
+    import select
+    import fcntl
+except ImportError:
+    pass
 import os
 from abc import ABC
 from typing import Optional, Tuple

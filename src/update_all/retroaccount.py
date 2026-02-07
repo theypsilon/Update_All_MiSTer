@@ -16,12 +16,13 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-import subprocess
 import json
 
+from update_all.analogue_pocket.http_gateway import fetch
 from update_all.logger import Logger
 from update_all.file_system import FileSystem
 from update_all.config import Config
+from update_all.os_utils import context_from_curl_ssl
 from update_all.other import GenericProvider
 from update_all.constants import FILE_retroaccount_user_json, FILE_retroaccount_device_id, API_retroaccount_access_mister
 
@@ -57,22 +58,16 @@ class RetroAccountService:
 
         config = self._config_provider.get()
         api_url = f'{config.retroaccount_domain}{API_retroaccount_access_mister}'
-        cmd = ['curl', '-s', '-w', '\\n%{http_code}',
-               '-H', f'x-refresh-token: {refresh_token}',
-               '-H', f'x-device-id: {device_id}']
-        if config.curl_ssl:
-            cmd.extend(config.curl_ssl.split())
-        cmd.append(api_url)
+        ssl_ctx, ssl_err = context_from_curl_ssl(config.curl_ssl)
+        if ssl_err is not None:
+            self._logger.debug(f'SSL context warning: {ssl_err}')
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        output = result.stdout.strip()
-        lines = output.rsplit('\n', 1)
-
-        if len(lines) < 2:
-            raise Exception(f'Unexpected curl response: {output}')
-
-        body = lines[0]
-        status_code = int(lines[1])
+        headers = {
+            'x-refresh-token': refresh_token,
+            'x-device-id': device_id,
+        }
+        status_code, raw_body = fetch(api_url, headers=headers, ssl_ctx=ssl_ctx, timeout=30, retry=0)
+        body = raw_body.decode()
 
         if status_code == 200:
             response_data = json.loads(body)

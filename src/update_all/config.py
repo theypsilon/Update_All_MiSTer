@@ -91,6 +91,7 @@ class Config:
     pocket_firmware_update: bool = False
     pocket_backup: bool = False
     log_viewer: bool = True
+    use_settings_screen_theme_in_log_viewer: bool = True
     timeline_after_logs: bool = True
 
 @unique

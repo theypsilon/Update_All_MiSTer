@@ -56,7 +56,12 @@ class LogViewer:
         self._encryption = encryption
 
     def show(self, doc: list[str], popup_dict: Optional[dict[str, str]] = None, initial_index: int = 0) -> bool:
-        ui_theme = self._store_provider.get().get_theme() if self._encryption.validate_key() == EncryptionResult.Success else STANDARD_UI_THEME
+        store = self._store_provider.get()
+        can_use_custom_theme = (
+            self._encryption.validate_key() == EncryptionResult.Success
+            and store.get_use_settings_screen_theme_in_log_viewer()
+        )
+        ui_theme = store.get_theme() if can_use_custom_theme else STANDARD_UI_THEME
         view_document(doc, popup_dict or {}, initial_index, ui_theme)
         return True
 

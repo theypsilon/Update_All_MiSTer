@@ -158,9 +158,9 @@ def settings_screen_model(): return {
                 },
             ]
         },
-        "main_menu": _main_menu(retroaccount='no'),
-        "main_menu_retroaccount_login": _main_menu(retroaccount='login'),
-        "main_menu_retroaccount_account": _main_menu(retroaccount='account'),
+        "main_menu": _main_menu(retroaccount_logged_in=None),
+        "main_menu_retroaccount_login": _main_menu(retroaccount_logged_in=False),
+        "main_menu_retroaccount_account": _main_menu(retroaccount_logged_in=True),
         "main_distribution_menu": {
             "type": "dialog_sub_menu",
             "header": "Main Distribution Settings",
@@ -323,6 +323,7 @@ def settings_screen_model(): return {
             "type": "dialog_sub_menu_info",
             "header": "Other Cores",
             "variables": {
+                "coin_op_collection_downloader": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
                 "arcade_offset_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "llapi_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "unofficial_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
@@ -332,7 +333,15 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Arcade Offset (Toya)",
+                    "title": "1 Coin-Op Collection",
+                    "description": "{coin_op_collection_downloader:enabled} Cores by Coin-Op Collection Org",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
+                        "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
+                    }
+                },
+                {
+                    "title": "2 Arcade Offset (Toya)",
                     "description": "{arcade_offset_downloader:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "arcade_offset_downloader"}],
@@ -344,7 +353,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "2 LLAPI Forks Folder",
+                    "title": "3 LLAPI Forks Folder",
                     "description": "{llapi_updater:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "llapi_updater"}],
@@ -356,7 +365,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "3 theypsilon Unofficial Distribution",
+                    "title": "4 theypsilon Unofficial Distribution",
                     "description": "{unofficial_updater:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "unofficial_updater"}],
@@ -372,7 +381,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "4 Y/C Builds from MikeS11",
+                    "title": "5 Y/C Builds from MikeS11",
                     "description": "{MikeS11/YC_Builds-MiSTer:enabled}",
                     "actions": {
                         "ok": [{
@@ -405,7 +414,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "5 agg23's MiSTer Cores",
+                    "title": "6 agg23's MiSTer Cores",
                     "description": "{agg23_db:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "agg23_db"}],
@@ -417,7 +426,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "6 Alt Cores",
+                    "title": "7 Alt Cores",
                     "description": "{ajgowans/alt-cores:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "ajgowans/alt-cores"}],
@@ -722,6 +731,7 @@ def settings_screen_model(): return {
                 "ui_theme": {"group": "store", "default": "Blue Installer", "values": ["Blue Installer", "Cyan Night", "Japan", "Aquamarine", "Clean Wall"]},
                 "firmware_needs_reboot": {"default": "false", "values": ["false", "true"]},
                 "timeline_after_logs": {"group": "store", "default": "true", "values": ["true", "false"]},
+                "use_settings_screen_theme_in_log_viewer": {"group": "store", "default": "true", "values": ["false", "true"]},
             },
             "entries": [
                 {
@@ -766,7 +776,12 @@ def settings_screen_model(): return {
                     "actions": {"ok": [{"type": "rotate_variable", "target": "ui_theme"}, {"type": "apply_theme"}]}
                 },
                 {
-                    "title": "BACK",
+                    "title": "4 Use Settings Screen Theme in Log Viewer",
+                    "description": "{use_settings_screen_theme_in_log_viewer:yesno}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "use_settings_screen_theme_in_log_viewer"}]}
+                },
+                {
+                    "title": "5 BACK",
                     "description": "",
                     "actions": {"ok": [
                         {
@@ -1188,116 +1203,34 @@ def settings_screen_model(): return {
                 },
             ]
         },
+        "retroaccount_menu": {
+            "type": "dialog_sub_menu",
+            "header": "RetroAccount Menu",
+            "entries": []
+        }
     }
 }
 
 
 def _retroaccount_account_entry(): return {
-    "title": "8 Patrons Menu",
-    "description": "Timeline, Themes, etc... [2025.10.17]",
-    "actions": {"ok": [
-        {"type": "calculate_has_right_available_code"},
-        {
-            "type": "condition",
-            "variable": "has_right_available_code",
-            "true": [{"type": "navigate", "target": "patrons_menu"}],
-            "false": [{
-                "ui": "message",
-                "header": "Patreon Key not found!",
-                "text": [
-                    "This menu contains exclusive content for patrons only.",
-                    " ",
-                    "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock premium options.",
-                    " ",
-                    "Thank you so much for your support!",
-                ],
-                "effects": [{
-                    "ui": "message",
-                    "header": "Support MiSTer",
-                    "text": [
-                        "Consider supporting @Alexey Melnikov@ aka @'Sorgelig'@ for his invaluable work as the main maintainer of the MiSTer Project: ~patreon.com/FPGAMiSTer~",
-                        " ",
-                        "Other key contributors:",
-                        " ·@Ace@ ~ko-fi.com/ace9921~ - Arcade cores",
-                        " ·@Artemio@ ~patreon.com/aurbina~ - Testing tools",
-                        " ·@Coin-Op@ ~patreon.com/atrac17~ - Arcade cores",
-                        " ·@furrtek@ ~patreon.com/furrtek~ - Reverse engineering hardware",
-                        " ·@JimmyStones@ ~ko-fi.com/jimmystones~ - Arcade cores",
-                        " ·@JOTEGO@ ~patreon.com/jotego~ - Arcade & Console cores",
-                        " ·@1FPGA@ ~patreon.com/1fpga~ - Firmware rewrite",
-                        " ·@Pierco@ ~ko-fi.com/pierco~ - Arcade cores",
-                        " ·@Srg320@ ~patreon.com/srg320~ - Console cores",
-                        " ·@theypsilon@ ~patreon.com/theypsilon~ - Updaters & Other Tools",
-                        " ·@wizzo@ ~patreon.com/wizzo~ - Tools & scripts",
-                        " ",
-                        "Your favorite open-source projects require your support to keep evolving!"
-                    ]
-                }],
-            }]
-        }
-    ]}
+    "title": "7 RetroAccount",
+    "description": "Check enabled MiSTer features",
+    "actions": {
+        "ok": [{"type": "navigate", "target": "retroaccount_menu"}],
+    }
 }
 
 
 def _retroaccount_login_entry(): return {
-    "title": "8 Login",
+    "title": "7 Login",
     "description": "Login to RetroAccount",
     "actions": {"ok": [{"type": "login_retroaccount"}]}
 }
 
-
-def _patrons_menu_entry(): return {
-    "title": "8 Patrons Menu",
-    "description": "Timeline, Themes, etc... [2025.10.17]",
-    "actions": {"ok": [
-        {"type": "calculate_has_right_available_code"},
-        {
-            "type": "condition",
-            "variable": "has_right_available_code",
-            "true": [{"type": "navigate", "target": "patrons_menu"}],
-            "false": [{
-                "ui": "message",
-                "header": "Patreon Key not found!",
-                "text": [
-                    "This menu contains exclusive content for patrons only.",
-                    " ",
-                    "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock premium options.",
-                    " ",
-                    "Thank you so much for your support!",
-                ],
-                "effects": [{
-                    "ui": "message",
-                    "header": "Support MiSTer",
-                    "text": [
-                        "Consider supporting @Alexey Melnikov@ aka @'Sorgelig'@ for his invaluable work as the main maintainer of the MiSTer Project: ~patreon.com/FPGAMiSTer~",
-                        " ",
-                        "Other key contributors:",
-                        " ·@Ace@ ~ko-fi.com/ace9921~ - Arcade cores",
-                        " ·@Artemio@ ~patreon.com/aurbina~ - Testing tools",
-                        " ·@Coin-Op@ ~patreon.com/atrac17~ - Arcade cores",
-                        " ·@furrtek@ ~patreon.com/furrtek~ - Reverse engineering hardware",
-                        " ·@JimmyStones@ ~ko-fi.com/jimmystones~ - Arcade cores",
-                        " ·@JOTEGO@ ~patreon.com/jotego~ - Arcade & Console cores",
-                        " ·@1FPGA@ ~patreon.com/1fpga~ - Firmware rewrite",
-                        " ·@Pierco@ ~ko-fi.com/pierco~ - Arcade cores",
-                        " ·@Srg320@ ~patreon.com/srg320~ - Console cores",
-                        " ·@theypsilon@ ~patreon.com/theypsilon~ - Updaters & Other Tools",
-                        " ·@wizzo@ ~patreon.com/wizzo~ - Tools & scripts",
-                        " ",
-                        "Your favorite open-source projects require your support to keep evolving!"
-                    ]
-                }],
-            }]
-        }
-    ]}
-}
-
-
-def _main_menu(retroaccount): return {
+def _main_menu(retroaccount_logged_in): return {
     "ui": "menu",
     "header": "Update All {update_all_version} Settings",
     "variables": {
-        "coin_op_collection_downloader": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
     },
     "hotkeys": [{"keys": [27], "action": _try_abort()}],
     "actions": [
@@ -1322,43 +1255,80 @@ def _main_menu(retroaccount): return {
                 "toggle": [{"type": "rotate_variable", "target": "jotego_updater"}],
             }
         },
-        {
-            "title": "3 Coin-Op Collection",
-            "description": "{coin_op_collection_downloader:enabled} Cores by Coin-Op Collection Org",
-            "actions": {
-                "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
-                "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
-            }
-        },
         {},  # separator
         {
-            "title": "4 Other Cores",
-            "description": "LLAPI, Unofficials, Y/C Builds...",
+            "title": "3 Other Cores",
+            "description": "Coin-Op Collection, LLAPI, Y/C, more...",
             "actions": {
                 "ok": [{"type": "navigate", "target": "other_cores_menu"}],
             }
         },
         {
-            "title": "5 Tools & Scripts",
+            "title": "4 Tools & Scripts",
             "description": "Names TXT, Arcade Organizer, Scripts...",
             "actions": {
                 "ok": [{"type": "navigate", "target": "tools_and_scripts_menu"}],
             }
         },
         {
-            "title": "6 Extra Content",
+            "title": "5 Extra Content",
             "description": "ROMs, BIOS & Wallpapers",
             "actions": {
                 "ok": [{"type": "navigate", "target": "extra_content_menu"}],
             }
         },
-        {},  # separator
         {
-            "title": "7 Analogue Pocket",
+            "title": "6 Analogue Pocket",
             "description": "Firmware Update & Backups",
             "actions": {"ok": [{"type": "navigate", "target": "analogue_pocket_menu"}]}
         },
-        _retroaccount_account_entry() if retroaccount == 'account' else _retroaccount_login_entry() if retroaccount == 'login' else _patrons_menu_entry(),
+        {},  # separator
+        {} if retroaccount_logged_in is None else _retroaccount_account_entry() if retroaccount_logged_in else _retroaccount_login_entry(),
+        {
+            "title": "8 Patrons Menu",
+            "description": "Timeline, Themes, etc... [2025.10.17]",
+            "actions": {"ok": [
+                {"type": "calculate_has_right_available_code"},
+                {
+                    "type": "condition",
+                    "variable": "has_right_available_code",
+                    "true": [{"type": "navigate", "target": "patrons_menu"}],
+                    "false": [{
+                        "ui": "message",
+                        "header": "Patreon Key not found!",
+                        "text": [
+                            "This menu contains exclusive content for patrons only.",
+                            " ",
+                            "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock premium options.",
+                            " ",
+                            "Thank you so much for your support!",
+                        ],
+                        "effects": [{
+                            "ui": "message",
+                            "header": "Support MiSTer",
+                            "text": [
+                                "Consider supporting @Alexey Melnikov@ aka @'Sorgelig'@ for his invaluable work as the main maintainer of the MiSTer Project: ~patreon.com/FPGAMiSTer~",
+                                " ",
+                                "Other key contributors:",
+                                " ·@Ace@ ~ko-fi.com/ace9921~ - Arcade cores",
+                                " ·@Artemio@ ~patreon.com/aurbina~ - Testing tools",
+                                " ·@Coin-Op@ ~patreon.com/atrac17~ - Arcade cores",
+                                " ·@furrtek@ ~patreon.com/furrtek~ - Reverse engineering hardware",
+                                " ·@JimmyStones@ ~ko-fi.com/jimmystones~ - Arcade cores",
+                                " ·@JOTEGO@ ~patreon.com/jotego~ - Arcade & Console cores",
+                                " ·@1FPGA@ ~patreon.com/1fpga~ - Firmware rewrite",
+                                " ·@Pierco@ ~ko-fi.com/pierco~ - Arcade cores",
+                                " ·@Srg320@ ~patreon.com/srg320~ - Console cores",
+                                " ·@theypsilon@ ~patreon.com/theypsilon~ - Updaters & Other Tools",
+                                " ·@wizzo@ ~patreon.com/wizzo~ - Tools & scripts",
+                                " ",
+                                "Your favorite open-source projects require your support to keep evolving!"
+                            ]
+                        }],
+                    }]
+                }
+            ]}
+        },
         {
             "title": "9 System Options",
             "description": "",
