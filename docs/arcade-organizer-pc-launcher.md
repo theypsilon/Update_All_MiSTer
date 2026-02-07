@@ -57,8 +57,7 @@ python3 arcade_organizer_pc_launcher.py
 
 The launcher looks for an INI file in this order:
 1. `INI_FILE` environment variable (if set)
-2. `arcade_organizer_pc_launcher.ini` (same name as the script, with `.ini` extension)
-3. `Scripts/update_arcade-organizer.ini` (default location)
+2. `Scripts/update_arcade-organizer.ini` (default location)
 
 If no INI file is found, default settings are used. Key INI options include:
 
@@ -76,6 +75,5 @@ See the [Arcade Organizer documentation](arcade_organizer.md) for all available 
 
 | Variable | Description |
 |----------|-------------|
-| `UPDATE_ALL_SOURCE` | URL or local file path to `update_all.pyz` (for development/testing) |
 | `PC_LAUNCHER_NO_WAIT` | Set to `1` to skip the "Press Enter" prompt at the end |
 | `INI_FILE` | Override the INI file path |

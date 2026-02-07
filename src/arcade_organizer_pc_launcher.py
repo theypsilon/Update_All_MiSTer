@@ -94,14 +94,10 @@ def _download_with_hash(url: str, hash_url: str, algo: str, suffix: str) -> str:
 
 
 def _find_ini_file(base_path):
-    """Find the INI file: env override > {script_name}.ini > update_arcade-organizer.ini > None."""
+    """Find the INI file: env override > update_arcade-organizer.ini > None."""
     env_ini = os.environ.get('INI_FILE', '')
     if env_ini:
         return env_ini
-
-    script_ini = Path(os.path.realpath(__file__)).with_suffix('.ini')
-    if script_ini.is_file():
-        return str(script_ini)
 
     default_ini = Path(base_path) / 'Scripts' / 'update_arcade-organizer.ini'
     if default_ini.is_file():
