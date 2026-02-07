@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,59 +28,68 @@ It downloads the Update All pyz, imports ArcadeOrganizerService, and runs
 the organizer against the local file tree.
 
 Environment variables:
-  UPDATE_ALL_SOURCE       URL or local path to update_all.pyz
   PC_LAUNCHER_NO_WAIT     Set to '1' to skip the "Press Enter" prompt
   INI_FILE                Path to the arcade organizer INI file
 """
 
-import json
 import os
 import sys
+import hashlib
 from pathlib import Path
-from shutil import copy, copyfileobj
+from shutil import copyfileobj
 from tempfile import NamedTemporaryFile
-from urllib.request import urlopen, Request
+from urllib.request import urlopen
 
 
-_DEFAULT_RELEASE_API = 'https://api.github.com/repos/theypsilon/Update_All_MiSTer/releases/latest'
-_PYZ_ASSET_NAME = 'update_all.pyz'
-
-
-def _find_pyz_url():
-    """Fetch the latest release from GitHub API and return the update_all.pyz download URL."""
-    print('Fetching latest Update All release info...')
-    req = Request(_DEFAULT_RELEASE_API, headers={'Accept': 'application/vnd.github+json'})
-    with urlopen(req, timeout=30) as resp:
-        data = json.loads(resp.read())
-    for asset in data.get('assets', []):
-        if asset['name'] == _PYZ_ASSET_NAME:
-            return asset['browser_download_url']
-    raise RuntimeError(f'Could not find {_PYZ_ASSET_NAME} in latest release assets')
+_PYZ_URL = 'https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all.pyz'
+_PYZ_SHA256_URL = 'https://github.com/theypsilon/Update_All_MiSTer/releases/latest/download/update_all.pyz.sha256'
+_MAD_DB_URL = 'https://raw.githubusercontent.com/MiSTer-devel/ArcadeDatabase_MiSTer/refs/heads/db/mad_db.json.zip'
+_MAD_DB_MD5_URL = 'https://raw.githubusercontent.com/MiSTer-devel/ArcadeDatabase_MiSTer/refs/heads/db/mad_db.json.zip.md5'
+_LOCAL_PYZ_RELATIVE_PATH = Path('Scripts') / '.config' / 'update_all' / 'update_all.pyz'
+_LOCAL_MAD_DB_RELATIVE_PATH = Path('Scripts') / '.config' / 'update_all' / 'mad_db.json.zip'
 
 
 def _fetch_pyz():
     """Download or copy the update_all.pyz to a temp file. Returns the temp file path."""
-    source = os.environ.get('UPDATE_ALL_SOURCE', '')
+    temp_name = _download_with_hash(_PYZ_URL, _PYZ_SHA256_URL, 'sha256', '.pyz')
+    print('Download complete.')
+    return temp_name
 
-    if source and not source.startswith('http://') and not source.startswith('https://'):
-        # Local file path
-        with NamedTemporaryFile(suffix='.pyz', delete=False) as temp:
-            temp_name = temp.name
-            temp.close()
-            copy(source, temp_name)
-        return temp_name
 
-    url = source if source else _find_pyz_url()
+def _fetch_mad_db():
+    temp_name = _download_with_hash(_MAD_DB_URL, _MAD_DB_MD5_URL, 'md5', '.json.zip')
+    print('MAD_DB download complete.')
+    return temp_name
 
+
+def _download_with_hash(url: str, hash_url: str, algo: str, suffix: str) -> str:
     print(f'Downloading {url} ...')
-    with NamedTemporaryFile(suffix='.pyz', mode='wb', delete=False) as temp:
+    with NamedTemporaryFile(suffix=suffix, mode='wb', delete=False) as temp:
         temp_name = temp.name
         with urlopen(url, timeout=180) as in_stream:
             if in_stream.status != 200:
                 raise RuntimeError(f'HTTP {in_stream.status} when downloading {url}')
             copyfileobj(in_stream, temp)
 
-    print('Download complete.')
+    print(f'Validating {algo.upper()} {hash_url} ...')
+    with urlopen(hash_url, timeout=30) as hash_stream:
+        if hash_stream.status != 200:
+            raise RuntimeError(f'HTTP {hash_stream.status} when downloading {hash_url}')
+        expected_text = hash_stream.read().decode().strip()
+
+    expected_hash = expected_text.split()[0]
+    hasher = hashlib.new(algo)
+    with open(temp_name, 'rb') as fp:
+        hasher.update(fp.read())
+    actual_hash = hasher.hexdigest()
+
+    if actual_hash != expected_hash:
+        try:
+            os.unlink(temp_name)
+        except FileNotFoundError:
+            pass
+        raise RuntimeError(f'Corrupted download: {algo.upper()} mismatch')
+
     return temp_name
 
 
@@ -109,9 +118,24 @@ def main():
     print()
 
     temp_pyz = None
+    temp_files = []
     result = 1
     try:
-        temp_pyz = _fetch_pyz()
+        local_pyz = Path(base_path) / _LOCAL_PYZ_RELATIVE_PATH
+        if local_pyz.is_file():
+            temp_pyz = str(local_pyz)
+            print(f'Using local update_all.pyz: {local_pyz}')
+        else:
+            temp_pyz = _fetch_pyz()
+            temp_files.append(temp_pyz)
+
+        local_mad_db = Path(base_path) / _LOCAL_MAD_DB_RELATIVE_PATH
+        if local_mad_db.is_file():
+            print(f'Using local MAD_DB: {local_mad_db}')
+        else:
+            mad_db_path = _fetch_mad_db()
+            temp_files.append(mad_db_path)
+            os.environ['MAD_DB'] = mad_db_path
 
         # Add the pyz to sys.path so we can import from it
         sys.path.insert(0, temp_pyz)
@@ -125,6 +149,7 @@ def main():
 
         logger = PrintLogger()
         ao_service = ArcadeOrganizerService(logger)
+
         config = ao_service.make_arcade_organizer_config(ini_file, base_path, '')
 
         # Force NO_SYMLINKS on Windows since symlinks require elevated privileges
@@ -138,9 +163,9 @@ def main():
         print(f'ERROR: {e}')
         result = 1
 
-    if temp_pyz:
+    for temp_file in temp_files:
         try:
-            os.unlink(temp_pyz)
+            os.unlink(temp_file)
         except FileNotFoundError:
             pass
 
