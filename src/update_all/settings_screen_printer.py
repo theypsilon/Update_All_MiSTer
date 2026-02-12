@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 import abc
 from typing import Tuple
 
+from update_all.retroaccount_ui import DeviceLoginRenderer
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 
 
@@ -27,5 +28,6 @@ class ColorThemeManager(abc.ABC):
 
 
 class SettingsScreenPrinter(abc.ABC):
-    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, ColorThemeManager]:
-        """Creates instances of DialogDrawerFactory"""
+    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, ColorThemeManager, DeviceLoginRenderer]:
+        """Creates instances of DialogDrawerFactory, ColorThemeManager, and a DeviceLoginRenderer"""
+

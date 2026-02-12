@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ except (ImportError, SyntaxError) as e:
     print('\n')
     print('Warning! Your OS version seems to be older than September 2021!')
     print('Please upgrade your OS before running Update All')
-    print('More info at https://github.com/MiSTer-devel/mr-fusion')
+    print('More info at https://github.com/theypsilon/ms-fusion')
     print()
     exit(1)
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ def settings_screen_model(): return {
     },
     "variables": {
         # Global variables
-        "update_all_version": {"default": "2.4.1"},
+        "update_all_version": {"default": "2.5"},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -161,6 +161,43 @@ def settings_screen_model(): return {
         "main_menu": _main_menu(retroaccount_logged_in=None),
         "main_menu_retroaccount_login": _main_menu(retroaccount_logged_in=False),
         "main_menu_retroaccount_account": _main_menu(retroaccount_logged_in=True),
+        "retroaccount_account_menu": {
+            "type": "dialog_sub_menu",
+            "header": "RetroAccount",
+            "variables": {
+                "retroaccount_domain": {"default": "https://retroaccount.com"},
+            },
+            "entries": [
+                {
+                    "title": "1 Account Options",
+                    "description": "More options at {retroaccount_domain}",
+                    "actions": {"ok": [{
+                        "ui": "message",
+                        "header": "Account Options",
+                        "text": [
+                            "Visit ~{retroaccount_domain}~ to access more account options.",
+                        ],
+                    }]}
+                },
+                {
+                    "title": "2 Logout Device",
+                    "description": "Log out from this device",
+                    "actions": {"ok": [{
+                        "ui": "confirm",
+                        "header": "Logout Device",
+                        "text": ["Are you sure you want to log out from this device?"],
+                        "preselected_action": "No",
+                        "actions": [
+                            {"title": "Yes", "type": "fixed", "fixed": [
+                                {"type": "retroaccount_device_logout"},
+                                {"type": "navigate", "target": "main_menu_retroaccount_login"},
+                            ]},
+                            {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
+                        ],
+                    }]}
+                },
+            ]
+        },
         "main_distribution_menu": {
             "type": "dialog_sub_menu",
             "header": "Main Distribution Settings",
@@ -722,25 +759,101 @@ def settings_screen_model(): return {
                     }]
                 }
             ],
-            "formatters": {
-                "spinner_option": {"true": "Revert Unstable Spinner Firmware", "false": "Test Unstable Spinner Firmware"},
-                "spinner_desc": {"true": "Restore the original MiSTer binary", "false": "For the Taito EGRET II Mini"}
-            },
             "variables": {
-                "is_test_spinner_firmware_applied": {"default": "false", "values": ["false", "true"]},
-                "ui_theme": {"group": "store", "default": "Blue Installer", "values": ["Blue Installer", "Cyan Night", "Japan", "Aquamarine", "Clean Wall"]},
+                "ui_theme": {"group": "store", "default": "Blue Installer", "values": ["Blue Installer", "Cyan Night", "Japan", "Aquamarine", "Clean Wall", "Bloody Amber", "Mainframe", "Aurora", "Neon Noir", "Mono"]},
                 "firmware_needs_reboot": {"default": "false", "values": ["false", "true"]},
                 "timeline_after_logs": {"group": "store", "default": "true", "values": ["true", "false"]},
                 "use_settings_screen_theme_in_log_viewer": {"group": "store", "default": "true", "values": ["false", "true"]},
             },
             "entries": [
                 {
-                    "title": "1 Show Timeline in Log Viewer",
+                    "title": "1 Change Theme",
+                    "description": "{ui_theme}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "ui_theme"}, {"type": "apply_theme"}]}
+                },
+                {
+                    "title": "2 Apply Theme in Log Viewer",
+                    "description": "{use_settings_screen_theme_in_log_viewer:yesno}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "use_settings_screen_theme_in_log_viewer"}]}
+                },
+                {
+                    "title": "3 Timeline in Log Viewer",
                     "description": "{timeline_after_logs:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "timeline_after_logs"}]}
                 },
                 {
-                    "title": "2 {is_test_spinner_firmware_applied:spinner_option}",
+                    "title": "4 Advanced Options",
+                    "description": "",
+                    "actions": {"ok": [{"type": "navigate", "target": "patrons_advanced_menu"}]}
+                },
+                {
+                    "title": "5 BACK",
+                    "description": "",
+                    "actions": {"ok": [
+                        {
+                            "type": "condition",
+                            "variable": "firmware_needs_reboot",
+                            "true": [{
+                                "ui": "message",
+                                "header": "The Firmware has been changed",
+                                "text": ["Please reboot NOW to execute it!"]
+                            }],
+                            "false": [{"type": "navigate", "target": "back"}]
+                        },
+                    ]}
+                },
+            ]
+        },
+        "patrons_advanced_menu": {
+            "ui": "menu",
+            "header": "Patrons Menu Advanced Options",
+            "hotkeys": [
+                {
+                    "keys": [27],
+                    "action": [{
+                        "type": "condition",
+                        "variable": "firmware_needs_reboot",
+                        "true": [{
+                            "ui": "message",
+                            "header": "The Firmware has been changed",
+                            "text": ["Please reboot NOW to execute it!"]
+                        }],
+                        "false": [{"type": "navigate", "target": "back"}]
+                    }]
+                },
+            ],
+            "actions": [
+                {
+                    "title": "Select",
+                    "type": "symbol",
+                    "symbol": "ok"
+                },
+                {
+                    "title": "Back",
+                    "type": "fixed",
+                    "fixed": [{
+                        "type": "condition",
+                        "variable": "firmware_needs_reboot",
+                        "true": [{
+                            "ui": "message",
+                            "header": "The Firmware has been changed",
+                            "text": ["Please reboot NOW to execute it!"]
+                        }],
+                        "false": [{"type": "navigate", "target": "back"}]
+                    }]
+                }
+            ],
+            "formatters": {
+                "spinner_option": {"true": "Revert Unstable Spinner Firmware", "false": "Test Unstable Spinner Firmware"},
+                "spinner_desc": {"true": "Restore the original MiSTer binary", "false": "For the Taito EGRET II Mini"}
+            },
+            "variables": {
+                "is_test_spinner_firmware_applied": {"default": "false", "values": ["false", "true"]},
+                "firmware_needs_reboot": {"default": "false", "values": ["false", "true"]},
+            },
+            "entries": [
+                {
+                    "title": "1 {is_test_spinner_firmware_applied:spinner_option}",
                     "description": "{is_test_spinner_firmware_applied:spinner_desc}",
                     "actions": {"ok": [
                         {"type": "calculate_is_test_spinner_firmware_applied"},
@@ -771,17 +884,7 @@ def settings_screen_model(): return {
                     ]}
                 },
                 {
-                    "title": "3 Settings Screen Theme",
-                    "description": "{ui_theme}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "ui_theme"}, {"type": "apply_theme"}]}
-                },
-                {
-                    "title": "4 Use Settings Screen Theme in Log Viewer",
-                    "description": "{use_settings_screen_theme_in_log_viewer:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "use_settings_screen_theme_in_log_viewer"}]}
-                },
-                {
-                    "title": "5 BACK",
+                    "title": "2 BACK",
                     "description": "",
                     "actions": {"ok": [
                         {
@@ -803,19 +906,12 @@ def settings_screen_model(): return {
             "header": "Arcade Organizer 2.0 Settings",
             "variables": {
                 "arcade_organizer_orgdir": {"rename": "orgdir", "group": "ao_ini", "default": "/media/fat/_Arcade/_Organized", "values": ["/media/fat/_Arcade/_Organized", "/media/fat/_Arcade", "/media/fat/_Arcade Organized"]},
-                "arcade_organizer_mad_db_description": {"rename": "mad_db_description", "group": "ao_ini", "default": "https://raw.githubusercontent.com/MiSTer-devel/ArcadeDatabase_MiSTer/db/mad_db.json.zip", "values": ["https://raw.githubusercontent.com/MiSTer-devel/ArcadeDatabase_MiSTer/db/mad_db.json.zip", "https://raw.githubusercontent.com/theypsilon/MAD_Database_MiSTer/db/mad_db.json.zip"]},
                 "arcade_organizer_topdir": {"rename": "topdir", "group": "ao_ini", "default": "", "values": ["", "platform", "core", "year"]},
                 "arcade_organizer_skipalts": {"rename": "skipalts", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
-                "arcade_organizer_prepend_year": {"rename": "prepend_year", "group": "ao_ini", "default": "false", "values": ["false", "true"]},
-                "arcade_organizer_verbose": {"rename": "verbose", "group": "ao_ini", "default": "false", "values": ["false", "true"]},
             },
             "formatters": {
-                "mad_db_name_formatter": {
-                    "https://raw.githubusercontent.com/MiSTer-devel/ArcadeDatabase_MiSTer/db/mad_db.json.zip": "MiSTer-devel/ArcadeDatabase_MiSTer",
-                    "https://raw.githubusercontent.com/theypsilon/MAD_Database_MiSTer/db/mad_db.json.zip": "theypsilon/Incomplete_MAD_DB_Generator",
-                },
                 'orgdir_description': {
-                    "/media/fat/_Arcade/_Organized": "On the 'Organized' sub folder under 'Arcade'",
+                    "/media/fat/_Arcade/_Organized": "On 'Organized' folder under 'Arcade'",
                     "/media/fat/_Arcade": "Directly on 'Arcade' folder",
                     "/media/fat/_Arcade Organized": "On new folder 'Arcade Organized'",
                 },
@@ -833,57 +929,42 @@ def settings_screen_model(): return {
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_orgdir"}]}
                 },
                 {
-                    "title": "3 Selected Database",
-                    "description": "{arcade_organizer_mad_db_description:mad_db_name_formatter}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_mad_db_description"}]}
-                },
-                {
-                    "title": "4 Top additional folders",
+                    "title": "3 Top additional folders",
                     "description": "{arcade_organizer_topdir:capitalize}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_topdir"}]}
                 },
                 {
-                    "title": "5 Skip MRA-Alternatives",
+                    "title": "4 Skip MRA-Alternatives",
                     "description": "{arcade_organizer_skipalts:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_skipalts"}]}
                 },
                 {
-                    "title": "6 Chronological sort below",
-                    "description": "{arcade_organizer_prepend_year:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_prepend_year"}]}
-                },
-                {
-                    "title": "7 Verbose script output",
-                    "description": "{arcade_organizer_verbose:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_verbose"}]}
-                },
-                {
-                    "title": "8 Alphabetic",
+                    "title": "5 Alphabetic",
                     "description": "Options for 0-9 and A-Z folders",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_alphabetic_menu"}]}
                 },
                 {
-                    "title": "9 Region",
+                    "title": "6 Region",
                     "description": "Options for Regions (World, Japan, USA...)",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_region_menu"}]}
                 },
                 {
-                    "title": "0 Collections",
+                    "title": "7 Collections",
                     "description": "Options for Platform, Core, Category, Year...",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_collections_menu"}]}
                 },
                 {
-                    "title": "A Video & Input",
+                    "title": "8 Video & Input",
                     "description": "Options for Rotation, Resolution, Inputs...",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_video_input_menu"}]}
                 },
                 {
-                    "title": "S Extra Software",
+                    "title": "9 Extra Software",
                     "description": "Options for Homebrew, Bootleg, Hacks...",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_extra_software_menu"}]}
                 },
                 {
-                    "title": "D Advanced Submenu",
+                    "title": "0 Advanced Submenu",
                     "description": "Advanced Options",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_advanced_menu"}]}
                 },
@@ -1167,11 +1248,23 @@ def settings_screen_model(): return {
             "type": "dialog_sub_menu",
             "header": "Arcade Organizer 2.0 Advanced Options",
             "variables": {
+                "arcade_organizer_prepend_year": {"rename": "prepend_year", "group": "ao_ini", "default": "false", "values": ["false", "true"]},
+                "arcade_organizer_verbose": {"rename": "verbose", "group": "ao_ini", "default": "false", "values": ["false", "true"]},
                 "arcade_organizer_folders_list": {"default": ""}
             },
             "entries": [
                 {
-                    "title": "1 Clean Folders",
+                    "title": "1 Chronological sort below",
+                    "description": "{arcade_organizer_prepend_year:yesno}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_prepend_year"}]}
+                },
+                {
+                    "title": "2 Verbose script output",
+                    "description": "{arcade_organizer_verbose:yesno}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_verbose"}]}
+                },
+                {
+                    "title": "3 Clean Folders",
                     "description": "Deletes the Arcade Organizer folders",
                     "actions": {"ok": [
                         {"type": "calculate_arcade_organizer_folders"},
@@ -1203,20 +1296,40 @@ def settings_screen_model(): return {
                 },
             ]
         },
-        "retroaccount_menu": {
-            "type": "dialog_sub_menu",
-            "header": "RetroAccount Menu",
-            "entries": []
-        }
     }
 }
 
 
+def apply_narrow_screen_transform(model):
+    items = model.get('items', {})
+    for item_key, item in items.items():
+        for entry in item.get('entries', []):
+            if not entry:
+                continue
+            description = entry.get('description', '')
+            if not description:
+                continue
+            actions = entry.get('actions', {})
+            for symbol, effects in actions.items():
+                if len(effects) == 1 and isinstance(effects[0], dict) and effects[0].get('type') == 'rotate_variable':
+                    actions[symbol] = [{
+                        "ui": "confirm",
+                        "header": entry['title'],
+                        "text": [description],
+                        "preselected_action": "Toggle",
+                        "actions": [
+                            {"title": "Toggle", "type": "fixed", "fixed": [effects[0]]},
+                            {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                        ],
+                    }]
+    return model
+
+
 def _retroaccount_account_entry(): return {
-    "title": "7 RetroAccount",
-    "description": "Check enabled MiSTer features",
+    "title": "7 Account",
+    "description": "From RetroAccount",
     "actions": {
-        "ok": [{"type": "navigate", "target": "retroaccount_menu"}],
+        "ok": [{"type": "navigate", "target": "retroaccount_account_menu"}],
     }
 }
 
@@ -1224,7 +1337,12 @@ def _retroaccount_account_entry(): return {
 def _retroaccount_login_entry(): return {
     "title": "7 Login",
     "description": "Login to RetroAccount",
-    "actions": {"ok": [{"type": "login_retroaccount"}]}
+    "actions": {"ok": [{
+        "ui": "device_login",
+        "header": "Device Login",
+        "success_effects": [{"type": "apply_theme"}, {"type": "navigate", "target": "main_menu_retroaccount_account"}],
+        "failure_effects": [{"type": "navigate", "target": "back"}],
+    }]}
 }
 
 def _main_menu(retroaccount_logged_in): return {
@@ -1286,7 +1404,7 @@ def _main_menu(retroaccount_logged_in): return {
         {} if retroaccount_logged_in is None else _retroaccount_account_entry() if retroaccount_logged_in else _retroaccount_login_entry(),
         {
             "title": "8 Patrons Menu",
-            "description": "Timeline, Themes, etc... [2025.10.17]",
+            "description": "Timeline, Themes, etc... [2026.02.XX]",
             "actions": {"ok": [
                 {"type": "calculate_has_right_available_code"},
                 {
@@ -1465,7 +1583,7 @@ def _try_abort(): return [
                 {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
             ],
         }],
-        "false": [{"ui": "message", "text": ["Pressed ESC/Abort", "Closing Update All..."], "effects": [{"type": "navigate", "target": "abort"}]}]
+        "false": [{"ui": "message", "text": ["Pressed ESC/Abort", "Closing Update All..."], "hotkeys": [{"keys": [27], "action": [{"type": "navigate", "target": "abort"}]}], "effects": [{"type": "navigate", "target": "abort"}]}]
     }
 ]
 

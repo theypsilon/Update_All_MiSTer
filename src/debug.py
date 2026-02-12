@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2021-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 import os
 import sys

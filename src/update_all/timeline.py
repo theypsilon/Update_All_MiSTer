@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -20,9 +20,10 @@ from update_all.constants import FILE_names_txt
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
-from update_all.other import GenericProvider
+from update_all.other import GenericProvider, terminal_size
 
 import tempfile
+import shutil
 from typing import Any
 
 
@@ -115,31 +116,50 @@ def create_timeline_doc(model, names_dict: dict[str, str]):
     doc = []
     sections = model.get("sections", [])
 
-    doc.append("=" * 80 + "\n")
-    doc.append("================================================================================\n")
-    doc.append("=============  ====  =       ==       =====  ====        =        ==============\n")
-    doc.append("=============  ====  =  ====  =  ====  ===    ======  ====  ====================\n")
-    doc.append("=============  ====  =  ====  =  ====  ==  ==  =====  ====  ====================\n")
-    doc.append("=============  ====  =  ====  =  ====  =  ====  ====  ====  ====================\n")
-    doc.append("=============  ====  =       ==  ====  =  ====  ====  ====      ================\n")
-    doc.append("=============  ====  =  =======  ====  =        ====  ====  ====================\n")
-    doc.append("=============  ====  =  =======  ====  =  ====  ====  ====  ====================\n")
-    doc.append("=============   ==   =  =======  ====  =  ====  ====  ====  ====================\n")
-    doc.append("==============      ==  =======       ==  ====  ====  ====        ==============\n")
-    doc.append("================================================================================\n")
-    doc.append("################################################################################\n")
-    doc.append("#######        #    #  #####  #        #  #######    #  #######  #        ######\n")
-    doc.append("##########  #####  ##   ###   #  #######  ########  ##   ######  #  ############\n")
-    doc.append("##########  #####  ##  #   #  #  #######  ########  ##    #####  #  ############\n")
-    doc.append("##########  #####  ##  ## ##  #  #######  ########  ##  ##  ###  #  ############\n")
-    doc.append("##########  #####  ##  #####  #      ###  ########  ##  ###  ##  #      ########\n")
-    doc.append("##########  #####  ##  #####  #  #######  ########  ##  ####  #  #  ############\n")
-    doc.append("##########  #####  ##  #####  #  #######  ########  ##  #####    #  ############\n")
-    doc.append("##########  #####  ##  #####  #  #######  ########  ##  ######   #  ############\n")
-    doc.append("##########  ####    #  #####  #        #        #    #  #######  #        ######\n")
-    doc.append("################################################################################\n")
-    doc.append("#" * 80 + "\n")
-    doc.append("\n")
+    columns = terminal_size().columns
+    if columns < 80:
+        doc.append("        ".center(columns))
+        doc.append(" UPDATE ".center(columns))
+        doc.append("TIMELINE".center(columns))
+        doc.append("        ".center(columns))
+    else:
+        def _pad(line, fill):
+            left = (columns - len(line)) // 2
+            right = columns - len(line) - left
+            return fill * left + line + fill * right + "\n"
+
+        doc.append("\n")
+        doc.append("=" * columns + "\n")
+        for line in [
+            "================================================================================",
+            "=============  ====  =       ==       =====  ====        =        ==============",
+            "=============  ====  =  ====  =  ====  ===    ======  ====  ====================",
+            "=============  ====  =  ====  =  ====  ==  ==  =====  ====  ====================",
+            "=============  ====  =  ====  =  ====  =  ====  ====  ====  ====================",
+            "=============  ====  =       ==  ====  =  ====  ====  ====      ================",
+            "=============  ====  =  =======  ====  =        ====  ====  ====================",
+            "=============  ====  =  =======  ====  =  ====  ====  ====  ====================",
+            "=============   ==   =  =======  ====  =  ====  ====  ====  ====================",
+            "==============      ==  =======       ==  ====  ====  ====        ==============",
+            "================================================================================",
+        ]:
+            doc.append(_pad(line, "="))
+        for line in [
+            "################################################################################",
+            "#######        #    #  #####  #        #  #######    #  #######  #        ######",
+            "##########  #####  ##   ###   #  #######  ########  ##   ######  #  ############",
+            "##########  #####  ##  #   #  #  #######  ########  ##    #####  #  ############",
+            "##########  #####  ##  ## ##  #  #######  ########  ##  ##  ###  #  ############",
+            "##########  #####  ##  #####  #      ###  ########  ##  ###  ##  #      ########",
+            "##########  #####  ##  #####  #  #######  ########  ##  ####  #  #  ############",
+            "##########  #####  ##  #####  #  #######  ########  ##  #####    #  ############",
+            "##########  #####  ##  #####  #  #######  ########  ##  ######   #  ############",
+            "##########  ####    #  #####  #        #        #    #  #######  #        ######",
+            "################################################################################",
+        ]:
+            doc.append(_pad(line, "#"))
+        doc.append("#" * columns + "\n")
+        doc.append("\n")
 
     if not sections:
         doc.extend(model.get("summary", {}).get("no_sections_msg", ["Timeline is empty."]))
@@ -148,7 +168,7 @@ def create_timeline_doc(model, names_dict: dict[str, str]):
     for section in sections:
         add_doc_section(doc, section, names_dict)
 
-    doc.append("=" * 80 + "\n")
+    doc.append("=" * columns + "\n")
 
     return doc
 
@@ -160,7 +180,7 @@ def add_doc_section(doc: list[str], section: dict[str, Any], names_dict: dict[st
         return
 
     doc.append(f'>>> {title.upper()}:\n')
-    doc.append("-" * 60 + "\n")
+    doc.append("-" * terminal_size().columns + "\n")
 
     for category in categories:
         formatted_category = category['category']

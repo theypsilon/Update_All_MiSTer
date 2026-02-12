@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -81,6 +81,7 @@ class CursesRuntime(UiRuntime):
         except Exception as e:
             print('WARNING: KEY_IGNORE_TIME environment variable invalid.', e)
 
+        curses.set_escdelay(25)
         curses.wrapper(loader)
 
     def update(self) -> None:
@@ -90,4 +91,9 @@ class CursesRuntime(UiRuntime):
         curses.endwin()
 
     def resume(self) -> None:
-        curses.initscr()
+        self._screen = curses.initscr()
+        self._window = None
+        self._last_key_pressed = -1
+        curses.noecho()
+        curses.cbreak()
+        curses.flushinp()

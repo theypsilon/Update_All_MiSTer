@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import abc
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List, Callable
 
 from update_all.ui_engine import EffectChain, ProcessKeyResult, UiSection, Interpolator, UiSectionFactory
 from update_all.ui_model_utilities import Key
@@ -43,6 +43,18 @@ class UiDialogDrawer(abc.ABC):
 
     def clear(self) -> None:
         """Clears all the screen"""
+
+    def max_text_lines(self) -> int:
+        """Returns max number of text lines that fit on screen. 0 means unlimited."""
+        return 0
+
+    def set_text_scroll(self, offset: int) -> None:
+        """Sets scroll offset for text lines. Applied after wrapping in paint()."""
+
+    def total_text_lines(self) -> int:
+        """Returns count of accumulated text lines (after wrapping by add_text_line)."""
+        return 0
+
 
 
 class UiDialogDrawerFactory(abc.ABC):
@@ -94,17 +106,25 @@ class _Message(UiSection):
     def __init__(self, drawer: UiDialogDrawer, data: Dict[str, Any]):
         self._drawer = drawer
         self._data = data
+        self._text_scroll = 0
 
     def process_key(self) -> Optional[ProcessKeyResult]:
         self._drawer.start(self._data)
 
-        for index, text_line in enumerate(self._data['text']):
+        for text_line in self._data['text']:
             self._drawer.add_text_line(text_line)
 
+        self._drawer.set_text_scroll(self._text_scroll)
         self._drawer.add_action(self._data.get('action_name', 'Ok'), is_selected=True)
 
         key = self._drawer.paint()
-        if key == Key.ENTER:
+        if key == Key.UP:
+            self._text_scroll = max(0, self._text_scroll - 1)
+        elif key == Key.DOWN:
+            total = self._drawer.total_text_lines()
+            max_lines = self._drawer.max_text_lines()
+            self._text_scroll = _clamp_scroll(self._text_scroll + 1, total, max_lines)
+        elif key == Key.ENTER:
             return EffectChain(self._data['effects'])
 
         return key
@@ -121,18 +141,27 @@ class _Confirm(UiSection):
         self._drawer = drawer
         self._data = data
         self._state = state
+        self._text_scroll = 0
 
     def process_key(self) -> Optional[ProcessKeyResult]:
         self._drawer.start(self._data)
 
-        for index, text_line in enumerate(self._data['text']):
+        for text_line in self._data['text']:
             self._drawer.add_text_line(text_line)
+
+        self._drawer.set_text_scroll(self._text_scroll)
 
         for index, action in enumerate(self._data['actions']):
             self._drawer.add_action(action['title'], index == self._state.lateral_position())
 
         key = self._drawer.paint()
-        if key == Key.LEFT:
+        if key == Key.UP:
+            self._text_scroll = max(0, self._text_scroll - 1)
+        elif key == Key.DOWN:
+            total = self._drawer.total_text_lines()
+            max_lines = self._drawer.max_text_lines()
+            self._text_scroll = _clamp_scroll(self._text_scroll + 1, total, max_lines)
+        elif key == Key.LEFT:
             self._state.navigate_left()
         elif key == Key.RIGHT:
             self._state.navigate_right()
@@ -156,8 +185,9 @@ class _Confirm(UiSection):
 
 
 class DialogSectionFactory(UiSectionFactory):
-    def __init__(self, dialog_drawer_factory: UiDialogDrawerFactory):
+    def __init__(self, dialog_drawer_factory: UiDialogDrawerFactory, device_login_factory: Optional[Callable[[Interpolator, Dict[str, Any]], UiSection]] = None):
         self._dialog_drawer_factory = dialog_drawer_factory
+        self._device_login_factory = device_login_factory
 
     def create_ui_section(self, ui_type: str, data: Dict[str, Any], interpolator: Interpolator) -> UiSection:
         state = _NavigationState(self._count_entries(data), len(data.get('actions', {})))
@@ -170,6 +200,10 @@ class DialogSectionFactory(UiSectionFactory):
             if 'effects' not in data:
                 data['effects'] = [{"type": "navigate", "target": "back"}]
             return _Message(drawer, data)
+        elif ui_type == 'device_login':
+            if self._device_login_factory is None:
+                raise ValueError('device_login is not supported')
+            return self._device_login_factory(interpolator, data)
         else:
             raise ValueError(f'Not implemented ui_type: {ui_type}')
 
@@ -234,24 +268,82 @@ class _Menu(UiSection):
         key = self._drawer.paint()
         if key == Key.UP:
             self._state.navigate_up()
+            self._clamp_to_active_action()
         elif key == Key.DOWN:
             self._state.navigate_down()
+            self._clamp_to_active_action()
         elif key == Key.LEFT:
-            self._state.navigate_left()
+            self._navigate_active_left()
         elif key == Key.RIGHT:
-            self._state.navigate_right()
+            self._navigate_active_right()
         elif key == Key.ENTER:
             return _make_action_effect_chain(self._data, self._state)
         elif key in self._hotkeys:
             self._state.reset_position(self._hotkeys[key])
+            self._clamp_to_active_action()
 
         return key
+
+    def _is_action_active(self, action_index):
+        action = self._data['actions'][action_index]
+        if action['type'] != 'symbol':
+            return True
+        return action['symbol'] in self._data['entries'][self._state.position()].get('actions', {})
+
+    def _navigate_active_left(self):
+        pos = self._state.lateral_position() - 1
+        while pos >= 0 and not self._is_action_active(pos):
+            pos -= 1
+        if pos >= 0:
+            self._state.reset_lateral_position(pos)
+
+    def _navigate_active_right(self):
+        pos = self._state.lateral_position() + 1
+        num_actions = len(self._data['actions'])
+        while pos < num_actions and not self._is_action_active(pos):
+            pos += 1
+        if pos < num_actions:
+            self._state.reset_lateral_position(pos)
+
+    def _clamp_to_active_action(self):
+        pos = self._state.lateral_position()
+        if self._is_action_active(pos):
+            return
+        num_actions = len(self._data['actions'])
+        left, right = pos - 1, pos + 1
+        while left >= 0 or right < num_actions:
+            if left >= 0 and self._is_action_active(left):
+                self._state.reset_lateral_position(left)
+                return
+            if right < num_actions and self._is_action_active(right):
+                self._state.reset_lateral_position(right)
+                return
+            left -= 1
+            right += 1
 
     def reset(self) -> None:
         self._state.reset_lateral_position()
 
     def clear(self) -> None:
         self._drawer.clear()
+
+
+def _scroll_text_lines(text_lines: List[str], scroll: int, max_lines: int) -> List[str]:
+    if max_lines <= 0 or len(text_lines) <= max_lines:
+        return text_lines
+    end = min(scroll + max_lines, len(text_lines))
+    visible = text_lines[scroll:end]
+    if scroll > 0:
+        visible[0] = '...'
+    if end < len(text_lines):
+        visible[-1] = '...'
+    return visible
+
+
+def _clamp_scroll(scroll: int, total: int, max_lines: int) -> int:
+    if max_lines <= 0 or total <= max_lines:
+        return 0
+    return min(scroll, total - max_lines)
 
 
 def _make_action_effect_chain(data: Dict[str, Any], state: _NavigationState) -> Optional[EffectChain]:

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,16 @@ class ColorConfiguration:
     HEADER_LINE_COLOR = 0
     COMMON_TEXT_COLOR = 0
     UNSELECTED_ACTION_COLOR = 0
+    LINK_COLOR = 0
+    DEVICE_LOGIN_BACKGROUND_COLOR = 0
+    DEVICE_LOGIN_TEXT_COLOR = 0
+    DEVICE_LOGIN_TEXT_EXTRA_ATTR = 0
+    DEVICE_LOGIN_HEADER_COLOR = 0
+    DEVICE_LOGIN_LINK_COLOR = 0
+    DEVICE_LOGIN_LINK_EXTRA_ATTR = 0
+    LOG_VIEWER_BACKGROUND_COLOR = 0
+    LOG_VIEWER_TEXT_COLOR = 0
+    LOG_VIEWER_SYMBOL_COLOR = 0
 
 
 colors = ColorConfiguration()
@@ -79,6 +89,11 @@ def make_color_theme(theme: str) -> ColorTheme:
     elif theme == 'Japan': return Custom3ColorTheme(white, red, white)
     elif theme == 'Aquamarine': return AquamarineColorTheme()
     elif theme == 'Clean Wall': return CleanWallColorTheme()
+    elif theme == 'Bloody Amber': return BloodyAmberColorTheme()
+    elif theme == 'Mainframe': return MainframeColorTheme()
+    elif theme == 'Aurora': return AuroraColorTheme()
+    elif theme == 'Neon Noir': return NeonNoirColorTheme()
+    elif theme == 'Mono': return MonoColorTheme()
     else: return BlueInstallerColorTheme()
 
 
@@ -104,6 +119,15 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[yellow][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[white][black]
+        colors.LINK_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_EXTRA_ATTR = curses.A_DIM
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[blue][blue]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][blue]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][blue]
 
     def standard(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[white][blue]
@@ -125,6 +149,15 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.SYMBOL_AT_COLOR = color_pair[red][white]
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.LINK_COLOR = color_pair[blue][white]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_EXTRA_ATTR = curses.A_DIM
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[blue][blue]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][blue]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][blue]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[white][black]
@@ -146,6 +179,15 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.SYMBOL_AT_COLOR = color_pair[cyan][white]
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.LINK_COLOR = color_pair[blue][white]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_EXTRA_ATTR = curses.A_DIM
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[white][red]
@@ -167,6 +209,15 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.SYMBOL_AT_COLOR = color_pair[red][white]
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.LINK_COLOR = color_pair[blue][white]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_EXTRA_ATTR = curses.A_DIM
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
 
 
 class CyanNightColorTheme(ColorTheme):
@@ -194,6 +245,14 @@ class CyanNightColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[yellow][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[cyan][black]
+        colors.LINK_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
@@ -216,6 +275,14 @@ class CyanNightColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[yellow][black]
+        colors.LINK_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
@@ -238,6 +305,14 @@ class CyanNightColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[red][black]
+        colors.LINK_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
 
 
 class AquamarineColorTheme(ColorTheme):
@@ -265,6 +340,15 @@ class AquamarineColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][cyan]
         colors.SYMBOL_AT_COLOR = color_pair[magenta][cyan]
         colors.COMMON_TEXT_COLOR = color_pair[black][cyan]
+        colors.LINK_COLOR = color_pair[blue][cyan]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[black][cyan]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[black][cyan]
+        colors.DEVICE_LOGIN_TEXT_EXTRA_ATTR = curses.A_DIM
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[black][cyan]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[black][cyan]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[cyan][cyan]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[black][cyan]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][cyan]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][cyan]
@@ -287,6 +371,14 @@ class AquamarineColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][cyan]
         colors.SYMBOL_AT_COLOR = color_pair[magenta][cyan]
         colors.COMMON_TEXT_COLOR = color_pair[red][cyan]
+        colors.LINK_COLOR = color_pair[blue][cyan]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][cyan]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][cyan]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[red][cyan]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[blue][cyan]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[cyan][cyan]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][cyan]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][cyan]
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[cyan][red]
@@ -309,6 +401,14 @@ class AquamarineColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[green][red]
         colors.SYMBOL_AT_COLOR = color_pair[yellow][red]
         colors.COMMON_TEXT_COLOR = color_pair[cyan][red]
+        colors.LINK_COLOR = color_pair[yellow][red]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[cyan][red]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[cyan][red]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[cyan][red]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[yellow][red]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[red][red]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[cyan][red]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][red]
 
 
 class CleanWallColorTheme(ColorTheme):
@@ -336,6 +436,15 @@ class CleanWallColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.SYMBOL_AT_COLOR = color_pair[magenta][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.LINK_COLOR = color_pair[blue][white]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][white]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[black][white]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[black][white]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[black][white]
+        colors.DEVICE_LOGIN_LINK_EXTRA_ATTR = curses.A_DIM
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[white][white]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[black][white]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[black][white]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
@@ -358,6 +467,14 @@ class CleanWallColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.SYMBOL_AT_COLOR = color_pair[magenta][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.LINK_COLOR = color_pair[blue][white]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[black][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[blue][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][red]
@@ -380,6 +497,14 @@ class CleanWallColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.SYMBOL_AT_COLOR = color_pair[magenta][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.LINK_COLOR = color_pair[blue][white]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][red]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][red]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][red]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][red]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[red][red]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][red]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][red]
 
 
 class Custom3ColorTheme(ColorTheme):
@@ -409,9 +534,17 @@ class Custom3ColorTheme(ColorTheme):
 
         colors.UNSELECTED_ACTION_COLOR = color_pair[self._text][self._box]
 
-        colors.SYMBOL_TILDE_COLOR = color_pair[blue if self._box is not blue else black][self._box]
+        colors.SYMBOL_TILDE_COLOR = color_pair[black if self._box is not black else blue][self._box]
         colors.SYMBOL_AT_COLOR = color_pair[red if self._box is not red else black][self._box]
         colors.COMMON_TEXT_COLOR = color_pair[self._text][self._box]
+        colors.LINK_COLOR = color_pair[cyan if self._box is not cyan else blue][self._box]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[self._box][self._background]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[self._box][self._background]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[self._box][self._background]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[black][self._background]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[self._background][self._background]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[self._box][self._background]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[black][self._background]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
@@ -434,6 +567,14 @@ class Custom3ColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[red][black]
         colors.COMMON_TEXT_COLOR = color_pair[white][black]
+        colors.LINK_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[black][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
@@ -456,3 +597,540 @@ class Custom3ColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[red][black]
         colors.COMMON_TEXT_COLOR = color_pair[red][black]
+        colors.LINK_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[black][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+
+
+class BloodyAmberColorTheme(ColorTheme):
+    def viewer(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.HEADER_LINE_COLOR = color_pair[yellow][black]
+        colors.HEADER_COLOR = color_pair[yellow][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][yellow]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][yellow]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][yellow]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[yellow][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[yellow][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][yellow]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][yellow]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[yellow][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[red][black]
+        colors.SYMBOL_AT_COLOR = color_pair[red][black]
+        colors.COMMON_TEXT_COLOR = color_pair[yellow][black]
+        colors.LINK_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[yellow][yellow]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[black][yellow]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[red][yellow]
+
+    def standard(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[yellow][yellow]
+        colors.HEADER_LINE_COLOR = color_pair[yellow][yellow]
+        colors.HEADER_COLOR = color_pair[red][yellow]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[red][black]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[yellow][black]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[yellow][black]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[black][yellow]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[red][yellow]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[yellow][black]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[yellow][black]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[black][yellow]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue][yellow]
+        colors.SYMBOL_AT_COLOR = color_pair[red][yellow]
+        colors.COMMON_TEXT_COLOR = color_pair[black][yellow]
+        colors.LINK_COLOR = color_pair[blue][yellow]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[green][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[green][black]
+
+    def black(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[yellow][yellow]
+        colors.HEADER_LINE_COLOR = color_pair[yellow][yellow]
+        colors.HEADER_COLOR = color_pair[red][yellow]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[yellow][red]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[yellow][red]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[yellow][red]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[red][yellow]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[black][yellow]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[yellow][red]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[yellow][red]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[red][yellow]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[black][yellow]
+        colors.SYMBOL_AT_COLOR = color_pair[black][yellow]
+        colors.COMMON_TEXT_COLOR = color_pair[red][yellow]
+        colors.LINK_COLOR = color_pair[black][yellow]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[yellow][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[yellow][yellow]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][yellow]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[black][yellow]
+
+    def red(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[red][red]
+        colors.HEADER_LINE_COLOR = color_pair[red][red]
+        colors.HEADER_COLOR = color_pair[yellow][red]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[yellow][black]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[red][black]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[red][black]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[black][red]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[yellow][red]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[red][black]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[red][black]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[black][red]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[yellow][red]
+        colors.SYMBOL_AT_COLOR = color_pair[white][red]
+        colors.COMMON_TEXT_COLOR = color_pair[black][red]
+        colors.LINK_COLOR = color_pair[yellow][red]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[yellow][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[yellow][yellow]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][yellow]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[black][yellow]
+
+
+class MainframeColorTheme(ColorTheme):
+    def viewer(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[green][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[green][black]
+        colors.HEADER_LINE_COLOR = color_pair[green][black]
+        colors.HEADER_COLOR = color_pair[green][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][green]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][green]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][green]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[green][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[green][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][green]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][green]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[green][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
+        colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
+        colors.COMMON_TEXT_COLOR = color_pair[green][black]
+        colors.LINK_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[green][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][black]
+
+    def standard(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[black][black]
+        colors.HEADER_LINE_COLOR = color_pair[black][black]
+        colors.HEADER_COLOR = color_pair[green][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][green]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][green]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][green]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[green][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[green][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][green]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][green]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[green][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
+        colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
+        colors.COMMON_TEXT_COLOR = color_pair[green][black]
+        colors.LINK_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[green][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][black]
+
+    def black(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[green][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[green][black]
+        colors.HEADER_LINE_COLOR = color_pair[green][black]
+        colors.HEADER_COLOR = color_pair[green][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][green]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][green]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][green]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[green][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[white][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][green]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][green]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[green][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
+        colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
+        colors.COMMON_TEXT_COLOR = color_pair[green][black]
+        colors.LINK_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[green][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][black]
+
+    def red(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[red][black]
+        colors.HEADER_LINE_COLOR = color_pair[red][black]
+        colors.HEADER_COLOR = color_pair[red][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][red]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][red]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][red]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[red][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[green][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][red]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][red]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[red][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[green][black]
+        colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
+        colors.COMMON_TEXT_COLOR = color_pair[red][black]
+        colors.LINK_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[green][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[green][black]
+
+
+class AuroraColorTheme(ColorTheme):
+    def viewer(self):
+        self.standard()
+
+    def standard(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][blue]
+        colors.BOX_BACKGROUND_COLOR = color_pair[yellow][blue]
+        colors.HEADER_LINE_COLOR = color_pair[yellow][blue]
+        colors.HEADER_COLOR = color_pair[white][blue]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[white][yellow]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[blue][yellow]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[blue][yellow]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[yellow][blue]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[white][blue]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[blue][yellow]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[blue][yellow]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[yellow][blue]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[cyan][blue]
+        colors.SYMBOL_AT_COLOR = color_pair[green][blue]
+        colors.COMMON_TEXT_COLOR = color_pair[yellow][blue]
+        colors.LINK_COLOR = color_pair[cyan][blue]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][blue]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][blue]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][blue]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][blue]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[blue][blue]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][blue]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][blue]
+
+    def black(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[cyan][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[cyan][black]
+        colors.HEADER_LINE_COLOR = color_pair[cyan][black]
+        colors.HEADER_COLOR = color_pair[cyan][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][cyan]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][cyan]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][cyan]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[cyan][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[white][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][cyan]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][cyan]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[cyan][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[blue][black]
+        colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
+        colors.COMMON_TEXT_COLOR = color_pair[cyan][black]
+        colors.LINK_COLOR = color_pair[blue][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[cyan][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[blue][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[blue][black]
+
+    def red(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[red][blue]
+        colors.BOX_BACKGROUND_COLOR = color_pair[red][blue]
+        colors.HEADER_LINE_COLOR = color_pair[red][blue]
+        colors.HEADER_COLOR = color_pair[red][blue]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[blue][red]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[blue][red]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[blue][red]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[red][blue]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[white][blue]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[blue][red]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[blue][red]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[red][blue]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[cyan][blue]
+        colors.SYMBOL_AT_COLOR = color_pair[yellow][blue]
+        colors.COMMON_TEXT_COLOR = color_pair[red][blue]
+        colors.LINK_COLOR = color_pair[cyan][blue]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][blue]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][blue]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[red][blue]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][blue]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[blue][blue]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][blue]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][blue]
+
+
+class NeonNoirColorTheme(ColorTheme):
+    def viewer(self):
+        self.standard()
+
+    def standard(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[black][black]
+        colors.HEADER_LINE_COLOR = color_pair[magenta][black]
+        colors.HEADER_COLOR = color_pair[white][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][magenta]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][magenta]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][magenta]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[magenta][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[cyan][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][magenta]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[cyan][black]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[magenta][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
+        colors.SYMBOL_AT_COLOR = color_pair[white][black]
+        colors.COMMON_TEXT_COLOR = color_pair[magenta][black]
+        colors.LINK_COLOR = color_pair[green][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[magenta][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[magenta][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[magenta][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][black]
+
+    def black(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.HEADER_LINE_COLOR = color_pair[yellow][black]
+        colors.HEADER_COLOR = color_pair[yellow][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][yellow]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][yellow]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][yellow]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[yellow][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[magenta][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][yellow]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][yellow]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[yellow][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[magenta][black]
+        colors.SYMBOL_AT_COLOR = color_pair[white][black]
+        colors.COMMON_TEXT_COLOR = color_pair[yellow][black]
+        colors.LINK_COLOR = color_pair[magenta][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[magenta][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[magenta][black]
+
+    def red(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[red][black]
+        colors.HEADER_LINE_COLOR = color_pair[red][black]
+        colors.HEADER_COLOR = color_pair[red][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][red]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][red]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][red]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[red][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[magenta][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][red]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][red]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[red][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[magenta][black]
+        colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
+        colors.COMMON_TEXT_COLOR = color_pair[red][black]
+        colors.LINK_COLOR = color_pair[magenta][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[magenta][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[magenta][black]
+
+
+class MonoColorTheme(ColorTheme):
+    def viewer(self):
+        self.standard()
+
+    def standard(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[white][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[white][black]
+        colors.HEADER_LINE_COLOR = color_pair[white][black]
+        colors.HEADER_COLOR = color_pair[white][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][white]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][white]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][white]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[white][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[white][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][white]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][white]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[white][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[white][black]
+        colors.SYMBOL_AT_COLOR = color_pair[white][black]
+        colors.COMMON_TEXT_COLOR = color_pair[white][black]
+        colors.LINK_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[white][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+
+    def black(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.HEADER_LINE_COLOR = color_pair[yellow][black]
+        colors.HEADER_COLOR = color_pair[yellow][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][yellow]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][yellow]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][yellow]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[yellow][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[yellow][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][yellow]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][yellow]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[yellow][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[yellow][black]
+        colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
+        colors.COMMON_TEXT_COLOR = color_pair[yellow][black]
+        colors.LINK_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[yellow][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[yellow][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[yellow][black]
+
+    def red(self):
+        colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
+        colors.BOX_BACKGROUND_COLOR = color_pair[red][black]
+        colors.HEADER_LINE_COLOR = color_pair[red][black]
+        colors.HEADER_COLOR = color_pair[red][black]
+
+        colors.FIRST_OPTION_KEY_SELECTED_COLOR = color_pair[black][red]
+        colors.SELECTED_OPTION_INFO_COLOR = color_pair[black][red]
+        colors.SELECTED_OPTION_TEXT_COLOR = color_pair[black][red]
+
+        colors.OPTION_UNSELECTED_COLOR = color_pair[red][black]
+        colors.FIRST_OPTION_KEY_UNSELECTED_COLOR = color_pair[red][black]
+
+        colors.SELECTED_ACTION_INTERIOR_COLOR = color_pair[black][red]
+        colors.SELECTED_ACTION_BORDER_COLOR = color_pair[black][red]
+
+        colors.UNSELECTED_ACTION_COLOR = color_pair[red][black]
+
+        colors.SYMBOL_TILDE_COLOR = color_pair[red][black]
+        colors.SYMBOL_AT_COLOR = color_pair[red][black]
+        colors.COMMON_TEXT_COLOR = color_pair[red][black]
+        colors.LINK_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_HEADER_COLOR = color_pair[red][black]
+        colors.DEVICE_LOGIN_LINK_COLOR = color_pair[red][black]
+        colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[red][black]

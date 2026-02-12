@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ from enum import unique, Enum
 from typing import Final
 
 # From patreon.com/theypsilon
-supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', "DefKonZer0", 'Thomas Williams')
+supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', 'DefKonZer0', 'Thomas Williams')
 
 # Default options (not in other options)
 DEFAULT_CURL_SSL_OPTIONS: Final[str] = ''
@@ -31,7 +31,8 @@ DEFAULT_TRANSITION_SERVICE_ONLY: Final[str] = 'false'
 DEFAULT_SKIP_DOWNLOADER: Final[str] = 'false'
 
 MISTER_ENVIRONMENT: Final[str] = 'mister'
-STANDARD_UI_THEME: Final[str] = 'Blue Installer'
+DEFAULT_SETTINGS_SCREEN_THEME: Final[str] = 'Blue Installer'
+DEFAULT_LOG_VIEWER_THEME: Final[str] = 'Mono'
 
 # RetroAccount
 FILE_retroaccount_feature_flag: Final[str] = 'Scripts/update_all.retroaccount.feature-flag'
@@ -41,9 +42,10 @@ KENV_RETROACCOUNT_FEATURE_FLAG: Final[str] = 'RETROACCOUNT_FEATURE_FLAG'
 KENV_RETROACCOUNT_DOMAIN: Final[str] = 'RETROACCOUNT_DOMAIN'
 K_RETROACCOUNT_DOMAIN: Final[str] = 'retroaccount_domain'
 DOMAIN_default_retroaccount: Final[str] = "https://retroaccount.com"
-API_retroaccount_access_mister: Final[str] = '/api/auth/mister'
+API_retroaccount_mister_sync: Final[str] = '/api/mister/sync'
 API_retroaccount_token_poll: Final[str] = '/api/auth/token'
-API_retroaccount_create_login_code: Final[str] = '/api/auth/device/code'
+API_retroaccount_device_login_code: Final[str] = '/api/auth/device/code'
+API_retroaccount_device_logout: Final[str] = '/api/auth/device/logout'
 
 # Downloader files
 FILE_update_all_pyz: Final[str] = 'Scripts/.config/update_all/update_all.pyz'
@@ -76,6 +78,7 @@ FILE_downloader_launcher_downloader_script: Final[str] = 'Scripts/downloader.sh'
 FILE_downloader_needs_reboot_after_linux_update: Final[str] = '/tmp/downloader_needs_reboot_after_linux_update'
 FILE_mister_downloader_needs_reboot: Final[str] = '/tmp/MiSTer_downloader_needs_reboot'
 
+BACKGROUND_JOBS_TIMEOUT: Final[int] = 60
 MEDIA_FAT: Final[str] = '/media/fat'
 
 # Dictionary Keys:
@@ -148,7 +151,7 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION: Final[str] = "2.4.1"
+UPDATE_ALL_VERSION: Final[str] = "2.5"
 MISTER_DOWNLOADER_VERSION: Final[str] = "2.3"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"

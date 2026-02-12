@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -25,13 +25,12 @@ except ImportError:
     pass
 import os
 from abc import ABC
-from typing import Optional, Tuple
+from typing import Optional
 
-from update_all.analogue_pocket.http_gateway import fetch
 from update_all.config import Config
+from update_all.fetcher import Fetcher
 from update_all.other import GenericProvider
 from update_all.logger import Logger
-import ssl
 
 
 class OsUtils(ABC):
@@ -58,9 +57,10 @@ class OsUtils(ABC):
 
 
 class LinuxOsUtils(OsUtils):
-    def __init__(self, config_provider: GenericProvider[Config], logger: Logger):
+    def __init__(self, config_provider: GenericProvider[Config], logger: Logger, fetcher: Fetcher):
         self._config_provider = config_provider
         self._logger = logger
+        self._fetcher = fetcher
 
     def sync(self) -> None:
         subprocess.run(['sync'], shell=False, stderr=subprocess.STDOUT)
@@ -124,36 +124,15 @@ class LinuxOsUtils(OsUtils):
         time.sleep(seconds)
 
     def download(self, url) -> Optional[bytes]:
-        ssl_ctx, ssl_err = context_from_curl_ssl(self._config_provider.get().curl_ssl)
-        if ssl_err is not None:
-            self._logger.debug(ssl_err)
-            self._logger.print('WARNING! Ignoring SSL parameters...')
-            return None
-
         try:
-            status, data = fetch(url, ssl_ctx=ssl_ctx, timeout=180, config=self._config_provider.get().http_config)
+            status, data = self._fetcher.fetch(url, timeout=180)
             if status != 200:
                 self._logger.print(f'ERROR! Bad http status!: {status}')
                 return None
 
             return data
         except Exception as e:
+            self._logger.debug('OsUtils: download failed')
             self._logger.debug(e)
             self._logger.print(f"An error occurred, please try again later.")
             return None
-
-
-def context_from_curl_ssl(curl_ssl) -> Tuple[ssl.SSLContext, Optional[Exception]]:
-    try:
-        context = ssl.create_default_context()
-
-        if curl_ssl.startswith('--cacert '):
-            cacert_file = curl_ssl[len('--cacert '):]
-            context.load_verify_locations(cacert_file)
-        elif curl_ssl == '--insecure':
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
-
-        return context, None
-    except Exception as e:
-        return ssl.create_default_context(), e

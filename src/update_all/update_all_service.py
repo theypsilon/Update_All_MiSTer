@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,12 +38,12 @@ from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_m
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, FILE_update_all_pyz, \
     EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update, \
     FILE_downloader_run_signal, FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script, \
-    COMMAND_TIMELINE, COMMAND_LATEST_LOG, FILE_timeline_short
+    COMMAND_TIMELINE, COMMAND_LATEST_LOG, FILE_timeline_short, BACKGROUND_JOBS_TIMEOUT
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer, create_log_document
-from update_all.other import GenericProvider
+from update_all.other import GenericProvider, terminal_size
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils, LinuxOsUtils
 from update_all.settings_screen import SettingsScreen
@@ -56,7 +56,9 @@ from update_all.file_system import FileSystemFactory, FileSystem
 from update_all.config_reader import ConfigReader
 from update_all.timeline import Timeline
 from update_all.transition_service import TransitionService
+from update_all.fetcher import Fetcher
 from update_all.retroaccount import RetroAccountService
+from update_all.retroaccount_gateway import RetroAccountGateway
 
 
 @enum.unique
@@ -75,7 +77,8 @@ class UpdateAllServiceFactory:
         config_provider = GenericProvider[Config]()
         store_provider = GenericProvider[LocalStore]()
         file_system = FileSystemFactory(config_provider, {}, self._logger).create_for_system_scope()
-        os_utils = LinuxOsUtils(config_provider=config_provider, logger=self._logger)
+        fetcher = Fetcher(config_provider, logger=None)
+        os_utils = LinuxOsUtils(config_provider=config_provider, logger=self._logger, fetcher=fetcher)
         ini_repository = IniRepository(self._logger, file_system=file_system, os_utils=os_utils)
         config_reader = ConfigReader(self._logger, env, ini_repository=ini_repository)
         store_migrator = StoreMigrator(migrations(), self._logger)
@@ -83,8 +86,10 @@ class UpdateAllServiceFactory:
         self._local_repository_provider.initialize(local_repository)
         transition_service = TransitionService(logger=self._logger, file_system=file_system, os_utils=os_utils, ini_repository=ini_repository)
         printer = SettingsScreenStandardCursesPrinter()
-        ao_service = ArcadeOrganizerService(self._logger)
+        ao_service = ArcadeOrganizerService(self._logger, fetcher)
         encryption = Encryption(self._logger, config_provider, file_system)
+        retroaccount_gateway = RetroAccountGateway(config_provider, self._logger, file_system, fetcher)
+        retroaccount = RetroAccountService(self._logger, file_system, config_provider, retroaccount_gateway, encryption)
         settings_screen = SettingsScreen(
             logger=self._logger,
             config_provider=config_provider,
@@ -96,7 +101,8 @@ class UpdateAllServiceFactory:
             store_provider=store_provider,
             ui_runtime=printer,
             ao_service=ao_service,
-            encryption=encryption
+            encryption=encryption,
+            retroaccount=retroaccount
         )
         environment_setup = EnvironmentSetupImpl(
             logger=self._logger,
@@ -108,7 +114,6 @@ class UpdateAllServiceFactory:
             file_system=file_system
         )
         timeline = Timeline(self._logger, config_provider, file_system, encryption)
-        retroaccount = RetroAccountService(self._logger, file_system, config_provider)
         return UpdateAllService(
             config_provider,
             self._logger,
@@ -124,7 +129,8 @@ class UpdateAllServiceFactory:
             log_viewer=LogViewer(file_system, store_provider, encryption),
             encryption=encryption,
             timeline=timeline,
-            retroaccount=retroaccount
+            retroaccount=retroaccount,
+            fetcher=fetcher
         )
 
 
@@ -143,7 +149,8 @@ class UpdateAllService:
                  local_repository: LocalRepository,
                  encryption: Encryption,
                  timeline: Timeline,
-                 retroaccount: RetroAccountService):
+                 retroaccount: RetroAccountService,
+                 fetcher: Fetcher):
         self._config_provider = config_provider
         self._logger = logger
         self._file_system = file_system
@@ -159,13 +166,15 @@ class UpdateAllService:
         self._encryption = encryption
         self._timeline = timeline
         self._retroaccount = retroaccount
+        self._fetcher = fetcher
         self._exit_code = 0
         self._end_time = 0.0
         self._error_reports: List[str] = []
         self._temp_launchers: List[str] = []
         self._timeline_after_log_doc: List[str] = []
         self._executor: Optional[ThreadPoolExecutor] = None
-        self._session_validation_future: Optional[Future] = None
+        self._background_job_future: Optional[Future] = None
+        self._update_all_md5: Optional[str] = None
 
     def full_run(self, run_pass: UpdateAllServicePass) -> int:
         if run_pass == UpdateAllServicePass.Continue:
@@ -190,15 +199,13 @@ class UpdateAllService:
             self._countdown_for_settings_screen()
             self._print_sequence()
             self._pre_run_tweaks()
-
-            update_all_mtime = self._get_mtime()
             self._run_downloader()
             self._sync_downloader_launcher()
 
-            if run_pass == UpdateAllServicePass.NewRun and update_all_mtime is not None:
-                new_update_all_mtime = self._get_mtime()
-                if update_all_mtime != new_update_all_mtime:
-                    self._logger.debug(f'Update All has changed: {update_all_mtime} != {new_update_all_mtime}')
+            if run_pass == UpdateAllServicePass.NewRun and self._update_all_md5 is not None:
+                new_update_all_md5 = self._calc_md5()
+                if self._update_all_md5 != new_update_all_md5:
+                    self._logger.debug(f'Update All has changed: {self._update_all_md5} != {new_update_all_md5}')
                     return EXIT_CODE_CAN_CONTINUE
 
         self._run_pocket_tools()
@@ -221,7 +228,7 @@ class UpdateAllService:
             timeline_doc = self._timeline.load_timeline_doc(env_check_skip=True)
 
             total_doc = [*log_doc, *timeline_doc]
-            index = len(total_doc) - len(log_doc)
+            index = len(timeline_doc)
             if index > 2:
                 index -= 2
 
@@ -246,26 +253,43 @@ class UpdateAllService:
 
     def _start_background_jobs(self) -> None:
         self._executor = ThreadPoolExecutor(max_workers=1)
-        self._session_validation_future = self._executor.submit(self._retroaccount.validate_user_session)
+        self._background_job_future = self._executor.submit(self._background_job)
+
+    def _background_job(self) -> None:
+        self._update_all_md5 = self._calc_md5()
+        self._retroaccount.mister_sync()
 
     def _show_intro(self) -> None:
+        columns = terminal_size().columns
+        def _center(text):
+            return text.center(columns)
+
         self._logger.print()
-        self._logger.print(f"                        ------- Update All {UPDATE_ALL_VERSION} --------                        ")
-        self._logger.print(f"                        The All-in-One Updater for MiSTer")
-        self._logger.print("                        ---------------------------------")
-        self._logger.print(f"                          - Powered by Downloader {MISTER_DOWNLOADER_VERSION} -")
+        self._logger.print(_center(f"------- Update All {UPDATE_ALL_VERSION} --------"))
+        self._logger.print(_center("The All-in-One Updater for MiSTer"))
+        self._logger.print(_center("---------------------------------"))
+        self._logger.print(_center(f"- Powered by Downloader {MISTER_DOWNLOADER_VERSION} -"))
         self._logger.print()
         if self._encryption.validate_key() != EncryptionResult.Success:
             self._logger.print()
-            self._logger.print("               ╔═════════════════════════════════════════════════╗              ")
-            self._logger.print("               ║  Become a patron to unlock exclusive features!  ║              ")
-            self._logger.print("               ║           www.patreon.com/theypsilon            ║              ")
-            self._logger.print("               ╚═════════════════════════════════════════════════╝              ")
+            if columns >= 51:
+                self._logger.print(_center("╔═════════════════════════════════════════════════╗"))
+                self._logger.print(_center("║  Become a patron to unlock exclusive features!  ║"))
+                self._logger.print(_center("║           www.patreon.com/theypsilon            ║"))
+                self._logger.print(_center("╚═════════════════════════════════════════════════╝"))
+            else:
+                self._logger.print(_center("Become a patron to unlock"))
+                self._logger.print(_center("exclusive features!"))
+                self._logger.print(_center("www.patreon.com/theypsilon"))
         else:
             self._logger.print()
-            self._logger.print("                    ╔═══════════════════════════════════════╗                   ")
-            self._logger.print("                    ║  Thank you so much for your support!  ║                   ")
-            self._logger.print("                    ╚═══════════════════════════════════════╝                   ")
+            if columns >= 41:
+                self._logger.print(_center("╔═══════════════════════════════════════╗"))
+                self._logger.print(_center("║  Thank you so much for your support!  ║"))
+                self._logger.print(_center("╚═══════════════════════════════════════╝"))
+            else:
+                self._logger.print(_center("Thank you so much"))
+                self._logger.print(_center("for your support!"))
 
         self._logger.print()
         self._logger.print(f'Reading sections from {self._ini_repository.downloader_ini_standard_path()}')
@@ -310,7 +334,7 @@ class UpdateAllService:
             config.update_linux = False
             config.autoreboot = False
 
-    def _get_mtime(self) -> Optional[float]:
+    def _calc_md5(self) -> Optional[float]:
         if not self._file_system.is_file(FILE_update_all_pyz):
             return None
 
@@ -466,7 +490,24 @@ class UpdateAllService:
 
     def _cleanup(self) -> None:
         if self._executor is not None:
-            self._executor.shutdown(wait=True)
+            if self._background_job_future is not None:
+                try:
+                    deadline = time.monotonic() + BACKGROUND_JOBS_TIMEOUT
+                    while not self._background_job_future.done() and time.monotonic() < deadline:
+                        self._logger.print('.', end='', flush=True)
+                        time.sleep(0.25)
+
+                    if not self._background_job_future.done():
+                        self._fetcher.cleanup()
+                        self._background_job_future.result(timeout=5)
+                    self._background_job_future = None
+                    self._logger.print(flush=True)
+
+                except Exception as e:
+                    self._logger.debug('Background job did not finish in time')
+                    self._logger.debug(e)
+
+            self._executor.shutdown(wait=False)
             self._executor = None
 
         for file in self._temp_launchers:
@@ -538,14 +579,14 @@ class UpdateAllService:
                 log_doc = self._log_viewer.load_log_document() if config.log_viewer else []
                 timeline_doc = self._timeline_after_log_doc
                 if len(log_doc) > 0 and len(timeline_doc) > 0:
+                    columns = terminal_size().columns
                     log_doc.append("\n")
-                    log_doc.append("=" * 80 + "\n")
+                    log_doc.append("=" * columns + "\n")
                     log_doc.append("\n")
-                    log_doc.append("               GO DOWN TO CHECK A SUMMARY OF WHAT'S BEEN UPDATED!!              \n")
-                    log_doc.append("\n")
+                    log_doc.append("GO DOWN TO CHECK A SUMMARY OF WHAT'S BEEN UPDATED!!".center(columns) + "\n")
 
                 total_doc = [*log_doc, *timeline_doc]
-                index = len(total_doc) - len(log_doc)
+                index = len(timeline_doc)
                 if index > 5:
                     index -= 5
 
@@ -633,9 +674,10 @@ class UpdateAllService:
         self._logger.print()
 
     def _draw_separator(self) -> None:
+        columns = terminal_size().columns
         self._logger.print()
         self._logger.print()
-        self._logger.print("################################################################################")
-        self._logger.print("#==============================================================================#")
-        self._logger.print("################################################################################")
+        self._logger.print("#" * columns)
+        self._logger.print("#" + "=" * (columns - 2) + "#")
+        self._logger.print("#" * columns)
         self._logger.print()

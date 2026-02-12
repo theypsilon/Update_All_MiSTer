@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -337,7 +337,12 @@ class _Interpolator(Interpolator):
                 return result.format(*reading_arguments)
 
         except Exception as e:
-            raise ValueError(reading_value, reading_modifier, formatter, e)
+            variable_value = self._ui.get_value(reading_value)
+            args = reading_arguments or []
+            raise ValueError(
+                f'Formatter error: variable="{reading_value}" value="{variable_value}" '
+                f'modifier="{reading_modifier}" args="{args}"'
+            ) from e
 
 
 class _EffectResolver:

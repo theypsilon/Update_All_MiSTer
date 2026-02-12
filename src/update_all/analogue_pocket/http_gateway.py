@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2021-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -645,8 +645,17 @@ def write_stream_to_data(in_stream: Any, calc_md5: bool, timeout: int, /) -> Tup
 
 _RETRYABLE_STATUS_CODES = frozenset({408, 429, 500, 502, 503, 504})
 
-
+import json
 def fetch(url: str, method: Optional[str] = None, body: Any = None, headers: Any = None, ssl_ctx: Optional[ssl.SSLContext] = None, timeout: Optional[float] = None, logger: Optional[HttpLogger] = None, config: Optional[HttpConfig] = None, retry: int = 3) -> tuple[int, bytes]:
+    if isinstance(body, dict):
+        if len(body) == 0:
+            body = None
+        else:
+            body = json.dumps(body)
+            if not headers:
+                headers = {}
+            headers['Content-Type'] = 'application/json'
+
     timeout = timeout or 300
     with HttpGateway(
         ssl_ctx=ssl_ctx or ssl.create_default_context(),

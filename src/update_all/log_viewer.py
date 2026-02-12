@@ -1,5 +1,5 @@
 #!/bin/python
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ import os
 from typing import Optional
 
 from update_all.colors_curses import init_colors, make_color_theme, colors
-from update_all.constants import FILE_update_all_log, STANDARD_UI_THEME
+from update_all.constants import FILE_update_all_log, DEFAULT_LOG_VIEWER_THEME
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
@@ -61,7 +61,7 @@ class LogViewer:
             self._encryption.validate_key() == EncryptionResult.Success
             and store.get_use_settings_screen_theme_in_log_viewer()
         )
-        ui_theme = store.get_theme() if can_use_custom_theme else STANDARD_UI_THEME
+        ui_theme = store.get_theme() if can_use_custom_theme else DEFAULT_LOG_VIEWER_THEME
         view_document(doc, popup_dict or {}, initial_index, ui_theme)
         return True
 
@@ -107,6 +107,7 @@ def view_document(document: list[str], popup_dict: dict[int, list[str]], initial
         make_color_theme(theme).viewer()
 
         window = screen.subwin(0, 0)
+        window.bkgd(' ', curses.color_pair(colors.LOG_VIEWER_BACKGROUND_COLOR))
         window.keypad(True)
         curses.cbreak()
         curses.curs_set(0)
@@ -114,13 +115,21 @@ def view_document(document: list[str], popup_dict: dict[int, list[str]], initial
         window.timeout(50)
         window.clear()
 
+        cols = curses.COLS if curses.COLS != 40 else 39
+
+        adjusted = adjust_document(document, cols)
+        if initial_index > 0:
+            adjusted_index = len(adjust_document(document[-initial_index:], cols))
+        else:
+            adjusted_index = 0
+
         ViewerGui(
             window,
-            curses.COLS,
+            cols,
             curses.LINES,
-            adjust_document(document, curses.COLS),
-            initial_index,
-            adjust_popup_dict(popup_dict, curses.COLS)
+            adjusted,
+            adjusted_index,
+            adjust_popup_dict(popup_dict, cols)
         ).loop()
 
     curses.wrapper(loader)
@@ -138,19 +147,41 @@ class ViewerGui:
         self.frame_end = max_lines - hud_size * 2
         self.mindex = len(document) - self.frame_end
 
+        hud_message = '←↑↓→ Navigate · Any key Exit'
+        text_area = max_cols - 7
+        hud_x = 1 + (text_area - len(hud_message)) // 2
+        dot_idx = hud_message.find('·')
+        self._hud_parts = (hud_message[:dot_idx], hud_x, dot_idx, hud_message[dot_idx + 1:]) if dot_idx != -1 else (hud_message, hud_x, -1, '')
+
     def addstr(self, y: int, x: int, text: str, attr: int):
         x, length = clip_range(x, len(text), self.mcols - 1)
-        self.window.addstr(clamp(y, 0, self.mlines - 1), x, text[:length], attr | curses.color_pair(colors.COMMON_TEXT_COLOR))
+        self.window.addstr(clamp(y, 0, self.mlines - 1), x, text[:length], attr | curses.color_pair(colors.LOG_VIEWER_TEXT_COLOR))
+
+    def addstr_symbol(self, y: int, x: int, text: str):
+        x, length = clip_range(x, len(text), self.mcols - 1)
+        self.window.addstr(clamp(y, 0, self.mlines - 1), x, text[:length], curses.color_pair(colors.LOG_VIEWER_SYMBOL_COLOR))
+
+    def addstr_log(self, y: int, x: int, text: str):
+        x, length = clip_range(x, len(text), self.mcols)
+        y = clamp(y, 0, self.mlines - 1)
+        text_attr = curses.color_pair(colors.LOG_VIEWER_TEXT_COLOR)
+        symbol_attr = curses.color_pair(colors.LOG_VIEWER_SYMBOL_COLOR)
+        win = self.window
+        for i, c in enumerate(text[:length]):
+            if ('a' <= c <= 'z') or ('A' <= c <= 'Z') or ('0' <= c <= '9') or c in ",.'!?_&":
+                win.addstr(y, x + i, c, text_attr)
+            else:
+                win.addstr(y, x + i, c, symbol_attr)
 
     def vline(self, y: int, x: int, attr: int, length: int):
         y, length = clip_range(y, length, self.mlines)
-        self.window.vline(y, clamp(x, 0, self.mcols - 1), attr | curses.color_pair(colors.COMMON_TEXT_COLOR), length)
+        self.window.vline(y, clamp(x, 0, self.mcols - 1), attr | curses.color_pair(colors.LOG_VIEWER_TEXT_COLOR), length)
 
     def hline(self, y: int, x: int, attr: int, length: int):
         x, length = clip_range(x, length, self.mcols)
-        self.window.hline(clamp(y, 0, self.mlines - 1), x, attr | curses.color_pair(colors.COMMON_TEXT_COLOR), length)
+        self.window.hline(clamp(y, 0, self.mlines - 1), x, attr | curses.color_pair(colors.LOG_VIEWER_TEXT_COLOR), length)
 
-    def draw_hud(self, hud_message: str, hud_percent: str, top: bool=True) -> None:
+    def draw_hud(self, hud_percent: str, top: bool=True) -> None:
         if top:
             y_text, y_line = 0, 1
             corner_left, corner_right, tee = curses.ACS_LLCORNER, curses.ACS_LRCORNER, curses.ACS_BTEE
@@ -158,7 +189,17 @@ class ViewerGui:
             y_text, y_line = self.mlines - 1, self.mlines - 2
             corner_left, corner_right, tee = curses.ACS_ULCORNER, curses.ACS_URCORNER, curses.ACS_TTEE
 
-        self.addstr(y_text, int(self.mcols / 2 - len(hud_message) / 2), hud_message, curses.A_NORMAL)
+        hud_attr = curses.color_pair(colors.LOG_VIEWER_TEXT_COLOR)
+        self.window.hline(clamp(y_text, 0, self.mlines - 1), 0, ord(' ') | hud_attr, self.mcols)
+        self.window.hline(clamp(y_line, 0, self.mlines - 1), 0, ord(' ') | hud_attr, self.mcols)
+
+        before, hud_x, dot_idx, after = self._hud_parts
+        if dot_idx == -1:
+            self.addstr(y_text, hud_x, before, curses.A_NORMAL)
+        else:
+            self.addstr(y_text, hud_x, before, curses.A_NORMAL)
+            self.addstr_symbol(y_text, hud_x + dot_idx, '·')
+            self.addstr(y_text, hud_x + dot_idx + 1, after, curses.A_NORMAL)
         self.addstr(y_text, self.mcols - 5, '   %', curses.A_NORMAL)
         self.addstr(y_text, self.mcols - len(hud_percent) - 1, hud_percent, curses.A_NORMAL)
 
@@ -175,7 +216,7 @@ class ViewerGui:
         last_index = None
         viewing = True
 
-        self.window.bkgd(' ', curses.color_pair(colors.BOX_BACKGROUND_COLOR))
+        self.window.bkgd(' ', curses.color_pair(colors.LOG_VIEWER_BACKGROUND_COLOR))
 
         while viewing:
             if last_index is None or last_index != index:
@@ -187,12 +228,11 @@ class ViewerGui:
                     page = self.document
 
                 for i, line in enumerate(page):
-                    self.addstr(i + self.frame_start, 0, line, curses.A_NORMAL)
+                    self.addstr_log(i + self.frame_start, 0, line)
 
-                hud_message = 'Press UP/DOWN LEFT/RIGHT to navigate, and any other button to EXIT'
                 hud_percent = f'{100 - (int(index * 100 / self.mindex))}%'
-                self.draw_hud(hud_message, hud_percent, top=True)
-                self.draw_hud(hud_message, hud_percent, top=False)
+                self.draw_hud(hud_percent, top=True)
+                self.draw_hud(hud_percent, top=False)
 
             key = self.window.getch()
             if key == curses.KEY_UP:

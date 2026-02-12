@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@ import os
 import sys
 from functools import cached_property
 from typing import Generic, TypeVar
+import shutil
+import types
 
 if 'unittest' in sys.modules.keys():
     import inspect
@@ -39,7 +41,7 @@ def strtobool(val: str):
     val = val.lower()
     if val in ('y', 'yes', 't', 'true', 'on', '1'):
         return 1
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+    elif val in ('n', 'no', 'f', 'false', 'off', '0', ''):
         return 0
     else:
         raise ValueError("invalid truth value %r" % (val,))
@@ -93,3 +95,14 @@ class GenericProvider(Generic[TObject]):
         if self._object is None:
             raise Exception(f"{self.__orig_class__.__args__[0].__name__} must be initialized before calling this method.")
         return self._object
+
+
+
+_terminal_size = None
+def terminal_size():
+    global _terminal_size
+    if _terminal_size is None:
+        size = shutil.get_terminal_size()
+        columns = size.columns if size.columns != 40 else 39
+        _terminal_size = types.SimpleNamespace(columns=columns, lines=size.lines)
+    return _terminal_size

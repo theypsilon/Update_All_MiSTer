@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,10 +53,9 @@ class CountdownImpl(Countdown):
         child_process = Process(target=read_characters, args=(char, ends, os_specifics.context()), daemon=True)
 
         self._logger.print()
-        self._logger.print(f" {bold('*')}Press <{bold('UP')}>, To enter the SETTINGS screen.")
+        self._logger.print(f" {bold('*')}Press <{bold('UP')}>, To enter the SETTINGS.")
         self._logger.print(f" {bold('*')}Press <{bold('DOWN')}>, To continue now.")
         self._logger.print()
-
         result = CountdownOutcome.CONTINUE
 
         try:
@@ -69,11 +68,8 @@ class CountdownImpl(Countdown):
             while now < end:
                 seconds = math.floor(end - now) + 1
                 if seconds != latest_seconds:
-                    seconds_str = f'{seconds} seconds' if seconds >= 10 else f' {seconds} seconds'
-                    print(f'                                        \rStarting in {seconds_str}.', end='')
-                    for _ in range(count - seconds + 1):
-                        print('.', end='')
-                    sys.stdout.flush()
+                    dots = '.' * (count - seconds + 1)
+                    print(f'\033[2K\rStarting in {seconds} seconds.{dots}', end='', flush=True)
                     latest_seconds = seconds
 
                 char_value = chr(char.value)

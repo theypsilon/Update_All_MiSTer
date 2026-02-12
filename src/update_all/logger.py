@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ import datetime
 import tempfile
 import sys
 import time
+import traceback
 from abc import ABC, abstractmethod
 
 
@@ -61,7 +62,7 @@ class PrintLogger(Logger):
 
     def debug(self, *args, sep='', end='\n', flush=True):
         if self._verbose_mode:
-            self._do_print(*args, sep=sep, end=end, file=sys.stdout, flush=flush)
+            self._do_print(*_transform_debug_args(args), sep=sep, end=end, file=sys.stdout, flush=flush)
 
     def bench(self, label):
         if self._start_time is not None:
@@ -123,8 +124,9 @@ class FileLoggerDecorator(TrivialLoggerDecorator):
         self._do_print_in_file(*args, sep=sep, end=end, flush=flush)
 
     def debug(self, *args, sep='', end='\n', flush=True):
-        self._decorated_logger.debug(*args, sep=sep, end=end, flush=flush)
-        self._do_print_in_file(*args, sep=sep, end=end, flush=flush)
+        transformed = _transform_debug_args(args)
+        self._decorated_logger.debug(*transformed, sep=sep, end=end, flush=flush)
+        self._do_print_in_file(*transformed, sep=sep, end=end, flush=flush)
 
     def _do_print_in_file(self, *args, sep, end, flush):
         if self._logfile is not None:
@@ -138,6 +140,46 @@ class DebugOnlyLoggerDecorator(TrivialLoggerDecorator):
     def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
         """Calls debug instead of print"""
         self._decorated_logger.debug(*args, sep=sep, end=end, flush=flush)
+
+
+def _transform_debug_args(args):
+    exception_msgs = []
+    rest_args = []
+    interp_count = 0
+    interp_main = ''
+    interp_subs = []
+    for a in args:
+        if isinstance(a, Exception):
+            exception_msgs.append(_format_ex(a))
+            continue
+
+        if interp_count > 1:
+            interp_subs.append(str(a))
+            interp_count -= 1
+        elif interp_count == 1:
+            try:
+                rest_args.append(interp_main % (*interp_subs, str(a)))
+            except Exception as e:
+                exception_msgs.append(_format_ex(e))
+                rest_args.extend([interp_main, *interp_subs, str(a)])
+            interp_subs = []
+            interp_count = 0
+            interp_main = ''
+        elif isinstance(a, str) and (interp_count := a.count('%s')) > 0:
+            interp_main = a
+        else:
+            rest_args.append(str(a))
+    return [*rest_args, *exception_msgs]
+
+
+def _format_ex(e: BaseException) -> str:
+    exception_msg = ''.join(traceback.TracebackException.from_exception(e).format())
+    padding = ' ' * 4
+    while e.__cause__ is not None:
+        e = e.__cause__
+        exception_msg += padding + 'CAUSE: ' + padding.join(traceback.TracebackException.from_exception(e).format())
+        padding += ' ' * 4
+    return exception_msg
 
 
 class CollectorLoggerDecorator(TrivialLoggerDecorator):

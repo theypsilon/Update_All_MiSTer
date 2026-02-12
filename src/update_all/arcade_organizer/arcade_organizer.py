@@ -29,10 +29,9 @@ import xml.etree.cElementTree as ET
 from enum import IntEnum, unique
 from typing import List, Dict, Any, Tuple
 
-from update_all.analogue_pocket.http_gateway import fetch, http_config as make_http_config
 from update_all.constants import FILE_arcade_database_mad_db_json_zip
+from update_all.fetcher import Fetcher
 from update_all.logger import Logger
-from update_all.os_utils import context_from_curl_ssl
 from update_all.other import strtobool
 
 
@@ -113,8 +112,9 @@ def to_ini(value):
 
 
 class ArcadeOrganizerService:
-    def __init__(self, printer: 'Logger'):
+    def __init__(self, printer: 'Logger', fetcher: Fetcher):
         self._printer = printer
+        self._fetcher = fetcher
 
     def make_arcade_organizer_config(self, ini_file_str: str, base_path: str, http_proxy: str = ''):
         ini_file_path = Path(ini_file_str)
@@ -268,7 +268,7 @@ class ArcadeOrganizerService:
 
     def run_arcade_organizer_organize_all_mras(self, config: Dict[str, Any]) -> bool:
         try:
-            infra = Infrastructure(config, self._printer)
+            infra = Infrastructure(config, self._printer, self._fetcher)
             mra_finder = MraFinder(config, infra)
             ao = ArcadeOrganizer(config, infra, mra_finder, self._printer)
             ao.organize_all_mras()
@@ -280,7 +280,7 @@ class ArcadeOrganizerService:
 
 
     def run_arcade_organizer_print_orgdir_folders(self, config: Dict[str, Any]) -> Tuple[List[str], bool]:
-        infra = Infrastructure(config, self._printer)
+        infra = Infrastructure(config, self._printer, self._fetcher)
         mra_finder = MraFinder(config, infra)
         ao = ArcadeOrganizer(config, infra, mra_finder, self._printer)
 
@@ -289,7 +289,7 @@ class ArcadeOrganizerService:
 
 
     def run_arcade_organizer_print_ini_options(self, config: Dict[str, Any]) -> bool:
-        infra = Infrastructure(config, self._printer)
+        infra = Infrastructure(config, self._printer, self._fetcher)
         mra_finder = MraFinder(config, infra)
         ao = ArcadeOrganizer(config, infra, mra_finder, self._printer)
 
@@ -350,9 +350,10 @@ class MraFinder:
 
 
 class Infrastructure:
-    def __init__(self, config, printer):
+    def __init__(self, config, printer, fetcher: Fetcher):
         self._config = config
         self._printer = printer
+        self._fetcher = fetcher
         self._init_private_variables()
         self._os_errors = []
 
@@ -412,22 +413,13 @@ class Infrastructure:
                 return self._tmp_data_zip_path
 
         self._printer.print("Downloading Mister Arcade Descriptions database")
-        # @TODO: Uncomment this in the next version, and add the deprecation to the changelog
-        # self._printer.print("WARNING: Setting up MAD_DB as an url is deprecated!")
-        # self._printer.print("WARNING: Please wrap your custom MAD_DB in a Downloader database instead.")
-        # self._printer.print("WARNING: You may create your own DB easily with github.com/theypsilon/DB-Template_MiSTer")
 
-        ssl_option = self._config.get('SSL_SECURITY_OPTION', '--insecure')
-        ssl_ctx, ssl_err = context_from_curl_ssl(ssl_option)
-        if ssl_err is not None:
-            self._printer.print("SSL context warning: %s" % ssl_err)
-
-        gw_config = None
-        if 'http_proxy' in self._config:
-            gw_config = make_http_config(http_proxy=self._config['http_proxy'], https_proxy=None)
+        self._printer.print("WARNING: Setting up MAD_DB as an url is deprecated!")
+        self._printer.print("WARNING: Please wrap your custom MAD_DB in a Downloader database instead.")
+        self._printer.print("WARNING: You may create your own DB easily with github.com/theypsilon/DB-Template_MiSTer")
 
         try:
-            status, zip_data = fetch(self._config['MAD_DB'], ssl_ctx=ssl_ctx, timeout=30, config=gw_config)
+            status, zip_data = self._fetcher.fetch(self._config['MAD_DB'], timeout=30)
         except Exception as e:
             self._printer.print("Couldn't download %s : %s" % (self._config['MAD_DB'], e))
             self._printer.print()
@@ -439,7 +431,7 @@ class Infrastructure:
             return None
 
         try:
-            md5_status, md5_data = fetch(self._config['MAD_DB'] + '.md5', ssl_ctx=ssl_ctx, timeout=30, config=gw_config)
+            md5_status, md5_data = self._fetcher.fetch(self._config['MAD_DB'] + '.md5', timeout=30)
         except Exception as e:
             self._printer.print("Couldn't download %s.md5 : %s" % (self._config['MAD_DB'], e))
             self._printer.print()

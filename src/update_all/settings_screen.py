@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,9 +23,8 @@ from update_all.analogue_pocket.pocket_backup import pocket_backup
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
-    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, STANDARD_UI_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme, \
-    FILE_retroaccount_user_json
-from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, AllDBs, all_dbs, ALL_DB_IDS
+    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
+from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, ALL_DB_IDS
 from update_all.downloader_utils import prepare_latest_downloader
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.ini_repository import IniRepository
@@ -35,6 +34,7 @@ from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
 from update_all.logger import Logger, CollectorLoggerDecorator
 from update_all.os_utils import OsUtils
+from update_all.retroaccount import RetroAccountService
 from update_all.settings_screen_model import settings_screen_model
 from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
@@ -46,7 +46,8 @@ class SettingsScreen(UiApplication):
     def __init__(self, logger: Logger, config_provider: GenericProvider[Config], file_system: FileSystem,
                  ini_repository: IniRepository, os_utils: OsUtils, settings_screen_printer: SettingsScreenPrinter,
                  local_repository: LocalRepository, store_provider: GenericProvider[LocalStore],
-                 ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService, encryption: Encryption):
+                 ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService, encryption: Encryption,
+                 retroaccount: RetroAccountService):
         self._logger = logger
         self._config_provider = config_provider
         self._file_system = file_system
@@ -58,13 +59,14 @@ class SettingsScreen(UiApplication):
         self._ui_runtime = ui_runtime
         self._ao_service = ao_service
         self._encryption = encryption
+        self._retroaccount = retroaccount
         self._original_firmware = None
         self._theme_manager = None
 
     def load_main_menu(self) -> None:
-        if not self._config_provider.get().retroaccount_feature_flag:
+        if not self._retroaccount.is_feature_enabled():
             menu = 'main_menu'
-        elif self._file_system.is_file(FILE_retroaccount_user_json):
+        elif self._retroaccount.get_login_state():
             menu = 'main_menu_retroaccount_account'
         else:
             menu = 'main_menu_retroaccount_login'
@@ -75,7 +77,10 @@ class SettingsScreen(UiApplication):
 
     def _load_menu_entry(self, menu_entry) -> None:
         def loader():
-            execute_ui_engine(menu_entry, settings_screen_model(), self, self._ui_runtime)
+            model = settings_screen_model()
+            #if terminal_size().columns <= 40:
+            #    model = apply_narrow_screen_transform(model)
+            execute_ui_engine(menu_entry, model, self, self._ui_runtime)
 
         self._ui_runtime.initialize_runtime(loader)
 
@@ -115,6 +120,7 @@ class SettingsScreen(UiApplication):
         ui.set_value('autoreboot', str(local_store.get_autoreboot()).lower())
         ui.set_value('pocket_firmware_update', str(local_store.get_pocket_firmware_update()).lower())
         ui.set_value('pocket_backup', str(local_store.get_pocket_backup()).lower())
+        ui.set_value('retroaccount_domain', config.retroaccount_domain)
 
         if ALL_DB_IDS['JTCORES'] not in config.databases:
             ui.set_value('download_beta_cores', str(local_store.get_download_beta_cores()).lower())
@@ -124,8 +130,8 @@ class SettingsScreen(UiApplication):
             ui.set_value('names_char_code', local_store.get_names_char_code())
             ui.set_value('names_sort_code', local_store.get_names_sort_code())
 
-        drawer_factory, theme_manager = self._settings_screen_printer.initialize_screen()
-        ui_theme = local_store.get_theme() if self._encryption.validate_key() == EncryptionResult.Success else STANDARD_UI_THEME
+        drawer_factory, theme_manager, device_login_renderer = self._settings_screen_printer.initialize_screen()
+        ui_theme = local_store.get_theme() if self._encryption.validate_key() == EncryptionResult.Success else DEFAULT_SETTINGS_SCREEN_THEME
         theme_manager.set_theme(ui_theme)
 
         pocket_firmware = self._local_repository.pocket_firmware_info()
@@ -149,11 +155,16 @@ class SettingsScreen(UiApplication):
             'apply_theme': lambda effect: self.apply_theme(ui),
             'pocket_firmware_update': lambda effect: self.pocket_firmware_update(ui),
             'pocket_backup': lambda effect: self.pocket_backup(ui),
-            'login_retroaccount': lambda effect: self.login_retroaccount(ui),
+            'retroaccount_device_logout': lambda effect: self.retroaccount_device_logout(ui),
         })
 
         self._theme_manager = theme_manager
-        return DialogSectionFactory(drawer_factory)
+
+        def device_login_factory(interpolator, data):
+            drawer = drawer_factory.create_ui_dialog_drawer(interpolator)
+            return self._retroaccount.create_device_login_ui(drawer, device_login_renderer, data)
+
+        return DialogSectionFactory(drawer_factory, device_login_factory)
 
     def calculate_file_exists(self, ui, effect) -> None:
         ui.set_value('file_exists', 'true' if self._file_system.is_file(effect['target']) else 'false')
@@ -438,5 +449,5 @@ class SettingsScreen(UiApplication):
 
         self._ui_runtime.resume()
 
-    def login_retroaccount(self, ui: UiContext) -> None:
-        pass
+    def retroaccount_device_logout(self, _ui: UiContext) -> None:
+        self._retroaccount.device_logout()

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+
+from unittest.mock import MagicMock
 
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from test.logger_tester import NoLogger
@@ -59,7 +61,7 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         self._create_cores_directory()
 
         # Initialize arcade organizer service
-        self.ao_service = ArcadeOrganizerService(NoLogger())
+        self.ao_service = ArcadeOrganizerService(NoLogger(), MagicMock())
 
     def tearDown(self):
         """Clean up temp directory after test."""

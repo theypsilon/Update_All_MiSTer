@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 José Manuel Barroso Galindo <theypsilon@gmail.com>
+# Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ from update_all.store_migrator import StoreMigrator, make_new_local_store
 from update_all.timeline import Timeline
 from update_all.transition_service import TransitionService
 from update_all.retroaccount import RetroAccountService
+from update_all.retroaccount_gateway import RetroAccountGateway
 from update_all.ui_engine import UiContext, UiRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllService
@@ -121,8 +122,8 @@ class SettingsScreenPrinterStub(SettingsScreenPrinter):
         self._factory = factory or MagicMock()
         self._theme_manager = theme_manager or MagicMock()
 
-    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, ColorThemeManager]:
-        return self._factory, self._theme_manager
+    def initialize_screen(self):
+        return self._factory, self._theme_manager, None
 
 
 class UiRuntimeStub(UiRuntime):
@@ -151,7 +152,8 @@ class SettingsScreenTester(SettingsScreen):
                  encryption: Encryption = None,
                  local_repository: LocalRepository = None,
                  store_provider: GenericProvider[LocalStore] = None,
-                 ao_service: ArcadeOrganizerService = None):
+                 ao_service: ArcadeOrganizerService = None,
+                 retroaccount: RetroAccountService = None):
 
         config_provider = config_provider or GenericProvider[Config]()
         file_system = file_system or FileSystemFactory(config_provider=config_provider).create_for_system_scope()
@@ -166,7 +168,8 @@ class SettingsScreenTester(SettingsScreen):
             encryption=encryption or EncryptionTester(file_system=file_system),
             local_repository=local_repository or LocalRepositoryTester(file_system=file_system),
             store_provider=store_provider or GenericProvider[LocalStore](),
-            ao_service=ao_service or ArcadeOrganizerServiceStub()
+            ao_service=ao_service or ArcadeOrganizerServiceStub(),
+            retroaccount=retroaccount or RetroAccountServiceTester(file_system=file_system, config_provider=config_provider),
         )
 
 
@@ -279,12 +282,13 @@ class UpdateAllServiceTester(UpdateAllService):
             local_repository=local_repository or LocalRepositoryTester(file_system=file_system),
             log_viewer=LogViewerTester(file_system, store_provider, encryption),
             timeline=TimelineTester(file_system),
-            retroaccount=RetroAccountServiceTester()
+            retroaccount=RetroAccountServiceTester(),
+            fetcher=MagicMock()
         )
 
 class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
     def __init__(self):
-        super().__init__(NoLogger())
+        super().__init__(NoLogger(), MagicMock())
 
     def make_arcade_organizer_config(self, ini_file_str: str, base_path: str, http_proxy: str = '') -> Dict[str, Any]:
         return {}
@@ -300,12 +304,16 @@ class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
 
 
 class RetroAccountServiceTester(RetroAccountService):
-    def __init__(self, file_system: FileSystem = None, config_provider: GenericProvider[Config] = None):
+    def __init__(self, file_system: FileSystem = None, config_provider: GenericProvider[Config] = None, retroaccount_gateway: RetroAccountGateway = None, encryption: Encryption = None):
+        config_provider = config_provider or GenericProvider[Config]()
+        file_system = file_system or FileSystemFactory().create_for_system_scope()
         super().__init__(
             NoLogger(),
-            file_system or FileSystemFactory().create_for_system_scope(),
-            config_provider or GenericProvider[Config]()
+            file_system,
+            config_provider,
+            retroaccount_gateway or RetroAccountGateway(config_provider, NoLogger(), file_system, MagicMock()),
+            encryption or EncryptionTester()
         )
 
-    def validate_user_session(self) -> None:
+    def mister_sync(self) -> None:
         pass
