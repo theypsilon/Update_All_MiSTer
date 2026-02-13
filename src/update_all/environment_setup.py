@@ -80,6 +80,6 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         if local_store.needs_save():
             self._local_repository.save_store(local_store)
 
-        self._config_reader.read_retroaccount_feature_flag_file(config, self._file_system)
+        self._config_reader.read_retroaccount_cfg(config, self._file_system)
         self._config_reader.debug_log(config, local_store)
         return EnvironmentSetupResult(requires_early_exit=config.transition_service_only)

@@ -64,12 +64,10 @@ class SettingsScreen(UiApplication):
         self._theme_manager = None
 
     def load_main_menu(self) -> None:
-        if not self._retroaccount.is_feature_enabled():
-            menu = 'main_menu'
-        elif self._retroaccount.get_login_state():
-            menu = 'main_menu_retroaccount_account'
+        if self._retroaccount.get_login_state():
+            menu = 'main_menu_account'
         else:
-            menu = 'main_menu_retroaccount_login'
+            menu = 'main_menu_login'
         self._load_menu_entry(menu)
 
     def load_test_menu(self) -> None:
@@ -398,7 +396,8 @@ class SettingsScreen(UiApplication):
         ui.set_value('arcade_organizer_folders_list', '')
 
     def apply_theme(self, ui: UiContext):
-        self._theme_manager.set_theme(ui.get_value('ui_theme'))
+        ui_theme = ui.get_value('ui_theme') if self._encryption.validate_key() == EncryptionResult.Success else DEFAULT_SETTINGS_SCREEN_THEME
+        self._theme_manager.set_theme(ui_theme)
 
     def prepare_exit_dont_save_and_run(self, ui):
         self._copy_ui_options_to_current_config(ui)
@@ -451,3 +450,4 @@ class SettingsScreen(UiApplication):
 
     def retroaccount_device_logout(self, _ui: UiContext) -> None:
         self._retroaccount.device_logout()
+        self._encryption.clear_cache()

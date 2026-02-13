@@ -4,23 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
-## Version 2.5 - 2026-02-XX
+## Version 2.5 - 2026-02-13
 
 ### Added
 - Responsive terminal layouts. UI elements now adapt to the terminal width, with simplified layouts on narrow screens (40 columns and below).
 - Mirror configuration system for alternative download sources with extra NTP server support.
 - Scrollable long messages in the Settings Screen. Text that exceeds the screen height can now be navigated with UP/DOWN arrows.
 - RetroAccount integration. Link your MiSTer to your [RetroAccount](https://retroaccount.com) for automatic Patreon key management. Features device login with QR code authentication, automatic key sync, and session refresh.
-- Four new color themes: Amber Terminal, Emerald Forest, Arctic, and Neon Noir.
+- Five new color themes: Bloody Amber, Mainframe, Aurora, Neon Noir, and Mono.
 
 ### Changed
 - Improved Log Viewer with themed colors, better symbol rendering, and centered navigation HUD.
-- Cleaner countdown animation with proper line clearing.
-- Better exception logging with full tracebacks and cause chains.
 - Replaced curl subprocess calls with a shared Python HTTP client (`Fetcher`) across all services, providing connection reuse, automatic retries with exponential backoff, and unified timeout management.
 - More reliable self-update detection using MD5 hash comparison instead of mtime.
 - Background tasks (RetroAccount sync, MD5 calculation) now run during countdown for faster startup.
-- Graceful shutdown with configurable timeout for background jobs.
 - Improved word wrapping in the Settings Screen.
 - Reorganized Main Menu: Coin-Op Collection entry now belongs to the Extra Cores menu, but is still enabled by default. Added Login/Account entry due to RetroAccount integration.
 - Reorganized Patrons Menu: theme and log viewer options are now the main entries, with the Unstable Spinner Firmware option moved to the new Advanced Options submenu.

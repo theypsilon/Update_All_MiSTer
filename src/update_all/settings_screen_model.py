@@ -158,9 +158,8 @@ def settings_screen_model(): return {
                 },
             ]
         },
-        "main_menu": _main_menu(retroaccount_logged_in=None),
-        "main_menu_retroaccount_login": _main_menu(retroaccount_logged_in=False),
-        "main_menu_retroaccount_account": _main_menu(retroaccount_logged_in=True),
+        "main_menu_login": _main_menu(retroaccount_logged_in=False),
+        "main_menu_account": _main_menu(retroaccount_logged_in=True),
         "retroaccount_account_menu": {
             "type": "dialog_sub_menu",
             "header": "RetroAccount",
@@ -190,7 +189,8 @@ def settings_screen_model(): return {
                         "actions": [
                             {"title": "Yes", "type": "fixed", "fixed": [
                                 {"type": "retroaccount_device_logout"},
-                                {"type": "navigate", "target": "main_menu_retroaccount_login"},
+                                {"type": "apply_theme"},
+                                {"type": "navigate", "target": "main_menu_login"},
                             ]},
                             {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
                         ],
@@ -844,7 +844,7 @@ def settings_screen_model(): return {
                 }
             ],
             "formatters": {
-                "spinner_option": {"true": "Revert Unstable Spinner Firmware", "false": "Test Unstable Spinner Firmware"},
+                "spinner_option": {"true": "Revert Unstable Spinner Firmware", "false": "Test Experimental Spinner Firmware"},
                 "spinner_desc": {"true": "Restore the original MiSTer binary", "false": "For the Taito EGRET II Mini"}
             },
             "variables": {
@@ -1340,7 +1340,7 @@ def _retroaccount_login_entry(): return {
     "actions": {"ok": [{
         "ui": "device_login",
         "header": "Device Login",
-        "success_effects": [{"type": "apply_theme"}, {"type": "navigate", "target": "main_menu_retroaccount_account"}],
+        "success_effects": [{"type": "apply_theme"}, {"type": "navigate", "target": "main_menu_account"}],
         "failure_effects": [{"type": "navigate", "target": "back"}],
     }]}
 }
@@ -1401,10 +1401,10 @@ def _main_menu(retroaccount_logged_in): return {
             "actions": {"ok": [{"type": "navigate", "target": "analogue_pocket_menu"}]}
         },
         {},  # separator
-        {} if retroaccount_logged_in is None else _retroaccount_account_entry() if retroaccount_logged_in else _retroaccount_login_entry(),
+        _retroaccount_account_entry() if retroaccount_logged_in else _retroaccount_login_entry(),
         {
             "title": "8 Patrons Menu",
-            "description": "Timeline, Themes, etc... [2026.02.XX]",
+            "description": "Timeline, Themes, etc... [2026.02.13]",
             "actions": {"ok": [
                 {"type": "calculate_has_right_available_code"},
                 {

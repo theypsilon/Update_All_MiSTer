@@ -39,7 +39,6 @@ class EnvDict(TypedDict):
     HTTP_PROXY: Optional[str]
     HTTPS_PROXY: Optional[str]
     MIRROR_ID: str
-    RETROACCOUNT_FEATURE_FLAG: str
     RETROACCOUNT_DOMAIN: str
 
 @dataclass
@@ -57,7 +56,6 @@ class Config:
     command: str = COMMAND_STANDARD
     http_proxy: str = ''
     http_config: Optional[HttpConfig] = None
-    retroaccount_feature_flag: bool = False
     retroaccount_domain: str = DOMAIN_default_retroaccount
 
     # General options

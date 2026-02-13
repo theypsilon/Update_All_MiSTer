@@ -35,10 +35,9 @@ DEFAULT_SETTINGS_SCREEN_THEME: Final[str] = 'Blue Installer'
 DEFAULT_LOG_VIEWER_THEME: Final[str] = 'Mono'
 
 # RetroAccount
-FILE_retroaccount_feature_flag: Final[str] = 'Scripts/update_all.retroaccount.feature-flag'
+FILE_retroaccount_cfg: Final[str] = 'Scripts/update_all.retroaccount.cfg'
 FILE_retroaccount_user_json: Final[str] = 'Scripts/.config/retroaccount/user.json'
 FILE_retroaccount_device_id: Final[str] = 'Scripts/.config/retroaccount/device.id'
-KENV_RETROACCOUNT_FEATURE_FLAG: Final[str] = 'RETROACCOUNT_FEATURE_FLAG'
 KENV_RETROACCOUNT_DOMAIN: Final[str] = 'RETROACCOUNT_DOMAIN'
 K_RETROACCOUNT_DOMAIN: Final[str] = 'retroaccount_domain'
 DOMAIN_default_retroaccount: Final[str] = "https://retroaccount.com"

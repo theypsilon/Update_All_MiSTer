@@ -44,9 +44,6 @@ class RetroAccountService(RetroAccountClient):
     def server_url(self) -> str:
         return self._config_provider.get().retroaccount_domain
 
-    def is_feature_enabled(self) -> bool:
-        return self._config_provider.get().retroaccount_feature_flag
-
     def get_login_state(self) -> bool:
         return self._file_system.is_file(FILE_retroaccount_user_json)
 
@@ -73,9 +70,6 @@ class RetroAccountService(RetroAccountClient):
         return result
 
     def mister_sync(self) -> None:
-        if not self._config_provider.get().retroaccount_feature_flag:
-            return
-
         self._logger.bench('RetroAccountService.mister_sync start')
         try:
             self._mister_sync_impl()
