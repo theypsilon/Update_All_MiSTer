@@ -75,8 +75,8 @@ class Timeline:
                 timeline_doc.append("<theypsilon> Thank you so much for supporting my work!!\n")
             else:
                 timeline_doc.append("For an extended Timeline of 12 months:\n")
-                timeline_doc.append(" • Get your Patreon Key at www.patreon.com/theypsilon\n")
-                timeline_doc.append(" • Place it at /media/fat/Scripts/update_all.patreonkey\n")
+                timeline_doc.append(" • Support www.patreon.com/theypsilon\n")
+                timeline_doc.append(" • Login in the Settings Screen\n")
                 timeline_doc.append("\n")
         elif timeline_plus_model is not None:
             timeline_doc = create_timeline_doc(timeline_plus_model, names_dict)

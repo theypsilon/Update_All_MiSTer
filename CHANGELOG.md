@@ -10,11 +10,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Responsive terminal layouts. UI elements now adapt to the terminal width, with simplified layouts on narrow screens (40 columns and below).
 - Mirror configuration system for alternative download sources with extra NTP server support.
 - Scrollable long messages in the Settings Screen. Text that exceeds the screen height can now be navigated with UP/DOWN arrows.
-- RetroAccount integration. Link your MiSTer to your [RetroAccount](https://retroaccount.com) for automatic Patreon key management. Features device login with QR code authentication, automatic key sync, and session refresh.
+- RetroAccount integration. Link your MiSTer to your [RetroAccount](https://retroaccount.com) for automatic Patreon key management.
 - Five new color themes: Bloody Amber, Mainframe, Aurora, Neon Noir, and Mono.
 
 ### Changed
 - Improved Log Viewer with themed colors, better symbol rendering, and centered navigation HUD.
+- Improved NTP and certificate handling. Now it includes NTP servers from different regions like China.
 - Replaced curl subprocess calls with a shared Python HTTP client (`Fetcher`) across all services, providing connection reuse, automatic retries with exponential backoff, and unified timeout management.
 - More reliable self-update detection using MD5 hash comparison instead of mtime.
 - Background tasks (RetroAccount sync, MD5 calculation) now run during countdown for faster startup.

@@ -168,13 +168,13 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Account Options",
+                    "title": "1 Manage Your Account",
                     "description": "More options at {retroaccount_domain}",
                     "actions": {"ok": [{
                         "ui": "message",
-                        "header": "Account Options",
+                        "header": "Manage Your Account",
                         "text": [
-                            "Visit ~{retroaccount_domain}~ to access more account options.",
+                            "Visit ~{retroaccount_domain}~ to manage your account and explore available features.",
                         ],
                     }]}
                 },
