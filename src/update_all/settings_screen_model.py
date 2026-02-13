@@ -154,7 +154,7 @@ def settings_screen_model(): return {
                 {
                     "title": "Go to MAIN MENU!",
                     "description": "yesno_reverse formatter: {main_updater:yesno_reverse}",
-                    "actions": {"ok": [{"type": "navigate", "target": "main_menu"}]}
+                    "actions": {"ok": [{"type": "navigate", "target": "main_menu_login"}]}
                 },
             ]
         },
