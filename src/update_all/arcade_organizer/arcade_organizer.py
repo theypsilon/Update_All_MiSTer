@@ -658,6 +658,8 @@ class Infrastructure:
         return {}
 
     def text_is_date(self, date_text):
+        if not date_text:
+            return False
         if self.text_to_date(date_text) is None:
             return False
         else:
