@@ -27,12 +27,13 @@ import json
 import zipfile
 import xml.etree.cElementTree as ET
 from enum import IntEnum, unique
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
+from update_all.config import Config
 from update_all.constants import FILE_arcade_database_mad_db_json_zip
 from update_all.fetcher import Fetcher
 from update_all.logger import Logger
-from update_all.other import strtobool
+from update_all.other import strtobool, GenericProvider
 
 
 @unique
@@ -111,10 +112,15 @@ def to_ini(value):
     return value
 
 
+def default_fetcher() -> Fetcher:
+    provider = GenericProvider[Config]()
+    provider.initialize(Config())
+    return Fetcher(provider)
+
 class ArcadeOrganizerService:
-    def __init__(self, printer: 'Logger', fetcher: Fetcher):
+    def __init__(self, printer: 'Logger', fetcher: Optional[Fetcher]):
         self._printer = printer
-        self._fetcher = fetcher
+        self._fetcher = fetcher or default_fetcher()
 
     def make_arcade_organizer_config(self, ini_file_str: str, base_path: str, http_proxy: str = ''):
         ini_file_path = Path(ini_file_str)
