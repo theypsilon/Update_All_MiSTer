@@ -30,6 +30,8 @@ the organizer against the local file tree.
 Environment variables:
   PC_LAUNCHER_NO_WAIT     Set to '1' to skip the "Press Enter" prompt
   INI_FILE                Path to the arcade organizer INI file
+  UPDATE_ALL_SOURCE       Path to an update_all.pyz, skipping local lookup and download
+  MAD_DB                  Path to a mad_db.json.zip, skipping local lookup and download
 """
 
 import os
@@ -117,21 +119,30 @@ def main():
     temp_files = []
     result = 1
     try:
-        local_pyz = Path(base_path) / _LOCAL_PYZ_RELATIVE_PATH
-        if local_pyz.is_file():
-            temp_pyz = str(local_pyz)
-            print(f'Using local update_all.pyz: {local_pyz}')
+        env_source = os.environ.get('UPDATE_ALL_SOURCE', '')
+        if env_source and Path(env_source).is_file():
+            temp_pyz = env_source
+            print(f'Using UPDATE_ALL_SOURCE from environment: {env_source}')
         else:
-            temp_pyz = _fetch_pyz()
-            temp_files.append(temp_pyz)
+            local_pyz = Path(base_path) / _LOCAL_PYZ_RELATIVE_PATH
+            if local_pyz.is_file():
+                temp_pyz = str(local_pyz)
+                print(f'Using local update_all.pyz: {local_pyz}')
+            else:
+                temp_pyz = _fetch_pyz()
+                temp_files.append(temp_pyz)
 
-        local_mad_db = Path(base_path) / _LOCAL_MAD_DB_RELATIVE_PATH
-        if local_mad_db.is_file():
-            print(f'Using local MAD_DB: {local_mad_db}')
+        env_mad_db = os.environ.get('MAD_DB', '')
+        if env_mad_db and Path(env_mad_db).is_file():
+            print(f'Using MAD_DB from environment: {env_mad_db}')
         else:
-            mad_db_path = _fetch_mad_db()
-            temp_files.append(mad_db_path)
-            os.environ['MAD_DB'] = mad_db_path
+            local_mad_db = Path(base_path) / _LOCAL_MAD_DB_RELATIVE_PATH
+            if local_mad_db.is_file():
+                print(f'Using local MAD_DB: {local_mad_db}')
+            else:
+                mad_db_path = _fetch_mad_db()
+                temp_files.append(mad_db_path)
+                os.environ['MAD_DB'] = mad_db_path
 
         # Add the pyz to sys.path so we can import from it
         sys.path.insert(0, temp_pyz)
