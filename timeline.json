@@ -1,0 +1,90 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Blue Print Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Blue Print MRA: Blue Print",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-02-22",
+      "timestamps": [
+        1771734716
+      ],
+      "title": "Files updated TODAY (2026-02-22)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Cosmic MRAs: Cosmic Alien, Devil Zone, Magical Spot, No Mans Land, Space Panic",
+              "type": "standalone"
+            },
+            {
+              "name": "Cosmic Guerilla MRA: Cosmic Guerilla",
+              "type": "standalone"
+            },
+            {
+              "name": "Tutankham MRAs: 2 alts",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "Minimig",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "MiSTer Firmware",
+              "type": "standalone"
+            },
+            {
+              "name": "MiSTer_example.ini",
+              "type": "standalone"
+            },
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1771222062,
+        1771393700,
+        1771469266,
+        1771603030
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1456,
+    "total_file_updates": 2073,
+    "unique_files": 1395
+  }
+}
