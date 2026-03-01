@@ -4,24 +4,24 @@ All-in-one script for keeping up-to-date with the [MiSTer](https://github.com/Mi
 This script runs the [__MiSTer Downloader__](https://github.com/MiSTer-devel/Downloader_MiSTer/) under the hood. It expands it by selecting additional downloader databases.
 
 Update All has a Settings Screen that allows you to configure which databases and tools you want to use. In said screen the menu includes:
-1. __Main Distribution__. Downloads most essential files, including cores and firmware. You are able to select between two versions:
+- __Main Distribution__. Downloads most essential files, including cores and firmware. You are able to select between two versions:
     * The [official MiSTer Distribution](https://github.com/MiSTer-devel/Distribution_MiSTer) in the [MiSTer-devel](https://github.com/MiSTer-devel) organization. **[Default option]**
     * The [DB9 Fork MiSTer Distribution](https://github.com/MiSTer-DB9/Distribution_MiSTer) with [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers. *Requires [SNAC8](https://github.com/theypsilon/Update_All_MiSTer/wiki#snac8) compatible adapter.*
     * The [Aitor Gómez fork](https://github.com/spark2k06/Main_MiSTer), which is same as the official MiSTer Distribution but includes his custom firmware.
-2. [JTCORES for MiSTer](https://github.com/jotego/jtcores_mister). Downloads many cores made by [Jotego Team](https://github.com/jotego). **[Default option]** 
+- [JTCORES for MiSTer](https://github.com/jotego/jtcores_mister). Downloads many cores made by [Jotego Team](https://github.com/jotego). **[Default option]** 
     * You may additionally enable patreon-only cores.
-3. [Coin-Op Collection](https://github.com/Coin-OpCollection/Distribution-MiSTerFPGA). Downloads cores developed by [the Coin-Op Collection organization](https://github.com/Coin-OpCollection). **[Default option]**
-4. **Other Cores**. A selection of curated databases that provide unofficial cores, including:
+- **Other Cores**. A selection of curated databases that provide unofficial cores, including:
+    * [Coin-Op Collection](https://github.com/Coin-OpCollection/Distribution-MiSTerFPGA). Downloads cores developed by [the Coin-Op Collection organization](https://github.com/Coin-OpCollection). **[Default option]**
     * [Arcade Offset](https://github.com/toryalai1/Arcade_Offset). Downloads patched arcade games curated by [Toya](https://github.com/toryalai1). **[Disabled by default]**
     * [LLAPI Forks Folder](https://github.com/MiSTer-LLAPI/LLAPI_folder_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). **[Disabled by default]**
     * And more...
-5. **Other Tools & Scripts**. Additional tools & scripts.
+- **Other Tools & Scripts**. Additional tools & scripts.
     * [Arcade Organizer](docs/arcade_organizer.md). Creates a folder structure under `_Arcade/_Organized` for easy navigation to all the MRA files. **[Disabled by default]**
     * [Names TXT](https://github.com/ThreepwoodLeBrush/Names_MiSTer). Downloads a complete names.txt file curated by [Threepwood](https://github.com/ThreepwoodLeBrush) that enables better core names in the menus. **[Disabled by default]**
     * And more...
-6. **Extra Content**. A selection of curated databases that provide extra content. Roms, Bios, Wallpapers, etc.
-7. **Analogue Pocket**. Tools to connect your MiSTer with your Analogue Pocket.
-8. **Patron Menu**. A menu with exclusive contents for members of my Patreon community.
+- **Extra Content**. A selection of curated databases that provide extra content. Roms, Bios, Wallpapers, etc.
+- **Analogue Pocket**. Tools to connect your MiSTer with your Analogue Pocket.
+- **Patron Menu**. A menu with exclusive contents for members of my Patreon community.
 
 ## Installation
 
