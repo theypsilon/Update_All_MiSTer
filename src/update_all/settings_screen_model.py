@@ -367,6 +367,7 @@ def settings_screen_model(): return {
                 "agg23_db": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MikeS11/YC_Builds-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "ajgowans/alt-cores": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "TheJesusFish/Dual-Ram-Console-Cores": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
@@ -473,6 +474,37 @@ def settings_screen_model(): return {
                             "text": [
                                 "Modified versions of some cores. Folder: Other"
                             ],
+                        }]
+                    }
+                },
+                {
+                    "title": "8 Dual RAM Console Cores",
+                    "description": "{TheJesusFish/Dual-Ram-Console-Cores:enabled}",
+                    "actions": {
+                        "ok": [{
+                            "type": "condition",
+                            "variable": "TheJesusFish/Dual-Ram-Console-Cores",
+                            "true": [{"type": "rotate_variable", "target": "TheJesusFish/Dual-Ram-Console-Cores"}],
+                            "false": [{
+                                "ui": "confirm",
+                                "alert_level": "black",
+                                "header": "Dual SDRAM required!",
+                                "preselected_action": "No",
+                                "text": [
+                                    "Only users who have two SDRAMs in their MiSTer should enable this option.",
+                                    " ",
+                                    "Do you have dual SDRAM modules installed?",
+                                ],
+                                "actions": [
+                                    {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": "TheJesusFish/Dual-Ram-Console-Cores"}, {"type": "navigate", "target": "back"}]},
+                                    {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
+                                ],
+                            }]
+                        }],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Dual RAM Console Cores",
+                            "text": ["Console cores with dual SDRAM support."],
                         }]
                     }
                 },
