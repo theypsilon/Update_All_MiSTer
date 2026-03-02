@@ -478,7 +478,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "8 Dual RAM Console Cores",
+                    "title": "8 Dual RAM Console Cores (TheJesusFish)",
                     "description": "{TheJesusFish/Dual-Ram-Console-Cores:enabled}",
                     "actions": {
                         "ok": [{
