@@ -68,7 +68,7 @@ class Fetcher:
 
                 self._gw = HttpGateway(
                     ssl_ctx=ssl_ctx or ssl.create_default_context(),
-                    timeout=300,
+                    read_timeout=180,
                     logger=self._logger,
                     config=config.http_config,
                 )
