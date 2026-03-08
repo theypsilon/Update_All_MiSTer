@@ -53,6 +53,10 @@ class LocalStore:
     def get_names_char_code(self) -> str: return self._props['names_char_code']
     def set_names_sort_code(self, names_sort_code: str) -> None: self.generic_set('names_sort_code', names_sort_code)
     def get_names_sort_code(self) -> str: return self._props['names_sort_code']
+    def set_overscan(self, overscan: str) -> None: self.generic_set('overscan', overscan)
+    def get_overscan(self) -> str: return self._props['overscan']
+    def set_monochrome_ui(self, value: bool) -> None: self.generic_set('monochrome_ui', value)
+    def get_monochrome_ui(self) -> bool: return self._props['monochrome_ui']
     def set_introduced_arcade_names_txt(self, introduced_arcade_names_txt: bool) -> None: self.generic_set('introduced_arcade_names_txt', introduced_arcade_names_txt)
 
     def get_introduced_arcade_names_txt(self) -> bool:

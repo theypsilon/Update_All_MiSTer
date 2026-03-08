@@ -18,6 +18,18 @@
 
 import curses
 import abc
+import types
+
+from update_all.other import get_overscan
+
+def curses_size():
+    lnarrow = curses.LINES <= 18
+    cnarrow = curses.COLS <= 48
+    cols_os, lines_os = get_overscan()
+    co = cols_os if cnarrow else 0
+    lo = lines_os if lnarrow else 0
+    return types.SimpleNamespace(columns=curses.COLS, lines=curses.LINES, cols_overscan=co, lines_overscan=lo, lnarrow=lnarrow, cnarrow=cnarrow)
+
 
 class ColorConfiguration:
     FIRST_OPTION_KEY_UNSELECTED_COLOR = 0

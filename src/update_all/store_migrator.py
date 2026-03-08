@@ -66,6 +66,8 @@ def make_new_local_store(store_migrator):
         'pocket_firmware_update': default_config.pocket_firmware_update,
         'pocket_backup': default_config.pocket_backup,
         'timeline_after_logs': default_config.timeline_after_logs,
+        'overscan': default_config.overscan,
+        'monochrome_ui': default_config.monochrome_ui,
     }
 
 

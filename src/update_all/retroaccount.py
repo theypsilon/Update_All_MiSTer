@@ -16,13 +16,13 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-from typing import Optional, Dict, Any
+from typing import Optional, Any
 
 from update_all.logger import Logger
 from update_all.file_system import FileSystem
 from update_all.config import Config
 from update_all.other import GenericProvider
-from update_all.constants import FILE_retroaccount_user_json, FILE_retroaccount_device_id
+from update_all.constants import FILE_retroaccount_user_json, FILE_retroaccount_device_id, FILE_patreon_key_md5
 from update_all.encryption import Encryption
 from update_all.retroaccount_gateway import RetroAccountGateway, SessionResult, MisterSyncResponse
 from update_all.retroaccount_ui import DeviceLogin, DeviceLoginRenderer, RetroAccountClient
@@ -39,6 +39,11 @@ class RetroAccountService(RetroAccountClient):
         self._config_provider = config_provider
         self._retroaccount_gateway = retroaccount_gateway
         self._encryption = encryption
+        self._has_installed_update_all_patreon_key = False
+        self._has_forced_logout = None
+
+    def has_installed_update_all_patreon_key(self) -> bool: return self._has_installed_update_all_patreon_key
+    def has_forced_logout(self) -> Optional[str]: return self._has_forced_logout
 
     @property
     def server_url(self) -> str:
@@ -52,7 +57,7 @@ class RetroAccountService(RetroAccountClient):
             return self._file_system.read_file_contents(FILE_retroaccount_device_id).strip() or None
         return None
 
-    def create_device_login_ui(self, drawer: UiDialogDrawer, renderer: DeviceLoginRenderer, data: Dict[str, Any]) -> UiSection:
+    def create_device_login_ui(self, drawer: UiDialogDrawer, renderer: DeviceLoginRenderer, data: dict[str, Any]) -> UiSection:
         return DeviceLogin(drawer, renderer, self, data)
 
     def request_device_code(self) -> Optional[dict]:
@@ -82,6 +87,7 @@ class RetroAccountService(RetroAccountClient):
     def _mister_sync_impl(self) -> None:
         if not self._file_system.is_file(FILE_retroaccount_user_json):
             self._logger.print('RetroAccount: Nothing to sync.')
+            self._unlink_update_all_patreon_key()
             return
 
         try:
@@ -89,7 +95,9 @@ class RetroAccountService(RetroAccountClient):
         except Exception as e:
             self._logger.debug('RetroAccountService: Could not read user data for sync')
             self._logger.debug(e)
-            self._file_system.unlink(FILE_retroaccount_user_json, verbose=False)
+            if self._file_system.unlink(FILE_retroaccount_user_json, verbose=False):
+                self._unlink_update_all_patreon_key()
+                self._has_forced_logout = 'Your credentials are corrupted!\nDo you have any problems with your storage (SD)?'
             return
 
         device_id = user_data.get('device_id', '')
@@ -97,6 +105,8 @@ class RetroAccountService(RetroAccountClient):
 
         if not device_id or not refresh_token:
             self._logger.print(f'RetroAccount Warning: Corrupted {FILE_retroaccount_user_json}')
+            self._unlink_update_all_patreon_key()
+            self._has_forced_logout = 'Your credentials are corrupted!\nDo you have any problems with your storage (SD)?'
             return
 
         patreon_key_fingerprint = None
@@ -127,26 +137,37 @@ class RetroAccountService(RetroAccountClient):
             self._file_system.make_dirs_parent(FILE_retroaccount_device_id)
             self._file_system.write_file_contents(FILE_retroaccount_device_id, device_id)
             self._file_system.unlink(FILE_retroaccount_user_json, verbose=False)
-
+            self._unlink_update_all_patreon_key()
+            self._has_forced_logout = 'Your credentials were revoked!\nYour account must be active, and you have to log in on each device you use.'
         else:
             self._logger.debug(f'RetroAccountService: MiSTer sync API returned status {response}.')
 
-    def _process_mister_response(self, response_dict: MisterSyncResponse) -> None:
+    def _unlink_update_all_patreon_key(self):
         update_all_patreon_key_path = self._config_provider.get().patreon_key_path
-        if response_dict.get('update_all_patreon_key_remove', False):
-            try:
-                self._file_system.unlink(update_all_patreon_key_path, verbose=False)
-                self._encryption.clear_cache()
-            except Exception as e:
-                self._logger.debug('RetroAccountService: Error during removal of update all patreon key.')
-                self._logger.debug(e)
+        if not self._file_system.is_file(update_all_patreon_key_path):
+            return
+
+        try:
+            self._file_system.unlink(update_all_patreon_key_path, verbose=False)
+            self._file_system.unlink(FILE_patreon_key_md5, verbose=False)
+            self._encryption.clear_cache()
+        except Exception as e:
+            self._logger.debug('RetroAccountService: Error during removal of update all patreon key.')
+            self._logger.debug(e)
+
+    def _process_mister_response(self, response_dict: MisterSyncResponse) -> None:
+        if response_dict.get('update_all_patreon_key_remove', False) is True:
+            self._unlink_update_all_patreon_key()
 
         update_all_patreon_key_url = response_dict.get('update_all_patreon_key_url', None)
         if isinstance(update_all_patreon_key_url, str):
             try:
-                self._retroaccount_gateway.install_file(update_all_patreon_key_path, update_all_patreon_key_url)
+                update_all_patreon_key_path = self._config_provider.get().patreon_key_path
+                update_all_patreon_key_md5 = self._retroaccount_gateway.install_file(update_all_patreon_key_path, update_all_patreon_key_url)
+                self._file_system.write_file_contents(FILE_patreon_key_md5, update_all_patreon_key_md5)
                 self._encryption.clear_cache()
                 self._logger.debug(f'RetroAccountService: New update_all.patreonkey installed at {update_all_patreon_key_path}!')
+                self._has_installed_update_all_patreon_key = True
             except Exception as e:
                 self._logger.debug('RetroAccountService: Could not install update all patreon key.')
                 self._logger.debug(e)

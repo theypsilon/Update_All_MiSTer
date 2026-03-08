@@ -125,6 +125,8 @@ class ConfigReader:
         config.log_viewer = store.get_log_viewer()
         config.use_settings_screen_theme_in_log_viewer = store.get_use_settings_screen_theme_in_log_viewer()
         config.timeline_after_logs = store.get_timeline_after_logs()
+        config.overscan = store.get_overscan()
+        config.monochrome_ui = store.get_monochrome_ui()
 
     def read_retroaccount_cfg(self, config: Config, file_system: FileSystem) -> None:
         if not file_system.is_file(FILE_retroaccount_cfg):

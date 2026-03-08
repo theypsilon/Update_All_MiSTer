@@ -144,7 +144,7 @@ class FileSystem(ABC):
         """interface"""
 
     @abstractmethod
-    def unlink(self, path, verbose=True):
+    def unlink(self, path, verbose=True) -> bool:
         """interface"""
 
     @abstractmethod
@@ -226,12 +226,12 @@ class _FileSystem(FileSystem):
             return f.read()
 
     def write_file_contents(self, path, content):
-        with open(self._path(path), 'w') as f:
-            return f.write(content)
+        target = self._path(path)
+        return self._safe_write(target, lambda f: f.write(content), mode='w')
 
     def write_file_bytes(self, path, content_bytes):
-        with open(self._path(path), 'wb') as f:
-            return f.write(content_bytes)
+        target = self._path(path)
+        return self._safe_write(target, lambda f: f.write(content_bytes), mode='wb')
 
     def touch(self, path):
         return Path(self._path(path)).touch()
@@ -259,6 +259,21 @@ class _FileSystem(FileSystem):
 
     def _parent_folder(self, path):
         return absolute_parent_folder(self._path(path))
+
+    @staticmethod
+    def _safe_write(target, write_fn, mode='w'):
+        tmp_path = target + '.tmp'
+        try:
+            with open(tmp_path, mode) as f:
+                result = write_fn(f)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, target)
+            return result
+        except:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            raise
 
     @staticmethod
     def _makedirs(target):
@@ -313,7 +328,7 @@ class _FileSystem(FileSystem):
     def download_target_path(self, path):
         return self._path(path)
 
-    def unlink(self, path, verbose=True):
+    def unlink(self, path, verbose=True) -> bool:
         verbose = verbose and not path.startswith('/tmp/')
 #        if self._config.get()[K_ALLOW_DELETE] != AllowDelete.ALL:
 #            if self._config.get()[K_ALLOW_DELETE] == AllowDelete.OLD_RBF and path[-4:].lower() == ".rbf":
@@ -372,14 +387,22 @@ class _FileSystem(FileSystem):
 
     def save_json_on_zip(self, db, path):
         json_name = Path(path).stem
-        zip_path = Path(self._path(path)).absolute()
-
-        with zipfile.ZipFile(zip_path, 'w') as zipf:
-            zipf.writestr(json_name, json.dumps(db))
+        target = str(Path(self._path(path)).absolute())
+        tmp_path = target + '.tmp'
+        try:
+            with zipfile.ZipFile(tmp_path, 'w') as zipf:
+                zipf.writestr(json_name, json.dumps(db))
+            with open(tmp_path, 'rb') as f:
+                os.fsync(f.fileno())
+            os.replace(tmp_path, target)
+        except:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            raise
 
     def save_json(self, db, path):
-        with open(self._path(path), 'w') as f:
-            json.dump(db, f)
+        target = self._path(path)
+        self._safe_write(target, lambda f: json.dump(db, f), mode='w')
 
     def unzip_contents(self, file, path, contained_files):
         raise NotImplementedError('No need on update_all')

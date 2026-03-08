@@ -21,7 +21,7 @@ import os
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, Future
-from typing import List, Optional
+from typing import Optional
 
 from update_all.analogue_pocket.firmware_update import pocket_firmware_update
 from update_all.analogue_pocket.pocket_backup import pocket_backup
@@ -29,7 +29,7 @@ from update_all.analogue_pocket.utils import is_pocket_mounted
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
-from update_all.databases import Database, AllDBs, all_dbs
+from update_all.databases import Database, all_dbs
 from update_all.downloader_utils import prepare_latest_downloader
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
@@ -38,13 +38,14 @@ from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_m
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, FILE_update_all_pyz, \
     EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update, \
     FILE_downloader_run_signal, FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script, \
-    COMMAND_TIMELINE, COMMAND_LATEST_LOG, FILE_timeline_short, BACKGROUND_JOBS_TIMEOUT
+    COMMAND_TIMELINE, COMMAND_LATEST_LOG, BACKGROUND_JOBS_TIMEOUT, \
+    FILE_patreon_key_md5, FILE_update_all_print_tmp_log
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
-from update_all.log_viewer import LogViewer, create_log_document
-from update_all.other import GenericProvider, terminal_size
-from update_all.logger import Logger
+from update_all.log_viewer import LogViewer, create_log_document, to_overscanned_doc
+from update_all.other import GenericProvider, terminal_size, get_overscan
+from update_all.logger import Logger, close_print_tmp_log_file
 from update_all.os_utils import OsUtils, LinuxOsUtils
 from update_all.settings_screen import SettingsScreen
 from update_all.settings_screen_standard_curses_printer import SettingsScreenStandardCursesPrinter
@@ -169,9 +170,9 @@ class UpdateAllService:
         self._fetcher = fetcher
         self._exit_code = 0
         self._end_time = 0.0
-        self._error_reports: List[str] = []
-        self._temp_launchers: List[str] = []
-        self._timeline_after_log_doc: List[str] = []
+        self._error_reports: list[str] = []
+        self._temp_launchers: list[str] = []
+        self._timeline_after_log_doc: list[str] = []
         self._executor: Optional[ThreadPoolExecutor] = None
         self._background_job_future: Optional[Future] = None
         self._update_all_md5: Optional[str] = None
@@ -213,7 +214,6 @@ class UpdateAllService:
         self._run_linux_update()
         self._cleanup()
         self._show_outro()
-        self._finalize_log()
         self._show_interactive_log_viewer_and_timeline()
         self._reboot_if_needed()
         return self._exit_code
@@ -260,19 +260,30 @@ class UpdateAllService:
         self._retroaccount.mister_sync()
 
     def _show_intro(self) -> None:
-        columns = terminal_size().columns
+        ts = terminal_size()
+        usable = ts.columns - ts.cols_overscan * 2
         def _center(text):
-            return text.center(columns)
+            return text.center(usable)
 
         self._logger.print()
-        self._logger.print(_center(f"------- Update All {UPDATE_ALL_VERSION} --------"))
-        self._logger.print(_center("The All-in-One Updater for MiSTer"))
-        self._logger.print(_center("---------------------------------"))
-        self._logger.print(_center(f"- Powered by Downloader {MISTER_DOWNLOADER_VERSION} -"))
+        title_text = f" Update All {UPDATE_ALL_VERSION} "
+        title_dashes = usable - len(title_text)
+        left_dashes = title_dashes // 2
+        right_dashes = title_dashes - left_dashes
+        self._logger.print(_center("-" * left_dashes + title_text + "-" * right_dashes))
+        subtitle = "The All-in-One Updater for MiSTer"
+        if len(subtitle) > usable:
+            subtitle = "The Updater for MiSTer"
+        powered = f"- Powered by Downloader {MISTER_DOWNLOADER_VERSION} -"
+        if len(powered) > usable:
+            powered = f"- Downloader {MISTER_DOWNLOADER_VERSION} -"
+        self._logger.print(_center(subtitle))
+        self._logger.print(_center("-" * min(33, usable)))
+        self._logger.print(_center(powered))
         self._logger.print()
         if self._encryption.validate_key() != EncryptionResult.Success:
             self._logger.print()
-            if columns >= 51:
+            if not ts.cnarrow:
                 self._logger.print(_center("╔═════════════════════════════════════════════════╗"))
                 self._logger.print(_center("║  Become a patron to unlock exclusive features!  ║"))
                 self._logger.print(_center("║           www.patreon.com/theypsilon            ║"))
@@ -283,7 +294,7 @@ class UpdateAllService:
                 self._logger.print(_center("www.patreon.com/theypsilon"))
         else:
             self._logger.print()
-            if columns >= 41:
+            if not ts.cnarrow:
                 self._logger.print(_center("╔═══════════════════════════════════════╗"))
                 self._logger.print(_center("║  Thank you so much for your support!  ║"))
                 self._logger.print(_center("╚═══════════════════════════════════════╝"))
@@ -358,10 +369,13 @@ class UpdateAllService:
             self._error_reports.append('Scripts/.config/downloader/downloader.log')
 
     def _execute_downloader(self, config: Config, downloader_ini_path: str, update_linux: bool, logfile: Optional[str], default_db: Optional[Database], quiet: bool = False) -> int:
+        screen_size = terminal_size()
         env = {
             'DOWNLOADER_INI_PATH': downloader_ini_path,
             'ALLOW_REBOOT': '0',
             'CURL_SSL': config.curl_ssl,
+            'COLUMNS': str(screen_size.columns - screen_size.cols_overscan * 2),
+            'LINES': str(screen_size.lines - screen_size.lines_overscan * 2),
             'UPDATE_LINUX': 'true' if update_linux else 'false',
         }
         if logfile is not None:
@@ -524,6 +538,18 @@ class UpdateAllService:
         run_time = str(datetime.timedelta(seconds=self._end_time - config.start_time))[2:-4]
         self._logger.print(f'Update All {UPDATE_ALL_VERSION} ({config.commit[0:3]}) by theypsilon. Run time: {run_time}s at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
         self._logger.debug(f"Commit: {config.commit}")
+        if self._retroaccount.has_installed_update_all_patreon_key():
+            self._logger.print('Patreon Key installed!')
+            try:
+                self._logger.debug(f"MD5: {self._file_system.read_file_contents(FILE_patreon_key_md5)}")
+            except:
+                pass
+        retroaccount_forced_logout = self._retroaccount.has_forced_logout()
+        if retroaccount_forced_logout is not None:
+            self._logger.print('\nYou\'ve been logged out from RetroAccount.')
+            self._logger.print(retroaccount_forced_logout)
+            self._logger.print('Please log in again from the Settings Screen.')
+
         self._logger.print()
 
         if len(self._error_reports):
@@ -551,40 +577,33 @@ class UpdateAllService:
         else:
             self._logger.print(f'Shoutout to {supporter_of_the_day}! patreon.com/theypsilon')
 
-    def _finalize_log(self) -> None:
-        config = self._config_provider.get()
-        should_reboot = not config.not_mister and (
-            self._file_system.is_file(FILE_mister_downloader_needs_reboot) or
-            self._file_system.is_file(FILE_downloader_needs_reboot_after_linux_update)
-        )
-        if should_reboot and not config.autoreboot:
-            self._logger.print("You should reboot")
-            self._logger.print()
-
-        if config.log_viewer and config.timeline_after_logs:
-            # Needs to be done here we want to collect logs before finalize
-            try:
-                self._timeline_after_log_doc = self._timeline.load_timeline_doc()
-            except Exception as e:
-                self._logger.debug(e)
-                self._logger.debug('Recovering from error by suspending timeline generation after logs.')
-                self._timeline_after_log_doc = []
-
-        self._logger.finalize()
-
     def _show_interactive_log_viewer_and_timeline(self) -> None:
         config = self._config_provider.get()
         if config.log_viewer:
             try:
-                log_doc = self._log_viewer.load_log_document() if config.log_viewer else []
-                timeline_doc = self._timeline_after_log_doc
-                if len(log_doc) > 0 and len(timeline_doc) > 0:
-                    columns = terminal_size().columns
-                    log_doc.append("\n")
-                    log_doc.append("=" * columns + "\n")
-                    log_doc.append("\n")
-                    log_doc.append("GO DOWN TO CHECK A SUMMARY OF WHAT'S BEEN UPDATED!!".center(columns) + "\n")
+                close_print_tmp_log_file()
+                log_doc = create_log_document(FILE_update_all_print_tmp_log) if config.log_viewer else []
+                timeline_doc = []
+                if config.timeline_after_logs:
+                    try:
+                        timeline_doc = self._timeline.load_timeline_doc()
+                    except Exception as e:
+                        self._logger.debug(e)
+                        self._logger.debug('Recovering from error by suspending timeline generation after logs.')
 
+                ts = terminal_size()
+                columns = ts.columns
+                cols_overscan = ts.cols_overscan
+                usable = columns - cols_overscan * 2
+
+                if len(log_doc) > 0 and len(timeline_doc) > 0:
+                    log_doc.append("\n")
+                    log_doc.append("=" * usable + "\n")
+                    log_doc.append("\n")
+                    log_doc.append("GO DOWN TO CHECK A SUMMARY OF WHAT'S BEEN UPDATED!!".center(usable) + "\n")
+
+                log_doc = to_overscanned_doc(log_doc, columns, cols_overscan)
+                timeline_doc = to_overscanned_doc(timeline_doc, columns, cols_overscan)
                 total_doc = [*log_doc, *timeline_doc]
                 index = len(timeline_doc)
                 if index > 5:
@@ -598,12 +617,10 @@ class UpdateAllService:
 
     def _show_log_viewer_with_latest_log(self) -> None:
         try:
-            self._log_viewer.show(self._log_viewer.load_log_document(), {}, 0)
+            self._log_viewer.show(create_log_document(self._file_system.resolve(FILE_update_all_log)), {}, 0)
         except Exception as e:
             self._logger.debug(e)
             self._logger.print("Could not load the latest log. Please try again after running Update All.")
-
-        self._logger.finalize()
 
     def _download_update_all_db_and_show_interactive_timeline(self) -> None:
         config = self._config_provider.get()
@@ -623,7 +640,6 @@ class UpdateAllService:
         else:
             self._logger.print('No timeline entries found. Try again later!')
 
-        self._logger.finalize()
         self._logger.print(''.join(timeline_doc))
 
     def _reboot_if_needed(self) -> None:
@@ -636,6 +652,8 @@ class UpdateAllService:
             return
 
         if not config.autoreboot:
+            self._logger.print("You should reboot")
+            self._logger.print()
             return
 
         outro_time = int(time.monotonic() - self._end_time)
@@ -648,6 +666,7 @@ class UpdateAllService:
         else:
             self._logger.print("\nRebooting now...")
 
+        self._logger.finalize()
         self._os_utils.reboot()
 
     def _print_sequence(self) -> None:
@@ -674,10 +693,11 @@ class UpdateAllService:
         self._logger.print()
 
     def _draw_separator(self) -> None:
-        columns = terminal_size().columns
+        ts = terminal_size()
+        usable = ts.columns - ts.cols_overscan * 2
         self._logger.print()
         self._logger.print()
-        self._logger.print("#" * columns)
-        self._logger.print("#" + "=" * (columns - 2) + "#")
-        self._logger.print("#" * columns)
+        self._logger.print("#" * usable)
+        self._logger.print("#" + "=" * (usable - 2) + "#")
+        self._logger.print("#" * usable)
         self._logger.print()

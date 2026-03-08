@@ -254,7 +254,7 @@ class _FileSystem(ProductionFileSystem):
     def download_target_path(self, path):
         return self._path(path)
 
-    def unlink(self, path, verbose=True):
+    def unlink(self, path, verbose=True) -> bool:
         file = self._path(path)
         if file in self._state.files:
             self._state.files.pop(file)

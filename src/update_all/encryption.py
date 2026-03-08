@@ -23,7 +23,7 @@ from enum import unique, Enum
 from functools import cache
 
 from update_all.config import Config
-from update_all.constants import MD5_patreon_key
+from update_all.constants import FILE_patreon_key_md5, MD5_old_patreon_key
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
 from update_all.other import GenericProvider
@@ -67,9 +67,16 @@ class Encryption:
             self._logger.debug(e)
             return EncryptionResult.InvalidKey
 
-        if fingerprint_result != MD5_patreon_key:
+        try:
+            md5_patreon_key = self._file_system.read_file_contents(FILE_patreon_key_md5)
+        except Exception as e:
+            self._logger.debug(f"Encryption: Stored Patreon Key MD5 read failed with error")
+            self._logger.debug(e)
+            md5_patreon_key = MD5_old_patreon_key
+
+        if fingerprint_result != md5_patreon_key:
             self._print_invalid_patreon_key_message()
-            self._logger.debug(f"Encryption: Expected '{MD5_patreon_key}', got '{fingerprint_result}'.")
+            self._logger.debug(f"Encryption: Expected '{md5_patreon_key}', got '{fingerprint_result}'.")
             return EncryptionResult.InvalidKey
 
         return EncryptionResult.Success
@@ -123,12 +130,7 @@ class Encryption:
             self._logger.debug(f"Encryption: Patreon Key file '{patreon_key_path}' does not exist.")
             return EncryptionResult.MissingKey
 
-        if self._file_system.file_size(patreon_key_path) != 32:
-            self._print_invalid_patreon_key_message()
-            self._logger.debug(f"Encryption: Patreon Key file '{patreon_key_path}' has invalid size.")
-            return EncryptionResult.InvalidKey
-
         return EncryptionResult.Success
 
     def _print_invalid_patreon_key_message(self):
-        self._logger.print(f"ERROR: Patreon Key validation failed, did you get the latest one?")
+        self._logger.print(f"ERROR: Patreon Key validation failed, log in to RetroAccount to fix it!")

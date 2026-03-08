@@ -91,6 +91,8 @@ class Config:
     log_viewer: bool = True
     use_settings_screen_theme_in_log_viewer: bool = True
     timeline_after_logs: bool = True
+    overscan: str = 'small'
+    monochrome_ui: bool = False
 
 @unique
 class AllowDelete(IntEnum):

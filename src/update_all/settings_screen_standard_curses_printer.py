@@ -17,15 +17,22 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 import curses
-from typing import Tuple
-
-from update_all.colors_curses import init_colors, make_color_theme, colors
+import traceback
+from update_all.colors_curses import init_colors, make_color_theme, colors, curses_size
 from update_all.settings_screen_printer import SettingsScreenPrinter, ColorThemeManager
 from update_all.ui_engine import Interpolator
 from update_all.ui_engine_curses_runtime import CursesRuntime
 from update_all.retroaccount_ui import DeviceLoginRenderer
 from update_all.ui_engine_dialog_application import UiDialogDrawer, UiDialogDrawerFactory
 from update_all.ui_model_utilities import Key
+
+_WARNING_LOG = '/tmp/curses_warnings.log'
+
+
+def _log_warning(msg):
+    with open(_WARNING_LOG, 'a') as f:
+        f.write(f'WARNING: {msg}\n')
+        traceback.print_stack(file=f)
 
 
 class SettingsScreenStandardCursesPrinter(CursesRuntime, SettingsScreenPrinter):
@@ -85,8 +92,7 @@ class _Layout(ColorThemeManager):
 
     def _paint_box(self, h: int, w: int, y: int, x: int, has_header: bool) -> None:
         screen = curses.initscr()
-        if curses.LINES <= 15:  # @resolution: This is to move the texts a bit up in tiny resolutions.
-            y -= 1
+        cs = curses_size()
         try:
             box1 = screen.subwin(h, w, y, x)
             box1.erase()
@@ -98,7 +104,7 @@ class _Layout(ColorThemeManager):
                 screen.hline(y + 2, x + 1, curses.ACS_HLINE | curses.color_pair(colors.HEADER_LINE_COLOR), w - 2)
 
         except curses.error as _:
-            box1 = screen.subwin(curses.LINES, curses.COLS, 0, 0)
+            box1 = screen.subwin(cs.lines, cs.columns, 0, 0)
             box1.erase()
             box1.attron(curses.color_pair(colors.BOX_BACKGROUND_COLOR))
             box1.bkgd(' ', curses.color_pair(colors.BOX_BACKGROUND_COLOR) | curses.A_NORMAL)
@@ -128,7 +134,8 @@ class _Drawer(UiDialogDrawer):
         self._effects = {}
         self._header = ''
         self._narrow_selected_info = ''
-        self._scroll_offset = 0
+        self._text_scroll_offset = 0
+        self._menu_scroll_offset = 0
 
     def start(self, data):
         self._text_lines = []
@@ -136,18 +143,19 @@ class _Drawer(UiDialogDrawer):
         self._actions = []
         self._effects = {}
         self._narrow_selected_info = ''
-        self._scroll_offset = 0
 
-        self._header = ''
-        if 'header' in data:
-            self._header = self._interpolator.interpolate(data['header'])
+        new_header = self._interpolator.interpolate(data['header']) if 'header' in data else ''
+        if new_header != self._header:
+            self._menu_scroll_offset = 0
+        self._header = new_header
 
         self._layout.set_sub_theme(data.get('alert_level', None))
 
     def add_text_line(self, text):
         interpolated_text = self._interpolator.interpolate(text)
         for line in interpolated_text.split('\n'):
-            n = curses.COLS - 2
+            cs = curses_size()
+            n = cs.columns - max(2, cs.cols_overscan * 2)
             for chunk in _word_wrap_line(line, n):
                 find_tilda = chunk.find('~')
                 find_at = chunk.find('@')
@@ -158,24 +166,29 @@ class _Drawer(UiDialogDrawer):
                 self._text_lines.append(chunk)
 
     def max_text_lines(self) -> int:
+        cs = curses_size()
         overhead = 4  # layout borders (2) + action line (1) + spacing (1)
         if self._header:
             overhead += 2
-        available = curses.LINES - overhead
+        available = cs.lines - overhead - cs.lines_overscan * 2
         return max(1, available)
 
     def set_text_scroll(self, offset: int) -> None:
-        self._scroll_offset = offset
+        self._text_scroll_offset = offset
 
     def total_text_lines(self) -> int:
         return len(self._text_lines)
 
     def add_menu_entry(self, option, info, is_selected=False):
-        if curses.LINES <= 15 and option == '' and info == '' and not is_selected:
+        cs = curses_size()
+        if cs.lnarrow and option == '' and info == '' and not is_selected:
             return  # @resolution: This is to avoid text being cutoff off the screen in tiny resolutions.
-        if curses.COLS <= 40:
+        if cs.cnarrow:
             if is_selected and info:
-                self._narrow_selected_info = self._interpolator.interpolate(info)
+                narrow_info = self._interpolator.interpolate(info)
+                if narrow_info.endswith('...'):
+                    narrow_info = narrow_info[:-3].rstrip()
+                self._narrow_selected_info = narrow_info
             info = ''
         self._menu_entries.append((self._interpolator.interpolate(option), self._interpolator.interpolate(info), is_selected))
 
@@ -186,52 +199,116 @@ class _Drawer(UiDialogDrawer):
         self._actions.append((' ' * (length + 2), is_selected))
 
     def paint(self) -> int:
+        cs = curses_size()
+
         visible_text_lines = self._text_lines
+        text_has_up_scroll = False
         max_tl = self.max_text_lines()
         if max_tl > 0 and len(self._text_lines) > max_tl:
             self._layout.reset()
-            end = min(self._scroll_offset + max_tl, len(self._text_lines))
-            start = self._scroll_offset
+            end = min(self._text_scroll_offset + max_tl, len(self._text_lines))
+            start = self._text_scroll_offset
             visible_text_lines = list(self._text_lines[start:end])
             if start > 0:
-                visible_text_lines[0] = '--- ↑ ↑ ↑ ---'
+                if self._header:
+                    text_has_up_scroll = True
+                else:
+                    visible_text_lines[0] = '--- \u2191 \u2191 \u2191 ---'
             if end < len(self._text_lines):
-                visible_text_lines[-1] = '--- ↓ ↓ ↓ ---'
+                visible_text_lines[-1] = '--- \u2193 \u2193 \u2193 ---'
 
-        total_lines = len(visible_text_lines) + len(self._menu_entries) + 1
         max_length_header = len(self._header)
-        if max_length_header > 0:
-            total_lines += 2
+        lo = cs.lines_overscan
+        skip_header = False
+        action_y = None
 
-        if len(self._actions) > 0 and total_lines < curses.COLS:
-            total_lines += 1
+        if cs.cnarrow and self._menu_entries:
+            action_y = cs.lines - 1 - lo - 1
+            available = action_y - lo
+            content_lines = len(visible_text_lines) + len(self._menu_entries)
 
-        offset_vertical = int(curses.LINES / 2 - total_lines / 2)
+            all_entries_for_width = self._menu_entries
+            if content_lines > available:
+                self._layout.reset()
+                max_entries = max(1, available - len(visible_text_lines))
+                all_entries = list(self._menu_entries)
+                total_entries = len(all_entries)
+                selected_idx = next((i for i, (_, _, s) in enumerate(all_entries) if s), 0)
 
-        offset_header = max(1, int(curses.COLS / 2 - max_length_header / 2))
-        max_length_text_line = min(curses.COLS - 2, calculate_max_length_text_line(self._text_lines))
+                self._menu_scroll_offset = _calculate_menu_scroll(selected_idx, total_entries, max_entries, self._menu_scroll_offset)
 
-        offset_text_line = max(1, int(curses.COLS / 2 - max_length_text_line / 2))
+                offset = self._menu_scroll_offset
+                has_up = offset > 0
+                real_count = (max_entries - 1) if has_up else max_entries
+                real_end = offset + real_count
+                has_down = real_end < total_entries
+                if has_down:
+                    real_count -= 1
+                    real_end = offset + real_count
 
-        max_length_option = calculate_max_length_option(self._menu_entries)
-        max_length_info =  calculate_max_length_info(self._menu_entries)
+                visible = []
+                if has_up:
+                    visible.append(('--- \u2191 \u2191 \u2191 ---', '', False))
+                visible.extend(all_entries[offset:real_end])
+                if has_down:
+                    visible.append(('--- \u2193 \u2193 \u2193 ---', '', False))
+
+                self._menu_entries = visible
+                content_lines = len(visible_text_lines) + len(self._menu_entries)
+
+            has_gap = content_lines + 1 <= available
+            has_box_top = has_gap and content_lines + 1 + 1 <= available
+            has_header = max_length_header > 0 and has_box_top and content_lines + 1 + 1 + 2 <= available
+
+            total_lines = content_lines + 1
+            if has_gap:
+                total_lines += 1
+            if has_header:
+                total_lines += 2
+
+            skip_header = not has_header
+            min_top = lo + 1 if has_box_top else lo
+            offset_vertical = max(min_top, min_top + int((action_y - min_top - total_lines + 1) / 2))
+        else:
+            text_is_scrolled = visible_text_lines is not self._text_lines
+            total_lines = len(visible_text_lines) + len(self._menu_entries) + 1
+            if max_length_header > 0:
+                total_lines += 2
+            has_gap = len(self._actions) > 0 and total_lines < cs.lines and not text_is_scrolled
+            if has_gap:
+                total_lines += 1
+            offset_vertical = int(cs.lines / 2 - total_lines / 2)
+
+        co = cs.cols_overscan
+        floor = max(1, co)
+        offset_header = max(floor, int(cs.columns / 2 - max_length_header / 2))
+        max_length_text_line = min(cs.columns - max(2, co * 2), calculate_max_length_text_line(self._text_lines))
+
+        offset_text_line = max(floor, int(cs.columns / 2 - max_length_text_line / 2))
+
+        width_entries = all_entries_for_width if action_y is not None else self._menu_entries
+        max_length_option = calculate_max_length_option(width_entries)
+        max_length_info =  calculate_max_length_info(width_entries)
         max_menu_entry = max_length_option + 2 + max_length_info
 
-        offset_menu = max(1, int(curses.COLS / 2 - max_menu_entry / 2))
+        offset_menu = max(floor, int(cs.columns / 2 - max_menu_entry / 2))
 
         action_gap = 4
         max_length_actions = sum(len(a) for a, _ in self._actions) + action_gap * max(0, len(self._actions) - 1)
-        offset_actions = int(curses.COLS / 2 - max_length_actions / 2)
+        offset_actions = int(cs.columns / 2 - max_length_actions / 2)
 
         total_width = max(max(max_menu_entry, max_length_text_line), max(max_length_header, max_length_actions))
         offset_horizontal = min(min(offset_menu, offset_text_line), min(offset_actions, offset_header))
 
-        self._layout.paint_layout(total_lines + 2, total_width + 2, offset_vertical - 1, offset_horizontal - 1, max_length_header> 0)
+        self._layout.paint_layout(total_lines + 2, total_width + 2, offset_vertical - 1, offset_horizontal - 1, max_length_header > 0 and not skip_header)
 
         line_index = offset_vertical
 
-        if max_length_header > 0:
+        if max_length_header > 0 and not skip_header:
             self._write_line(line_index, offset_header, self._header, curses.A_NORMAL | curses.color_pair(colors.HEADER_COLOR))
+            if text_has_up_scroll:
+                up_text = '--- \u2191 \u2191 \u2191 ---'
+                self._write_line(line_index + 1, offset_text_line, up_text, curses.A_NORMAL | curses.color_pair(colors.COMMON_TEXT_COLOR))
             line_index += 2
 
         for line in visible_text_lines:
@@ -265,7 +342,9 @@ class _Drawer(UiDialogDrawer):
             self._write_line(line_index, offset_menu + max_length_option + 2, info, mode)
             line_index += 1
 
-        if len(self._actions) > 0 and total_lines < curses.COLS:
+        if action_y is not None:
+            line_index = action_y
+        elif has_gap:
             line_index += 1
 
         for action, is_selected in self._actions:
@@ -277,32 +356,90 @@ class _Drawer(UiDialogDrawer):
                 self._write_line(line_index, offset_actions, action, curses.A_NORMAL | curses.color_pair(colors.UNSELECTED_ACTION_COLOR))
             offset_actions += len(action) + action_gap
 
-        if curses.COLS <= 40:
+        if cs.cnarrow:
+            co = cs.cols_overscan
+            lo = cs.lines_overscan
             mode = curses.A_NORMAL | curses.color_pair(colors.SELECTED_OPTION_INFO_COLOR)
-            self._runtime.window.hline(curses.LINES - 1, 0, ord(' ') | mode, curses.COLS)
+            desc_y = cs.lines - 1 - lo
+            for clear_y in range(desc_y, cs.lines):
+                self._clear_line(clear_y, 0, ord(' ') | mode, cs.columns)
             if self._narrow_selected_info:
-                text = self._narrow_selected_info[:curses.COLS - 1]
-                x = max(0, (curses.COLS - len(text)) // 2)
-                self._runtime.window.addstr(curses.LINES - 1, x, text, mode)
+                avail = max(1, cs.columns - co * 2 - 1)  # usable width (skip overscan on both sides, -1 for right edge padding)
+                text = self._narrow_selected_info
+                if len(text) > avail:
+                    return self._marquee_read_key(text, avail, mode, cs)
+                x = max(co, (cs.columns - len(text)) // 2)
+                self._write_line(desc_y, x, text, mode)
 
         return self._runtime.read_key()
+
+    def _marquee_read_key(self, text, avail, mode, cs):
+        max_offset = len(text) - avail
+        offset = 0
+        direction = 1
+        pause_ticks = 7  # ~2.1s at 300ms per tick
+        wait = pause_ticks
+        y = cs.lines - 1 - cs.lines_overscan
+        win = self._runtime.window
+        win.timeout(300)
+        try:
+            while True:
+                co = cs.cols_overscan
+                visible = text[offset:offset + avail]
+                self._clear_line(y, 0, ord(' ') | mode, cs.columns)
+                self._write_line(y, co, visible, mode)
+                curses.doupdate()
+                key = self._runtime.read_key()
+                if key != Key.NONE and key != -1:
+                    return key
+                if wait > 0:
+                    wait -= 1
+                    continue
+                offset += direction
+                if offset >= max_offset or offset <= 0:
+                    direction = -direction
+                    wait = pause_ticks
+        finally:
+            win.timeout(-1)
 
     def clear(self) -> None:
         self._layout.reset()
 
+    def _clear_line(self, y, x, ch, n):
+        cs = curses_size()
+        if y < 0 or y >= cs.lines or x < 0 or x >= cs.columns:
+            _log_warning(f'_clear_line out of bounds: y={y} x={x} lines={cs.lines} cols={cs.columns}')
+            return
+        n = min(n, cs.columns - x)
+        if n <= 0:
+            return
+        self._runtime.window.hline(y, x, ch, n)
+
     def _write_line(self, y, x, text, mode):
-        if curses.LINES <= 15:  #  @resolution: This is to move the texts a bit up in tiny resolutions.
-            y -= 1
-        if y < 0 or y >= curses.LINES:
+        if not text:
             return
-        if x < 0:
-            text = text[-x:]
-            x = 0
-        if x >= curses.COLS:
+        cs = curses_size()
+        if y < 0 or y >= cs.lines:
+            _log_warning(f'_write_line out of bounds: y={y} x={x} text={text!r} lines={cs.lines} cols={cs.columns}')
             return
-        if x + len(text) >= curses.COLS:
-            text = text[0:(curses.COLS - x - 1)]
+        left_col = cs.cols_overscan  # @resolution: Overscan compensation in narrow resolutions.
+        right_col = cs.columns - cs.cols_overscan
+        if x < left_col:
+            _log_warning(f'_write_line x below left bound: y={y} x={x} left_col={left_col} text={text!r}')
+            text = text[left_col - x:]
+            x = left_col
+        if x >= right_col:
+            _log_warning(f'_write_line x beyond right bound: y={y} x={x} right_col={right_col} text={text!r}')
+            return
+        if x + len(text) > right_col:
+            _log_warning(f'_write_line text truncated: y={y} x={x} right_col={right_col} text={text!r}')
+            text = text[0:(right_col - x)]
+        if y == cs.lines - 1 and x + len(text) >= cs.columns:
+            text = text[0:(cs.columns - x - 1)]
+        if not text:
+            return
         self._runtime.window.addstr(y, x, text, mode)
+
 
 class CursesDeviceLoginRenderer(DeviceLoginRenderer):
     def __init__(self, runtime: CursesRuntime):
@@ -493,6 +630,33 @@ def calculate_max_length_text_line(lines):
         if length > max_length:
             max_length = length
     return max_length
+
+
+def _calculate_menu_scroll(selected_idx, total_entries, max_entries, current_offset):
+    offset = current_offset
+    if offset == 0:
+        if selected_idx + 1 > max_entries - 2 and total_entries > max_entries:
+            offset = selected_idx - max_entries + 4
+    else:
+        end_vis = offset + max_entries - 1
+        if end_vis < total_entries:
+            last_visible = offset + max_entries - 3
+            if selected_idx + 1 > last_visible:
+                offset = selected_idx - max_entries + 4
+    if offset > 0 and selected_idx - 1 < offset:
+        offset = max(0, selected_idx - 1)
+    offset = max(0, min(offset, max(0, total_entries - (max_entries - 1))))
+
+    vis_slots = max_entries - (1 if offset > 0 else 0)
+    if offset + vis_slots < total_entries:
+        vis_slots -= 1  # down indicator takes a slot
+    visible_end = offset + vis_slots - 1
+    if selected_idx > visible_end:
+        offset = min(selected_idx, max(0, total_entries - (max_entries - 1)))
+    elif selected_idx < offset:
+        offset = max(0, selected_idx)
+
+    return offset
 
 
 def _word_wrap_line(line, max_width):

@@ -20,7 +20,7 @@ from update_all.store_migrator import Migration
 
 
 def migrations() -> list[Migration]:
-    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5]
+    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6]
 
 def migration_v1(local_store) -> None:
     """create arcade_names_txt field"""
@@ -50,3 +50,9 @@ def migration_v5(local_store) -> None:
 
     local_store['mirror'] = ''  # Selected mirror ID ('' / 'off' = no mirror)
     local_store['use_settings_screen_theme_in_log_viewer'] = True  # Allow log viewer to use Settings Screen theme
+
+def migration_v6(local_store) -> None:
+    """create overscan and accessibility_monochrome_ui fields"""
+
+    local_store['overscan'] = 'small'
+    local_store['monochrome_ui'] = False

@@ -25,6 +25,7 @@ def settings_screen_model(): return {
         "encc_forks_description": {"devel": "Official Cores from MiSTer-devel", "db9": "DB9 / SNAC8 forks with ENCC", "aitorgomez": "AitorGomez Fork"},
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
 # @TODO (mirror)       "mirror": {"": "Off.", "off": "Off.", "mysticalrealm": "Mystical Realm"},
+        # "overscan": {"none": "None", "small": "Small", "medium": "Medium"},
         "bool_flag_presence_text": {
             "0": "Ignore them entirely",
             "1": "Place them only on its {0} folder",
@@ -372,15 +373,15 @@ def settings_screen_model(): return {
             "entries": [
                 {
                     "title": "1 Coin-Op Collection",
-                    "description": "{coin_op_collection_downloader:enabled} Cores by Coin-Op Collection Org",
+                    "description": "{coin_op_collection_downloader:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
                         "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
                     }
                 },
                 {
-                    "title": "2 Arcade Offset (Toya)",
-                    "description": "{arcade_offset_downloader:enabled}",
+                    "title": "2 Arcade Offset",
+                    "description": "{arcade_offset_downloader:enabled} Maintainer: Toya",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "arcade_offset_downloader"}],
                         "info": [{
@@ -403,8 +404,8 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "4 theypsilon Unofficial Distribution",
-                    "description": "{unofficial_updater:enabled}",
+                    "title": "4 Unofficial Distribution",
+                    "description": "{unofficial_updater:enabled} Maintainer: theypsilon",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "unofficial_updater"}],
                         "info": [{
@@ -419,8 +420,8 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "5 Y/C Builds from MikeS11",
-                    "description": "{MikeS11/YC_Builds-MiSTer:enabled}",
+                    "title": "5 Y/C Builds",
+                    "description": "{MikeS11/YC_Builds-MiSTer:enabled} Maintainer: MikeS11",
                     "actions": {
                         "ok": [{
                             "type": "condition",
@@ -478,8 +479,8 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "8 Dual RAM Console Cores (TheJesusFish)",
-                    "description": "{TheJesusFish/Dual-Ram-Console-Cores:enabled}",
+                    "title": "8 Dual RAM Console Cores",
+                    "description": "{TheJesusFish/Dual-Ram-Console-Cores:enabled} Maintainer: TheJesusFish",
                     "actions": {
                         "ok": [{
                             "type": "condition",
@@ -642,7 +643,7 @@ def settings_screen_model(): return {
                 },
                 {
                     "title": "2 Pocket Backup",
-                    "description": "{pocket_backup:enabled} Backup saves & other important files.",
+                    "description": "{pocket_backup:enabled} Backup saves & other important files",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "pocket_backup_menu"}],
                         "toggle": [{"type": "rotate_variable", "target": "pocket_backup"}]
@@ -711,6 +712,8 @@ def settings_screen_model(): return {
                 "autoreboot": {"group": ["ua_ini", "store"], "default": "true", "values": ["false", "true"]},
                 "countdown_time": {"group": ["ua_ini", "store"], "default": "15", "values": ["15", "4", "60"]},
                 "log_viewer": {"group": "store", "default": "true", "values": ["false", "true"]},
+                # "overscan": {"group": "store", "default": "small", "values": ["none", "small", "medium"]},
+                # "monochrome_ui": {"group": "store", "default": "false", "values": ["false", "true"]},
 # @TODO (mirror)                "mirror": {"group": "store", "default": "off", "values": ["off", "mysticalrealm"]},
             },
             "entries": [
@@ -730,7 +733,17 @@ def settings_screen_model(): return {
                     "actions": {"ok": [{"type": "rotate_variable", "target": "log_viewer"}]}
                 },
                 # {
-                #     "title": "4 Mirror",
+                #     "title": "4 Overscan",
+                #     "description": "CRT only: {overscan:overscan}",
+                #     "actions": {"ok": [{"type": "rotate_variable", "target": "overscan"}, {"type": "apply_overscan"}]}
+                # },
+                # {
+                #     "title": "5 Accessibility: Monochrome UI",
+                #     "description": "{monochrome_ui:enabled}",
+                #     "actions": {"ok": [{"type": "rotate_variable", "target": "monochrome_ui"}, {"type": "apply_theme"}]}
+                # },
+                # {
+                #     "title": "6 Mirror",
                 #     "description": "{mirror}",
                 #     "actions": {"ok": [{"type": "rotate_variable", "target": "mirror"}]}
                 # }
@@ -801,7 +814,11 @@ def settings_screen_model(): return {
                 {
                     "title": "1 Change Theme",
                     "description": "{ui_theme}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "ui_theme"}, {"type": "apply_theme"}]}
+                    "actions": {"ok": [
+                        {"type": "rotate_variable", "target": "ui_theme"},
+                        #{"type": "disable_monochrome_ui"},
+                        {"type": "apply_theme"}
+                    ]}
                 },
                 {
                     "title": "2 Apply Theme in Log Viewer",
@@ -935,7 +952,7 @@ def settings_screen_model(): return {
         },
         "arcade_organizer_menu": {
             "type": "dialog_sub_menu",
-            "header": "Arcade Organizer 2.0 Settings",
+            "header": "Arcade Organizer Settings",
             "variables": {
                 "arcade_organizer_orgdir": {"rename": "orgdir", "group": "ao_ini", "default": "/media/fat/_Arcade/_Organized", "values": ["/media/fat/_Arcade/_Organized", "/media/fat/_Arcade", "/media/fat/_Arcade Organized"]},
                 "arcade_organizer_topdir": {"rename": "topdir", "group": "ao_ini", "default": "", "values": ["", "platform", "core", "year"]},
@@ -1004,7 +1021,7 @@ def settings_screen_model(): return {
         },
         "arcade_organizer_alphabetic_menu": {
             "type": "dialog_sub_menu",
-            "header": "Arcade Organizer 2.0 Alphabetic Options",
+            "header": "Arcade Organizer Alphabetic Options",
             "variables": {
                 "arcade_organizer_az_dir": {"rename": "az_dir", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
             },
@@ -1018,7 +1035,7 @@ def settings_screen_model(): return {
         },
         "arcade_organizer_region_menu": {
             "type": "dialog_sub_menu",
-            "header": "Arcade Organizer 2.0 Region Options",
+            "header": "Arcade Organizer Region Options",
             "variables": {
                 "arcade_organizer_region_dir": {"rename": "region_dir", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
                 "arcade_organizer_region_main": {"rename": "region_main", "group": "ao_ini", "default": "DEV PREFERRED", "values": ["DEV PREFERRED", "Japan", "World", "USA", "Asia", "Europe", "Hispanic", "Spain", "Argentina", "Italy", "Brazil", "France", "Germany"]},
@@ -1047,7 +1064,7 @@ def settings_screen_model(): return {
         },
         "arcade_organizer_collections_menu": {
             "type": "dialog_sub_menu",
-            "header": "Arcade Organizer 2.0 Collections Options",
+            "header": "Arcade Organizer Collections Options",
             "variables": {
                 "arcade_organizer_platform_dir": {"rename": "platform_dir", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
                 "arcade_organizer_core_dir": {"rename": "core_dir", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
@@ -1096,7 +1113,7 @@ def settings_screen_model(): return {
         },
         "arcade_organizer_year_options_menu": {
             "type": "dialog_sub_menu",
-            "header": "Arcade Organizer 2.0 Year Options",
+            "header": "Arcade Organizer Year Options",
             "variables": {
                 "arcade_organizer_year_dir": {"rename": "year_dir", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
                 "arcade_organizer_decades_dir": {"rename": "decades_dir", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
@@ -1116,7 +1133,7 @@ def settings_screen_model(): return {
         },
         "arcade_organizer_video_input_menu": {
             "type": "dialog_sub_menu",
-            "header": "Arcade Organizer 2.0 Video & Inputs Options",
+            "header": "Arcade Organizer Video & Inputs Options",
             "variables": {
                 "arcade_organizer_move_inputs": {"rename": "move_inputs", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
                 "arcade_organizer_num_buttons": {"rename": "num_buttons", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
@@ -1170,7 +1187,7 @@ def settings_screen_model(): return {
         },
         "arcade_organizer_resolution_menu": {
             "type": "dialog_sub_menu",
-            "header": "Arcade Organizer 2.0 Resolution Options",
+            "header": "Arcade Organizer Resolution Options",
             "variables": {
                 "arcade_organizer_resolution_dir": {"rename": "resolution_dir", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
                 "arcade_organizer_resolution_15khz": {"rename": "resolution_15khz", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
@@ -1202,7 +1219,7 @@ def settings_screen_model(): return {
         },
         "arcade_organizer_rotation_menu": {
             "type": "dialog_sub_menu",
-            "header": "Arcade Organizer 2.0 Rotation Options",
+            "header": "Arcade Organizer Rotation Options",
             "variables": {
                 "arcade_organizer_rotation_dir": {"rename": "rotation_dir", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
                 "arcade_organizer_rotation_0": {"rename": "rotation_0", "group": "ao_ini", "default": "true", "values": ["false", "true"]},
@@ -1246,7 +1263,7 @@ def settings_screen_model(): return {
         },
         "arcade_organizer_extra_software_menu": {
             "type": "dialog_sub_menu",
-            "header": "Arcade Organizer 2.0 Extra Software Options",
+            "header": "Arcade Organizer Extra Software Options",
             "variables": {
                 "arcade_organizer_homebrew": {"rename": "homebrew", "group": "ao_ini", "default": "1", "values": ["1", "0", "2"]},
                 "arcade_organizer_bootleg": {"rename": "bootleg", "group": "ao_ini", "default": "1", "values": ["1", "0", "2"]},
@@ -1278,7 +1295,7 @@ def settings_screen_model(): return {
         },
         "arcade_organizer_advanced_menu": {
             "type": "dialog_sub_menu",
-            "header": "Arcade Organizer 2.0 Advanced Options",
+            "header": "Arcade Organizer Advanced Options",
             "variables": {
                 "arcade_organizer_prepend_year": {"rename": "prepend_year", "group": "ao_ini", "default": "false", "values": ["false", "true"]},
                 "arcade_organizer_verbose": {"rename": "verbose", "group": "ao_ini", "default": "false", "values": ["false", "true"]},
@@ -1391,7 +1408,7 @@ def _main_menu(retroaccount_logged_in): return {
     "entries": [
         {
             "title": "1 Main Distribution",
-            "description": "{main_updater:enabled} Main MiSTer cores from {encc_forks}",
+            "description": "{main_updater:enabled} Main cores from {encc_forks}",
             "actions": {
                 "ok": [{"type": "navigate", "target": "main_distribution_menu"}],
                 "toggle": [{"type": "rotate_variable", "target": "main_updater"}],
@@ -1436,7 +1453,7 @@ def _main_menu(retroaccount_logged_in): return {
         _retroaccount_account_entry() if retroaccount_logged_in else _retroaccount_login_entry(),
         {
             "title": "8 Patrons Menu",
-            "description": "Timeline, Themes, etc... [2026.02.13]",
+            "description": "Timeline, Themes, etc... 2026.02.13",
             "actions": {"ok": [
                 {"type": "calculate_has_right_available_code"},
                 {
@@ -1445,11 +1462,11 @@ def _main_menu(retroaccount_logged_in): return {
                     "true": [{"type": "navigate", "target": "patrons_menu"}],
                     "false": [{
                         "ui": "message",
-                        "header": "Patreon Key not found!",
+                        "header": "Update All Extras not enabled!",
                         "text": [
                             "This menu contains exclusive content for patrons only.",
                             " ",
-                            "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock premium options.",
+                            "Support ~patreon.com/theypsilon~ and then log in via the @Login@ menu entry to unlock premium options.",
                             " ",
                             "Thank you so much for your support!",
                         ],
@@ -1566,11 +1583,11 @@ def _try_access_patrons_menu(): return [
         "true": [{"type": "navigate", "target": "patrons_menu"}],
         "false": [{
             "ui": "message",
-            "header": "Patreon Key not found!",
+            "header": "Update All Extras not enabled!",
             "text": [
                 "This menu contains exclusive content for patrons only.",
                 " ",
-                "Get your @'Patreon Key'@ file from ~patreon.com/theypsilon~ and put it on the @Scripts@ folder to unlock premium options.",
+                "Support ~patreon.com/theypsilon~ and then log in via the @Login@ menu entry to unlock premium options.",
                 " ",
                 "Thank you so much for your support!",
             ],

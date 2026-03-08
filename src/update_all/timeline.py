@@ -67,17 +67,10 @@ class Timeline:
             timeline_doc.append("\n")
             timeline_doc.append("[!!] This Timeline only covers the latest 7 days of updates [!!]\n")
             timeline_doc.append("\n")
-            if self._file_system.is_file(config.patreon_key_path):
-                timeline_doc.append("Your Patreon Key is expired since 2025-10-17!\n")
-                timeline_doc.append("Get a new Patreon Key at www.patreon.com/theypsilon\n")
-                timeline_doc.append("And you'll unlock an extended Timeline of 12 months!\n")
-                timeline_doc.append("\n")
-                timeline_doc.append("<theypsilon> Thank you so much for supporting my work!!\n")
-            else:
-                timeline_doc.append("For an extended Timeline of 12 months:\n")
-                timeline_doc.append(" • Support www.patreon.com/theypsilon\n")
-                timeline_doc.append(" • Login in the Settings Screen\n")
-                timeline_doc.append("\n")
+            timeline_doc.append("For an extended Timeline of 12 months:\n")
+            timeline_doc.append(" • Support www.patreon.com/theypsilon\n")
+            timeline_doc.append(" • Login in the Settings Screen\n")
+            timeline_doc.append("\n")
         elif timeline_plus_model is not None:
             timeline_doc = create_timeline_doc(timeline_plus_model, names_dict)
             timeline_doc.append("\n")
@@ -116,7 +109,8 @@ def create_timeline_doc(model, names_dict: dict[str, str]):
     doc = []
     sections = model.get("sections", [])
 
-    columns = terminal_size().columns
+    ts = terminal_size()
+    columns = ts.columns - ts.cols_overscan * 2
     if columns < 80:
         doc.append("        ".center(columns))
         doc.append(" UPDATE ".center(columns))
@@ -168,7 +162,8 @@ def create_timeline_doc(model, names_dict: dict[str, str]):
     for section in sections:
         add_doc_section(doc, section, names_dict)
 
-    doc.append("=" * columns + "\n")
+    ts = terminal_size()
+    doc.append("=" * (ts.columns - ts.cols_overscan * 2) + "\n")
 
     return doc
 
@@ -180,7 +175,8 @@ def add_doc_section(doc: list[str], section: dict[str, Any], names_dict: dict[st
         return
 
     doc.append(f'>>> {title.upper()}:\n')
-    doc.append("-" * terminal_size().columns + "\n")
+    ts = terminal_size()
+    doc.append("-" * (ts.columns - ts.cols_overscan * 2) + "\n")
 
     for category in categories:
         formatted_category = category['category']

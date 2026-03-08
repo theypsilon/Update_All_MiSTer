@@ -98,11 +98,27 @@ class GenericProvider(Generic[TObject]):
 
 
 
-_terminal_size = None
+_cols_overscan = int(os.environ.get('COLS_OVERSCAN', '2'))
+_lines_overscan = int(os.environ.get('LINES_OVERSCAN', '1'))
+
+def get_overscan():
+    return _cols_overscan, _lines_overscan
+
+def set_overscan(cols, lines):
+    global _cols_overscan, _lines_overscan
+    _cols_overscan = cols
+    _lines_overscan = lines
+
+_terminal_raw_size = None
 def terminal_size():
-    global _terminal_size
-    if _terminal_size is None:
+    global _terminal_raw_size
+    if _terminal_raw_size is None:
         size = shutil.get_terminal_size()
-        columns = size.columns if size.columns != 40 else 39
-        _terminal_size = types.SimpleNamespace(columns=columns, lines=size.lines)
-    return _terminal_size
+        _terminal_raw_size = types.SimpleNamespace(columns=size.columns, lines=size.lines)
+    raw = _terminal_raw_size
+    lnarrow = raw.lines <= 18
+    cnarrow = raw.columns <= 48
+    cols_os, lines_os = get_overscan()
+    co = cols_os if cnarrow else 0
+    lo = lines_os if lnarrow else 0
+    return types.SimpleNamespace(columns=raw.columns, lines=raw.lines, cols_overscan=co, lines_overscan=lo, lnarrow=lnarrow, cnarrow=cnarrow)

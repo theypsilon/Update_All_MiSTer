@@ -16,6 +16,7 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+import hashlib
 import json
 from enum import unique, Enum
 from typing import Optional, Tuple, Any, TypedDict, Union
@@ -64,8 +65,10 @@ class RetroAccountGateway:
             'x-refresh-token': refresh_token,
             'x-device-id': device_id,
         }
+        url = f'{self._server_url()}{API_retroaccount_mister_sync}'
+        self._logger.debug(f'RetroAccountGateway: fetching {url}')
         try:
-            status_code, raw_body_response = self._fetcher.fetch(f'{self._server_url()}{API_retroaccount_mister_sync}', method='POST', body=body, headers=headers, timeout=10)
+            status_code, raw_body_response = self._fetcher.fetch(url, method='POST', body=body, headers=headers, timeout=10)
         except Exception as e:
             self._logger.debug('RetroAccountGateway: mister_sync fetch failed')
             self._logger.debug(e)
@@ -85,8 +88,10 @@ class RetroAccountGateway:
             'x-refresh-token': refresh_token,
             'x-device-id': device_id,
         }
+        url = f'{self._server_url()}{API_retroaccount_device_logout}'
+        self._logger.debug(f'RetroAccountGateway: fetching {url}')
         try:
-            status_code, _ = self._fetcher.fetch(f'{self._server_url()}{API_retroaccount_device_logout}', method='POST', headers=headers, timeout=10)
+            status_code, _ = self._fetcher.fetch(url, method='POST', headers=headers, timeout=10)
         except Exception as e:
             self._logger.debug('RetroAccountGateway: post_device_logout fetch failed')
             self._logger.debug(e)
@@ -98,8 +103,10 @@ class RetroAccountGateway:
         payload: dict[str, Any] = {'client_id': client_id}
         if device_id:
             payload['device_id'] = device_id
+        url = f'{self._server_url()}{API_retroaccount_device_login_code}'
+        self._logger.debug(f'RetroAccountGateway: fetching {url}')
         try:
-            status, raw = self._fetcher.fetch(f'{self._server_url()}{API_retroaccount_device_login_code}', method='POST', body=payload, timeout=10)
+            status, raw = self._fetcher.fetch(url, method='POST', body=payload, timeout=10)
         except Exception as e:
             self._logger.debug('RetroAccountGateway: request_device_code fetch failed')
             self._logger.debug(e)
@@ -113,13 +120,15 @@ class RetroAccountGateway:
         payload: dict[str, Any] = {'device_code': device_code, 'client_id': client_id}
         if device_id:
             payload['device_id'] = device_id
+        url = f'{self._server_url()}{API_retroaccount_token_poll}'
         try:
-            status, raw = self._fetcher.fetch(f'{self._server_url()}{API_retroaccount_token_poll}', method='POST', body=payload, timeout=10)
+            status, raw = self._fetcher.fetch(url, method='POST', body=payload, timeout=10)
         except Exception as e:
             self._logger.debug('RetroAccountGateway: poll_for_token fetch failed')
             self._logger.debug(e)
             return None
         if status == 200:
+            self._logger.debug(f'RetroAccountGateway: fetched {url} successfully')
             return json.loads(raw.decode('utf-8')) if raw else {}
         if status == 428:
             return None
@@ -128,9 +137,11 @@ class RetroAccountGateway:
         self._logger.debug(f'RetroAccountGateway: poll_for_token failed with status {status}')
         return None
 
-    def install_file(self, file_path: str, file_url: str) -> None:
+    def install_file(self, file_path: str, file_url: str) -> str:
+        self._logger.debug(f'RetroAccountGateway: fetching {file_url}')
         status, data = self._fetcher.fetch(file_url, timeout=30)
         if status != 200:
             raise RuntimeError(f'install_file failed: HTTP {status} for {file_url}')
         self._file_system.make_dirs_parent(file_path)
         self._file_system.write_file_bytes(file_path, data)
+        return hashlib.md5(data).hexdigest()

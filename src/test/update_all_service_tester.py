@@ -15,7 +15,7 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
-from typing import Tuple, Any, List, Set, Dict, Callable, Optional
+from typing import Any, Callable, Optional
 from unittest.mock import MagicMock
 
 from test.countdown_stub import CountdownStub
@@ -184,14 +184,14 @@ class UiContextStub(UiContext):
     def set_value(self, key: str, value: Any) -> None:
         self.variables[key] = value
 
-    def add_custom_effects(self, effects: Dict[str, Callable[[], None]]):
+    def add_custom_effects(self, effects: dict[str, Callable[[], None]]):
         self.effects = effects
 
-    def add_custom_formatters(self, formatters: Dict[str, Callable[[str], str]]):
+    def add_custom_formatters(self, formatters: dict[str, Callable[[str], str]]):
         self.formatters = formatters
 
 
-def ensure_str_lists(this: List[any]) -> List[str]:
+def ensure_str_lists(this: list[any]) -> list[str]:
     for value in this:
         if not isinstance(this, list):
             raise Exception(f'Value "{str(value)}" must be list, got "{str(type(value))}" instead.')
@@ -199,7 +199,7 @@ def ensure_str_lists(this: List[any]) -> List[str]:
     return this
 
 
-def default_databases(add: List[str] = None, sub: List[str] = None) -> Set[str]:
+def default_databases(add: list[str] = None, sub: list[str] = None) -> set[str]:
     sub = ensure_str_lists(sub or [])
     return {value for value in {DB_ID_DISTRIBUTION_MISTER, all_dbs('').JTCORES.db_id, all_dbs('').COIN_OP_COLLECTION.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id} if value not in sub} | set(ensure_str_lists(add or []))
 
@@ -289,16 +289,16 @@ class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
     def __init__(self):
         super().__init__(NoLogger(), MagicMock())
 
-    def make_arcade_organizer_config(self, ini_file_str: str, base_path: str, http_proxy: str = '') -> Dict[str, Any]:
+    def make_arcade_organizer_config(self, ini_file_str: str, base_path: str, http_proxy: str = '') -> dict[str, Any]:
         return {}
 
-    def run_arcade_organizer_organize_all_mras(self, config: Dict[str, Any]) -> bool:
+    def run_arcade_organizer_organize_all_mras(self, config: dict[str, Any]) -> bool:
         return True
 
-    def run_arcade_organizer_print_orgdir_folders(self, config: Dict[str, Any]) -> Tuple[List[str], bool]:
+    def run_arcade_organizer_print_orgdir_folders(self, config: dict[str, Any]) -> tuple[list[str], bool]:
         return [], True
 
-    def run_arcade_organizer_print_ini_options(self, config: Dict[str, Any]) -> bool:
+    def run_arcade_organizer_print_ini_options(self, config: dict[str, Any]) -> bool:
         return True
 
 

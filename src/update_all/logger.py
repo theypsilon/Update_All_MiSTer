@@ -16,11 +16,17 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import datetime
+import os
+import shutil
 import tempfile
 import sys
 import time
 import traceback
 from abc import ABC, abstractmethod
+from io import TextIOWrapper
+from typing import Optional
+
+from update_all.constants import FILE_update_all_print_tmp_log, OVERSCAN_PRESETS
 
 
 class Logger(ABC):
@@ -29,7 +35,7 @@ class Logger(ABC):
         """makes logs more verbose"""
 
     @abstractmethod
-    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
+    def print(self, *args, sep='', end='\n', flush=True):
         """print always"""
 
     @abstractmethod
@@ -43,11 +49,36 @@ class Logger(ABC):
     def finalize(self):
         """to be called at the very end, should not call any method after this one"""
 
+_print_tmp_log_file: Optional[TextIOWrapper] = None
+def open_print_tmp_log_file():
+    if os.path.exists(FILE_update_all_print_tmp_log):
+        os.remove(FILE_update_all_print_tmp_log)
+    global _print_tmp_log_file
+    _print_tmp_log_file = open(FILE_update_all_print_tmp_log, 'w')
+
+def close_print_tmp_log_file():
+    global _print_tmp_log_file
+    if _print_tmp_log_file is not None:
+        _print_tmp_log_file.close()
+        _print_tmp_log_file = None
+
+def apply_overscan_to_text(args, sep: str, columns: int, overscan: int) -> list[str]:
+    import textwrap
+    text = sep.join(str(a) for a in args)
+    pad = ' ' * overscan
+    usable = columns - overscan * 2
+    if not text:
+        return [pad]
+    lines = textwrap.wrap(text, width=usable, break_long_words=True, break_on_hyphens=False)
+    return [pad + line for line in lines]
+
 
 class PrintLogger(Logger):
     def __init__(self):
         self._verbose_mode = False
         self._start_time = None
+        self._overscan = 0
+        self._columns = 0
 
     def set_local_repository(self, local_repository):
         pass
@@ -56,9 +87,19 @@ class PrintLogger(Logger):
         if config.verbose:
             self._verbose_mode = True
             self._start_time = config.start_time
+        if config.overscan in OVERSCAN_PRESETS:
+            self._overscan = OVERSCAN_PRESETS[config.overscan][0]
+        self._columns = shutil.get_terminal_size().columns
+        open_print_tmp_log_file()
 
-    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
-        self._do_print(*args, sep=sep, end=end, file=file, flush=flush)
+    def print(self, *args, sep='', end='\n', flush=True):
+        # if self._overscan == 0:
+        self._do_print(*args, sep=sep, end=end, file=sys.stdout, flush=flush)
+        # else:
+        #     for line in apply_overscan_to_text(args, sep, self._columns, self._overscan):
+        #         self._do_print(line, sep='', end=end, file=sys.stdout, flush=flush)
+        if _print_tmp_log_file is not None:
+            self._do_print(*args, sep=sep, end=end, file=_print_tmp_log_file, flush=flush)
 
     def debug(self, *args, sep='', end='\n', flush=True):
         if self._verbose_mode:
@@ -91,7 +132,7 @@ class TrivialLoggerDecorator(Logger):
     def configure(self, config):
         self._decorated_logger.configure(config)
 
-    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
+    def print(self, *args, sep='', end='\n', flush=True):
         self._decorated_logger.print(*args, sep=sep, end=end, flush=flush)
 
     def debug(self, *args, sep='', end='\n', flush=True):
@@ -116,11 +157,14 @@ class FileLoggerDecorator(TrivialLoggerDecorator):
             return
 
         self._logfile.close()
-        self._local_repository_provider.get().save_log_from_tmp(self._logfile.name)
+        try:
+            self._local_repository_provider.get().save_log_from_tmp(self._logfile.name)
+        except:
+            pass
         self._logfile = None
 
-    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
-        self._decorated_logger.print(*args, sep=sep, end=end, file=file, flush=flush)
+    def print(self, *args, sep='', end='\n', flush=True):
+        self._decorated_logger.print(*args, sep=sep, end=end, flush=flush)
         self._do_print_in_file(*args, sep=sep, end=end, flush=flush)
 
     def debug(self, *args, sep='', end='\n', flush=True):
@@ -137,7 +181,7 @@ class DebugOnlyLoggerDecorator(TrivialLoggerDecorator):
     def __init__(self, decorated_logger):
         super().__init__(decorated_logger)
 
-    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
+    def print(self, *args, sep='', end='\n', flush=True):
         """Calls debug instead of print"""
         self._decorated_logger.debug(*args, sep=sep, end=end, flush=flush)
 
@@ -188,7 +232,7 @@ class CollectorLoggerDecorator(TrivialLoggerDecorator):
         self.prints = []
         self.debugs = []
 
-    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
+    def print(self, *args, sep='', end='\n', flush=True):
         self._decorated_logger.print(*args, sep=sep, end=end, flush=flush)
         self.prints.append(args[0])
 
@@ -202,5 +246,5 @@ class PostPrintCallbackLoggerDecorator(TrivialLoggerDecorator):
         super().__init__(decorated_logger)
         self._post_print_cb = post_print_cb
 
-    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=True):
+    def print(self, *args, sep='', end='\n', flush=True):
         self._post_print_cb(args[0])

@@ -15,16 +15,14 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
-import sys
-
 from update_all.logger import Logger
 
 
 class NoLogger(Logger):
-    def print(self, *args, sep='', end='\n', file=sys.stdout, flush=False):
+    def print(self, *args, sep='', end='\n', flush=False):
         pass
 
-    def debug(self, *args, sep='', end='\n', file=sys.stdout, flush=False):
+    def debug(self, *args, sep='', end='\n', flush=False):
         pass
 
     def bench(self, _label):

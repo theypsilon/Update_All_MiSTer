@@ -51,8 +51,9 @@ def main(env):
     except Exception as _:
         logger.print(traceback.format_exc())
         exit_code = 1
+    finally:
+        logger.finalize()
 
-    logger.finalize()
     return exit_code
 
 

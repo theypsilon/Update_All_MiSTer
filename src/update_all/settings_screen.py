@@ -23,7 +23,8 @@ from update_all.analogue_pocket.pocket_backup import pocket_backup
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
-    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
+    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme, \
+    OVERSCAN_PRESETS
 from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, ALL_DB_IDS
 from update_all.downloader_utils import prepare_latest_downloader
 from update_all.encryption import Encryption, EncryptionResult
@@ -31,7 +32,7 @@ from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
-from update_all.other import GenericProvider
+from update_all.other import GenericProvider, set_overscan
 from update_all.logger import Logger, CollectorLoggerDecorator
 from update_all.os_utils import OsUtils
 from update_all.retroaccount import RetroAccountService
@@ -119,6 +120,9 @@ class SettingsScreen(UiApplication):
         ui.set_value('pocket_firmware_update', str(local_store.get_pocket_firmware_update()).lower())
         ui.set_value('pocket_backup', str(local_store.get_pocket_backup()).lower())
         ui.set_value('retroaccount_domain', config.retroaccount_domain)
+        # ui.set_value('overscan', local_store.get_overscan())
+        # self.apply_overscan(ui)
+        # ui.set_value('monochrome_ui', str(local_store.get_monochrome_ui()).lower())
 
         if ALL_DB_IDS['JTCORES'] not in config.databases:
             ui.set_value('download_beta_cores', str(local_store.get_download_beta_cores()).lower())
@@ -129,7 +133,10 @@ class SettingsScreen(UiApplication):
             ui.set_value('names_sort_code', local_store.get_names_sort_code())
 
         drawer_factory, theme_manager, device_login_renderer = self._settings_screen_printer.initialize_screen()
-        ui_theme = local_store.get_theme() if self._encryption.validate_key() == EncryptionResult.Success else DEFAULT_SETTINGS_SCREEN_THEME
+        if local_store.get_monochrome_ui():
+            ui_theme = 'Mono'
+        else:
+            ui_theme = local_store.get_theme() if self._encryption.validate_key() == EncryptionResult.Success else DEFAULT_SETTINGS_SCREEN_THEME
         theme_manager.set_theme(ui_theme)
 
         pocket_firmware = self._local_repository.pocket_firmware_info()
@@ -150,9 +157,11 @@ class SettingsScreen(UiApplication):
             'clean_arcade_organizer_folders': lambda effect: self.clean_arcade_organizer_folders(ui),
             'calculate_names_char_code_warning': lambda effect: self.calculate_names_char_code_warning(ui),
             'calculate_names_txt_file_warning': lambda effect: self.calculate_names_txt_file_warning(ui),
+            # 'disable_monochrome_ui': lambda effect: self.disable_monochrome_ui(ui),
             'apply_theme': lambda effect: self.apply_theme(ui),
             'pocket_firmware_update': lambda effect: self.pocket_firmware_update(ui),
             'pocket_backup': lambda effect: self.pocket_backup(ui),
+            # 'apply_overscan': lambda effect: self.apply_overscan(ui),
             'retroaccount_device_logout': lambda effect: self.retroaccount_device_logout(ui),
         })
 
@@ -305,6 +314,8 @@ class SettingsScreen(UiApplication):
         store.set_autoreboot(config.autoreboot)
         store.set_pocket_firmware_update(config.pocket_firmware_update)
         store.set_pocket_backup(config.pocket_backup)
+        store.set_overscan(config.overscan)
+        store.set_monochrome_ui(config.monochrome_ui)
         # @TODO (mirror) store.set_mirror(ui.get_value('mirror'))
 
     def _does_arcade_oganizer_need_save(self, ui: UiContext):
@@ -395,9 +406,23 @@ class SettingsScreen(UiApplication):
         ui.set_value('has_arcade_organizer_folders', 'false')
         ui.set_value('arcade_organizer_folders_list', '')
 
+    def disable_monochrome_ui(self, ui: UiContext):
+        if ui.get_value('monochrome_ui') == 'true':
+            ui.set_value('monochrome_ui', 'false')
+
+
+
     def apply_theme(self, ui: UiContext):
+        # if ui.get_value('monochrome_ui') == 'true': # @TODO: Enable whenever we enable monochrome_ui and disable_monochrome_ui
+        #     self._theme_manager.set_theme('Mono')
+        # else:
+        #     ui_theme = ui.get_value('ui_theme') if self._encryption.validate_key() == EncryptionResult.Success else DEFAULT_SETTINGS_SCREEN_THEME
+        #     self._theme_manager.set_theme(ui_theme)
         ui_theme = ui.get_value('ui_theme') if self._encryption.validate_key() == EncryptionResult.Success else DEFAULT_SETTINGS_SCREEN_THEME
         self._theme_manager.set_theme(ui_theme)
+    def apply_overscan(self, ui: UiContext):
+        cols, lines = OVERSCAN_PRESETS.get(ui.get_value('overscan'), (2, 1))
+        set_overscan(cols, lines)
 
     def prepare_exit_dont_save_and_run(self, ui):
         self._copy_ui_options_to_current_config(ui)
