@@ -51,7 +51,7 @@ class Timeline:
                 elif decrypt_result == EncryptionResult.MissingKey:
                     pass
                 elif decrypt_result == EncryptionResult.InvalidKey:
-                    self._logger.debug("Your Patreon Key is expired.")
+                    self._logger.debug("Your Patreon Key is expired or not yet updated.")
                 elif decrypt_result == EncryptionResult.ImproperEnvironment:
                     self._logger.debug('Please run Update All on MiSTer to load the Extended Update Timeline.')
                 else:
