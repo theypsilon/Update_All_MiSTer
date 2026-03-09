@@ -16,46 +16,44 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 from update_all.config import Config
-from update_all.constants import FILE_names_txt
+from update_all.constants import FILE_names_txt, FILE_timeline_plus2
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
 from update_all.other import GenericProvider, terminal_size
+from update_all.retroaccount import RetroAccountService
 
 import tempfile
-import shutil
 from typing import Any
 
 
+
 class Timeline:
-    def __init__(self, logger: Logger, config_provider: GenericProvider[Config], file_system: FileSystem, encryption: Encryption):
+    def __init__(self, logger: Logger, config_provider: GenericProvider[Config], file_system: FileSystem, encryption: Encryption, retroaccount: RetroAccountService):
         self._logger = logger
         self._config_provider = config_provider
         self._file_system = file_system
         self._encryption = encryption
+        self._retroaccount = retroaccount
         self._names_dict = {}
 
     def load_timeline_doc(self, env_check_skip: bool = False) -> list[str]:
         config = self._config_provider.get()
 
-        timeline_plus_model = None
         timeline_model = None
+        timeline_plus_model = None
+        not_yet_updated = False
+
         if self._file_system.is_file(config.timeline_plus_path):
             with tempfile.NamedTemporaryFile() as temp_file:
                 if env_check_skip:
-                    self._logger.debug('Skipping environment check for timeline decryption')
+                    self._logger.debug('Timeline: Skipping environment check for timeline decryption')
                     self._encryption.skip_environment_check()
-                decrypt_result = self._encryption.decrypt_file(config.timeline_plus_path, temp_file.name)
-                if decrypt_result == EncryptionResult.Success:
-                    timeline_plus_model = self._file_system.load_dict_from_file(temp_file.name, '.json')
-                elif decrypt_result == EncryptionResult.MissingKey:
-                    pass
-                elif decrypt_result == EncryptionResult.InvalidKey:
-                    self._logger.debug("Your Patreon Key is expired or not yet updated.")
-                elif decrypt_result == EncryptionResult.ImproperEnvironment:
-                    self._logger.debug('Please run Update All on MiSTer to load the Extended Update Timeline.')
-                else:
-                    self._logger.debug(f'Could not decrypt timeline_plus_file: {decrypt_result}')
+
+                timeline_plus_model, not_yet_updated = self._extract_plus_model(config.timeline_plus_path, temp_file.name)
+                if not_yet_updated and self._file_system.is_file(FILE_timeline_plus2):
+                    self._logger.debug("Timeline: Attempting to extract from timeline_plus2.")
+                    timeline_plus_model, not_yet_updated = self._extract_plus_model(FILE_timeline_plus2, temp_file.name)
 
         if timeline_plus_model is None and self._file_system.is_file(config.timeline_short_path):
             timeline_model = self._file_system.load_dict_from_file(config.timeline_short_path, '.json')
@@ -67,9 +65,12 @@ class Timeline:
             timeline_doc.append("\n")
             timeline_doc.append("[!!] This Timeline only covers the latest 7 days of updates [!!]\n")
             timeline_doc.append("\n")
-            timeline_doc.append("For an extended Timeline of 12 months:\n")
-            timeline_doc.append(" • Support www.patreon.com/theypsilon\n")
-            timeline_doc.append(" • Login in the Settings Screen\n")
+            if not_yet_updated:
+                timeline_doc.append("The Extended Timeline is being calculated, try again soon!:\n")
+            else:
+                timeline_doc.append("For an extended Timeline of 12 months:\n")
+                timeline_doc.append(" • Support www.patreon.com/theypsilon\n")
+                timeline_doc.append(" • Login in the Settings Screen\n")
             timeline_doc.append("\n")
         elif timeline_plus_model is not None:
             timeline_doc = create_timeline_doc(timeline_plus_model, names_dict)
@@ -79,6 +80,28 @@ class Timeline:
             timeline_doc = []
 
         return timeline_doc
+
+    def _extract_plus_model(self, timeline_plus_model_path: str, output: str) -> tuple[Any, bool]:
+        timeline_plus_model = None
+        not_yet_updated = False
+
+        decrypt_result = self._encryption.decrypt_file(timeline_plus_model_path, output)
+        if decrypt_result == EncryptionResult.Success:
+            timeline_plus_model = self._file_system.load_dict_from_file(output, '.json')
+        elif decrypt_result == EncryptionResult.MissingKey:
+            pass
+        elif decrypt_result == EncryptionResult.InvalidKey:
+            if self._retroaccount.is_update_all_extras_active():
+                not_yet_updated = True
+                self._logger.debug("Timeline: Your Patreon Key is not yet updated.")
+            else:
+                self._logger.debug("Timeline: Your Patreon Key is expired.")
+        elif decrypt_result == EncryptionResult.ImproperEnvironment:
+            self._logger.debug('Timeline: Please run Update All on MiSTer to load the Extended Update Timeline.')
+        else:
+            self._logger.debug(f'Timeline: Could not decrypt timeline_plus_file: {decrypt_result}')
+
+        return timeline_plus_model, not_yet_updated
 
     def _load_names_dict(self, names_path: str) -> dict[str, str]:
         names_dict = {}
@@ -100,7 +123,7 @@ class Timeline:
                 if key and value:
                     names_dict[key] = value
         except Exception as e:
-            self._logger.debug(f"Error reading names file {names_path}.")
+            self._logger.debug(f"Timeline: Error reading names file {names_path}.")
             self._logger.debug(e)
 
         return names_dict

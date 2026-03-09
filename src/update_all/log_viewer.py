@@ -21,10 +21,10 @@ import os
 from typing import Optional
 
 from update_all.constants import DEFAULT_LOG_VIEWER_THEME
-from update_all.encryption import Encryption, EncryptionResult
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
+from update_all.retroaccount import RetroAccountService
 
 
 def clamp(v, lo, hi): return max(lo, min(v, hi))
@@ -67,15 +67,15 @@ def create_log_document(file_path: str) -> list[str]:
 
 
 class LogViewer:
-    def __init__(self, file_system: FileSystem, store_provider: GenericProvider[LocalStore], encryption: Encryption):
+    def __init__(self, file_system: FileSystem, store_provider: GenericProvider[LocalStore], retroaccount: RetroAccountService):
         self._file_system = file_system
         self._store_provider = store_provider
-        self._encryption = encryption
+        self._retroaccount = retroaccount
 
     def show(self, doc: list[str], popup_dict: Optional[dict[str, str]] = None, initial_index: int = 0) -> bool:
         store = self._store_provider.get()
         can_use_custom_theme = (
-            self._encryption.validate_key() == EncryptionResult.Success
+            self._retroaccount.is_update_all_extras_active()
             and store.get_use_settings_screen_theme_in_log_viewer()
         )
         ui_theme = store.get_theme() if can_use_custom_theme else DEFAULT_LOG_VIEWER_THEME

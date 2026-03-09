@@ -139,7 +139,7 @@ class EncryptionTester(Encryption):
 
 class TimelineTester(Timeline):
     def __init__(self, file_system: FileSystem = None):
-        super().__init__(NoLogger(), GenericProvider[Config](), file_system or FileSystemFactory().create_for_system_scope(), EncryptionTester(file_system=file_system))
+        super().__init__(NoLogger(), GenericProvider[Config](), file_system or FileSystemFactory().create_for_system_scope(), EncryptionTester(file_system=file_system), RetroAccountServiceTester())
 
 class SettingsScreenTester(SettingsScreen):
     def __init__(self, config_provider: GenericProvider[Config] = None,
@@ -264,7 +264,6 @@ class UpdateAllServiceTester(UpdateAllService):
         environment_setup = environment_setup or EnvironmentSetupTester(file_system=file_system, os_utils=os_utils, config_provider=config_provider)
         settings_screen = settings_screen or SettingsScreenTester(config_provider=config_provider, file_system=file_system, os_utils=os_utils, ao_service=ao_service)
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
-        encryption = EncryptionTester()
 
         super().__init__(
             config_provider=config_provider,
@@ -273,13 +272,12 @@ class UpdateAllServiceTester(UpdateAllService):
             os_utils=os_utils,
             countdown=countdown or CountdownStub(),
             settings_screen=settings_screen,
-            encryption=encryption,
             store_provider=store_provider or GenericProvider[LocalStore](),
             ini_repository=self.ini_repository,
             environment_setup=environment_setup,
             ao_service=ao_service,
             local_repository=local_repository or LocalRepositoryTester(file_system=file_system),
-            log_viewer=LogViewerTester(file_system, store_provider, encryption),
+            log_viewer=LogViewerTester(file_system, store_provider, RetroAccountServiceTester()),
             timeline=TimelineTester(file_system),
             retroaccount=RetroAccountServiceTester(),
             fetcher=MagicMock()

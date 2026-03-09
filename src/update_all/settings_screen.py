@@ -27,7 +27,7 @@ from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABL
     OVERSCAN_PRESETS
 from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, ALL_DB_IDS
 from update_all.downloader_utils import prepare_latest_downloader
-from update_all.encryption import Encryption, EncryptionResult
+from update_all.encryption import Encryption
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
@@ -136,7 +136,7 @@ class SettingsScreen(UiApplication):
         if local_store.get_monochrome_ui():
             ui_theme = 'Mono'
         else:
-            ui_theme = local_store.get_theme() if self._encryption.validate_key() == EncryptionResult.Success else DEFAULT_SETTINGS_SCREEN_THEME
+            ui_theme = local_store.get_theme() if self._retroaccount.is_update_all_extras_active() else DEFAULT_SETTINGS_SCREEN_THEME
         theme_manager.set_theme(ui_theme)
 
         pocket_firmware = self._local_repository.pocket_firmware_info()
@@ -184,7 +184,7 @@ class SettingsScreen(UiApplication):
         if firmware_md5 is not None:
             self._original_firmware = firmware_md5
 
-        ui.set_value('has_right_available_code', 'true' if self._encryption.validate_key() == EncryptionResult.Success else 'false')
+        ui.set_value('has_right_available_code', 'true' if self._retroaccount.is_update_all_extras_active() else 'false')
 
         self._set_spinner_options(ui)
 
@@ -416,9 +416,9 @@ class SettingsScreen(UiApplication):
         # if ui.get_value('monochrome_ui') == 'true': # @TODO: Enable whenever we enable monochrome_ui and disable_monochrome_ui
         #     self._theme_manager.set_theme('Mono')
         # else:
-        #     ui_theme = ui.get_value('ui_theme') if self._encryption.validate_key() == EncryptionResult.Success else DEFAULT_SETTINGS_SCREEN_THEME
+        #     ui_theme = ui.get_value('ui_theme') if self._retroaccount.is_update_all_extras_active() else DEFAULT_SETTINGS_SCREEN_THEME
         #     self._theme_manager.set_theme(ui_theme)
-        ui_theme = ui.get_value('ui_theme') if self._encryption.validate_key() == EncryptionResult.Success else DEFAULT_SETTINGS_SCREEN_THEME
+        ui_theme = ui.get_value('ui_theme') if self._retroaccount.is_update_all_extras_active() else DEFAULT_SETTINGS_SCREEN_THEME
         self._theme_manager.set_theme(ui_theme)
     def apply_overscan(self, ui: UiContext):
         cols, lines = OVERSCAN_PRESETS.get(ui.get_value('overscan'), (2, 1))

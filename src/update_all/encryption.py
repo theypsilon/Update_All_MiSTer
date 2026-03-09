@@ -23,7 +23,7 @@ from enum import unique, Enum
 from functools import cache
 
 from update_all.config import Config
-from update_all.constants import FILE_patreon_key_md5, MD5_old_patreon_key
+from update_all.constants import FILE_patreon_key_md5, MD5_old_patreon_key, FILE_patreon_key_prev
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
 from update_all.other import GenericProvider
@@ -82,6 +82,13 @@ class Encryption:
         return EncryptionResult.Success
 
     def decrypt_file(self, input_path: str, output_path: str) -> EncryptionResult:
+        result = self._decrypt_file(input_path, output_path, self._config_provider.get().patreon_key_path)
+        if result == EncryptionResult.InvalidKey and self._file_system.is_file(FILE_patreon_key_prev):
+            self._logger.debug("Encryption: Attempting with older patreon key.")
+            result = self._decrypt_file(input_path, output_path, FILE_patreon_key_prev)
+        return result
+
+    def _decrypt_file(self, input_path: str, output_path: str, key_file_path: str) -> EncryptionResult:
         result = self._common_checks()
         if result != EncryptionResult.Success:
             return result
@@ -96,7 +103,7 @@ class Encryption:
                 "enc", "-aes-256-cbc", "-d",
                 "-in", self._file_system.download_target_path(input_path),
                 "-out", self._file_system.download_target_path(output_path),
-                "-kfile", self._file_system.download_target_path(self._config_provider.get().patreon_key_path),
+                "-kfile", self._file_system.download_target_path(key_file_path),
                 "-nosalt", "-iter", "1"
             ],
                 check=True,

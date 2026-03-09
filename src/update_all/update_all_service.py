@@ -31,7 +31,7 @@ from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
 from update_all.databases import Database, all_dbs
 from update_all.downloader_utils import prepare_latest_downloader
-from update_all.encryption import Encryption, EncryptionResult
+from update_all.encryption import Encryption
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_mister_downloader_needs_reboot, \
     MEDIA_FAT, \
@@ -114,7 +114,7 @@ class UpdateAllServiceFactory:
             store_provider=store_provider,
             file_system=file_system
         )
-        timeline = Timeline(self._logger, config_provider, file_system, encryption)
+        timeline = Timeline(self._logger, config_provider, file_system, encryption, retroaccount)
         return UpdateAllService(
             config_provider,
             self._logger,
@@ -127,8 +127,7 @@ class UpdateAllServiceFactory:
             environment_setup=environment_setup,
             ao_service=ao_service,
             local_repository=local_repository,
-            log_viewer=LogViewer(file_system, store_provider, encryption),
-            encryption=encryption,
+            log_viewer=LogViewer(file_system, store_provider, retroaccount),
             timeline=timeline,
             retroaccount=retroaccount,
             fetcher=fetcher
@@ -148,7 +147,6 @@ class UpdateAllService:
                  ao_service: ArcadeOrganizerService,
                  log_viewer: LogViewer,
                  local_repository: LocalRepository,
-                 encryption: Encryption,
                  timeline: Timeline,
                  retroaccount: RetroAccountService,
                  fetcher: Fetcher):
@@ -164,7 +162,6 @@ class UpdateAllService:
         self._ao_service = ao_service
         self._local_repository = local_repository
         self._log_viewer = log_viewer
-        self._encryption = encryption
         self._timeline = timeline
         self._retroaccount = retroaccount
         self._fetcher = fetcher
@@ -239,12 +236,6 @@ class UpdateAllService:
             pocket_firmware_update(self._config_provider.get().curl_ssl, self._local_repository, self._logger, self._config_provider.get().http_config)
         elif test_routine == 'POCKET_BACKUP':
             pocket_backup(self._logger)
-        elif test_routine == 'DECRYPT':
-            self._logger.bench('DECRYPT START!')
-            with tempfile.NamedTemporaryFile() as temp_file:
-                self._encryption.decrypt_file('/media/fat/myfile.txt.enc', temp_file.name)
-                self._logger.print('DECRYPT: ', temp_file.read().decode('utf-8', errors='replace'))
-            self._logger.bench('DECRYPT DONE.')
         else:
             self._logger.print(f"Test routine '{test_routine}' not implemented!")
             return
@@ -281,7 +272,7 @@ class UpdateAllService:
         self._logger.print(_center("-" * min(33, usable)))
         self._logger.print(_center(powered))
         self._logger.print()
-        if self._encryption.validate_key() != EncryptionResult.Success:
+        if not self._retroaccount.is_update_all_extras_active():
             self._logger.print()
             if not ts.cnarrow:
                 self._logger.print(_center("╔═════════════════════════════════════════════════╗"))

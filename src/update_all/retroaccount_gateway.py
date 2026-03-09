@@ -38,6 +38,7 @@ class MisterSyncResponse(TypedDict, total=False):
     tokens: _MisterSyncTokens
     update_all_patreon_key_url: str
     update_all_patreon_key_remove: bool
+    update_all_extras: bool
 
 
 @unique
