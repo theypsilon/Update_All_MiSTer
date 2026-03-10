@@ -18,7 +18,7 @@
 
 import unittest
 
-from update_all.log_viewer import calculate_hud_layout, calculate_hud_message, HudLayout
+from update_all.log_viewer import calculate_hud_layout, calculate_hud_message, HudLayout, split_log_text_runs
 from update_all.other import TerminalSize, OverscanDim
 
 
@@ -29,6 +29,15 @@ class _ScreenDims:
 
 
 class TestLogViewer(unittest.TestCase):
+    def test_split_log_text_runs___groups_text_and_symbol_segments(self):
+        self.assertEqual(
+            [('Hello', True), (' >>> ', False), ('world_123!?', True), (' []', False)],
+            split_log_text_runs('Hello >>> world_123!? []'),
+        )
+
+    def test_split_log_text_runs___returns_empty_for_empty_text(self):
+        self.assertEqual([], split_log_text_runs(''))
+
     def test_calculate_hud_message___uses_two_width_tiers_based_on_cnarrow(self):
         self.assertEqual(
             '←↑↓→ Navigate · Any key Exit',

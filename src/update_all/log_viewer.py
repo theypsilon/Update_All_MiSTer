@@ -34,6 +34,29 @@ def clip_range(start: int, length: int, limit: int) -> tuple[int, int]:
     length = clamp(length, 1, limit)
     return clamp(start, 0, limit - length), length
 
+
+def split_log_text_runs(text: str) -> list[tuple[str, bool]]:
+    if text == '':
+        return []
+
+    def is_text_char(c: str) -> bool:
+        return ('a' <= c <= 'z') or ('A' <= c <= 'Z') or ('0' <= c <= '9') or c in ",.'!?_&"
+
+    runs: list[tuple[str, bool]] = []
+    start = 0
+    current_is_text = is_text_char(text[0])
+
+    for i in range(1, len(text)):
+        is_text = is_text_char(text[i])
+        if is_text != current_is_text:
+            runs.append((text[start:i], current_is_text))
+            start = i
+            current_is_text = is_text
+
+    runs.append((text[start:], current_is_text))
+    return runs
+
+
 def to_overscanned_doc(doc: list[str], columns: int, cols_overscan: int) -> list[str]:
     if columns - cols_overscan * 2 <= 0:
         return doc
@@ -158,16 +181,16 @@ def view_document(document: list[str], popup_dict: dict[int, list[str]], initial
                                curses.color_pair(colors.LOG_VIEWER_SYMBOL_COLOR))
 
         def addstr_log(self, y: int, x: int, text: str):
+            text = text.rstrip('\n')
             x, length = clip_range(x, len(text), self.mcols)
             y = clamp(y, 0, self.mlines - 1)
             text_attr = curses.color_pair(colors.LOG_VIEWER_TEXT_COLOR)
             symbol_attr = curses.color_pair(colors.LOG_VIEWER_SYMBOL_COLOR)
             win = self.window
-            for i, c in enumerate(text[:length]):
-                if ('a' <= c <= 'z') or ('A' <= c <= 'Z') or ('0' <= c <= '9') or c in ",.'!?_&":
-                    win.addstr(y, x + i, c, text_attr)
-                else:
-                    win.addstr(y, x + i, c, symbol_attr)
+            run_x = x
+            for run, is_text in split_log_text_runs(text[:length]):
+                win.addstr(y, run_x, run, text_attr if is_text else symbol_attr)
+                run_x += len(run)
 
         def vline(self, y: int, x: int, attr: int, length: int):
             y, length = clip_range(y, length, self.mlines)
