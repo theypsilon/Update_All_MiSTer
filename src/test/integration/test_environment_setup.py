@@ -24,7 +24,7 @@ from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, FILE_update_all_
 from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT, all_dbs
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
-from update_all.other import GenericProvider
+from update_all.other import GenericProvider, TerminalSize
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.update_all_service_tester import EnvironmentSetupTester, default_databases, default_env
@@ -48,7 +48,7 @@ class TestEnvironmentSetup(unittest.TestCase):
         expected_files = expected_files or {k: v['content'].strip() for k, v in state.files.items()}
         expected_files = {k: processIni(v.strip()) for k, v in expected_files.items()}
 
-        result = environment_setup.setup_environment()
+        result = environment_setup.setup_environment(TerminalSize(columns=80, lines=40))
 
         config = config_provider.get()
         config.start_time = 0.0

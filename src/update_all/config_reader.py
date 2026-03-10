@@ -30,7 +30,7 @@ from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
 from update_all.local_store import LocalStore
 from update_all.logger import Logger
-from update_all.other import strtobool
+from update_all.other import str_to_bool, TerminalSize, calculate_overscan
 
 
 class ConfigReader:
@@ -62,8 +62,8 @@ class ConfigReader:
         config.base_system_path = config.base_path
         config.curl_ssl = valid_max_length(KENV_CURL_SSL, self._env['CURL_SSL'], 50).strip()
         config.commit = valid_max_length(KENV_COMMIT, self._env['COMMIT'], 50).strip()
-        config.skip_downloader = strtobool(self._env.get('SKIP_DOWNLOADER').strip().lower())
-        config.transition_service_only = strtobool(self._env['TRANSITION_SERVICE_ONLY'].strip().lower())
+        config.skip_downloader = str_to_bool(self._env.get('SKIP_DOWNLOADER').strip().lower())
+        config.transition_service_only = str_to_bool(self._env['TRANSITION_SERVICE_ONLY'].strip().lower())
         config.patreon_key_path = self._env['PATREON_KEY_PATH'].strip()
         config.command = self._env.get('COMMAND', config.command).strip().upper()
         config.timeline_short_path = self._env.get('TIMELINE_SHORT_PATH', config.timeline_short_path).strip()
@@ -128,6 +128,10 @@ class ConfigReader:
         config.overscan = store.get_overscan()
         config.monochrome_ui = store.get_monochrome_ui()
 
+    def fill_config_with_terminal_size(self, config: Config, size: TerminalSize):
+        config.term_size = size
+        config.overscan_dim = calculate_overscan(config.overscan, size)
+
     def read_retroaccount_cfg(self, config: Config, file_system: FileSystem) -> None:
         if not file_system.is_file(FILE_retroaccount_cfg):
             return
@@ -166,7 +170,7 @@ def is_mister_environment(env):
 
 
 def is_debug_enabled(env):
-    return strtobool(env[KENV_DEBUG].strip().lower())
+    return str_to_bool(env[KENV_DEBUG].strip().lower())
 
 
 class InvalidConfigParameter(Exception):

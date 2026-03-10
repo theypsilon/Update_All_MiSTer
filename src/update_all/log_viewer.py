@@ -23,7 +23,8 @@ from typing import Optional
 from update_all.constants import DEFAULT_LOG_VIEWER_THEME
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
-from update_all.other import GenericProvider
+from update_all.config import Config
+from update_all.other import GenericProvider, ScreenDims
 from update_all.retroaccount import RetroAccountService
 
 
@@ -67,8 +68,9 @@ def create_log_document(file_path: str) -> list[str]:
 
 
 class LogViewer:
-    def __init__(self, file_system: FileSystem, store_provider: GenericProvider[LocalStore], retroaccount: RetroAccountService):
+    def __init__(self, file_system: FileSystem, config_provider: GenericProvider[Config], store_provider: GenericProvider[LocalStore], retroaccount: RetroAccountService):
         self._file_system = file_system
+        self._config_provider = config_provider
         self._store_provider = store_provider
         self._retroaccount = retroaccount
 
@@ -79,7 +81,8 @@ class LogViewer:
             and store.get_use_settings_screen_theme_in_log_viewer()
         )
         ui_theme = store.get_theme() if can_use_custom_theme else DEFAULT_LOG_VIEWER_THEME
-        view_document(doc, popup_dict or {}, initial_index, ui_theme)
+        config = self._config_provider.get()
+        view_document(doc, popup_dict or {}, initial_index, ui_theme, config)
         return True
 
 
@@ -112,9 +115,9 @@ def adjust_popup_dict(popup_dict: dict[int, list[str]], max_cols: int) -> dict[i
     return new_dict
 
 
-def view_document(document: list[str], popup_dict: dict[int, list[str]], initial_index: int, theme: Optional[str]) -> None:
+def view_document(document: list[str], popup_dict: dict[int, list[str]], initial_index: int, theme: Optional[str], screen_dims: ScreenDims) -> None:
     import curses
-    from update_all.colors_curses import init_colors, make_color_theme, colors, curses_size
+    from update_all.colors_curses import init_colors, make_color_theme, colors
 
     class ViewerGui:
         def __init__(self, window: curses.window, max_cols: int, max_lines: int, document: list[str],
@@ -256,23 +259,22 @@ def view_document(document: list[str], popup_dict: dict[int, list[str]], initial
         window.timeout(50)
         window.clear()
 
-        cs = curses_size()
+        ts = screen_dims.term_size
 
-        adjusted = adjust_document(document, cs.columns)
+        adjusted = adjust_document(document, ts.columns)
         if initial_index > 0:
-            adjusted_index = len(adjust_document(document[-initial_index:], cs.columns))
+            adjusted_index = len(adjust_document(document[-initial_index:], ts.columns))
         else:
             adjusted_index = 0
 
         ViewerGui(
             window,
-            cs.columns,
-            cs.lines,
+            ts.columns,
+            ts.lines,
             adjusted,
             adjusted_index,
-            adjust_popup_dict(popup_dict, cs.columns)
+            adjust_popup_dict(popup_dict, ts.columns)
         ).loop()
 
     curses.wrapper(loader)
-
 

@@ -16,8 +16,10 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import unittest
+from io import StringIO
+from unittest.mock import patch
 
-from update_all.logger import apply_overscan_to_text
+from update_all.logger import apply_overscan_to_text, PrintLogger
 
 
 class TestApplyOverscanToText(unittest.TestCase):
@@ -163,6 +165,37 @@ class TestApplyOverscanToText(unittest.TestCase):
         # columns=16, overscan=2 -> usable=12
         result = apply_overscan_to_text(['aaa bbb ccc ddd eee'], '', columns=16, overscan=2)
         self.assertEqual(['  aaa bbb ccc', '  ddd eee'], result)
+
+    def test_print_logger___with_embedded_newlines___preserves_line_breaks_before_overscan(self):
+        logger = PrintLogger()
+        logger._overscan = 2
+        logger._columns = 20
+
+        with patch('sys.stdout', new_callable=StringIO) as stdout:
+            logger.print('START!\nSECTION: jtcores', end='')
+
+        self.assertEqual('  START!\n  SECTION: jtcores', stdout.getvalue())
+
+    def test_print_logger___with_wrapped_text_and_embedded_newlines___preserves_both_wraps_and_line_breaks(self):
+        logger = PrintLogger()
+        logger._overscan = 2
+        logger._columns = 20
+
+        with patch('sys.stdout', new_callable=StringIO) as stdout:
+            logger.print('abcdefghijklmnopq\nx', end='')
+
+        self.assertEqual('  abcdefghijklmnop\n  q\n  x', stdout.getvalue())
+
+    def test_print_logger___when_chunk_ends_with_newline___next_chunk_does_not_get_extra_padding(self):
+        logger = PrintLogger()
+        logger._overscan = 2
+        logger._columns = 20
+
+        with patch('sys.stdout', new_callable=StringIO) as stdout:
+            logger.print('START!\n', end='')
+            logger.print('SECTION: jtcores', end='')
+
+        self.assertEqual('  START!\n  SECTION: jtcores', stdout.getvalue())
 
 
 if __name__ == '__main__':

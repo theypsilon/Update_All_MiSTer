@@ -41,7 +41,7 @@ from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer
 from update_all.os_utils import OsUtils
-from update_all.other import GenericProvider
+from update_all.other import GenericProvider, TerminalSize
 from update_all.settings_screen import SettingsScreen
 from update_all.settings_screen_printer import SettingsScreenPrinter, ColorThemeManager
 from update_all.store_migrator import StoreMigrator, make_new_local_store
@@ -121,7 +121,7 @@ class SettingsScreenPrinterStub(SettingsScreenPrinter):
         self._factory = factory or MagicMock()
         self._theme_manager = theme_manager or MagicMock()
 
-    def initialize_screen(self):
+    def initialize_screen(self, screen_dims=None):
         return self._factory, self._theme_manager, None
 
 
@@ -237,7 +237,7 @@ class EnvironmentSetupStub(EnvironmentSetup):
     def __init__(self, result: Optional[EnvironmentSetupResult] = None):
         self._result = result or EnvironmentSetupResult()
 
-    def setup_environment(self) -> EnvironmentSetupResult:
+    def setup_environment(self, term_size: TerminalSize) -> EnvironmentSetupResult:
         return self._result
 
 
@@ -277,7 +277,7 @@ class UpdateAllServiceTester(UpdateAllService):
             environment_setup=environment_setup,
             ao_service=ao_service,
             local_repository=local_repository or LocalRepositoryTester(file_system=file_system),
-            log_viewer=LogViewerTester(file_system, store_provider, RetroAccountServiceTester()),
+            log_viewer=LogViewerTester(file_system, config_provider, store_provider, RetroAccountServiceTester()),
             timeline=TimelineTester(file_system),
             retroaccount=RetroAccountServiceTester(),
             fetcher=MagicMock()

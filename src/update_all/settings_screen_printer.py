@@ -18,6 +18,7 @@
 import abc
 from typing import Tuple
 
+from update_all.other import ScreenDims
 from update_all.retroaccount_ui import DeviceLoginRenderer
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 
@@ -28,6 +29,6 @@ class ColorThemeManager(abc.ABC):
 
 
 class SettingsScreenPrinter(abc.ABC):
-    def initialize_screen(self) -> Tuple[UiDialogDrawerFactory, ColorThemeManager, DeviceLoginRenderer]:
+    def initialize_screen(self, screen_dims: ScreenDims) -> Tuple[UiDialogDrawerFactory, ColorThemeManager, DeviceLoginRenderer]:
         """Creates instances of DialogDrawerFactory, ColorThemeManager, and a DeviceLoginRenderer"""
 

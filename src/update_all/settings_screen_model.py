@@ -25,7 +25,7 @@ def settings_screen_model(): return {
         "encc_forks_description": {"devel": "Official Cores from MiSTer-devel", "db9": "DB9 / SNAC8 forks with ENCC", "aitorgomez": "AitorGomez Fork"},
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
 # @TODO (mirror)       "mirror": {"": "Off.", "off": "Off.", "mysticalrealm": "Mystical Realm"},
-        # "overscan": {"none": "None", "small": "Small", "medium": "Medium"},
+        "overscan": {"none": "None", "low": "Low", "medium": "Medium", "high": "High", "maximum": "Max"},
         "bool_flag_presence_text": {
             "0": "Ignore them entirely",
             "1": "Place them only on its {0} folder",
@@ -712,8 +712,8 @@ def settings_screen_model(): return {
                 "autoreboot": {"group": ["ua_ini", "store"], "default": "true", "values": ["false", "true"]},
                 "countdown_time": {"group": ["ua_ini", "store"], "default": "15", "values": ["15", "4", "60"]},
                 "log_viewer": {"group": "store", "default": "true", "values": ["false", "true"]},
-                # "overscan": {"group": "store", "default": "small", "values": ["none", "small", "medium"]},
-                # "monochrome_ui": {"group": "store", "default": "false", "values": ["false", "true"]},
+                "overscan": {"group": "store", "default": "medium", "values": ["none", "low", "medium", "high", "maximum"]},
+                "monochrome_ui": {"group": "store", "default": "false", "values": ["false", "true"]},
 # @TODO (mirror)                "mirror": {"group": "store", "default": "off", "values": ["off", "mysticalrealm"]},
             },
             "entries": [
@@ -732,16 +732,16 @@ def settings_screen_model(): return {
                     "description": "Scrollable Screen: {log_viewer:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "log_viewer"}]}
                 },
-                # {
-                #     "title": "4 Overscan",
-                #     "description": "CRT only: {overscan:overscan}",
-                #     "actions": {"ok": [{"type": "rotate_variable", "target": "overscan"}, {"type": "apply_overscan"}]}
-                # },
-                # {
-                #     "title": "5 Accessibility: Monochrome UI",
-                #     "description": "{monochrome_ui:enabled}",
-                #     "actions": {"ok": [{"type": "rotate_variable", "target": "monochrome_ui"}, {"type": "apply_theme"}]}
-                # },
+                {
+                    "title": "4 Overscan",
+                    "description": "{overscan:overscan}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "overscan"}, {"type": "apply_overscan"}]}
+                },
+                {
+                    "title": "5 Accessibility: Monochrome UI",
+                    "description": "{monochrome_ui:enabled}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "monochrome_ui"}, {"type": "apply_theme"}]}
+                },
                 # {
                 #     "title": "6 Mirror",
                 #     "description": "{mirror}",
@@ -816,7 +816,7 @@ def settings_screen_model(): return {
                     "description": "{ui_theme}",
                     "actions": {"ok": [
                         {"type": "rotate_variable", "target": "ui_theme"},
-                        #{"type": "disable_monochrome_ui"},
+                        {"type": "disable_monochrome_ui"},
                         {"type": "apply_theme"}
                     ]}
                 },

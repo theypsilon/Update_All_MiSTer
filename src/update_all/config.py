@@ -23,6 +23,7 @@ from typing import Set, Optional, TypedDict
 from update_all.analogue_pocket.http_gateway import HttpConfig
 from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, MEDIA_FAT, FILE_patreon_key, \
     FILE_timeline_short, FILE_timeline_plus, COMMAND_STANDARD, DOMAIN_default_retroaccount
+from update_all.other import OverscanDim, TerminalSize, calculate_overscan
 
 
 class EnvDict(TypedDict):
@@ -91,7 +92,9 @@ class Config:
     log_viewer: bool = True
     use_settings_screen_theme_in_log_viewer: bool = True
     timeline_after_logs: bool = True
-    overscan: str = 'small'
+    overscan: str = 'medium'
+    overscan_dim: OverscanDim = calculate_overscan('medium', TerminalSize(columns=80, lines=40))
+    term_size: TerminalSize = TerminalSize(columns=80, lines=40)
     monochrome_ui: bool = False
 
 @unique

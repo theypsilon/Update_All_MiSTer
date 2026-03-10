@@ -17,11 +17,8 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-import hashlib
-import os
 import sys
-from functools import cached_property
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, NamedTuple, Protocol
 import shutil
 import types
 
@@ -37,7 +34,7 @@ class UnreachableException(Exception):
 _calling_test_only = False
 
 
-def strtobool(val: str):
+def str_to_bool(val: str):
     val = val.lower()
     if val in ('y', 'yes', 't', 'true', 'on', '1'):
         return 1
@@ -45,6 +42,21 @@ def strtobool(val: str):
         return 0
     else:
         raise ValueError("invalid truth value %r" % (val,))
+
+
+def any_to_bool(val, default=False):
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, str):
+        return bool(str_to_bool(val))
+    return default
+
+
+def any_to_nonfalsy_str(val):
+    if not isinstance(val, str):
+        return None
+    val = val.strip()
+    return val if val else None
 
 
 def empty_store_without_base_path():
@@ -97,28 +109,38 @@ class GenericProvider(Generic[TObject]):
         return self._object
 
 
+class OverscanDim(NamedTuple):
+    cols: int = 0
+    lines: int = 0
 
-_cols_overscan = int(os.environ.get('COLS_OVERSCAN', '2'))
-_lines_overscan = int(os.environ.get('LINES_OVERSCAN', '1'))
+class TerminalSize(NamedTuple):
+    columns: int
+    lines: int
+    lnarrow: bool = False
+    cnarrow: bool = False
 
-def get_overscan():
-    return _cols_overscan, _lines_overscan
+class ScreenDims(Protocol):
+    term_size: TerminalSize
+    overscan_dim: OverscanDim
 
-def set_overscan(cols, lines):
-    global _cols_overscan, _lines_overscan
-    _cols_overscan = cols
-    _lines_overscan = lines
+def terminal_size() -> TerminalSize:
+    ts = shutil.get_terminal_size()
+    lnarrow = ts.lines <= 18
+    cnarrow = ts.columns <= 48
+    return TerminalSize(columns=ts.columns, lines=ts.lines,lnarrow=lnarrow, cnarrow=cnarrow)
 
-_terminal_raw_size = None
-def terminal_size():
-    global _terminal_raw_size
-    if _terminal_raw_size is None:
-        size = shutil.get_terminal_size()
-        _terminal_raw_size = types.SimpleNamespace(columns=size.columns, lines=size.lines)
-    raw = _terminal_raw_size
-    lnarrow = raw.lines <= 18
-    cnarrow = raw.columns <= 48
-    cols_os, lines_os = get_overscan()
-    co = cols_os if cnarrow else 0
-    lo = lines_os if lnarrow else 0
-    return types.SimpleNamespace(columns=raw.columns, lines=raw.lines, cols_overscan=co, lines_overscan=lo, lnarrow=lnarrow, cnarrow=cnarrow)
+def calculate_overscan(overscan_label: str, size: TerminalSize) -> OverscanDim:
+    if overscan_label == 'maximum':
+        overscan_percent = 10.0
+    elif overscan_label == 'high':
+        overscan_percent = 7.5
+    elif overscan_label == 'medium':
+        overscan_percent = 5.0
+    elif overscan_label == 'small' or overscan_label == 'low':
+        overscan_percent = 2.5
+    else:
+        overscan_percent = 0
+
+    overscan_cols = round(size.columns * overscan_percent / 100)
+    overscan_lines = round(size.lines * overscan_percent / 100)
+    return OverscanDim(overscan_cols, overscan_lines)

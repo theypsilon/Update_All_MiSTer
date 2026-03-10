@@ -33,7 +33,7 @@ from update_all.config import Config
 from update_all.constants import FILE_arcade_database_mad_db_json_zip
 from update_all.fetcher import Fetcher
 from update_all.logger import Logger
-from update_all.other import strtobool, GenericProvider
+from update_all.other import str_to_bool, GenericProvider
 
 
 @unique
@@ -65,7 +65,7 @@ class IniParser:
         return result.strip('"\' ')
 
     def get_bool(self, key, default):
-        return strtobool(self.get_string(key, 'true' if default else 'false')) == 1
+        return str_to_bool(self.get_string(key, 'true' if default else 'false')) == 1
 
     def get_int(self, key, default):
         result = self.get_string(key, None)

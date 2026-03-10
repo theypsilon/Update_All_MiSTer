@@ -18,6 +18,7 @@
 import curses
 from typing import Tuple, Union
 
+from update_all.other import ScreenDims
 from update_all.settings_screen_printer import SettingsScreenPrinter, ColorThemeManager
 from update_all.settings_screen_standard_curses_printer import CursesDeviceLoginRenderer
 from update_all.ui_engine import Interpolator
@@ -31,7 +32,7 @@ class SettingsScreenTrivialCursesPrinter(CursesRuntime, SettingsScreenPrinter, C
     _index_horizontal = 0
     _index_vertical = 0
 
-    def initialize_screen(self):
+    def initialize_screen(self, screen_dims: ScreenDims):
         curses.start_color()
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
 

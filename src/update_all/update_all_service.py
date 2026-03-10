@@ -44,7 +44,7 @@ from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer, create_log_document, to_overscanned_doc
-from update_all.other import GenericProvider, terminal_size, get_overscan
+from update_all.other import GenericProvider, terminal_size
 from update_all.logger import Logger, close_print_tmp_log_file
 from update_all.os_utils import OsUtils, LinuxOsUtils
 from update_all.settings_screen import SettingsScreen
@@ -127,7 +127,7 @@ class UpdateAllServiceFactory:
             environment_setup=environment_setup,
             ao_service=ao_service,
             local_repository=local_repository,
-            log_viewer=LogViewer(file_system, store_provider, retroaccount),
+            log_viewer=LogViewer(file_system, config_provider, store_provider, retroaccount),
             timeline=timeline,
             retroaccount=retroaccount,
             fetcher=fetcher
@@ -175,11 +175,12 @@ class UpdateAllService:
         self._update_all_md5: Optional[str] = None
 
     def full_run(self, run_pass: UpdateAllServicePass) -> int:
+        ts = terminal_size()
         if run_pass == UpdateAllServicePass.Continue:
-            self._environment_setup.setup_environment()
+            self._environment_setup.setup_environment(ts)
             self._pre_run_tweaks()
         else:
-            env_result = self._environment_setup.setup_environment()
+            env_result = self._environment_setup.setup_environment(ts)
             if env_result.requires_early_exit:
                 return EXIT_CODE_REQUIRES_EARLY_EXIT
 
@@ -251,8 +252,10 @@ class UpdateAllService:
         self._retroaccount.mister_sync()
 
     def _show_intro(self) -> None:
-        ts = terminal_size()
-        usable = ts.columns - ts.cols_overscan * 2
+        config = self._config_provider.get()
+        ts = config.term_size
+        oc = config.overscan_dim
+        usable = ts.columns - oc.cols * 2
         def _center(text):
             return text.center(usable)
 
@@ -360,13 +363,14 @@ class UpdateAllService:
             self._error_reports.append('Scripts/.config/downloader/downloader.log')
 
     def _execute_downloader(self, config: Config, downloader_ini_path: str, update_linux: bool, logfile: Optional[str], default_db: Optional[Database], quiet: bool = False) -> int:
-        screen_size = terminal_size()
+        ts = config.term_size
+        oc = config.overscan_dim
         env = {
             'DOWNLOADER_INI_PATH': downloader_ini_path,
             'ALLOW_REBOOT': '0',
             'CURL_SSL': config.curl_ssl,
-            'COLUMNS': str(screen_size.columns - screen_size.cols_overscan * 2),
-            'LINES': str(screen_size.lines - screen_size.lines_overscan * 2),
+            'COLUMNS': str(ts.columns - oc.cols * 2),
+            'LINES': str(ts.lines - oc.lines * 2),
             'UPDATE_LINUX': 'true' if update_linux else 'false',
         }
         if logfile is not None:
@@ -392,8 +396,8 @@ class UpdateAllService:
         if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
             env['DEFAULT_BASE_PATH'] = config.base_path
 
-        if config.not_mister:
-            env['DEBUG'] = 'true'
+        #if config.not_mister:  # @TODO: Revert this
+        #    env['DEBUG'] = 'true'
 
         return_code = self._os_utils.execute_process(downloader_file, env, quiet)
         if not self._file_system.is_file(FILE_downloader_run_signal):
@@ -582,9 +586,11 @@ class UpdateAllService:
                         self._logger.debug(e)
                         self._logger.debug('Recovering from error by suspending timeline generation after logs.')
 
-                ts = terminal_size()
+                config = self._config_provider.get()
+                ts = config.term_size
+                oc = config.overscan_dim
                 columns = ts.columns
-                cols_overscan = ts.cols_overscan
+                cols_overscan = oc.cols
                 usable = columns - cols_overscan * 2
 
                 if len(log_doc) > 0 and len(timeline_doc) > 0:
@@ -684,8 +690,8 @@ class UpdateAllService:
         self._logger.print()
 
     def _draw_separator(self) -> None:
-        ts = terminal_size()
-        usable = ts.columns - ts.cols_overscan * 2
+        config = self._config_provider.get()
+        usable = config.term_size.columns - config.overscan_dim.cols * 2
         self._logger.print()
         self._logger.print()
         self._logger.print("#" * usable)

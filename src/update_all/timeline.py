@@ -20,7 +20,7 @@ from update_all.constants import FILE_names_txt, FILE_timeline_plus2
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
-from update_all.other import GenericProvider, terminal_size
+from update_all.other import GenericProvider
 from update_all.retroaccount import RetroAccountService
 
 import tempfile
@@ -60,8 +60,10 @@ class Timeline:
 
         names_dict = self._load_names_dict(FILE_names_txt)
 
+        usable_columns = config.term_size.columns - config.overscan_dim.cols * 2
+
         if timeline_model is not None:
-            timeline_doc = create_timeline_doc(timeline_model, names_dict)
+            timeline_doc = create_timeline_doc(timeline_model, names_dict, usable_columns)
             timeline_doc.append("\n")
             timeline_doc.append("[!!] This Timeline only covers the latest 7 days of updates [!!]\n")
             timeline_doc.append("\n")
@@ -73,7 +75,7 @@ class Timeline:
                 timeline_doc.append(" • Login in the Settings Screen\n")
             timeline_doc.append("\n")
         elif timeline_plus_model is not None:
-            timeline_doc = create_timeline_doc(timeline_plus_model, names_dict)
+            timeline_doc = create_timeline_doc(timeline_plus_model, names_dict, usable_columns)
             timeline_doc.append("\n")
             timeline_doc.append("<theypsilon> That's all! Thank you so much for supporting my work!!\n")
         else:
@@ -128,12 +130,9 @@ class Timeline:
 
         return names_dict
 
-def create_timeline_doc(model, names_dict: dict[str, str]):
+def create_timeline_doc(model, names_dict: dict[str, str], columns: int):
     doc = []
     sections = model.get("sections", [])
-
-    ts = terminal_size()
-    columns = ts.columns - ts.cols_overscan * 2
     if columns < 80:
         doc.append("        ".center(columns))
         doc.append(" UPDATE ".center(columns))
@@ -183,14 +182,13 @@ def create_timeline_doc(model, names_dict: dict[str, str]):
         return doc
 
     for section in sections:
-        add_doc_section(doc, section, names_dict)
+        add_doc_section(doc, section, names_dict, columns)
 
-    ts = terminal_size()
-    doc.append("=" * (ts.columns - ts.cols_overscan * 2) + "\n")
+    doc.append("=" * columns + "\n")
 
     return doc
 
-def add_doc_section(doc: list[str], section: dict[str, Any], names_dict: dict[str, str]):
+def add_doc_section(doc: list[str], section: dict[str, Any], names_dict: dict[str, str], columns: int):
     title = section["title"]
     categories = section.get("categories", [])
 
@@ -198,8 +196,7 @@ def add_doc_section(doc: list[str], section: dict[str, Any], names_dict: dict[st
         return
 
     doc.append(f'>>> {title.upper()}:\n')
-    ts = terminal_size()
-    doc.append("-" * (ts.columns - ts.cols_overscan * 2) + "\n")
+    doc.append("-" * columns + "\n")
 
     for category in categories:
         formatted_category = category['category']

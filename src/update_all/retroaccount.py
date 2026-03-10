@@ -16,13 +16,13 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Any
 
 from update_all.logger import Logger
 from update_all.file_system import FileSystem
 from update_all.config import Config
-from update_all.other import GenericProvider
+from update_all.other import GenericProvider, any_to_bool, any_to_nonfalsy_str
 from update_all.constants import FILE_retroaccount_user_json, FILE_retroaccount_device_id, FILE_patreon_key_md5, \
     FILE_patreon_key_prev
 from update_all.encryption import Encryption, EncryptionResult
@@ -40,7 +40,7 @@ _REVOKED_CREDENTIALS_MESSAGE = 'Your credentials were revoked!\nYour account mus
 class _SyncTransition:
     update_all_extras_active: Optional[bool] = None
     save_device_id: Optional[str] = None
-    save_user_json: Optional[dict[str, Any]] = None
+    save_user_json: Optional[dict[str, Any]] = field(default=None, repr=False)
     remove_user_json: bool = False
     remove_update_all_patreon_key: bool = False
     install_update_all_patreon_key_url: Optional[str] = None
@@ -129,16 +129,15 @@ class RetroAccountService(RetroAccountClient):
                 credentials_were_corrupted=True,
             )
 
-        credentials = self._read_sync_credentials(user_data)
-        if credentials is None:
+        device_id = any_to_nonfalsy_str(user_data.get('device_id'))
+        refresh_token = any_to_nonfalsy_str(user_data.get('refresh_token'))
+        if not device_id or not refresh_token:
             self._logger.print(f'RetroAccount Warning: Corrupted {FILE_retroaccount_user_json}')
             return _SyncTransition(
                 remove_update_all_patreon_key=True,
                 update_all_extras_active=False,
                 credentials_were_corrupted=True,
             )
-
-        device_id, refresh_token = credentials
 
         patreon_key_fingerprint = None
         patreon_key_path = self._config_provider.get().patreon_key_path
@@ -155,18 +154,18 @@ class RetroAccountService(RetroAccountClient):
 
         if result == SessionResult.VALID and isinstance(response, dict):
             updated_user_data = None
-            new_refresh_token = response.get('tokens', {}).get('refresh_token')
-            if isinstance(new_refresh_token, str) and new_refresh_token.strip():
+            new_refresh_token = any_to_nonfalsy_str(response.get('tokens', {}).get('refresh_token'))
+            if new_refresh_token:
                 self._logger.debug(f'RetroAccountService: New refresh token!')
-                updated_user_data = {'device_id': device_id, 'refresh_token': new_refresh_token.strip()}
+                updated_user_data = {'device_id': device_id, 'refresh_token': new_refresh_token}
 
-            update_all_patreon_key_url = response.get('update_all_patreon_key_url', None)
-            update_all_patreon_key_url = update_all_patreon_key_url.strip() if isinstance(update_all_patreon_key_url, str) else None
+            benefits = response.get('benefits', {})
+            self._logger.debug(f'RetroAccountService: Benefits after mister_sync ', benefits)
             return _SyncTransition(
                 save_user_json=updated_user_data,
-                install_update_all_patreon_key_url=update_all_patreon_key_url,
-                remove_update_all_patreon_key=response.get('update_all_patreon_key_remove', False) is True,
-                update_all_extras_active=response.get('update_all_extras', False) is True,
+                install_update_all_patreon_key_url=any_to_nonfalsy_str(benefits.get('update_all_patreon_key_url', None)),
+                remove_update_all_patreon_key=any_to_bool(benefits.get('update_all_patreon_key_remove', None)),
+                update_all_extras_active=any_to_bool(benefits.get('update_all_extras', None)),
             )
 
         if result == SessionResult.REVOKED:
@@ -186,21 +185,9 @@ class RetroAccountService(RetroAccountClient):
         self._has_installed_update_all_patreon_key = False
         self._has_forced_logout = None
 
-    @staticmethod
-    def _read_sync_credentials(user_data: dict[str, Any]) -> Optional[tuple[str, str]]:
-        device_id = user_data.get('device_id')
-        refresh_token = user_data.get('refresh_token')
-        if not isinstance(device_id, str) or not isinstance(refresh_token, str):
-            return None
-
-        device_id = device_id.strip()
-        refresh_token = refresh_token.strip()
-        if not device_id or not refresh_token:
-            return None
-
-        return device_id, refresh_token
-
     def _apply_sync_transition(self, transition: _SyncTransition) -> None:
+        self._logger.debug(transition)
+
         if transition.update_all_extras_active is not None:
             self._update_all_extras = transition.update_all_extras_active
 

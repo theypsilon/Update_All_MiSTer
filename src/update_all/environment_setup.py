@@ -23,7 +23,7 @@ from update_all.config import Config
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
 from update_all.logger import Logger
-from update_all.other import GenericProvider
+from update_all.other import GenericProvider, TerminalSize
 from update_all.local_repository import LocalRepository
 from update_all.config_reader import ConfigReader
 from update_all.transition_service import TransitionService
@@ -36,7 +36,7 @@ class EnvironmentSetupResult:
 
 class EnvironmentSetup(ABC):
     @abstractmethod
-    def setup_environment(self) -> EnvironmentSetupResult:
+    def setup_environment(self, term_size: TerminalSize) -> EnvironmentSetupResult:
         """Setups the application environment."""
 
 
@@ -55,7 +55,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._store_provider = store_provider
         self._file_system = file_system
 
-    def setup_environment(self) -> EnvironmentSetupResult:
+    def setup_environment(self, term_size: TerminalSize) -> EnvironmentSetupResult:
         config = Config()
         config.start_time = time.monotonic()
 
@@ -67,6 +67,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         downloader_ini = self._config_reader.read_downloader_ini()
         self._config_reader.fill_config_with_mister_section(config, downloader_ini)
         self._config_reader.fill_config_with_local_store(config, local_store)
+        self._config_reader.fill_config_with_terminal_size(config, term_size)
         self._logger.configure(config)
 
         self._transition_service.from_old_db_ids_to_new_db_ids(downloader_ini)

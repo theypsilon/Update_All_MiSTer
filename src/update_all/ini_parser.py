@@ -16,7 +16,7 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-from update_all.other import strtobool
+from update_all.other import str_to_bool
 
 
 class IniParser:
@@ -30,7 +30,7 @@ class IniParser:
         return self._ini_args.get(key, default).strip('"\' ')
 
     def get_bool(self, key, default):
-        return bool(strtobool(self.get_string(key, 'true' if default else 'false')))
+        return bool(str_to_bool(self.get_string(key, 'true' if default else 'false')))
 
     def get_int(self, key, default):
         result = self.get_string(key, None)

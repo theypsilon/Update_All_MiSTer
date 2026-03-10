@@ -86,8 +86,10 @@ class TestRetroAccountService(unittest.TestCase):
     def test_mister_sync___when_session_is_valid___applies_one_explicit_transition_for_refresh_and_entitlement_replacement(self):
         gateway_response = {
             'tokens': {'refresh_token': 'refresh-2'},
-            'update_all_patreon_key_remove': True,
-            'update_all_patreon_key_url': 'https://example.com/update_all.patreonkey',
+            'benefits': {
+                'update_all_patreon_key_remove': True,
+                'update_all_patreon_key_url': 'https://example.com/update_all.patreonkey',
+            },
         }
         sut, file_system, gateway, encryption = tester(
             files=default_sync_files(),
@@ -111,7 +113,7 @@ class TestRetroAccountService(unittest.TestCase):
         sut, file_system, gateway, _encryption = tester(
             files=default_sync_files(),
             gateway_result=SessionResult.VALID,
-            gateway_response={'update_all_extras': True},
+            gateway_response={'benefits': {'update_all_extras': True}},
         )
 
         sut.mister_sync()
@@ -128,7 +130,7 @@ class TestRetroAccountService(unittest.TestCase):
         sut, file_system, gateway, _encryption = tester(
             files=default_sync_files(),
             gateway_result=SessionResult.VALID,
-            gateway_response={'update_all_extras': True},
+            gateway_response={'benefits': {'update_all_extras': True}},
         )
 
         sut.mister_sync()

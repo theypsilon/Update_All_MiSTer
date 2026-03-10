@@ -17,7 +17,6 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 import datetime
 import os
-import shutil
 import tempfile
 import sys
 import time
@@ -26,7 +25,7 @@ from abc import ABC, abstractmethod
 from io import TextIOWrapper
 from typing import Optional
 
-from update_all.constants import FILE_update_all_print_tmp_log, OVERSCAN_PRESETS
+from update_all.constants import FILE_update_all_print_tmp_log
 
 
 class Logger(ABC):
@@ -73,6 +72,31 @@ def apply_overscan_to_text(args, sep: str, columns: int, overscan: int) -> list[
     return [pad + line for line in lines]
 
 
+def apply_overscan_preserving_newlines(args, sep: str, columns: int, overscan: int, end: str) -> list[tuple[str, str]]:
+    text = sep.join(str(a) for a in args)
+    rendered_lines: list[tuple[str, str]] = []
+
+    if text == '':
+        return [(line, end) for line in apply_overscan_to_text([''], '', columns, overscan)]
+
+    chunks = text.splitlines(keepends=True)
+    if len(chunks) == 0:
+        chunks = [text]
+
+    for chunk_index, chunk in enumerate(chunks):
+        has_newline = chunk.endswith('\n')
+        chunk_text = chunk[:-1] if has_newline else chunk
+        chunk_lines = apply_overscan_to_text([chunk_text], '', columns, overscan)
+        is_last_chunk = chunk_index == len(chunks) - 1
+        chunk_end = '\n' if has_newline else end if is_last_chunk else ''
+
+        for line_index, line in enumerate(chunk_lines):
+            line_end = chunk_end if line_index == len(chunk_lines) - 1 else '\n'
+            rendered_lines.append((line, line_end))
+
+    return rendered_lines
+
+
 class PrintLogger(Logger):
     def __init__(self):
         self._verbose_mode = False
@@ -87,17 +111,16 @@ class PrintLogger(Logger):
         if config.verbose:
             self._verbose_mode = True
             self._start_time = config.start_time
-        if config.overscan in OVERSCAN_PRESETS:
-            self._overscan = OVERSCAN_PRESETS[config.overscan][0]
-        self._columns = shutil.get_terminal_size().columns
+        self._overscan = config.overscan_dim.cols
+        self._columns = config.term_size.columns
         open_print_tmp_log_file()
 
     def print(self, *args, sep='', end='\n', flush=True):
-        # if self._overscan == 0:
-        self._do_print(*args, sep=sep, end=end, file=sys.stdout, flush=flush)
-        # else:
-        #     for line in apply_overscan_to_text(args, sep, self._columns, self._overscan):
-        #         self._do_print(line, sep='', end=end, file=sys.stdout, flush=flush)
+        if self._overscan == 0:
+            self._do_print(*args, sep=sep, end=end, file=sys.stdout, flush=flush)
+        else:
+            for line, line_end in apply_overscan_preserving_newlines(args, sep, self._columns, self._overscan, end):
+                self._do_print(line, sep='', end=line_end, file=sys.stdout, flush=flush)
         if _print_tmp_log_file is not None:
             self._do_print(*args, sep=sep, end=end, file=_print_tmp_log_file, flush=flush)
 

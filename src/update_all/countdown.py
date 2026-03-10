@@ -24,7 +24,7 @@ from enum import unique, IntEnum, auto
 from multiprocessing import Process, Value
 
 from update_all.cli_output_formatting import bold
-from update_all.logger import Logger
+from update_all.logger import Logger, PrintLogger
 
 
 @unique
@@ -46,6 +46,7 @@ class CountdownImpl(Countdown):
     def execute_count(self, count) -> CountdownOutcome:
         os_specifics = make_os_specifics()
         os_specifics.initialize()
+        left_padding = _countdown_left_padding(self._logger)
 
         char = Value('i', 0)
         ends = Value('i', 0)
@@ -69,7 +70,7 @@ class CountdownImpl(Countdown):
                 seconds = math.floor(end - now) + 1
                 if seconds != latest_seconds:
                     dots = '.' * (count - seconds + 1)
-                    print(f'\033[2K\rStarting in {seconds} seconds.{dots}', end='', flush=True)
+                    print(_countdown_status_line(f'Starting in {seconds} seconds.{dots}', left_padding), end='', flush=True)
                     latest_seconds = seconds
 
                 char_value = chr(char.value)
@@ -91,6 +92,7 @@ class CountdownImpl(Countdown):
 
             child_process.close()
             os_specifics.finalize()
+            print('', flush=True)
 
         return result
 
@@ -135,6 +137,21 @@ class _GetchWindows:
 
 
 _getch = make_getch()
+
+
+def _countdown_status_line(text: str, left_padding: int) -> str:
+    return f'\033[2K\r{" " * left_padding}{text}'
+
+
+def _countdown_left_padding(logger: Logger) -> int:
+    current_logger = logger
+    while hasattr(current_logger, '_decorated_logger'):
+        current_logger = getattr(current_logger, '_decorated_logger')
+
+    if isinstance(current_logger, PrintLogger):
+        return current_logger._overscan
+
+    return 0
 
 
 def make_os_specifics():

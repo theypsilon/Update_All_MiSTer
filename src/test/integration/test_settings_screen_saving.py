@@ -22,7 +22,7 @@ from typing import Tuple
 from update_all.config import Config
 from update_all.ini_repository import read_ini_contents
 from update_all.local_store import LocalStore
-from update_all.other import GenericProvider
+from update_all.other import GenericProvider, TerminalSize
 from update_all.databases import db_ids_to_model_variable_pairs
 from update_all.settings_screen import SettingsScreen
 from update_all.store_migrator import make_new_local_store
@@ -208,7 +208,7 @@ def tester(files=None) -> Tuple[SettingsScreen, UiContextStub, FileSystemState]:
     config_provider = GenericProvider[Config]()
     store_provider = GenericProvider[LocalStore]()
     file_system = FileSystemFactory(state=state).create_for_system_scope()
-    EnvironmentSetupTester(file_system=file_system, config_provider=config_provider, store_provider=store_provider).setup_environment()
+    EnvironmentSetupTester(file_system=file_system, config_provider=config_provider, store_provider=store_provider).setup_environment(TerminalSize(columns=80, lines=40))
     settings_screen = SettingsScreenTester(config_provider=config_provider, store_provider=store_provider, file_system=file_system)
     settings_screen.initialize_ui(ui)
 
