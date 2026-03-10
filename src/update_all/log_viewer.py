@@ -22,6 +22,7 @@ from typing import Optional, NamedTuple
 
 from update_all.constants import DEFAULT_LOG_VIEWER_THEME
 from update_all.file_system import FileSystem
+from update_all.logger import apply_overscan_preserving_newlines
 from update_all.local_store import LocalStore
 from update_all.config import Config
 from update_all.other import GenericProvider, ScreenDims
@@ -34,20 +35,14 @@ def clip_range(start: int, length: int, limit: int) -> tuple[int, int]:
     return clamp(start, 0, limit - length), length
 
 def to_overscanned_doc(doc: list[str], columns: int, cols_overscan: int) -> list[str]:
-    if cols_overscan <= 0:
+    if columns - cols_overscan * 2 <= 0:
         return doc
-    usable = columns - cols_overscan * 2
-    if usable <= 0:
-        return doc
-    pad = ' ' * cols_overscan
-    result = []
-    for line in doc:
-        nl = '\n' if line.endswith('\n') else ''
-        text = line.rstrip('\n')
-        while len(text) > usable:
-            result.append(pad + text[:usable] + nl)
-            text = text[usable:]
-        result.append(pad + text + nl)
+    if len(doc) == 0:
+        return []
+    result: list[str] = []
+    for entry in doc:
+        rendered = apply_overscan_preserving_newlines([entry], '', columns, cols_overscan, '')
+        result.extend(line + line_end for line, line_end in rendered)
     return result
 
 
@@ -84,35 +79,6 @@ class LogViewer:
         config = self._config_provider.get()
         view_document(doc, popup_dict or {}, initial_index, ui_theme, config)
         return True
-
-
-def adjust_document(document: list[str], max_cols: int) -> list[str]:
-    new_doc = []
-    for line in document:
-        nl = '\n' if line.endswith('\n') else ''
-        line = line.rstrip('\n')
-
-        if len(line) <= max_cols:
-            new_doc.append(line + nl)
-        else:
-            full_chunks = len(line) // max_cols
-            for i in range(full_chunks):
-                chunk = line[i * max_cols:(i + 1) * max_cols]
-                new_doc.append(chunk + nl)
-
-            rem = len(line) % max_cols
-            if rem:
-                tail = line[-rem:]
-                new_doc.append(tail + nl)
-
-    return new_doc
-
-
-def adjust_popup_dict(popup_dict: dict[int, list[str]], max_cols: int) -> dict[int, list[str]]:
-    new_dict = {}
-    for key, lines in popup_dict.items():
-        new_dict[key] = adjust_document(lines, max_cols)
-    return new_dict
 
 
 class HudLayout(NamedTuple):
@@ -163,7 +129,7 @@ def view_document(document: list[str], popup_dict: dict[int, list[str]], initial
 
     class ViewerGui:
         def __init__(self, window: curses.window, max_cols: int, max_lines: int, document: list[str],
-                     initial_index: int, popup_dict: dict[int, list[str]], hud_layout: HudLayout):
+                     initial_index: int, hud_layout: HudLayout):
             self.window = window
             self.mcols = max_cols
             self.mlines = max_lines
@@ -329,20 +295,14 @@ def view_document(document: list[str], popup_dict: dict[int, list[str]], initial
 
         ts = screen_dims.term_size
 
-        adjusted = adjust_document(document, ts.columns)
-        if initial_index > 0:
-            adjusted_index = len(adjust_document(document[-initial_index:], ts.columns))
-        else:
-            adjusted_index = 0
         hud_layout = calculate_hud_layout(screen_dims)
 
         ViewerGui(
             window,
             ts.columns,
             ts.lines,
-            adjusted,
-            adjusted_index,
-            adjust_popup_dict(popup_dict, ts.columns),
+            document,
+            initial_index,
             hud_layout
         ).loop()
 

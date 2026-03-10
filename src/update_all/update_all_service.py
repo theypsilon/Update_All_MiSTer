@@ -276,9 +276,15 @@ class UpdateAllService:
             return
 
         if test_routine == 'TIMELINE':
+            config = self._config_provider.get()
+            ts = config.term_size
+            oc = config.overscan_dim
+            columns = ts.columns
+            cols_overscan = oc.cols
             log_doc = create_log_document(FILE_update_all_log if self._file_system.is_file(FILE_update_all_log) else 'test_log_viewer.log')
             timeline_doc = self._timeline.load_timeline_doc(env_check_skip=True)
-
+            log_doc = to_overscanned_doc(log_doc, columns, cols_overscan)
+            timeline_doc = to_overscanned_doc(timeline_doc, columns, cols_overscan)
             total_doc = [*log_doc, *timeline_doc]
             index = len(timeline_doc)
             if index > 2:
@@ -665,8 +671,13 @@ class UpdateAllService:
                 self._logger.debug('Recovering from error by suspending log viewer.')
 
     def _show_log_viewer_with_latest_log(self) -> None:
+        config = self._config_provider.get()
+        ts = config.term_size
+        oc = config.overscan_dim
         try:
-            self._log_viewer.show(create_log_document(self._file_system.resolve(FILE_update_all_log)), {}, 0)
+            latest_log = create_log_document(self._file_system.resolve(FILE_update_all_log))
+            latest_log = to_overscanned_doc(latest_log, ts.columns, oc.cols)
+            self._log_viewer.show(latest_log, {}, 0)
         except Exception as e:
             self._logger.debug(e)
             self._logger.print("Could not load the latest log. Please try again after running Update All.")
@@ -685,6 +696,7 @@ class UpdateAllService:
         timeline_doc = self._timeline.load_timeline_doc(env_check_skip=True)
         if len(timeline_doc) > 0:
             self._logger.print('Showing interactive Update Timeline viewer:')
+            timeline_doc = to_overscanned_doc(timeline_doc, config.term_size.columns, config.overscan_dim.cols)
             self._log_viewer.show(timeline_doc, {}, len(timeline_doc))
         else:
             self._logger.print('No timeline entries found. Try again later!')

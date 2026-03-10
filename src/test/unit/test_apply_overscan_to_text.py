@@ -30,6 +30,11 @@ class TestApplyOverscanToText(unittest.TestCase):
         result = apply_overscan_to_text(['hello'], '', columns=40, overscan=2)
         self.assertEqual(['  hello'], result)
 
+    def test_apply_overscan_to_text___with_centered_text_that_fits___preserves_spacing(self):
+        text = 'UPDATE TIMELINE'.center(32)
+        result = apply_overscan_to_text([text], '', columns=36, overscan=2)
+        self.assertEqual(['  ' + text], result)
+
     def test_apply_overscan_to_text___with_overscan_4___adds_4_spaces(self):
         result = apply_overscan_to_text(['hi'], '', columns=40, overscan=4)
         self.assertEqual(['    hi'], result)

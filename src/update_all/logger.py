@@ -68,6 +68,8 @@ def apply_overscan_to_text(args, sep: str, columns: int, overscan: int) -> list[
     usable = columns - overscan * 2
     if not text:
         return [pad]
+    if len(text) <= usable:
+        return [pad + text]
     lines = textwrap.wrap(text, width=usable, break_long_words=True, break_on_hyphens=False)
     return [pad + line for line in lines]
 

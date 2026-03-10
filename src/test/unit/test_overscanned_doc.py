@@ -24,14 +24,19 @@ class TestToOverscannedDoc(unittest.TestCase):
 
     # --- No overscan ---
 
-    def test_to_overscanned_doc___with_zero_overscan___returns_doc_unchanged(self):
+    def test_to_overscanned_doc___with_zero_overscan___wraps_without_padding(self):
         doc = [
             'short line\n',
             'this line is exactly twenty chars long!\n',
             'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOP\n',
         ]
         result = to_overscanned_doc(doc, columns=40, cols_overscan=0)
-        self.assertEqual(doc, result)
+        self.assertEqual([
+            'short line\n',
+            'this line is exactly twenty chars long!\n',
+            'abcdefghijklmnopqrstuvwxyz0123456789ABCD\n',
+            'EFGHIJKLMNOP\n',
+        ], result)
 
     # --- Basic padding ---
 
@@ -51,6 +56,13 @@ class TestToOverscannedDoc(unittest.TestCase):
         doc = ['aaa\n', 'bbb\n', 'ccc\n']
         result = to_overscanned_doc(doc, columns=80, cols_overscan=2)
         self.assertEqual(['  aaa\n', '  bbb\n', '  ccc\n'], result)
+
+    def test_to_overscanned_doc___with_multiple_entries_without_newlines___keeps_entries_separate(self):
+        result = to_overscanned_doc([' UPDATE '.center(32), 'TIMELINE'.center(32)], columns=36, cols_overscan=2)
+        self.assertEqual([
+            '  ' + ' UPDATE '.center(32),
+            '  ' + 'TIMELINE'.center(32),
+        ], result)
 
     # --- Wrapping ---
 
@@ -87,7 +99,7 @@ class TestToOverscannedDoc(unittest.TestCase):
     def test_to_overscanned_doc___with_no_newline_long_line___wraps_without_adding_newlines(self):
         # columns=10, overscan=1 -> usable=8
         result = to_overscanned_doc(['abcdefghij'], columns=10, cols_overscan=1)
-        self.assertEqual([' abcdefgh', ' ij'], result)
+        self.assertEqual([' abcdefgh\n', ' ij'], result)
 
     def test_to_overscanned_doc___with_overscan_at_half_columns___returns_unchanged(self):
         doc = ['hello\n']
@@ -100,8 +112,8 @@ class TestToOverscannedDoc(unittest.TestCase):
         result = to_overscanned_doc(doc, columns=16, cols_overscan=2)
         self.assertEqual([
             '  short\n',
-            '  this is a lo\n',
-            '  nger line\n',
+            '  this is a\n',
+            '  longer line\n',
             '  \n',
         ], result)
 
