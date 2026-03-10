@@ -134,6 +134,60 @@ class UpdateAllServiceFactory:
         )
 
 
+def calculate_supporter_shoutout(config: Config, supporter_name: str) -> str:
+    usable_columns = config.term_size.columns - config.overscan_dim.cols * 2
+    message_tiers = [
+        f"Today's shoutout is for {supporter_name}! - Join us at patreon.com/theypsilon",
+        f"Shoutout to {supporter_name}! patreon.com/theypsilon",
+        f"Thanks {supporter_name}! patreon.com/theypsilon",
+    ]
+
+    for message in message_tiers:
+        if len(message) <= usable_columns:
+            return message
+
+    return message_tiers[-1]
+
+
+def calculate_outro_summary(config: Config, run_time: str, timestamp: str) -> str:
+    usable_columns = config.term_size.columns - config.overscan_dim.cols * 2
+    message_tiers = [
+        f'Update All {UPDATE_ALL_VERSION} ({config.commit[0:3]}) by theypsilon. Run time: {run_time}s at {timestamp}',
+        f'Update All {UPDATE_ALL_VERSION} by theypsilon {run_time}s {timestamp}',
+        f'Update All {UPDATE_ALL_VERSION}: {run_time}s {timestamp}',
+        f'Update All {UPDATE_ALL_VERSION}: {run_time}s',
+    ]
+
+    for message in message_tiers:
+        if len(message) <= usable_columns:
+            return message
+
+    return message_tiers[-1]
+
+
+def calculate_success_summary(config: Config, log_path: str) -> str:
+    usable_columns = config.term_size.columns - config.overscan_dim.cols * 2
+    message_tiers = [
+        f'Success! More details at: {log_path}',
+        f'Success! Log: {log_path}',
+        'Success! Log saved.',
+    ]
+
+    for message in message_tiers:
+        if len(message) <= usable_columns:
+            return message
+
+    return message_tiers[-1]
+
+
+def calculate_reading_sections_summary(config: Config, downloader_ini_path: str) -> Optional[str]:
+    usable_columns = config.term_size.columns - config.overscan_dim.cols * 2
+    message = f'Reading sections from {downloader_ini_path}'
+    if len(message) <= usable_columns:
+        return message
+    return None
+
+
 class UpdateAllService:
     def __init__(self, config_provider: GenericProvider[Config],
                  logger: Logger,
@@ -297,7 +351,9 @@ class UpdateAllService:
                 self._logger.print(_center("for your support!"))
 
         self._logger.print()
-        self._logger.print(f'Reading sections from {self._ini_repository.downloader_ini_standard_path()}')
+        reading_sections_summary = calculate_reading_sections_summary(config, self._ini_repository.downloader_ini_standard_path())
+        if reading_sections_summary is not None:
+            self._logger.print(reading_sections_summary)
         self._logger.print()
 
     def _countdown_for_settings_screen(self) -> None:
@@ -531,7 +587,7 @@ class UpdateAllService:
 
         self._end_time = time.monotonic()
         run_time = str(datetime.timedelta(seconds=self._end_time - config.start_time))[2:-4]
-        self._logger.print(f'Update All {UPDATE_ALL_VERSION} ({config.commit[0:3]}) by theypsilon. Run time: {run_time}s at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+        self._logger.print(calculate_outro_summary(config, run_time, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         self._logger.debug(f"Commit: {config.commit}")
         if self._retroaccount.has_installed_update_all_patreon_key():
             self._logger.print('Patreon Key installed!')
@@ -561,16 +617,12 @@ class UpdateAllService:
             self._logger.print()
             self._logger.print(f"Full log for more details: {FILE_update_all_log}")
         else:
-            self._logger.print(f"Success! More details at: {FILE_update_all_log}")
+            self._logger.print(calculate_success_summary(config, FILE_update_all_log))
 
         self._logger.print()
         days_since_epoch = int(time.time() // 86400)
         supporter_of_the_day = supporter_plus_patrons[days_since_epoch % len(supporter_plus_patrons)]
-        longer_msg = f'Today\'s shoutout is for {supporter_of_the_day}! - Join us at patreon.com/theypsilon'
-        if len(longer_msg) <= 80:
-            self._logger.print(longer_msg)
-        else:
-            self._logger.print(f'Shoutout to {supporter_of_the_day}! patreon.com/theypsilon')
+        self._logger.print(calculate_supporter_shoutout(self._config_provider.get(), supporter_of_the_day))
 
     def _show_interactive_log_viewer_and_timeline(self) -> None:
         config = self._config_provider.get()

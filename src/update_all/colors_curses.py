@@ -46,6 +46,10 @@ class ColorConfiguration:
     LOG_VIEWER_BACKGROUND_COLOR = 0
     LOG_VIEWER_TEXT_COLOR = 0
     LOG_VIEWER_SYMBOL_COLOR = 0
+    LOG_VIEWER_HUD_TEXT_COLOR = 0
+    LOG_VIEWER_HUD_SYMBOL_COLOR = 0
+    LOG_VIEWER_HUD_LINES_COLOR = 0
+    LOG_VIEWER_HUD_BORDER_COLOR = 0
 
 
 colors = ColorConfiguration()
@@ -129,6 +133,10 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[blue][blue]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][blue]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][blue]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[black][white]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = color_pair[blue][white]
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = color_pair[red][white]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def standard(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[white][blue]
@@ -159,6 +167,10 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[blue][blue]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][blue]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][blue]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[white][black]
@@ -189,6 +201,10 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[white][red]
@@ -219,6 +235,10 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
 
 class CyanNightColorTheme(ColorTheme):
@@ -254,6 +274,10 @@ class CyanNightColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[cyan][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[black][black]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
@@ -284,6 +308,10 @@ class CyanNightColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
@@ -314,6 +342,10 @@ class CyanNightColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
 
 class AquamarineColorTheme(ColorTheme):
@@ -350,6 +382,10 @@ class AquamarineColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[cyan][cyan]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[black][cyan]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][cyan]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][cyan]
@@ -380,6 +416,10 @@ class AquamarineColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[cyan][cyan]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][cyan]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][cyan]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[cyan][red]
@@ -410,6 +450,10 @@ class AquamarineColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[red][red]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[cyan][red]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][red]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
 
 class CleanWallColorTheme(ColorTheme):
@@ -446,6 +490,10 @@ class CleanWallColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[white][white]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[black][white]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[black][white]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[white][white]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[white][white]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
@@ -476,6 +524,10 @@ class CleanWallColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][red]
@@ -506,6 +558,10 @@ class CleanWallColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[red][red]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][red]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][red]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
 
 class Custom3ColorTheme(ColorTheme):
@@ -546,6 +602,10 @@ class Custom3ColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[self._background][self._background]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[self._box][self._background]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[black][self._background]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
@@ -576,6 +636,10 @@ class Custom3ColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
@@ -606,6 +670,10 @@ class Custom3ColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
 
 class BloodyAmberColorTheme(ColorTheme):
@@ -638,6 +706,10 @@ class BloodyAmberColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[yellow][yellow]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[black][yellow]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[red][yellow]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def standard(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
@@ -668,6 +740,10 @@ class BloodyAmberColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[green][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
@@ -698,6 +774,10 @@ class BloodyAmberColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[yellow][yellow]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][yellow]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[black][yellow]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
@@ -728,6 +808,10 @@ class BloodyAmberColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[yellow][yellow]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][yellow]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[black][yellow]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
 
 class MainframeColorTheme(ColorTheme):
@@ -759,7 +843,11 @@ class MainframeColorTheme(ColorTheme):
         colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][black]
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[green][black]
-        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[green][black]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[green][green]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
 
     def standard(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
@@ -789,7 +877,11 @@ class MainframeColorTheme(ColorTheme):
         colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][black]
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[green][black]
-        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[green][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[black][green]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = color_pair[black][green]
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = color_pair[black][green]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[green][black]
@@ -819,7 +911,11 @@ class MainframeColorTheme(ColorTheme):
         colors.DEVICE_LOGIN_LINK_COLOR = color_pair[cyan][black]
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[green][black]
-        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[green][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[black][green]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = color_pair[black][green]
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = color_pair[black][green]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
@@ -850,6 +946,10 @@ class MainframeColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[green][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[black][green]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = color_pair[black][green]
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = color_pair[black][green]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
 
 class AuroraColorTheme(ColorTheme):
@@ -885,6 +985,10 @@ class AuroraColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[blue][blue]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][blue]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][blue]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[cyan][black]
@@ -915,6 +1019,10 @@ class AuroraColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[cyan][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[blue][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][blue]
@@ -945,6 +1053,10 @@ class AuroraColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[blue][blue]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][blue]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][blue]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
 
 class NeonNoirColorTheme(ColorTheme):
@@ -980,6 +1092,10 @@ class NeonNoirColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[magenta][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[magenta][magenta]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = color_pair[cyan][magenta]
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = color_pair[black][magenta]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[black][black]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
@@ -1010,6 +1126,10 @@ class NeonNoirColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[magenta][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
@@ -1040,6 +1160,10 @@ class NeonNoirColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[magenta][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
 
 class MonoColorTheme(ColorTheme):
@@ -1075,6 +1199,10 @@ class MonoColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[white][black]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
@@ -1105,6 +1233,10 @@ class MonoColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[yellow][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
 
     def red(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][black]
@@ -1135,3 +1267,7 @@ class MonoColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[red][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[red][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
