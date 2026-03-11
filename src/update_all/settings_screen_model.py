@@ -34,7 +34,7 @@ def settings_screen_model(): return {
     },
     "variables": {
         # Global variables
-        "update_all_version": {"default": "2.5"},
+        "update_all_version": {"default": "2.6"},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -1347,31 +1347,6 @@ def settings_screen_model(): return {
         },
     }
 }
-
-
-def apply_narrow_screen_transform(model):
-    items = model.get('items', {})
-    for item_key, item in items.items():
-        for entry in item.get('entries', []):
-            if not entry:
-                continue
-            description = entry.get('description', '')
-            if not description:
-                continue
-            actions = entry.get('actions', {})
-            for symbol, effects in actions.items():
-                if len(effects) == 1 and isinstance(effects[0], dict) and effects[0].get('type') == 'rotate_variable':
-                    actions[symbol] = [{
-                        "ui": "confirm",
-                        "header": entry['title'],
-                        "text": [description],
-                        "preselected_action": "Toggle",
-                        "actions": [
-                            {"title": "Toggle", "type": "fixed", "fixed": [effects[0]]},
-                            {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
-                        ],
-                    }]
-    return model
 
 
 def _retroaccount_account_entry(): return {

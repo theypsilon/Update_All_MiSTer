@@ -40,12 +40,12 @@ class TestLogViewer(unittest.TestCase):
 
     def test_calculate_hud_message___uses_two_width_tiers_based_on_cnarrow(self):
         self.assertEqual(
-            '←↑↓→ Navigate · Any key Exit',
-            calculate_hud_message(_ScreenDims(TerminalSize(columns=80, lines=40, cnarrow=False), OverscanDim())),
+            '←↑↓→ Navigate · Any other key to EXIT',
+            str(calculate_hud_message(_ScreenDims(TerminalSize(columns=80, lines=40, cnarrow=False), OverscanDim()))),
         )
         self.assertEqual(
             '↑↓←→ Nav · Any key Exit',
-            calculate_hud_message(_ScreenDims(TerminalSize(columns=40, lines=18, cnarrow=True), OverscanDim())),
+            str(calculate_hud_message(_ScreenDims(TerminalSize(columns=40, lines=18, cnarrow=True), OverscanDim()))),
         )
 
     def test_calculate_hud_layout___without_overscan___uses_full_screen_bounds(self):

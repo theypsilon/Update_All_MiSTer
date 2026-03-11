@@ -18,7 +18,7 @@
 
 import unittest
 
-from update_all.other import any_to_bool, any_to_nonfalsy_str, calculate_overscan, OverscanDim, TerminalSize
+from update_all.other import any_to_bool, any_to_nonfalsy_str, calculate_overscan, TerminalSize, OverscanDim, calculate_outer_box
 
 
 class TestOther(unittest.TestCase):
@@ -63,7 +63,30 @@ class TestOther(unittest.TestCase):
             ('medium', _size(40, 18),   OverscanDim(cols=2, lines=1)),
             ('high',    _size(40, 18),   OverscanDim(cols=3, lines=1)),
             ('maximum',   _size(40, 18),   OverscanDim(cols=4, lines=2)),
+            ('none', _size(80, 15), OverscanDim(cols=0, lines=0)),
+            ('small', _size(80, 15), OverscanDim(cols=2, lines=0)),
+            ('medium', _size(80, 15), OverscanDim(cols=4, lines=1)),
+            ('high', _size(80, 15), OverscanDim(cols=6, lines=1)),
+            ('maximum', _size(80, 15), OverscanDim(cols=8, lines=2)),
         ]
         for label, size, expected in cases:
             with self.subTest(label=label, size=size):
                 self.assertEqual(str(expected), str(calculate_overscan(label, size)))
+
+    def test_calculate_outer_box___returns_preview_border_around_usable_area(self):
+        screen_dims = _ScreenDims(TerminalSize(columns=80, lines=40), OverscanDim(cols=4, lines=2))
+        self.assertEqual((1, 38, 3, 76), calculate_outer_box(screen_dims))
+
+    def test_calculate_outer_box___returns_none_when_overscan_is_disabled(self):
+        screen_dims = _ScreenDims(TerminalSize(columns=80, lines=40), OverscanDim(cols=0, lines=0))
+        self.assertIsNone(calculate_outer_box(screen_dims))
+
+    def test_calculate_outer_box___keeps_zero_line_overscan_outside_screen(self):
+        screen_dims = _ScreenDims(TerminalSize(columns=80, lines=40), OverscanDim(cols=1, lines=0))
+        self.assertEqual((-1, 40, 0, 79), calculate_outer_box(screen_dims))
+
+
+class _ScreenDims:
+    def __init__(self, term_size: TerminalSize, overscan_dim: OverscanDim):
+        self.term_size = term_size
+        self.overscan_dim = overscan_dim

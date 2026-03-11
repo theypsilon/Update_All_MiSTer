@@ -144,3 +144,11 @@ def calculate_overscan(overscan_label: str, size: TerminalSize) -> OverscanDim:
     overscan_cols = round(size.columns * overscan_percent / 100)
     overscan_lines = round(size.lines * overscan_percent / 100)
     return OverscanDim(overscan_cols, overscan_lines)
+
+
+def calculate_outer_box(screen_dims):
+    ts = screen_dims.term_size
+    oc = screen_dims.overscan_dim
+    if oc.cols <= 0 and oc.lines <= 0:
+        return None
+    return oc.lines - 1, ts.lines - oc.lines, oc.cols - 1, ts.columns - oc.cols

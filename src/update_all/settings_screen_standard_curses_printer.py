@@ -19,7 +19,7 @@
 import curses
 import traceback
 from update_all.colors_curses import init_colors, make_color_theme, colors
-from update_all.other import ScreenDims
+from update_all.other import ScreenDims, calculate_outer_box
 from update_all.settings_screen_printer import SettingsScreenPrinter, ColorThemeManager
 from update_all.ui_engine import Interpolator
 from update_all.ui_engine_curses_runtime import CursesRuntime
@@ -378,6 +378,9 @@ class _Drawer(UiDialogDrawer):
                 x = max(co, (ts.columns - len(text)) // 2)
                 self._write_line(desc_y, x, text, mode)
 
+        if _is_selected_overscan_entry(self._menu_entries):
+            self._paint_overscan_preview()
+
         return self._runtime.read_key()
 
     def _marquee_read_key(self, text, avail, mode):
@@ -449,6 +452,43 @@ class _Drawer(UiDialogDrawer):
         if not text:
             return
         self._runtime.window.addstr(y, x, text, mode)
+
+    def _paint_overscan_preview(self) -> None:
+        preview_border = calculate_outer_box(self._sd)
+        if preview_border is None:
+            return
+        top, bottom, left, right = preview_border
+        ts = self._sd.term_size
+        attr = curses.A_NORMAL | curses.color_pair(colors.OVERSCAN_BOX_COLOR)
+        win = self._runtime.window
+        block = '█'
+        try:
+            for y in range(0, min(ts.lines, top + 1)):
+                width = ts.columns - (1 if y == ts.lines - 1 else 0)
+                if width > 0:
+                    win.addstr(y, 0, block * width, attr)
+
+            for y in range(max(0, bottom), ts.lines):
+                width = ts.columns - (1 if y == ts.lines - 1 else 0)
+                if width > 0:
+                    win.addstr(y, 0, block * width, attr)
+
+            start_y = max(0, top + 1)
+            end_y = min(ts.lines, bottom)
+            if start_y < end_y:
+                if 0 <= left < ts.columns:
+                    left_width = left + 1
+                    for y in range(start_y, end_y):
+                        width = min(left_width, ts.columns - (1 if y == ts.lines - 1 else 0))
+                        if width > 0:
+                            win.addstr(y, 0, block * width, attr)
+                if 0 <= right < ts.columns:
+                    for y in range(start_y, end_y):
+                        width = ts.columns - right - (1 if y == ts.lines - 1 else 0)
+                        if width > 0:
+                            win.addstr(y, right, block * width, attr)
+        except curses.error:
+            pass
 
 
 class CursesDeviceLoginRenderer(DeviceLoginRenderer):
@@ -667,6 +707,10 @@ def _calculate_menu_scroll(selected_idx, total_entries, max_entries, current_off
         offset = max(0, selected_idx)
 
     return offset
+
+
+def _is_selected_overscan_entry(menu_entries):
+    return any(is_selected and option.endswith('Overscan') for option, _, is_selected in menu_entries)
 
 
 def _word_wrap_line(line, max_width):

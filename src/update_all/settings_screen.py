@@ -23,10 +23,8 @@ from update_all.analogue_pocket.pocket_backup import pocket_backup
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
-    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme, \
-    OVERSCAN_PRESETS
+    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
 from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, ALL_DB_IDS
-from update_all.downloader_utils import prepare_latest_downloader
 from update_all.encryption import Encryption
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
@@ -77,8 +75,6 @@ class SettingsScreen(UiApplication):
     def _load_menu_entry(self, menu_entry) -> None:
         def loader():
             model = settings_screen_model()
-            #if terminal_size().columns <= 40:
-            #    model = apply_narrow_screen_transform(model)
             execute_ui_engine(menu_entry, model, self, self._ui_runtime)
 
         self._ui_runtime.initialize_runtime(loader)
@@ -121,7 +117,6 @@ class SettingsScreen(UiApplication):
         ui.set_value('pocket_backup', str(local_store.get_pocket_backup()).lower())
         ui.set_value('retroaccount_domain', config.retroaccount_domain)
         ui.set_value('overscan', local_store.get_overscan())
-        self.apply_overscan(ui)  # @TODO: CHECK BEFORE GOING TO PRODUCTION. WHy is this here???
         ui.set_value('monochrome_ui', str(local_store.get_monochrome_ui()).lower())
 
         if ALL_DB_IDS['JTCORES'] not in config.databases:
@@ -148,7 +143,6 @@ class SettingsScreen(UiApplication):
             'calculate_has_right_available_code': lambda effect: self.calculate_has_right_available_code(ui),
             'calculate_is_test_spinner_firmware_applied': lambda effect: self.calculate_is_test_spinner_firmware_applied(ui),
             'test_unstable_spinner_firmware': lambda effect: self.test_unstable_spinner_firmware(ui),
-#            'play_bad_apple': lambda effect: self.play_bad_apple(ui),  @TODO: To be removed
             'save': lambda effect: self.save(ui),
             'prepare_exit_dont_save_and_run': lambda effect: self.prepare_exit_dont_save_and_run(ui),
             'calculate_file_exists': lambda effect: self.calculate_file_exists(ui, effect),
@@ -221,33 +215,6 @@ class SettingsScreen(UiApplication):
         ui.set_value('is_test_spinner_firmware_applied', 'true' if is_test_firmware else 'false')
         ui.set_value('firmware_needs_reboot', 'true' if self._original_firmware != firmware_md5 else 'false')
 
-    def play_bad_apple(self, _ui) -> None:
-        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=False)
-        if downloader_file is None:
-            return None
-
-        mister_ini = self._read_mister_ini()
-
-        bad_apple_db_url = "https://github.com/theypsilon/BadAppleDB_MiSTer/releases/download/v1/bad_apple_full_res_db.json.zip"
-        if 'fb_size=2' in mister_ini or 'fb_terminal=0' in mister_ini:
-            bad_apple_db_url = "https://github.com/theypsilon/BadAppleDB_MiSTer/releases/download/v1/bad_apple_half_res_db.json.zip"
-
-        env = {
-            'DOWNLOADER_INI_PATH': "/tmp/downloader_bad_apple.ini",
-            'ALLOW_REBOOT': '0',
-            'CURL_SSL': self._config_provider.get().curl_ssl,
-            'UPDATE_LINUX': 'false',
-            'DEFAULT_DB_ID': 'bad_apple_db',
-            'DEFAULT_DB_URL': bad_apple_db_url,
-            'LOGFILE': "/tmp/downloader_bad_apple.log",
-        }
-
-        self._ui_runtime.interrupt()
-
-        self._os_utils.execute_process(downloader_file, env)
-
-        self._ui_runtime.resume()
-
     def calculate_needs_save(self, ui: UiContext) -> None:
         needs_save_file_set = set()
 
@@ -304,6 +271,7 @@ class SettingsScreen(UiApplication):
 
         if local_store.needs_save():
             self._local_repository.save_store(local_store)
+            self._logger.configure(config)
 
     def _fill_store(self, store: LocalStore, ui: UiContext, config: Config):
         store.set_theme(ui.get_value('ui_theme'))
@@ -423,12 +391,12 @@ class SettingsScreen(UiApplication):
         config = self._config_provider.get()
         config.overscan = ui.get_value('overscan')
         config.overscan_dim = calculate_overscan(config.overscan, config.term_size)
-        self._logger.configure(config)
 
     def prepare_exit_dont_save_and_run(self, ui):
         self._copy_ui_options_to_current_config(ui)
         config = self._config_provider.get()
         config.temporary_downloader_ini = True
+        self._logger.configure(config)
         self._ini_repository.write_downloader_ini(config, FILE_downloader_temp_ini)
         self._logger.debug(f'Written temporary {FILE_downloader_temp_ini} file.')
 

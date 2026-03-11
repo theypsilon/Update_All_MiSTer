@@ -35,6 +35,7 @@ class ColorConfiguration:
     BOX_BACKGROUND_COLOR = 0
     HEADER_LINE_COLOR = 0
     COMMON_TEXT_COLOR = 0
+    OVERSCAN_BOX_COLOR = 0
     UNSELECTED_ACTION_COLOR = 0
     LINK_COLOR = 0
     DEVICE_LOGIN_BACKGROUND_COLOR = 0
@@ -91,7 +92,7 @@ class ColorTheme(abc.ABC):
 
 def make_color_theme(theme: str) -> ColorTheme:
     if theme == 'Cyan Night': return CyanNightColorTheme()
-    elif theme == 'Japan': return Custom3ColorTheme(white, red, white)
+    elif theme == 'Japan': return Custom3ColorTheme(white, red, white, yellow)
     elif theme == 'Aquamarine': return AquamarineColorTheme()
     elif theme == 'Clean Wall': return CleanWallColorTheme()
     elif theme == 'Bloody Amber': return BloodyAmberColorTheme()
@@ -124,6 +125,7 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[yellow][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[white][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[cyan][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
@@ -158,6 +160,7 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.SYMBOL_AT_COLOR = color_pair[red][white]
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[blue][white]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
@@ -192,6 +195,7 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.SYMBOL_AT_COLOR = color_pair[cyan][white]
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[blue][white]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
@@ -226,6 +230,7 @@ class BlueInstallerColorTheme(ColorTheme):
         colors.SYMBOL_AT_COLOR = color_pair[red][white]
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[blue][white]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
@@ -266,6 +271,7 @@ class CyanNightColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[yellow][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[cyan][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[green][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[cyan][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[cyan][black]
@@ -274,10 +280,10 @@ class CyanNightColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[cyan][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
-        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[white][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
         colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
-        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[white][black]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
@@ -300,6 +306,7 @@ class CyanNightColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[yellow][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[green][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][black]
@@ -334,6 +341,7 @@ class CyanNightColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[red][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[cyan][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
@@ -373,6 +381,7 @@ class AquamarineColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][cyan]
         colors.SYMBOL_AT_COLOR = color_pair[magenta][cyan]
         colors.COMMON_TEXT_COLOR = color_pair[black][cyan]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[blue][cyan]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[black][cyan]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[black][cyan]
@@ -382,10 +391,10 @@ class AquamarineColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[cyan][cyan]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[black][cyan]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][cyan]
-        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
-        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
-        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
-        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[black][cyan]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = color_pair[black][cyan]
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = color_pair[cyan][black]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[cyan][cyan]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[red][cyan]
@@ -408,6 +417,7 @@ class AquamarineColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][cyan]
         colors.SYMBOL_AT_COLOR = color_pair[magenta][cyan]
         colors.COMMON_TEXT_COLOR = color_pair[red][cyan]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[blue][cyan]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][cyan]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][cyan]
@@ -442,6 +452,7 @@ class AquamarineColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[green][red]
         colors.SYMBOL_AT_COLOR = color_pair[yellow][red]
         colors.COMMON_TEXT_COLOR = color_pair[cyan][red]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[yellow][red]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[cyan][red]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[cyan][red]
@@ -481,6 +492,7 @@ class CleanWallColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.SYMBOL_AT_COLOR = color_pair[magenta][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[blue][white]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][white]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[black][white]
@@ -516,6 +528,7 @@ class CleanWallColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.SYMBOL_AT_COLOR = color_pair[magenta][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[blue][white]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[black][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
@@ -550,6 +563,7 @@ class CleanWallColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][white]
         colors.SYMBOL_AT_COLOR = color_pair[magenta][white]
         colors.COMMON_TEXT_COLOR = color_pair[black][white]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[blue][white]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][red]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][red]
@@ -565,10 +579,11 @@ class CleanWallColorTheme(ColorTheme):
 
 
 class Custom3ColorTheme(ColorTheme):
-    def __init__(self, background, box, text):
+    def __init__(self, background, box, text, contrast):
         self._background = background
         self._box = box
         self._text = text
+        self._contrast = contrast
 
     def viewer(self):
         self.standard()
@@ -594,6 +609,7 @@ class Custom3ColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[black if self._box is not black else blue][self._box]
         colors.SYMBOL_AT_COLOR = color_pair[red if self._box is not red else black][self._box]
         colors.COMMON_TEXT_COLOR = color_pair[self._text][self._box]
+        colors.OVERSCAN_BOX_COLOR = color_pair[self._contrast][self._contrast]
         colors.LINK_COLOR = color_pair[cyan if self._box is not cyan else blue][self._box]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[self._box][self._background]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[self._box][self._background]
@@ -602,10 +618,10 @@ class Custom3ColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[self._background][self._background]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[self._box][self._background]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[black][self._background]
-        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
-        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
-        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
-        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[self._box][self._box]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = color_pair[self._text][self._box]
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = color_pair[black][self._box]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[self._box][self._box]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[black][black]
@@ -628,6 +644,7 @@ class Custom3ColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[red][black]
         colors.COMMON_TEXT_COLOR = color_pair[white][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[cyan][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[black][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
@@ -662,6 +679,7 @@ class Custom3ColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[red][black]
         colors.COMMON_TEXT_COLOR = color_pair[red][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[cyan][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[black][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
@@ -698,6 +716,7 @@ class BloodyAmberColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[red][black]
         colors.SYMBOL_AT_COLOR = color_pair[red][black]
         colors.COMMON_TEXT_COLOR = color_pair[yellow][black]
+        colors.OVERSCAN_BOX_COLOR = color_pair[red][red]
         colors.LINK_COLOR = color_pair[white][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][black]
@@ -706,10 +725,10 @@ class BloodyAmberColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[yellow][yellow]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[black][yellow]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[red][yellow]
-        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
-        colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
-        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
-        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[red][black]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = color_pair[yellow][black]
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = color_pair[red][black]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[red][black]
 
     def standard(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[yellow][black]
@@ -732,6 +751,7 @@ class BloodyAmberColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][yellow]
         colors.SYMBOL_AT_COLOR = color_pair[red][yellow]
         colors.COMMON_TEXT_COLOR = color_pair[black][yellow]
+        colors.OVERSCAN_BOX_COLOR = color_pair[red][red]
         colors.LINK_COLOR = color_pair[blue][yellow]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][black]
@@ -766,6 +786,7 @@ class BloodyAmberColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[black][yellow]
         colors.SYMBOL_AT_COLOR = color_pair[black][yellow]
         colors.COMMON_TEXT_COLOR = color_pair[red][yellow]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[black][yellow]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
@@ -800,6 +821,7 @@ class BloodyAmberColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[yellow][red]
         colors.SYMBOL_AT_COLOR = color_pair[white][red]
         colors.COMMON_TEXT_COLOR = color_pair[black][red]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[yellow][red]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
@@ -836,6 +858,7 @@ class MainframeColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
         colors.COMMON_TEXT_COLOR = color_pair[green][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[cyan][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[green][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[green][black]
@@ -870,6 +893,7 @@ class MainframeColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
         colors.COMMON_TEXT_COLOR = color_pair[green][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[cyan][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[green][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[green][black]
@@ -904,6 +928,7 @@ class MainframeColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
         colors.COMMON_TEXT_COLOR = color_pair[green][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[cyan][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[green][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[green][black]
@@ -938,6 +963,7 @@ class MainframeColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[green][black]
         colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
         colors.COMMON_TEXT_COLOR = color_pair[red][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[green][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
@@ -977,6 +1003,7 @@ class AuroraColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][blue]
         colors.SYMBOL_AT_COLOR = color_pair[green][blue]
         colors.COMMON_TEXT_COLOR = color_pair[yellow][blue]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[cyan][blue]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][blue]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][blue]
@@ -985,10 +1012,10 @@ class AuroraColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[blue][blue]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[yellow][blue]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][blue]
-        colors.LOG_VIEWER_HUD_LINES_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[white][blue]
         colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
-        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
-        colors.LOG_VIEWER_HUD_BORDER_COLOR = colors.LOG_VIEWER_HUD_LINES_COLOR
+        colors.LOG_VIEWER_HUD_SYMBOL_COLOR = color_pair[white][blue]
+        colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[cyan][blue]
 
     def black(self):
         colors.WINDOW_BACKGROUND_COLOR = color_pair[cyan][black]
@@ -1011,6 +1038,7 @@ class AuroraColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[blue][black]
         colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
         colors.COMMON_TEXT_COLOR = color_pair[cyan][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[blue][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[cyan][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[cyan][black]
@@ -1045,6 +1073,7 @@ class AuroraColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][blue]
         colors.SYMBOL_AT_COLOR = color_pair[yellow][blue]
         colors.COMMON_TEXT_COLOR = color_pair[red][blue]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[cyan][blue]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][blue]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][blue]
@@ -1084,6 +1113,7 @@ class NeonNoirColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[cyan][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[magenta][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[green][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[magenta][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[magenta][black]
@@ -1093,7 +1123,7 @@ class NeonNoirColorTheme(ColorTheme):
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[magenta][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[cyan][black]
         colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[magenta][magenta]
-        colors.LOG_VIEWER_HUD_TEXT_COLOR = color_pair[cyan][magenta]
+        colors.LOG_VIEWER_HUD_TEXT_COLOR = color_pair[white][magenta]
         colors.LOG_VIEWER_HUD_SYMBOL_COLOR = color_pair[black][magenta]
         colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[black][black]
 
@@ -1118,6 +1148,7 @@ class NeonNoirColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[magenta][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[yellow][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[magenta][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][black]
@@ -1152,6 +1183,7 @@ class NeonNoirColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[magenta][black]
         colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
         colors.COMMON_TEXT_COLOR = color_pair[red][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[magenta][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]
@@ -1191,6 +1223,7 @@ class MonoColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[white][black]
         colors.SYMBOL_AT_COLOR = color_pair[white][black]
         colors.COMMON_TEXT_COLOR = color_pair[white][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[white][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[white][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[white][black]
@@ -1199,7 +1232,7 @@ class MonoColorTheme(ColorTheme):
         colors.LOG_VIEWER_BACKGROUND_COLOR = color_pair[black][black]
         colors.LOG_VIEWER_TEXT_COLOR = color_pair[white][black]
         colors.LOG_VIEWER_SYMBOL_COLOR = color_pair[white][black]
-        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[black][black]
+        colors.LOG_VIEWER_HUD_LINES_COLOR = color_pair[white][black]
         colors.LOG_VIEWER_HUD_TEXT_COLOR = colors.LOG_VIEWER_TEXT_COLOR
         colors.LOG_VIEWER_HUD_SYMBOL_COLOR = colors.LOG_VIEWER_SYMBOL_COLOR
         colors.LOG_VIEWER_HUD_BORDER_COLOR = color_pair[white][black]
@@ -1225,6 +1258,7 @@ class MonoColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[yellow][black]
         colors.SYMBOL_AT_COLOR = color_pair[yellow][black]
         colors.COMMON_TEXT_COLOR = color_pair[yellow][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[yellow][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[yellow][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[yellow][black]
@@ -1259,6 +1293,7 @@ class MonoColorTheme(ColorTheme):
         colors.SYMBOL_TILDE_COLOR = color_pair[red][black]
         colors.SYMBOL_AT_COLOR = color_pair[red][black]
         colors.COMMON_TEXT_COLOR = color_pair[red][black]
+        colors.OVERSCAN_BOX_COLOR = colors.COMMON_TEXT_COLOR
         colors.LINK_COLOR = color_pair[red][black]
         colors.DEVICE_LOGIN_BACKGROUND_COLOR = color_pair[red][black]
         colors.DEVICE_LOGIN_TEXT_COLOR = color_pair[red][black]

@@ -93,13 +93,16 @@ class LogViewer:
         self._retroaccount = retroaccount
 
     def show(self, doc: list[str], popup_dict: Optional[dict[str, str]] = None, initial_index: int = 0) -> bool:
-        store = self._store_provider.get()
-        can_use_custom_theme = (
-            self._retroaccount.is_update_all_extras_active()
-            and store.get_use_settings_screen_theme_in_log_viewer()
-        )
-        ui_theme = store.get_theme() if can_use_custom_theme else DEFAULT_LOG_VIEWER_THEME
         config = self._config_provider.get()
+        if config.monochrome_ui:
+            ui_theme = DEFAULT_LOG_VIEWER_THEME
+        else:
+            store = self._store_provider.get()
+            can_use_custom_theme = (
+                self._retroaccount.is_update_all_extras_active()
+                and store.get_use_settings_screen_theme_in_log_viewer()
+            )
+            ui_theme = store.get_theme() if can_use_custom_theme else DEFAULT_LOG_VIEWER_THEME
         view_document(doc, popup_dict or {}, initial_index, ui_theme, config)
         return True
 
@@ -115,10 +118,19 @@ class HudLayout(NamedTuple):
     page_rows: int
 
 
-def calculate_hud_message(screen_dims: ScreenDims) -> str:
+class HudMessage(NamedTuple):
+    nav_symbols: str
+    nav_text: str
+    sep_symbol: str
+    any_key_text: str
+
+    def __str__(self): return f'{self.nav_symbols} {self.nav_text} {self.sep_symbol} {self.any_key_text}'
+
+
+def calculate_hud_message(screen_dims: ScreenDims) -> HudMessage:
     if screen_dims.term_size.cnarrow:
-        return '↑↓←→ Nav · Any key Exit'
-    return '←↑↓→ Navigate · Any key Exit'
+        return HudMessage('↑↓←→', 'Nav', '·', 'Any key Exit')
+    return HudMessage('←↑↓→', 'Navigate', '·', 'Any other key to EXIT')
 
 
 def calculate_hud_layout(screen_dims: ScreenDims) -> HudLayout:
@@ -163,12 +175,9 @@ def view_document(document: list[str], popup_dict: dict[int, list[str]], initial
             self.frame_end = hud_layout.page_rows
             self.mindex = max(1, len(document) - self.frame_end)
 
-            hud_message = calculate_hud_message(screen_dims)
+            self._hud_msg = calculate_hud_message(screen_dims)
             text_area = hud_layout.width - 7
-            hud_x = hud_layout.left + 1 + max(0, (text_area - len(hud_message)) // 2)
-            dot_idx = hud_message.find('·')
-            self._hud_parts = (hud_message[:dot_idx], hud_x, dot_idx, hud_message[dot_idx + 1:]) if dot_idx != -1 else (
-            hud_message, hud_x, -1, '')
+            self._hud_x = hud_layout.left + 1 + max(0, (text_area - len(str(self._hud_msg))) // 2)
 
         def addstr(self, y: int, x: int, text: str, attr: int):
             x, length = clip_range(x, len(text), self.mcols - 1)
@@ -221,23 +230,29 @@ def view_document(document: list[str], popup_dict: dict[int, list[str]], initial
             self.window.hline(clamp(y_text, 0, self.mlines - 1), hl.left, ord(' ') | hud_attr, hl.width)
             self.window.hline(clamp(y_line, 0, self.mlines - 1), hl.left, ord(' ') | hud_attr, hl.width)
 
-            before, hud_x, dot_idx, after = self._hud_parts
-            hud_text_attr = curses.color_pair(colors.LOG_VIEWER_HUD_TEXT_COLOR)
-            hud_dot_attr = curses.color_pair(colors.LOG_VIEWER_HUD_SYMBOL_COLOR)
-            if dot_idx == -1:
-                x, length = clip_range(hud_x, len(before), self.mcols - 1)
-                self.window.addstr(clamp(y_text, 0, self.mlines - 1), x, before[:length], curses.A_NORMAL | hud_text_attr)
-            else:
-                x, length = clip_range(hud_x, len(before), self.mcols - 1)
-                self.window.addstr(clamp(y_text, 0, self.mlines - 1), x, before[:length], curses.A_NORMAL | hud_text_attr)
-                x, length = clip_range(hud_x + dot_idx, 1, self.mcols - 1)
-                self.window.addstr(clamp(y_text, 0, self.mlines - 1), x, '·'[:length], hud_dot_attr)
-                x, length = clip_range(hud_x + dot_idx + 1, len(after), self.mcols - 1)
-                self.window.addstr(clamp(y_text, 0, self.mlines - 1), x, after[:length], curses.A_NORMAL | hud_text_attr)
-            x, length = clip_range(hl.left + hl.width - 5, len('   %'), self.mcols - 1)
-            self.window.addstr(clamp(y_text, 0, self.mlines - 1), x, '   %'[:length], curses.A_NORMAL | hud_text_attr)
-            x, length = clip_range(hl.left + hl.width - len(hud_percent) - 1, len(hud_percent), self.mcols - 1)
-            self.window.addstr(clamp(y_text, 0, self.mlines - 1), x, hud_percent[:length], curses.A_NORMAL | hud_text_attr)
+            hm = self._hud_msg
+            cx = self._hud_x
+            hud_text_attr = curses.A_NORMAL | curses.color_pair(colors.LOG_VIEWER_HUD_TEXT_COLOR)
+            hud_sym_attr = curses.color_pair(colors.LOG_VIEWER_HUD_SYMBOL_COLOR)
+            yt = clamp(y_text, 0, self.mlines - 1)
+            x, length = clip_range(cx, len(hm.nav_symbols), self.mcols - 1)
+            self.window.addstr(yt, x, hm.nav_symbols[:length], hud_sym_attr)
+            cx += len(hm.nav_symbols) + 1
+            x, length = clip_range(cx, len(hm.nav_text), self.mcols - 1)
+            self.window.addstr(yt, x, hm.nav_text[:length], hud_text_attr)
+            cx += len(hm.nav_text) + 1
+            x, length = clip_range(cx, 1, self.mcols - 1)
+            self.window.addstr(yt, x, hm.sep_symbol, hud_sym_attr)
+            cx += 2
+            x, length = clip_range(cx, len(hm.any_key_text), self.mcols - 1)
+            self.window.addstr(yt, x, hm.any_key_text[:length], hud_text_attr)
+            num_part = hud_percent[:-1]
+            x, length = clip_range(hl.left + hl.width - 5, 3, self.mcols - 1)
+            self.window.addstr(yt, x, '   '[:length], hud_text_attr)
+            x, length = clip_range(hl.left + hl.width - len(hud_percent) - 1, len(num_part), self.mcols - 1)
+            self.window.addstr(yt, x, num_part[:length], hud_text_attr)
+            x, length = clip_range(hl.left + hl.width - 2, 1, self.mcols - 1)
+            self.window.addstr(yt, x, '%', hud_sym_attr)
 
             vertical_line_start = 0 if top else y_text
             vertical_line_length = y_text + 1 if top else self.mlines - y_text

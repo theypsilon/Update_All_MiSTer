@@ -458,8 +458,8 @@ class UpdateAllService:
         if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
             env['DEFAULT_BASE_PATH'] = config.base_path
 
-        #if config.not_mister:  # @TODO: Revert this
-        #    env['DEBUG'] = 'true'
+        if config.not_mister:
+            env['DEBUG'] = 'true'
 
         return_code = self._os_utils.execute_process(downloader_file, env, quiet)
         if not self._file_system.is_file(FILE_downloader_run_signal):

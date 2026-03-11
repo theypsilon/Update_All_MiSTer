@@ -51,10 +51,6 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertGreaterEqual(len(initialized_effects), 5)
         self.assertEqual(used_effects, initialized_effects)
 
-    def test_bad_apple___with_no_mister_ini_changes___does_not_crash(self):
-        sut, ui = tester()
-        sut.play_bad_apple(ui)
-
     def test_calculate_names_char_code_warning___with_names_char18___returns_names_char_code_warning_equals_true(self):
         sut, ui = tester()
         ui.set_value('names_char_code', 'char18')
