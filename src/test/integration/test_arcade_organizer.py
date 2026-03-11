@@ -101,6 +101,18 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             zipf.writestr('mad_db.json', mad_db_data)
 
+    def _update_mad_database_zip(self, extra_entries):
+        mad_db_fixture = os.path.join(
+            os.path.dirname(__file__), '..', 'fixtures', 'arcade_organizer', 'mad_db.json'
+        )
+        with open(mad_db_fixture, 'r') as f:
+            mad_db = json.load(f)
+        mad_db.update(extra_entries)
+
+        zip_path = os.path.join(self.work_path, 'data.zip')
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            zipf.writestr('mad_db.json', json.dumps(mad_db))
+
     def _create_cores_directory(self):
         """Create cores directory with dummy core files."""
         cores_dir = os.path.join(self.mradir, 'cores')
@@ -122,6 +134,22 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         for core_name in core_names:
             core_path = os.path.join(cores_dir, core_name)
             Path(core_path).touch()
+
+    def _write_arcade_names(self, names_lines):
+        names_path = os.path.join(self.base_path, 'Scripts', '.config', 'arcade_names', 'arcade_names.txt')
+        os.makedirs(os.path.dirname(names_path), exist_ok=True)
+        with open(names_path, 'w') as f:
+            f.write('\n'.join(names_lines) + '\n')
+
+    def _write_mra_fixture(self, filename, setname, rbf):
+        with open(os.path.join(self.mradir, filename), 'w') as f:
+            f.write(
+                '<misterromdescription>\n'
+                f'    <name>{setname}</name>\n'
+                f'    <setname>{setname}</setname>\n'
+                f'    <rbf>{rbf}</rbf>\n'
+                '</misterromdescription>\n'
+            )
 
     def _create_ini_file(self, **options):
         """Create INI file with specified options."""
@@ -343,6 +371,74 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
 
         actual_paths = self._get_organized_mra_paths()
         self.assertEqual(expected_paths, actual_paths, "Bootleg games should be filtered out")
+
+    def test_organize___core_collection_name_with_colon___sanitizes_directory_name(self):
+        self._write_mra_fixture('timepilot84.mra', 'timepilot84', 'TimePilot84')
+        self._update_mad_database_zip({
+            'timepilot84': {
+                'file': 'timepilot84.mra',
+                'rotation': 0,
+                'flip': False,
+                'resolution': '15kHz',
+                'region': 'World',
+                'homebrew': False,
+                'bootleg': False,
+                'year': 1984,
+                'manufacturer': ['Konami'],
+                'platform': ["Time Pilot '84"],
+                'category': ['Shoot'],
+                'series': ['Time Pilot'],
+                'players': '2',
+                'move_inputs': ['8-way Joystick'],
+                'special_controls': [],
+                'num_buttons': 2,
+                'num_monitors': 1,
+                'cocktail': '',
+            },
+        })
+        self._write_arcade_names([
+            "ARCADE_TIMEPILOT84: Time Pilot '84: Further Into Unknown World",
+        ])
+
+        self._create_ini_file(
+            SKIPALTS=True,
+            CORE_DIR=True,
+            AZ_DIR=False,
+            REGION_DIR=False,
+            YEAR_DIR=False,
+            CATEGORY_DIR=False,
+            PLATFORM_DIR=False,
+            MANUFACTURER_DIR=False,
+            SERIES_DIR=False,
+            RESOLUTION_DIR=False,
+            ROTATION_DIR=False,
+            PLAYERS_DIR=False,
+            MOVE_INPUTS_DIR=False,
+            NUM_BUTTONS_DIR=False,
+            SPECIAL_CONTROLS_DIR=False,
+            NUM_MONITORS_DIR=False,
+            BOOTLEG=0,
+            HOMEBREW=0,
+        )
+
+        config = self.ao_service.make_arcade_organizer_config(
+            self.ini_path,
+            self.base_path,
+            ''
+        )
+
+        success = self.ao_service.run_arcade_organizer_organize_all_mras(config)
+        self.assertTrue(success)
+
+        actual_paths = self._get_organized_mra_paths()
+        self.assertIn(
+            "_3 Collections/_2 By MiSTer Core/_Time Pilot '84- Further Into Unknown World/timepilot84.mra",
+            actual_paths,
+        )
+        self.assertNotIn(
+            "_3 Collections/_2 By MiSTer Core/_Time Pilot '84: Further Into Unknown World/timepilot84.mra",
+            actual_paths,
+        )
 
     def test_organize___with_region_filter___includes_only_matching_region(self):
         """Test that region filter works correctly."""

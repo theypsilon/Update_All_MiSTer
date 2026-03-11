@@ -316,6 +316,10 @@ def is_path_alternative(mra_path):
     return any(p.name.lower() == '_alternatives' for p in mra_path.parents)
 
 
+def sanitize_path_component(name):
+    return str(name).replace(':', '-')
+
+
 def datetime_from_ctime(entry):
     try:
         return datetime.datetime.fromtimestamp(entry.stat().st_ctime, tz=datetime.timezone.utc)
@@ -372,7 +376,7 @@ class Infrastructure:
         self._tmp_data_zip_path = Path(self._config['TMP_DATA_ZIP'])
 
     def make_symlink(self, mra_path, name, directory):
-        target = Path(directory) / name.replace(':', '-')
+        target = Path(directory) / sanitize_path_component(name)
         if target.is_file() or target.is_symlink():
             return
         try:
@@ -956,11 +960,11 @@ class ArcadeOrganizer:
             if not isinstance(self._description[description_field], list):
                 self._description[description_field] = [self._description[description_field]]
             for entry in self._description[description_field]:
-                self.create_symlink("%s/_%s/" % (self._config[orgdir], entry))
+                self.create_symlink("%s/_%s/" % (self._config[orgdir], sanitize_path_component(entry)))
 
     def impl_create_single_link(self, config_dir_check, description_field, orgdir):
         if self._config[config_dir_check] and description_field in self._description:
-            self.create_symlink("%s/_%s/" % (self._config[orgdir], self._description[description_field]))
+            self.create_symlink("%s/_%s/" % (self._config[orgdir], sanitize_path_component(self._description[description_field])))
 
     def impl_create_bool_link(self, description_field, orgdir):
         if self._description[description_field]:
