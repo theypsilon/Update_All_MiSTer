@@ -444,4 +444,3 @@ class SettingsScreen(UiApplication):
 
     def retroaccount_device_logout(self, _ui: UiContext) -> None:
         self._retroaccount.device_logout()
-        self._encryption.clear_cache()

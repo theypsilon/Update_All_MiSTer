@@ -37,10 +37,11 @@ _REVOKED_CREDENTIALS_MESSAGE = 'Your credentials were revoked!\nYour account mus
 
 class TestRetroAccountService(unittest.TestCase):
     def test_mister_sync___when_no_user_json___removes_stale_patreon_key(self):
-        sut, file_system, _gateway, encryption = tester(files={
+        sut, file_system, _gateway, _encryption = tester(files={
             FILE_patreon_key: {'hash': 'stale-md5', 'content': 'old-key'},
             FILE_patreon_key_md5: {'content': 'stale-md5'},
         })
+        activate_prev_patreon_key_url(sut)
 
         sut.mister_sync()
 
@@ -48,14 +49,15 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertFalse(file_system.is_file(FILE_patreon_key_md5))
         self.assertIsNone(sut.has_forced_logout())
         self.assertFalse(sut.has_installed_update_all_patreon_key())
-        self.assertEqual(1, encryption.clear_cache_calls)
+        self.assertFalse(sut.has_prev_patreon_key_url())
 
     def test_mister_sync___when_user_json_is_corrupted___forces_logout_and_clears_entitlement(self):
-        sut, file_system, _gateway, encryption = tester(files={
+        sut, file_system, _gateway, _encryption = tester(files={
             FILE_retroaccount_user_json: {'content': '{'},
             FILE_patreon_key: {'hash': 'stale-md5', 'content': 'old-key'},
             FILE_patreon_key_md5: {'content': 'stale-md5'},
         })
+        activate_prev_patreon_key_url(sut)
 
         sut.mister_sync()
 
@@ -64,14 +66,15 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertFalse(file_system.is_file(FILE_patreon_key_md5))
         self.assertEqual(_CORRUPTED_CREDENTIALS_MESSAGE, sut.has_forced_logout())
         self.assertFalse(sut.has_installed_update_all_patreon_key())
-        self.assertEqual(1, encryption.clear_cache_calls)
+        self.assertFalse(sut.has_prev_patreon_key_url())
 
     def test_mister_sync___when_session_is_revoked___persists_device_id_and_clears_credentials_and_entitlement(self):
-        sut, file_system, _gateway, encryption = tester(
+        sut, file_system, _gateway, _encryption = tester(
             files=default_sync_files(),
             gateway_result=SessionResult.REVOKED,
             gateway_response=401,
         )
+        activate_prev_patreon_key_url(sut)
 
         sut.mister_sync()
 
@@ -81,7 +84,7 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertFalse(file_system.is_file(FILE_patreon_key_md5))
         self.assertEqual(_REVOKED_CREDENTIALS_MESSAGE, sut.has_forced_logout())
         self.assertFalse(sut.has_installed_update_all_patreon_key())
-        self.assertEqual(1, encryption.clear_cache_calls)
+        self.assertFalse(sut.has_prev_patreon_key_url())
 
     def test_mister_sync___when_session_is_valid___applies_one_explicit_transition_for_refresh_and_entitlement_replacement(self):
         gateway_response = {
@@ -91,7 +94,7 @@ class TestRetroAccountService(unittest.TestCase):
                 'update_all_patreon_key_url': 'https://example.com/update_all.patreonkey',
             },
         }
-        sut, file_system, gateway, encryption = tester(
+        sut, file_system, gateway, _encryption = tester(
             files=default_sync_files(),
             gateway_result=SessionResult.VALID,
             gateway_response=gateway_response,
@@ -107,7 +110,6 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertEqual('installed-md5', file_system.read_file_contents(FILE_patreon_key_md5))
         self.assertTrue(sut.has_installed_update_all_patreon_key())
         self.assertIsNone(sut.has_forced_logout())
-        self.assertEqual(2, encryption.clear_cache_calls)
 
     def test_mister_sync___when_previous_sync_enabled_extras_and_next_sync_has_no_user_json___disables_extras(self):
         sut, file_system, gateway, _encryption = tester(
@@ -115,6 +117,7 @@ class TestRetroAccountService(unittest.TestCase):
             gateway_result=SessionResult.VALID,
             gateway_response={'benefits': {'update_all_extras': True}},
         )
+        activate_prev_patreon_key_url(sut)
 
         sut.mister_sync()
         self.assertTrue(sut.is_update_all_extras_active())
@@ -125,6 +128,7 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertFalse(sut.is_update_all_extras_active())
         self.assertFalse(file_system.is_file(FILE_patreon_key))
         self.assertEqual(1, len(gateway.mister_sync_calls))
+        self.assertFalse(sut.has_prev_patreon_key_url())
 
     def test_device_logout___when_previous_sync_enabled_extras___disables_extras_in_current_process(self):
         sut, file_system, gateway, _encryption = tester(
@@ -132,6 +136,7 @@ class TestRetroAccountService(unittest.TestCase):
             gateway_result=SessionResult.VALID,
             gateway_response={'benefits': {'update_all_extras': True}},
         )
+        activate_prev_patreon_key_url(sut)
 
         sut.mister_sync()
         self.assertTrue(sut.is_update_all_extras_active())
@@ -141,6 +146,7 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertFalse(sut.is_update_all_extras_active())
         self.assertFalse(file_system.is_file(FILE_retroaccount_user_json))
         self.assertEqual([('refresh-1', 'device-1')], gateway.logout_calls)
+        self.assertFalse(sut.has_prev_patreon_key_url())
 
 
 def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None):
@@ -160,6 +166,10 @@ def default_sync_files():
         FILE_patreon_key: {'hash': 'old-md5', 'content': 'old-key'},
         FILE_patreon_key_md5: {'content': 'old-md5'},
     }
+
+
+def activate_prev_patreon_key_url(sut: RetroAccountService):
+    sut._update_all_patreon_key_prev_url = 'https://example.com/update_all_prev.patreonkey'
 
 
 class _EncryptionSpy:

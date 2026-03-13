@@ -15,17 +15,16 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+import tempfile
+from typing import Any
+
 from update_all.config import Config
-from update_all.constants import FILE_names_txt, FILE_timeline_plus2
+from update_all.constants import FILE_names_txt, FILE_timeline_plus2, FILE_patreon_key_prev
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
 from update_all.other import GenericProvider
 from update_all.retroaccount import RetroAccountService
-
-import tempfile
-from typing import Any
-
 
 
 class Timeline:
@@ -87,7 +86,23 @@ class Timeline:
         timeline_plus_model = None
         not_yet_updated = False
 
-        decrypt_result = self._encryption.decrypt_file(timeline_plus_model_path, output)
+        decrypt_result = self._encryption.decrypt_file(timeline_plus_model_path, output, self._config_provider.get().patreon_key_path)
+        try:
+            # Fallback 1: Attempt local previous patreon key if exists
+            if decrypt_result == EncryptionResult.InvalidKey and self._file_system.is_file(FILE_patreon_key_prev):
+                self._logger.debug("Encryption: Attempting with previously installed patreon key.")
+                decrypt_result = self._encryption.decrypt_file(timeline_plus_model_path, output, FILE_patreon_key_prev)
+
+            # Fallback 2: Attempt remote previous patreon key if exists
+            if decrypt_result == EncryptionResult.InvalidKey and self._retroaccount.has_prev_patreon_key_url():
+                self._logger.debug("Encryption: Attempting with patreon key from previous url.")
+                with tempfile.NamedTemporaryFile() as previous_patreon_key_file:
+                    self._retroaccount.install_update_all_prev_patreon_key(previous_patreon_key_file.name)
+                    decrypt_result = self._encryption.decrypt_file(timeline_plus_model_path, output, previous_patreon_key_file.name)
+        except Exception as e:
+            self._logger.debug(e)
+            self._logger.debug('Timeline: Patreon key fallbacks failed.')
+
         if decrypt_result == EncryptionResult.Success:
             timeline_plus_model = self._file_system.load_dict_from_file(output, '.json')
         elif decrypt_result == EncryptionResult.MissingKey:
@@ -231,4 +246,3 @@ def format_file_entry(file_entry, names_dict):
         return names_dict.get(name, name)
 
     return ""
-

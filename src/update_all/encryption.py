@@ -21,9 +21,10 @@ import subprocess
 import platform
 from enum import unique, Enum
 from functools import cache
+from typing import Optional
 
 from update_all.config import Config
-from update_all.constants import FILE_patreon_key_md5, MD5_old_patreon_key, FILE_patreon_key_prev
+from update_all.constants import FILE_patreon_key_md5
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
 from update_all.other import GenericProvider
@@ -49,15 +50,15 @@ class Encryption:
     def skip_environment_check(self):
         self._check_env = False
 
-    def clear_cache(self):
-        self.validate_key.cache_clear()
-        self._common_checks.cache_clear()
-
-    @cache
     def validate_key(self) -> EncryptionResult:
-        result = self._common_checks()
-        if result != EncryptionResult.Success:
-            return result
+        env_check_result = self._validate_environment()
+        if env_check_result is not None:
+            return env_check_result
+
+        patreon_key_path = self._config_provider.get().patreon_key_path
+        if not self._file_system.is_file(patreon_key_path):
+            self._logger.debug(f"Encryption: Patreon Key file '{patreon_key_path}' does not exist.")
+            return EncryptionResult.MissingKey
 
         try:
             fingerprint_result = self._file_system.hash(self._config_provider.get().patreon_key_path)
@@ -72,7 +73,7 @@ class Encryption:
         except Exception as e:
             self._logger.debug(f"Encryption: Stored Patreon Key MD5 read failed with error")
             self._logger.debug(e)
-            md5_patreon_key = MD5_old_patreon_key
+            return EncryptionResult.InvalidKey
 
         if fingerprint_result != md5_patreon_key:
             self._print_invalid_patreon_key_message()
@@ -81,17 +82,14 @@ class Encryption:
 
         return EncryptionResult.Success
 
-    def decrypt_file(self, input_path: str, output_path: str) -> EncryptionResult:
-        result = self._decrypt_file(input_path, output_path, self._config_provider.get().patreon_key_path)
-        if result == EncryptionResult.InvalidKey and self._file_system.is_file(FILE_patreon_key_prev):
-            self._logger.debug("Encryption: Attempting with older patreon key.")
-            result = self._decrypt_file(input_path, output_path, FILE_patreon_key_prev)
-        return result
+    def decrypt_file(self, input_path: str, output_path: str, key_file_path: str) -> EncryptionResult:
+        env_check_result = self._validate_environment()
+        if env_check_result is not None:
+            return env_check_result
 
-    def _decrypt_file(self, input_path: str, output_path: str, key_file_path: str) -> EncryptionResult:
-        result = self._common_checks()
-        if result != EncryptionResult.Success:
-            return result
+        if not self._file_system.is_file(key_file_path):
+            self._logger.debug(f"Encryption: Patreon Key file '{key_file_path}' does not exist.")
+            return EncryptionResult.MissingKey
 
         if not self._file_system.is_file(input_path):
             self._logger.debug(f"Encryption: Input file '{input_path}' does not exist.")
@@ -126,18 +124,12 @@ class Encryption:
 
         return EncryptionResult.Success
 
-    @cache
-    def _common_checks(self) -> EncryptionResult:
+    def _validate_environment(self) -> Optional[EncryptionResult]:
         if self._check_env and (platform.system() != 'Linux' or not self._file_system.is_file('/MiSTer.version')):
             self._logger.debug("Encryption: Not running on MiSTer, abort.")
             return EncryptionResult.ImproperEnvironment
 
-        patreon_key_path = self._config_provider.get().patreon_key_path
-        if not self._file_system.is_file(patreon_key_path):
-            self._logger.debug(f"Encryption: Patreon Key file '{patreon_key_path}' does not exist.")
-            return EncryptionResult.MissingKey
-
-        return EncryptionResult.Success
+        return None
 
     def _print_invalid_patreon_key_message(self):
         self._logger.print(f"ERROR: Patreon Key validation failed, log in to RetroAccount to fix it!")

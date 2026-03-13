@@ -44,6 +44,7 @@ class _SyncTransition:
     remove_user_json: bool = False
     remove_update_all_patreon_key: bool = False
     install_update_all_patreon_key_url: Optional[str] = None
+    update_all_patreon_key_prev_url: Optional[str] = None
     credentials_were_corrupted: bool = False
     credentials_were_revoked: bool = False
 
@@ -58,6 +59,7 @@ class RetroAccountService(RetroAccountClient):
         self._has_installed_update_all_patreon_key = False
         self._has_forced_logout = None
         self._update_all_extras: Optional[bool] = None
+        self._update_all_patreon_key_prev_url: Optional[str] = None
 
     def has_installed_update_all_patreon_key(self) -> bool: return self._has_installed_update_all_patreon_key
     def has_forced_logout(self) -> Optional[str]: return self._has_forced_logout
@@ -68,8 +70,11 @@ class RetroAccountService(RetroAccountClient):
 
     def is_update_all_extras_active(self) -> bool:
         if self._update_all_extras is None:
-            return self._encryption.validate_key() == EncryptionResult.Success
+            self._update_all_extras = self._encryption.validate_key() == EncryptionResult.Success
         return self._update_all_extras
+
+    def has_prev_patreon_key_url(self) -> bool:
+        return self._update_all_patreon_key_prev_url is not None and self._update_all_patreon_key_prev_url.strip() != ''
 
     def get_login_state(self) -> bool:
         return self._file_system.is_file(FILE_retroaccount_user_json)
@@ -164,6 +169,7 @@ class RetroAccountService(RetroAccountClient):
             return _SyncTransition(
                 save_user_json=updated_user_data,
                 install_update_all_patreon_key_url=any_to_nonfalsy_str(benefits.get('update_all_patreon_key_url', None)),
+                update_all_patreon_key_prev_url=any_to_nonfalsy_str(benefits.get('update_all_patreon_key_prev_url', None)),
                 remove_update_all_patreon_key=any_to_bool(benefits.get('update_all_patreon_key_remove', None)),
                 update_all_extras_active=any_to_bool(benefits.get('update_all_extras', None)),
             )
@@ -208,6 +214,8 @@ class RetroAccountService(RetroAccountClient):
         if transition.install_update_all_patreon_key_url:
             self._install_update_all_patreon_key(transition.install_update_all_patreon_key_url)
 
+        self._update_all_patreon_key_prev_url = transition.update_all_patreon_key_prev_url
+
         if transition.credentials_were_corrupted:
             self._has_forced_logout = 'Your credentials are corrupted!\nDo you have any problems with your storage (SD)?'
 
@@ -215,14 +223,11 @@ class RetroAccountService(RetroAccountClient):
             self._has_forced_logout = 'Your credentials were revoked!\nYour account must be active, and you have to log in on each device you use.'
 
     def _unlink_update_all_patreon_key(self):
-        update_all_patreon_key_path = self._config_provider.get().patreon_key_path
-        if not self._file_system.is_file(update_all_patreon_key_path):
-            return
-
         try:
+            update_all_patreon_key_path = self._config_provider.get().patreon_key_path
             self._file_system.unlink(update_all_patreon_key_path, verbose=False)
             self._file_system.unlink(FILE_patreon_key_md5, verbose=False)
-            self._encryption.clear_cache()
+            self._file_system.unlink(FILE_patreon_key_prev, verbose=False)
         except Exception as e:
             self._logger.debug('RetroAccountService: Error during removal of update all patreon key.')
             self._logger.debug(e)
@@ -234,11 +239,21 @@ class RetroAccountService(RetroAccountClient):
                 self._file_system.copy(update_all_patreon_key_path, FILE_patreon_key_prev)
             update_all_patreon_key_md5 = self._retroaccount_gateway.install_file(update_all_patreon_key_path, update_all_patreon_key_url)
             self._file_system.write_file_contents(FILE_patreon_key_md5, update_all_patreon_key_md5)
-            self._encryption.clear_cache()
             self._logger.debug(f'RetroAccountService: New update_all.patreonkey installed at {update_all_patreon_key_path}!')
             self._has_installed_update_all_patreon_key = True
         except Exception as e:
             self._logger.debug('RetroAccountService: Could not install update all patreon key.')
+            self._logger.debug(e)
+
+    def install_update_all_prev_patreon_key(self, target_path: str) -> None:
+        if not self.has_prev_patreon_key_url():
+            self._logger.debug('RetroAccountService: No previous update all patreon key url available!')
+            return
+
+        try:
+            self._retroaccount_gateway.install_file(target_path, self._update_all_patreon_key_prev_url)
+        except Exception as e:
+            self._logger.debug(f'RetroAccountService: Could not install previous update all patreon key from {self._update_all_patreon_key_prev_url} to {target_path}')
             self._logger.debug(e)
 
     def save_login_credentials(self, credentials: dict) -> bool:
@@ -270,6 +285,7 @@ class RetroAccountService(RetroAccountClient):
         self._update_all_extras = False
         self._has_installed_update_all_patreon_key = False
         self._has_forced_logout = None
+        self._update_all_patreon_key_prev_url = None
 
     def device_logout(self) -> bool:
         if not self._file_system.is_file(FILE_retroaccount_user_json):

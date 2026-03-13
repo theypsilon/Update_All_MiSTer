@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.6 - 2026-03-13
+
+### Added
+- Dual RAM Console Cores DB by TheJesusFish.
+- New Overscan setting in the Settings Screen for CRT users, with presets from None (0%) to Max (20%), a live mask preview, and usable-area-aware rendering across Update All, the Log Viewer, the Timeline, and Downloader output, with default presets calibrated to behave more like classic TV safe areas (10% of the borders).
+- More scrolling elements introduced in the Settings Screen for very small resolutions with overscan.
+- Monochrome UI theme added as an accessible high-contrast setting alternative, freely available for all users.
+
+### Changed
+- Log Viewer themes now have more distinct variations when rendering the HUD.
+- HTTP client improvements taken from Downloader.
+- Fixed bug in Arcade Organizer where some paths with ":" would not work correctly.
+- Improved file download resilience against unexpected power loss on exFAT SD cards.
+- Proper word wrapping in both the standard output and the Log Viewer.
+- Fixed a bug where unsaved settings screen changes could clash with the new drop-in Database feature, causing a crash on a subsequent run.
+- A few other tweaks, fixes and optimizations.
+
+### Removed
+- Bad Apple DB can no longer be run due to recent Downloader changes. All related code has been removed.
+
 ## Version 2.5 - 2026-02-13
 
 ### Added

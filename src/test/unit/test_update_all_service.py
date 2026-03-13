@@ -16,10 +16,16 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+from unittest.mock import MagicMock
 import unittest
 
+from test.fake_filesystem import FileSystemFactory
 from update_all.config import Config
+from update_all.constants import FILE_patreon_key_prev, UPDATE_ALL_VERSION
+from update_all.encryption import EncryptionResult
+from update_all.other import GenericProvider
 from update_all.other import TerminalSize, OverscanDim
+from update_all.timeline import Timeline
 from update_all.update_all_service import calculate_supporter_shoutout, calculate_outro_summary, calculate_success_summary, calculate_reading_sections_summary
 
 
@@ -52,19 +58,19 @@ class TestUpdateAllService(unittest.TestCase):
         cases = [
             (
                 Config(commit='unknown', term_size=TerminalSize(columns=120, lines=40), overscan_dim=OverscanDim(cols=2, lines=0)),
-                'Update All 2.5 (unk) by theypsilon. Run time: 00:01.17s at 2026-03-10 19:34:04',
+                f'Update All {UPDATE_ALL_VERSION} (unk) by theypsilon. Run time: 00:01.17s at 2026-03-10 19:34:04',
             ),
             (
                 Config(commit='unknown', term_size=TerminalSize(columns=80, lines=40), overscan_dim=OverscanDim(cols=2, lines=0)),
-                'Update All 2.5 by theypsilon 00:01.17s 2026-03-10 19:34:04',
+                f'Update All {UPDATE_ALL_VERSION} by theypsilon 00:01.17s 2026-03-10 19:34:04',
             ),
             (
                 Config(commit='unknown', term_size=TerminalSize(columns=56, lines=40), overscan_dim=OverscanDim(cols=2, lines=0)),
-                'Update All 2.5: 00:01.17s 2026-03-10 19:34:04',
+                f'Update All {UPDATE_ALL_VERSION}: 00:01.17s 2026-03-10 19:34:04',
             ),
             (
                 Config(commit='unknown', term_size=TerminalSize(columns=28, lines=40), overscan_dim=OverscanDim(cols=2, lines=0)),
-                'Update All 2.5: 00:01.17s',
+                f'Update All {UPDATE_ALL_VERSION}: 00:01.17s',
             ),
         ]
 
@@ -109,3 +115,61 @@ class TestUpdateAllService(unittest.TestCase):
         for config, expected in cases:
             with self.subTest(config=config, expected=expected):
                 self.assertEqual(expected, calculate_reading_sections_summary(config, downloader_ini_path))
+
+
+class TestTimelineFallbacks(unittest.TestCase):
+    def test_extract_plus_model___when_local_previous_key_fallback_raises___continues(self):
+        file_system = FileSystemFactory.from_state(files={
+            FILE_patreon_key_prev: {'content': 'old-key', 'hash': 'old-key'},
+        }).create_for_system_scope()
+        config_provider = GenericProvider[Config]()
+        config_provider.initialize(Config())
+        sut = Timeline(MagicMock(), config_provider, file_system, _EncryptionStub(
+            EncryptionResult.InvalidKey,
+            RuntimeError('boom'),
+        ), _RetroAccountStub(False))
+
+        timeline_plus_model, not_yet_updated = sut._extract_plus_model('timeline_plus.enc', 'timeline_plus_output.json')
+
+        self.assertIsNone(timeline_plus_model)
+        self.assertFalse(not_yet_updated)
+
+    def test_extract_plus_model___when_remote_previous_key_fallback_raises___continues(self):
+        file_system = FileSystemFactory.from_state().create_for_system_scope()
+        config_provider = GenericProvider[Config]()
+        config_provider.initialize(Config())
+        sut = Timeline(MagicMock(), config_provider, file_system, _EncryptionStub(
+            EncryptionResult.InvalidKey,
+        ), _RetroAccountStub(True, RuntimeError('boom')))
+
+        timeline_plus_model, not_yet_updated = sut._extract_plus_model('timeline_plus.enc', 'timeline_plus_output.json')
+
+        self.assertIsNone(timeline_plus_model)
+        self.assertFalse(not_yet_updated)
+
+
+class _EncryptionStub:
+    def __init__(self, *results):
+        self._results = list(results)
+
+    def decrypt_file(self, _timeline_plus_model_path: str, _output: str, _key_file_path: str):
+        result = self._results.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+
+class _RetroAccountStub:
+    def __init__(self, has_prev_patreon_key_url: bool, install_exception: Exception = None):
+        self._has_prev_patreon_key_url = has_prev_patreon_key_url
+        self._install_exception = install_exception
+
+    def has_prev_patreon_key_url(self) -> bool:
+        return self._has_prev_patreon_key_url
+
+    def install_update_all_prev_patreon_key(self, _target_path: str) -> None:
+        if self._install_exception is not None:
+            raise self._install_exception
+
+    def is_update_all_extras_active(self) -> bool:
+        return False
