@@ -229,7 +229,7 @@ class _Drawer(UiDialogDrawer):
         skip_header = False
         action_y = None
 
-        if ts.cnarrow and self._menu_entries:
+        if (ts.cnarrow or ts.lnarrow) and self._menu_entries:
             action_y = ts.lines - 1 - lo - 1
             available = action_y - lo
             content_lines = len(visible_text_lines) + len(self._menu_entries)
