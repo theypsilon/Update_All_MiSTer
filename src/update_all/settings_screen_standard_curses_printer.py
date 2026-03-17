@@ -18,6 +18,8 @@
 
 import curses
 import traceback
+from dataclasses import dataclass
+from typing import Optional
 from update_all.colors_curses import init_colors, make_color_theme, colors
 from update_all.other import ScreenDims, calculate_outer_box
 from update_all.settings_screen_printer import SettingsScreenPrinter, ColorThemeManager
@@ -28,6 +30,68 @@ from update_all.ui_engine_dialog_application import UiDialogDrawer, UiDialogDraw
 from update_all.ui_model_utilities import Key
 
 _WARNING_LOG = '/tmp/curses_warnings.log'
+_ACTION_GAP = 4
+_SCROLL_UP_MARKER = '--- \u2191 \u2191 \u2191 ---'
+_SCROLL_DOWN_MARKER = '--- \u2193 \u2193 \u2193 ---'
+
+@dataclass(frozen=True)
+class DrawerPaintLayout:
+    action_gap: int
+    action_y: Optional[int]
+    has_gap: bool
+    layout_reset: bool
+    max_length_header: int
+    max_length_option: int
+    menu_entries: list[tuple[str, str, bool]]
+    menu_scroll_offset: int
+    offset_actions: int
+    offset_header: int
+    offset_menu: int
+    offset_text_line: int
+    offset_vertical: int
+    skip_header: bool
+    text_has_up_scroll: bool
+    total_lines: int
+    total_width: int
+    visible_text_lines: list[str]
+
+    def has_header(self) -> bool:
+        return self.max_length_header > 0 and not self.skip_header
+
+    def offset_horizontal(self) -> int:
+        return min(self.offset_menu, self.offset_text_line, self.offset_actions, self.offset_header)
+
+
+@dataclass(frozen=True)
+class _VisibleTextLayout:
+    lines: list[str]
+    is_scrolled: bool
+    layout_reset: bool
+    text_has_up_scroll: bool
+
+
+@dataclass(frozen=True)
+class _VerticalLayout:
+    action_y: Optional[int]
+    has_gap: bool
+    layout_reset: bool
+    menu_entries: list[tuple[str, str, bool]]
+    menu_scroll_offset: int
+    offset_vertical: int
+    skip_header: bool
+    total_lines: int
+
+
+@dataclass(frozen=True)
+class _HorizontalLayout:
+    action_gap: int
+    max_length_header: int
+    max_length_option: int
+    offset_actions: int
+    offset_header: int
+    offset_menu: int
+    offset_text_line: int
+    total_width: int
 
 
 def _log_warning(msg):
@@ -140,6 +204,7 @@ class _Drawer(UiDialogDrawer):
         self._narrow_selected_info = ''
         self._text_scroll_offset = 0
         self._menu_scroll_offset = 0
+        self._printed_overscan_preview = False
 
     def start(self, data):
         self._text_lines = []
@@ -170,17 +235,11 @@ class _Drawer(UiDialogDrawer):
 
                 self._text_lines.append(chunk)
 
-    def max_text_lines(self) -> int:
-        ts = self._sd.term_size
-        oc = self._sd.overscan_dim
-        overhead = 4  # layout borders (2) + action line (1) + spacing (1)
-        if self._header:
-            overhead += 2
-        available = ts.lines - overhead - oc.lines * 2
-        return max(1, available)
-
     def set_text_scroll(self, offset: int) -> None:
         self._text_scroll_offset = offset
+
+    def max_text_lines(self) -> int:
+        return max_text_lines(self._sd, self._header)
 
     def total_text_lines(self) -> int:
         return len(self._text_lines)
@@ -205,155 +264,79 @@ class _Drawer(UiDialogDrawer):
         self._actions.append((' ' * (length + 2), is_selected))
 
     def paint(self) -> int:
-        ts = self._sd.term_size
-        oc = self._sd.overscan_dim
+        paint_layout: DrawerPaintLayout = calc_drawer_paint(
+            self._sd,
+            self._text_lines,
+            self._text_scroll_offset,
+            self._header,
+            self._menu_entries,
+            self._menu_scroll_offset,
+            self._actions,
+        )
 
-        visible_text_lines = self._text_lines
-        text_has_up_scroll = False
-        max_tl = self.max_text_lines()
-        if max_tl > 0 and len(self._text_lines) > max_tl:
+        should_reset_layout = paint_layout.layout_reset
+        is_selected_overscan = _is_selected_overscan_entry(self._menu_entries)
+        if not is_selected_overscan and self._printed_overscan_preview:
+            self._printed_overscan_preview = False
+            should_reset_layout = True
+
+        self._menu_scroll_offset = paint_layout.menu_scroll_offset
+        if should_reset_layout:
             self._layout.reset()
-            end = min(self._text_scroll_offset + max_tl, len(self._text_lines))
-            start = self._text_scroll_offset
-            visible_text_lines = list(self._text_lines[start:end])
-            if start > 0:
-                if self._header:
-                    text_has_up_scroll = True
-                else:
-                    visible_text_lines[0] = '--- \u2191 \u2191 \u2191 ---'
-            if end < len(self._text_lines):
-                visible_text_lines[-1] = '--- \u2193 \u2193 \u2193 ---'
+        self._layout.paint_layout(
+            paint_layout.total_lines + 2,
+            paint_layout.total_width + 2,
+            paint_layout.offset_vertical - 1,
+            paint_layout.offset_horizontal() - 1,
+            paint_layout.has_header(),
+        )
 
-        max_length_header = len(self._header)
-        lo = oc.lines
-        skip_header = False
-        action_y = None
+        line_index = paint_layout.offset_vertical
 
-        if (ts.cnarrow or ts.lnarrow) and self._menu_entries:
-            action_y = ts.lines - 1 - lo - 1
-            available = action_y - lo
-            content_lines = len(visible_text_lines) + len(self._menu_entries)
-
-            all_entries_for_width = self._menu_entries
-            if content_lines > available:
-                self._layout.reset()
-                max_entries = max(1, available - len(visible_text_lines))
-                all_entries = list(self._menu_entries)
-                total_entries = len(all_entries)
-                selected_idx = next((i for i, (_, _, s) in enumerate(all_entries) if s), 0)
-
-                self._menu_scroll_offset = _calculate_menu_scroll(selected_idx, total_entries, max_entries, self._menu_scroll_offset)
-
-                offset = self._menu_scroll_offset
-                has_up = offset > 0
-                real_count = (max_entries - 1) if has_up else max_entries
-                real_end = offset + real_count
-                has_down = real_end < total_entries
-                if has_down:
-                    real_count -= 1
-                    real_end = offset + real_count
-
-                visible = []
-                if has_up:
-                    visible.append(('--- \u2191 \u2191 \u2191 ---', '', False))
-                visible.extend(all_entries[offset:real_end])
-                if has_down:
-                    visible.append(('--- \u2193 \u2193 \u2193 ---', '', False))
-
-                self._menu_entries = visible
-                content_lines = len(visible_text_lines) + len(self._menu_entries)
-
-            has_gap = content_lines + 1 <= available
-            has_box_top = has_gap and content_lines + 1 + 1 <= available
-            has_header = max_length_header > 0 and has_box_top and content_lines + 1 + 1 + 2 <= available
-
-            total_lines = content_lines + 1
-            if has_gap:
-                total_lines += 1
-            if has_header:
-                total_lines += 2
-
-            skip_header = not has_header
-            min_top = lo + 1 if has_box_top else lo
-            offset_vertical = max(min_top, min_top + int((action_y - min_top - total_lines + 1) / 2))
-        else:
-            text_is_scrolled = visible_text_lines is not self._text_lines
-            total_lines = len(visible_text_lines) + len(self._menu_entries) + 1
-            if max_length_header > 0:
-                total_lines += 2
-            has_gap = len(self._actions) > 0 and total_lines < ts.lines and not text_is_scrolled
-            if has_gap:
-                total_lines += 1
-            offset_vertical = int(ts.lines / 2 - total_lines / 2)
-
-        co = oc.cols
-        floor = max(1, co)
-        offset_header = max(floor, int(ts.columns / 2 - max_length_header / 2))
-        max_length_text_line = min(ts.columns - max(2, co * 2), calculate_max_length_text_line(self._text_lines))
-
-        offset_text_line = max(floor, int(ts.columns / 2 - max_length_text_line / 2))
-
-        width_entries = all_entries_for_width if action_y is not None else self._menu_entries
-        max_length_option = calculate_max_length_option(width_entries)
-        max_length_info =  calculate_max_length_info(width_entries)
-        max_menu_entry = max_length_option + 2 + max_length_info
-
-        offset_menu = max(floor, int(ts.columns / 2 - max_menu_entry / 2))
-
-        action_gap = 4
-        max_length_actions = sum(len(a) for a, _ in self._actions) + action_gap * max(0, len(self._actions) - 1)
-        offset_actions = int(ts.columns / 2 - max_length_actions / 2)
-
-        total_width = max(max(max_menu_entry, max_length_text_line), max(max_length_header, max_length_actions))
-        offset_horizontal = min(min(offset_menu, offset_text_line), min(offset_actions, offset_header))
-
-        self._layout.paint_layout(total_lines + 2, total_width + 2, offset_vertical - 1, offset_horizontal - 1, max_length_header > 0 and not skip_header)
-
-        line_index = offset_vertical
-
-        if max_length_header > 0 and not skip_header:
-            self._write_line(line_index, offset_header, self._header, curses.A_NORMAL | curses.color_pair(colors.HEADER_COLOR))
-            if text_has_up_scroll:
+        if paint_layout.has_header():
+            self._write_line(line_index, paint_layout.offset_header, self._header, curses.A_NORMAL | curses.color_pair(colors.HEADER_COLOR))
+            if paint_layout.text_has_up_scroll:
                 up_text = '--- \u2191 \u2191 \u2191 ---'
-                self._write_line(line_index + 1, offset_text_line, up_text, curses.A_NORMAL | curses.color_pair(colors.COMMON_TEXT_COLOR))
+                self._write_line(line_index + 1, paint_layout.offset_text_line, up_text, curses.A_NORMAL | curses.color_pair(colors.COMMON_TEXT_COLOR))
             line_index += 2
 
-        for line in visible_text_lines:
+        for line in paint_layout.visible_text_lines:
             if line in self._effects:
                 for mode, start, end in self._effects[line]:
-                    self._write_line(line_index, offset_text_line + start, line[start:end], mode)
+                    self._write_line(line_index, paint_layout.offset_text_line + start, line[start:end], mode)
 
             else:
-                self._write_line(line_index, offset_text_line, line, curses.A_NORMAL | curses.color_pair(colors.COMMON_TEXT_COLOR))
+                self._write_line(line_index, paint_layout.offset_text_line, line, curses.A_NORMAL | curses.color_pair(colors.COMMON_TEXT_COLOR))
             line_index += 1
 
-        for option, info, is_selected in self._menu_entries:
+        for option, info, is_selected in paint_layout.menu_entries:
             if is_selected:
                 mode = curses.A_NORMAL | curses.color_pair(colors.FIRST_OPTION_KEY_SELECTED_COLOR)
             else:
                 mode = curses.A_NORMAL | curses.color_pair(colors.FIRST_OPTION_KEY_UNSELECTED_COLOR)
 
-            self._write_line(line_index, offset_menu, option[0:1], mode)
+            self._write_line(line_index, paint_layout.offset_menu, option[0:1], mode)
 
             if is_selected:
                 mode = curses.A_NORMAL | curses.color_pair(colors.SELECTED_OPTION_TEXT_COLOR)
             else:
                 mode = curses.A_NORMAL | curses.color_pair(colors.OPTION_UNSELECTED_COLOR)
 
-            self._write_line(line_index, offset_menu + 1, option[1:], mode)
+            self._write_line(line_index, paint_layout.offset_menu + 1, option[1:], mode)
 
             if is_selected:
                 mode = curses.A_NORMAL | curses.color_pair(colors.SELECTED_OPTION_INFO_COLOR)
             else:
                 mode = curses.A_NORMAL | curses.color_pair(colors.COMMON_TEXT_COLOR)
-            self._write_line(line_index, offset_menu + max_length_option + 2, info, mode)
+            self._write_line(line_index, paint_layout.offset_menu + paint_layout.max_length_option + 2, info, mode)
             line_index += 1
 
-        if action_y is not None:
-            line_index = action_y
-        elif has_gap:
+        if paint_layout.action_y is not None:
+            line_index = paint_layout.action_y
+        elif paint_layout.has_gap:
             line_index += 1
 
+        offset_actions = paint_layout.offset_actions
         for action, is_selected in self._actions:
             if is_selected:
                 self._write_line(line_index, offset_actions, action[0:1], curses.A_BLINK | curses.color_pair(colors.SELECTED_ACTION_BORDER_COLOR))
@@ -361,9 +344,11 @@ class _Drawer(UiDialogDrawer):
                 self._write_line(line_index, offset_actions + len(action) - 1, action[-1:], curses.A_BLINK | curses.color_pair(colors.SELECTED_ACTION_BORDER_COLOR))
             else:
                 self._write_line(line_index, offset_actions, action, curses.A_NORMAL | curses.color_pair(colors.UNSELECTED_ACTION_COLOR))
-            offset_actions += len(action) + action_gap
+            offset_actions += len(action) + paint_layout.action_gap
 
+        ts = self._sd.term_size
         if ts.cnarrow:
+            oc = self._sd.overscan_dim
             co = oc.cols
             lo = oc.lines
             mode = curses.A_NORMAL | curses.color_pair(colors.SELECTED_OPTION_INFO_COLOR)
@@ -378,8 +363,9 @@ class _Drawer(UiDialogDrawer):
                 x = max(co, (ts.columns - len(text)) // 2)
                 self._write_line(desc_y, x, text, mode)
 
-        if _is_selected_overscan_entry(self._menu_entries):
+        if is_selected_overscan:
             self._paint_overscan_preview()
+            self._printed_overscan_preview = True
 
         return self._runtime.read_key()
 
@@ -599,6 +585,184 @@ class CursesDeviceLoginRenderer(DeviceLoginRenderer):
             win.addstr(row, x, text, attr)
         except curses.error:
             pass
+
+
+def max_text_lines(sd: ScreenDims, header: str) -> int:
+    ts = sd.term_size
+    oc = sd.overscan_dim
+    overhead = 4  # layout borders (2) + action line (1) + spacing (1)
+    if header:
+        overhead += 2
+    available = ts.lines - overhead - oc.lines * 2
+    return max(1, available)
+
+def _calc_visible_text_layout(max_tl: int, text_lines, text_scroll_offset: int, header: str) -> _VisibleTextLayout:
+    if max_tl <= 0 or len(text_lines) <= max_tl:
+        return _VisibleTextLayout(lines=text_lines, is_scrolled=False, layout_reset=False, text_has_up_scroll=False)
+
+    end = min(text_scroll_offset + max_tl, len(text_lines))
+    start = text_scroll_offset
+    visible_text_lines = list(text_lines[start:end])
+    text_has_up_scroll = False
+
+    if start > 0:
+        if header:
+            text_has_up_scroll = True
+        else:
+            visible_text_lines[0] = _SCROLL_UP_MARKER
+    if end < len(text_lines):
+        visible_text_lines[-1] = _SCROLL_DOWN_MARKER
+
+    return _VisibleTextLayout(
+        lines=visible_text_lines,
+        is_scrolled=True,
+        layout_reset=True,
+        text_has_up_scroll=text_has_up_scroll,
+    )
+
+
+def _build_visible_menu_entries(all_menu_entries, menu_scroll_offset: int, max_entries: int) -> tuple[list[tuple[str, str, bool]], int]:
+    total_entries = len(all_menu_entries)
+    selected_idx = next((i for i, (_, _, is_selected) in enumerate(all_menu_entries) if is_selected), 0)
+    menu_scroll_offset = _calculate_menu_scroll(selected_idx, total_entries, max_entries, menu_scroll_offset)
+    has_up = menu_scroll_offset > 0
+    real_count = max_entries - 1 if has_up else max_entries
+    real_end = menu_scroll_offset + real_count
+    has_down = real_end < total_entries
+    if has_down:
+        real_end -= 1
+
+    visible_entries = []
+    if has_up:
+        visible_entries.append((_SCROLL_UP_MARKER, '', False))
+    visible_entries.extend(all_menu_entries[menu_scroll_offset:real_end])
+    if has_down:
+        visible_entries.append((_SCROLL_DOWN_MARKER, '', False))
+
+    return visible_entries, menu_scroll_offset
+
+
+def _calc_compact_vertical_layout(ts, oc, max_length_header: int, visible_text_lines, all_menu_entries, menu_scroll_offset: int) -> _VerticalLayout:
+    action_y = ts.lines - oc.lines - 2
+    available = action_y - oc.lines
+    content_lines = len(visible_text_lines) + len(all_menu_entries)
+    menu_entries = all_menu_entries
+    layout_reset = False
+
+    if content_lines > available:
+        max_entries = max(1, available - len(visible_text_lines))
+        menu_entries, menu_scroll_offset = _build_visible_menu_entries(list(all_menu_entries), menu_scroll_offset, max_entries)
+        content_lines = len(visible_text_lines) + len(menu_entries)
+        layout_reset = True
+
+    has_gap = content_lines + 1 <= available
+    has_box_top = has_gap and content_lines + 2 <= available
+    has_header = max_length_header > 0 and has_box_top and content_lines + 4 <= available
+    total_lines = content_lines + 1 + (1 if has_gap else 0) + (2 if has_header else 0)
+    min_top = oc.lines + (1 if has_box_top else 0)
+
+    return _VerticalLayout(
+        action_y=action_y,
+        has_gap=has_gap,
+        layout_reset=layout_reset,
+        menu_entries=menu_entries,
+        menu_scroll_offset=menu_scroll_offset,
+        offset_vertical=max(min_top, min_top + int((action_y - min_top - total_lines + 1) / 2)),
+        skip_header=not has_header,
+        total_lines=total_lines,
+    )
+
+
+def _calc_standard_vertical_layout(ts, oc, max_length_header: int, visible_text: _VisibleTextLayout, all_menu_entries, menu_scroll_offset: int, actions) -> _VerticalLayout:
+    total_lines = len(visible_text.lines) + len(all_menu_entries) + 1 + (2 if max_length_header > 0 else 0)
+    usable_lines = max(1, ts.lines - oc.lines * 2)
+    has_gap = len(actions) > 0 and total_lines < usable_lines and not visible_text.is_scrolled
+    if has_gap:
+        total_lines += 1
+
+    return _VerticalLayout(
+        action_y=None,
+        has_gap=has_gap,
+        layout_reset=False,
+        menu_entries=all_menu_entries,
+        menu_scroll_offset=menu_scroll_offset,
+        offset_vertical=oc.lines + int(usable_lines / 2 - total_lines / 2),
+        skip_header=False,
+        total_lines=total_lines,
+    )
+
+
+def _centered_offset(columns: int, width: int, floor: int) -> int:
+    return max(floor, int(columns / 2 - width / 2))
+
+
+def _calc_horizontal_layout(ts, oc, header: str, text_lines, all_menu_entries, actions) -> _HorizontalLayout:
+    max_length_header = len(header)
+    floor = max(1, oc.cols)
+    max_length_text_line = min(ts.columns - max(2, oc.cols * 2), calculate_max_length_text_line(text_lines))
+    max_length_option = calculate_max_length_option(all_menu_entries)
+    max_length_info = calculate_max_length_info(all_menu_entries)
+    max_menu_entry = max_length_option + 2 + max_length_info
+    max_length_actions = sum(len(action) for action, _ in actions) + _ACTION_GAP * max(0, len(actions) - 1)
+
+    return _HorizontalLayout(
+        action_gap=_ACTION_GAP,
+        max_length_header=max_length_header,
+        max_length_option=max_length_option,
+        offset_actions=_centered_offset(ts.columns, max_length_actions, floor),
+        offset_header=_centered_offset(ts.columns, max_length_header, floor),
+        offset_menu=_centered_offset(ts.columns, max_menu_entry, floor),
+        offset_text_line=_centered_offset(ts.columns, max_length_text_line, floor),
+        total_width=max(max_menu_entry, max_length_text_line, max_length_header, max_length_actions),
+    )
+
+
+def calc_drawer_paint(sd: ScreenDims, text_lines, text_scroll_offset, header, all_menu_entries, menu_scroll_offset, actions) -> DrawerPaintLayout:
+    ts = sd.term_size
+    oc = sd.overscan_dim
+    visible_text = _calc_visible_text_layout(max_text_lines(sd, header), text_lines, text_scroll_offset, header)
+    horizontal = _calc_horizontal_layout(ts, oc, header, text_lines, all_menu_entries, actions)
+
+    if ts.lnarrow and all_menu_entries:
+        vertical = _calc_compact_vertical_layout(
+            ts,
+            oc,
+            horizontal.max_length_header,
+            visible_text.lines,
+            all_menu_entries,
+            menu_scroll_offset,
+        )
+    else:
+        vertical = _calc_standard_vertical_layout(
+            ts,
+            oc,
+            horizontal.max_length_header,
+            visible_text,
+            all_menu_entries,
+            menu_scroll_offset,
+            actions,
+        )
+
+    return DrawerPaintLayout(
+        action_gap=horizontal.action_gap,
+        action_y=vertical.action_y,
+        has_gap=vertical.has_gap,
+        layout_reset=visible_text.layout_reset or vertical.layout_reset,
+        max_length_header=horizontal.max_length_header,
+        max_length_option=horizontal.max_length_option,
+        menu_entries=vertical.menu_entries,
+        menu_scroll_offset=vertical.menu_scroll_offset,
+        offset_actions=horizontal.offset_actions,
+        offset_header=horizontal.offset_header,
+        offset_menu=horizontal.offset_menu,
+        offset_text_line=horizontal.offset_text_line,
+        offset_vertical=vertical.offset_vertical,
+        skip_header=vertical.skip_header,
+        text_has_up_scroll=visible_text.text_has_up_scroll,
+        total_lines=vertical.total_lines,
+        total_width=horizontal.total_width,
+        visible_text_lines=visible_text.lines,
+    )
 
 
 def parse_effects(chunk):

@@ -19,13 +19,18 @@
 import unittest
 
 from update_all.log_viewer import calculate_hud_layout, calculate_hud_message, HudLayout, split_log_text_runs
-from update_all.other import TerminalSize, OverscanDim
+from update_all.other import TerminalSize, OverscanDim, are_dims_narrow
 
 
 class _ScreenDims:
     def __init__(self, term_size: TerminalSize, overscan_dim: OverscanDim):
         self.term_size = term_size
         self.overscan_dim = overscan_dim
+
+
+def _terminal_size(columns: int, lines: int) -> TerminalSize:
+    lnarrow, cnarrow = are_dims_narrow(lines, columns)
+    return TerminalSize(columns=columns, lines=lines, lnarrow=lnarrow, cnarrow=cnarrow)
 
 
 class TestLogViewer(unittest.TestCase):
@@ -41,15 +46,15 @@ class TestLogViewer(unittest.TestCase):
     def test_calculate_hud_message___uses_two_width_tiers_based_on_cnarrow(self):
         self.assertEqual(
             '←↑↓→ Navigate · Any other key to EXIT',
-            str(calculate_hud_message(_ScreenDims(TerminalSize(columns=80, lines=40, cnarrow=False), OverscanDim()))),
+            str(calculate_hud_message(_ScreenDims(_terminal_size(columns=80, lines=40), OverscanDim()))),
         )
         self.assertEqual(
             '↑↓←→ Nav · Any key Exit',
-            str(calculate_hud_message(_ScreenDims(TerminalSize(columns=40, lines=18, cnarrow=True), OverscanDim()))),
+            str(calculate_hud_message(_ScreenDims(_terminal_size(columns=40, lines=18), OverscanDim()))),
         )
 
     def test_calculate_hud_layout___without_overscan___uses_full_screen_bounds(self):
-        screen_dims = _ScreenDims(TerminalSize(columns=80, lines=40), OverscanDim(cols=0, lines=0))
+        screen_dims = _ScreenDims(_terminal_size(columns=80, lines=40), OverscanDim(cols=0, lines=0))
 
         self.assertEqual(
             HudLayout(
@@ -66,7 +71,7 @@ class TestLogViewer(unittest.TestCase):
         )
 
     def test_calculate_hud_layout___with_overscan___uses_usable_area_bounds(self):
-        screen_dims = _ScreenDims(TerminalSize(columns=80, lines=40), OverscanDim(cols=4, lines=2))
+        screen_dims = _ScreenDims(_terminal_size(columns=80, lines=40), OverscanDim(cols=4, lines=2))
 
         self.assertEqual(
             HudLayout(

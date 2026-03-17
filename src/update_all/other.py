@@ -123,10 +123,12 @@ class ScreenDims(Protocol):
     term_size: TerminalSize
     overscan_dim: OverscanDim
 
+def are_dims_narrow(lines: int, columns: int) -> tuple[int, int]:
+    return lines <= 18, columns <= 48
+
 def terminal_size() -> TerminalSize:
     ts = shutil.get_terminal_size()
-    lnarrow = ts.lines <= 18
-    cnarrow = ts.columns <= 48
+    lnarrow, cnarrow = are_dims_narrow(ts.lines, ts.columns)
     return TerminalSize(columns=ts.columns, lines=ts.lines,lnarrow=lnarrow, cnarrow=cnarrow)
 
 def calculate_overscan(overscan_label: str, size: TerminalSize) -> OverscanDim:

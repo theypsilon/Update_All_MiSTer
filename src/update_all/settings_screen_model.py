@@ -1437,13 +1437,13 @@ def _main_menu(retroaccount_logged_in): return {
                     "true": [{"type": "navigate", "target": "patrons_menu"}],
                     "false": [{
                         "ui": "message",
-                        "header": "Update All Extras not enabled!",
+                        "header": "Patrons Menu locked",
                         "text": [
-                            "This menu contains exclusive content for patrons only.",
+                            "Requires the @Update All Extras@ patron benefit.",
                             " ",
-                            "Support ~patreon.com/theypsilon~ and then log in via the @Login@ menu entry to unlock premium options.",
+                            "Support ~patreon.com/theypsilon~ and then sign in from the @Login@ menu to unlock it.",
                             " ",
-                            "Thank you so much for your support!",
+                            "Thank you for your support!",
                         ],
                         "effects": [{
                             "ui": "message",
