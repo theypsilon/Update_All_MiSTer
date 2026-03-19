@@ -97,9 +97,16 @@ if (( 10#$(date +%Y) < 2000 )) ; then
 fi
 
 # CERTS SETUP
-if [ -s "${CACERT_PEM_1}" ] ; then
+check_pem_shape() {
+    awk '
+        /^-----BEGIN CERTIFICATE-----$/ {depth++; begin++; next}
+        /^-----END CERTIFICATE-----$/   {if (depth == 0) exit 1; depth--; end++}
+        END {exit !(begin > 0 && begin == end && depth == 0)}
+    ' "$1" >/dev/null 2>&1
+}
+if check_pem_shape "${CACERT_PEM_1}" ; then
     export SSL_CERT_FILE="${CACERT_PEM_1}"
-elif [ -s "${CACERT_PEM_0}" ] ; then
+elif check_pem_shape "${CACERT_PEM_0}" ; then
     export SSL_CERT_FILE="${CACERT_PEM_0}"
 elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
     set +e
@@ -125,6 +132,7 @@ elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
 
         if [[ "${DIALOG_RET}" != "0" ]] ; then
             echo "No secure connection is possible without fixing the certificates."
+            echo "Please fix the certificates and try again."
             exit 1
         fi
 
@@ -172,7 +180,10 @@ download_file() {
             return
             ;;
         60|77|35|51|58|59|82|83)
-            echo ; echo "No secure connection is possible without fixing the certificates."
+            echo
+            echo "Could not establish a secure connection."
+            echo "There may be a problem with the certificates."
+            echo "Please check the certificates and try again."
             exit 1
             ;;
         *)
