@@ -186,14 +186,15 @@ def settings_screen_model(): return {
                     }]}
                 },
                 {
-                    "title": "2 JOTEGO JTBeta Access",
+                    "title": "2 JOTEGO Patreon Access",
                     "description": "{retroaccount_jtbeta_access}",
                     "actions": {"ok": [{
                         "ui": "message",
-                        "header": "JOTEGO JTBeta Access",
+                        "header": "JOTEGO Patreon Access",
                         "text": [
                             "Get access to JOTEGO beta and release candidate core versions weeks or even months before public release!",
                             "With this benefit, jtbeta.zip is installed automatically, so you don’t have to reinstall it by hand with every new release.",
+                            "Other Patreon attachments, such as the KAI MRAs, are also installed automatically."
                             "",
                             "{retroaccount_jtbeta_access_support}",
                         ],
