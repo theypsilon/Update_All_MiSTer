@@ -97,8 +97,8 @@ class AllDBs:
 
         # WALLPAPERS
         self.RANNYSNICE_WALLPAPERS = Database(db_id='Ranny-Snice/Ranny-Snice-Wallpapers', db_url='https://raw.githubusercontent.com/Ranny-Snice/Ranny-Snice-Wallpapers/db/db.json.zip', title='Ranny Snice Wallpapers')
-        self.ANIME0T4KU_WALLPAPERS = Database(db_id='anime0t4ku_wallpapers', db_url='https://raw.githubusercontent.com/Anime0t4ku/MiSTerWallpapers/refs/heads/db/db/0t4kuwallpapers.json.zip', title='Anime0t4ku Wallpapers')
-        self.PCN_CHALLENGE_WALLPAPERS = Database(db_id='pcn_challenge_wallpapers', db_url='https://raw.githubusercontent.com/Anime0t4ku/MiSTerWallpapers/refs/heads/db/db/pcnchallenge.json.zip', title='PCN Challenge Wallpapers')
+        self.ANIME0T4KU_WALLPAPERS = Database(db_id='anime0t4ku_wallpapers', db_url='https://raw.githubusercontent.com/Anime0t4ku/MiSTerWallpapers/db/db/0t4kuwallpapers.json.zip', title='Anime0t4ku Wallpapers')
+        self.PCN_CHALLENGE_WALLPAPERS = Database(db_id='pcn_challenge_wallpapers', db_url='https://raw.githubusercontent.com/Anime0t4ku/MiSTerWallpapers/db/db/pcnchallenge.json.zip', title='PCN Challenge Wallpapers')
 
     def all_dbs_list(self) -> List[Database]:
         return [db for field_name, db in self.__dict__.items() if not field_name.startswith('_')]
