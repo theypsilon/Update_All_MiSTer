@@ -67,12 +67,12 @@ if (( 10#$(date +%Y) < 2000 )) ; then
     NTP_CONF="/etc/ntp.conf"
     for server in "${NTP_SERVERS[@]}"; do
         if ! grep -qF "${server}" "${NTP_CONF}"; then
-            echo "server $server iburst" >> "${NTP_CONF}" 2>/dev/null || true
+            { echo "server $server iburst" >> "${NTP_CONF}" ; } 2>>/tmp/ua_launcher_errors.log || true
         fi
     done
     NTP_PID="/var/run/ntpd.pid"
     start-stop-daemon -K -p "${NTP_PID}" || true
-    rm -f "${NTP_PID}" || true
+    rm -f "${NTP_PID}" 2>>/tmp/ua_launcher_errors.log || true
     start-stop-daemon -S -q -p "${NTP_PID}" -x "/usr/sbin/ntpd" -- -g -p "${NTP_PID}" || true
     connected=0
     for ((i=1; i<=10; i++)); do
@@ -141,7 +141,7 @@ elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
             RO_ROOT="true"
         fi
         [ "${RO_ROOT}" == "true" ] && mount / -o remount,rw
-        rm /etc/ssl/certs/* 2> /dev/null || true
+        rm -f /etc/ssl/certs/* 2>>/tmp/ua_launcher_errors.log || true
         echo
         echo "Installing cacert.pem from ${CACERT_PEM_INSTALL_URL}"
         curl --insecure --location -o /tmp/cacert.pem "${CACERT_PEM_INSTALL_URL}"
@@ -193,7 +193,7 @@ download_file() {
     esac
 }
 
-rm ${RUN_TOOL_PATH} 2> /dev/null || true
+rm -f ${RUN_TOOL_PATH} 2>>/tmp/ua_launcher_errors.log || true
 
 if [ -s "${LATEST_TOOL_PATH}" ] ; then
     cp "${LATEST_TOOL_PATH}" "${RUN_TOOL_PATH}"
@@ -223,6 +223,6 @@ if [[ ${UA_RET} -ne 0 ]] ; then
     exit 1
 fi
 
-rm ${RUN_TOOL_PATH} 2> /dev/null || true
+rm -f ${RUN_TOOL_PATH} 2>>/tmp/ua_launcher_errors.log || true
 
 exit 0

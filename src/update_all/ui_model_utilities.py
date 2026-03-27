@@ -118,6 +118,10 @@ def search_in_model(result: TResult, base_types: Dict[str, Any], item, cb: Calla
         for item in item['items'].values():
             search_in_model(result, base_types, item, cb)
 
+    if 'on_idle' in item:
+        for idle_effect in item['on_idle']:
+            search_in_model(result, base_types, idle_effect, cb)
+
     if 'type' not in item:
         return
 

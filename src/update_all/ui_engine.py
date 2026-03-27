@@ -380,8 +380,27 @@ class _EffectResolver:
                 if possible_values[cur_index] != self._ui.get_value(target_variable):
                     self._ui.set_value(target_variable, possible_values[cur_index])
                     result = 'clear_window'
+
+            elif effect['type'] == 'set_variable':
+                target_variable = effect['target']
+                target_value = effect['value']
+                possible_values = self._data['variables'][target_variable]['values']
+
+                cur_index = 0
+                for index, var_value in enumerate(possible_values):
+                    if var_value == target_value:
+                        cur_index = index
+                        break
+
+                if possible_values[cur_index] != self._ui.get_value(target_variable):
+                    self._ui.set_value(target_variable, possible_values[cur_index])
+                    result = 'clear_window'
+
             elif effect['type'] in self._additional_effects:
-                self._additional_effects[effect['type']](effect)
+                additional_effect_result = self._additional_effects[effect['type']](effect)
+                if additional_effect_result == 'clear_window':
+                    result = 'clear_window'
+
             else:
                 raise NotImplementedError(f'Wrong effect type :"{effect["type"]}"')
 

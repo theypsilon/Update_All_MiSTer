@@ -23,12 +23,18 @@ from collections import OrderedDict
 from typing import Optional, Dict, List, Tuple, Any
 
 from update_all.config import Config
-from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini, DOWNLOADER_STORE_STANDARD_PATH
+from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini, DOWNLOADER_STORE_STANDARD_PATH, \
+    DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI
 from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS
 from update_all.file_system import FileSystem
 from update_all.ini_parser import IniParser
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils
+
+SEPARATE_DB_INI_FILES: Dict[str, str] = {
+    ALL_DB_IDS['BIOS'].lower(): DOWNLOADER_BIOS_DB_INI,
+    ALL_DB_IDS['ARCADE_ROMS'].lower(): DOWNLOADER_ARCADE_ROMS_DB_INI,
+}
 
 
 class IniRepository:
@@ -243,6 +249,72 @@ class IniRepository:
 
         self._file_system.save_json(store, store_path)
 
+    def extract_db_to_separate_ini(self, db_id: str, target_ini_filename: str, downloader_ini: Dict[str, IniParser]) -> bool:
+        lower_id = db_id.lower()
+        if lower_id not in downloader_ini:
+            return False
+
+        downloader_ini_txt = self._read_downloader_ini_rawtext()
+        if downloader_ini_txt is None:
+            self._logger.debug(f'WARNING! Could not extract db_id {db_id} because downloader ini is not readable.')
+            return False
+
+        section_lines = []
+        remaining_lines = []
+        capturing = False
+        for line in downloader_ini_txt.splitlines():
+            if capturing:
+                if line.strip().startswith('['):
+                    capturing = False
+                    remaining_lines.append(line)
+                else:
+                    section_lines.append(line)
+                continue
+
+            if line.lower().strip() == f'[{lower_id}]':
+                capturing = True
+                section_lines.append(f'[{db_id}]')
+            else:
+                remaining_lines.append(line)
+
+        target_path = f'{self._base_path}/{target_ini_filename}'
+        self._file_system.make_dirs_parent(target_path)
+        self._file_system.write_file_contents(target_path, '\n'.join(section_lines) + '\n')
+
+        self._file_system.write_file_contents(self.downloader_ini_standard_path(), '\n'.join(remaining_lines).rstrip() + '\n')
+        self._downloader_ini = None
+
+        del downloader_ini[lower_id]
+        return True
+
+    def read_separate_db_ini_files(self) -> Dict[str, IniParser]:
+        result = {}
+        for lower_id, ini_filename in SEPARATE_DB_INI_FILES.items():
+            target_path = f'{self._base_path}/{ini_filename}'
+            if not self._file_system.is_file(target_path):
+                continue
+            try:
+                contents = self._file_system.read_file_contents(target_path)
+                parser = read_ini_contents(contents)
+                for header, section in parser.items():
+                    if header.lower() != 'default':
+                        result[header.lower()] = IniParser({k.lower(): v for k, v in section.items()})
+            except Exception as e:
+                self._logger.debug(f'Could not read separate DB INI file at: {target_path}')
+                self._logger.debug(e)
+        return result
+
+    def write_separate_db_ini_files(self, config: Config) -> None:
+        active = {db.db_id.lower(): db for _, db in candidate_databases(config) if db.db_id in config.databases}
+        for lower_id, ini_filename in SEPARATE_DB_INI_FILES.items():
+            target_path = f'{self._base_path}/{ini_filename}'
+            if lower_id in active:
+                db = active[lower_id]
+                self._file_system.make_dirs_parent(target_path)
+                self._file_system.write_file_contents(target_path, f'[{db.db_id}]\ndb_url = {db.db_url}\n')
+            elif self._file_system.is_file(target_path):
+                self._file_system.unlink(target_path, verbose=False)
+
     def write_arcade_organizer_active_at_arcade_organizer_ini(self, config: Config) -> None:
         contents = ''
         if self._file_system.is_file(ARCADE_ORGANIZER_INI):
@@ -283,6 +355,10 @@ class IniRepository:
     def _add_new_downloader_ini_changes(ini, config: Config) -> None:
         for _, db in candidate_databases(config):
             db_id = db.db_id.lower()
+            if db_id in SEPARATE_DB_INI_FILES:
+                if db_id in ini:
+                    del ini[db_id]
+                continue
             if db in active_databases(config):
                 if db_id not in ini:
                     ini[db_id] = {}
@@ -297,6 +373,8 @@ class IniRepository:
                 continue
 
             lower_id = db_id.lower()
+            if lower_id not in ini:
+                continue
 
             if filter_active:
                 arcade_roms_filter = ini[lower_id]['filter'].strip().lower() if 'filter' in ini[lower_id] else ''

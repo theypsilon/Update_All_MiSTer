@@ -39,8 +39,8 @@ def settings_screen_model(): return {
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
         "download_beta_cores": {"group": "jt_ini", "default": "false", "values": ["false", "true"]},
-        "bios_getter": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
-        "arcade_roms_db_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
+        "bios_getter": {"group": ["ua_ini", "separate_db"], "default": "false", "values": ["false", "true"]},
+        "arcade_roms_db_downloader": {"group": ["ua_ini", "separate_db"], "default": "false", "values": ["false", "true"]},
         "names_txt_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
         "arcade_organizer": {"group": ["ua_ini", "ao_ini"], "default": "false", "values": ["false", "true"]},
 
@@ -166,10 +166,41 @@ def settings_screen_model(): return {
             "header": "RetroAccount",
             "variables": {
                 "retroaccount_domain": {"default": "https://retroaccount.com"},
+                "retroaccount_update_all_extras": {"default": "Checking..."},
+                "retroaccount_update_all_extras_support": {"default": ""},
+                "retroaccount_jtbeta_access": {"default": "Checking..."},
+                "retroaccount_jtbeta_access_support": {"default": ""},
             },
             "entries": [
                 {
-                    "title": "1 Manage Your Account",
+                    "title": "1 Update All Extras",
+                    "description": "{retroaccount_update_all_extras}",
+                    "actions": {"ok": [{
+                        "ui": "message",
+                        "header": "Update All Extras",
+                        "text": [
+                            "Access the Extended Timeline, Patrons Menu, custom UI themes, and more!",
+                            "",
+                            "{retroaccount_update_all_extras_support}",
+                        ],
+                    }]}
+                },
+                {
+                    "title": "2 JOTEGO JTBeta Access",
+                    "description": "{retroaccount_jtbeta_access}",
+                    "actions": {"ok": [{
+                        "ui": "message",
+                        "header": "JOTEGO JTBeta Access",
+                        "text": [
+                            "Get access to JOTEGO beta and release candidate core versions weeks or even months before public release!",
+                            "With this benefit, jtbeta.zip is installed automatically, so you don’t have to reinstall it by hand with every new release.",
+                            "",
+                            "{retroaccount_jtbeta_access_support}",
+                        ],
+                    }]}
+                },
+                {
+                    "title": "3 Manage Your Account",
                     "description": "More options at {retroaccount_domain}",
                     "actions": {"ok": [{
                         "ui": "message",
@@ -180,12 +211,17 @@ def settings_screen_model(): return {
                     }]}
                 },
                 {
-                    "title": "2 Logout Device",
+                    "title": "4 Logout Device",
                     "description": "Log out from this device",
                     "actions": {"ok": [{
                         "ui": "confirm",
                         "header": "Logout Device",
-                        "text": ["Are you sure you want to log out from this device?"],
+                        "alert_level": "red",
+                        "text": [
+                            "If you log out, you'll lose access to your benefits.",
+                            "",
+                            "Are you sure you want to log out from this device?"
+                        ],
                         "preselected_action": "No",
                         "actions": [
                             {"title": "Yes", "type": "fixed", "fixed": [
@@ -196,8 +232,9 @@ def settings_screen_model(): return {
                             {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
                         ],
                     }]}
-                },
-            ]
+                }
+            ],
+            "on_idle": [{"type": "retroaccount_check_state"}]
         },
         "main_distribution_menu": {
             "type": "dialog_sub_menu",
@@ -225,7 +262,7 @@ def settings_screen_model(): return {
                     "actions": {"ok": [{"type": "rotate_variable", "target": "jotego_updater"}]}
                 },
                 {
-                    "title": "2 Install Premium Cores",
+                    "title": "2 Install Private Releases",
                     "description": "{download_beta_cores:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "download_beta_cores"}]}
                 },
@@ -603,7 +640,14 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "4 Uberyoji Boot ROMs",
+                    "title": "4 Anime0t4ku Wallpapers",
+                    "description": "",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "anime0t4ku_wallpapers_menu"}],
+                    }
+                },
+                {
+                    "title": "5 Uberyoji Boot ROMs",
                     "description": "{uberyoji_mister_boot_roms_mgl:enabled} Boot ROMs for popular consoles",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
@@ -611,7 +655,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "5 Dinierto GBA Borders",
+                    "title": "6 Dinierto GBA Borders",
                     "description": "{Dinierto/MiSTer-GBA-Borders:enabled} Borders for the GBA Core",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
@@ -762,6 +806,39 @@ def settings_screen_model(): return {
                     "title": "2 Aspect Ratio",
                     "description": "{rannysnice_wallpapers_filter}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "rannysnice_wallpapers_filter"}]}
+                },
+            ]
+        },
+        "anime0t4ku_wallpapers_menu": {
+            "type": "dialog_sub_menu",
+            "variables": {
+                "anime0t4ku_wallpapers": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "pcn_challenge_wallpapers": {"group": "db", "default": "false", "values": ["false", "true"]},
+            },
+            "header": "Anime0t4ku Wallpapers Settings",
+            "entries": [
+                {
+                    "title": "1 Unrestricted Anime0t4ku 16:9 Wallpapers",
+                    "description": "{anime0t4ku_wallpapers:enabled}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "anime0t4ku_wallpapers"}]}
+                },
+                {
+                    "title": "2 PCN Challenge 16:9 Wallpapers",
+                    "description": "{pcn_challenge_wallpapers:enabled}",
+                    "actions": {
+                        "ok": [{
+                            "ui": "confirm",
+                            "header": "PCN Challenge Wallpapers",
+                            "text": [
+                                "Anime0t4ku creates these wallpapers during Pixel Cherry Ninja livestreams.",
+                                "They are made live based on suggestions from the chat, often within time limits or specific creative challenges.",
+                            ],
+                            "actions": [
+                                {"title": "Enable", "type": "fixed", "fixed": [{"type": "set_variable", "value": "true", "target": "pcn_challenge_wallpapers"}, {"type": "navigate", "target": "back"}]},
+                                {"title": "Disable", "type": "fixed", "fixed": [{"type": "set_variable", "value": "false", "target": "pcn_challenge_wallpapers"}, {"type": "navigate", "target": "back"}]}
+                            ],
+                        }],
+                    }
                 },
             ]
         },
@@ -1351,7 +1428,7 @@ def settings_screen_model(): return {
 
 def _retroaccount_account_entry(): return {
     "title": "7 Account",
-    "description": "From RetroAccount",
+    "description": "From RetroAccount. {retroaccount_checking}",
     "actions": {
         "ok": [{"type": "navigate", "target": "retroaccount_account_menu"}],
     }
@@ -1373,6 +1450,7 @@ def _main_menu(retroaccount_logged_in): return {
     "ui": "menu",
     "header": "Update All {update_all_version} Settings",
     "variables": {
+        "retroaccount_checking": {"default": ""}
     },
     "hotkeys": [{"keys": [27], "action": _try_abort()}],
     "actions": [
@@ -1546,7 +1624,8 @@ def _main_menu(retroaccount_logged_in): return {
                 {"type": "navigate", "target": "exit_and_run"}
             ]}
         }
-    ]
+    ],
+    "on_idle": [{"type": "retroaccount_check_state"}]
 }
 
 

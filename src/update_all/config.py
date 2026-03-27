@@ -17,7 +17,7 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 from dataclasses import dataclass, field
-from enum import unique, IntEnum
+from enum import IntEnum
 from typing import Set, Optional, TypedDict
 
 from update_all.analogue_pocket.http_gateway import HttpConfig
@@ -41,11 +41,13 @@ class EnvDict(TypedDict):
     HTTPS_PROXY: Optional[str]
     MIRROR_ID: str
     RETROACCOUNT_DOMAIN: str
+    real_start_time: float
 
 @dataclass
 class Config:
     # Not really a config
     start_time: float = 0.0
+    boot_time: float = 0.0
 
     # From the environment
     curl_ssl: str = DEFAULT_CURL_SSL_OPTIONS
@@ -97,7 +99,6 @@ class Config:
     term_size: TerminalSize = TerminalSize(columns=80, lines=40)
     monochrome_ui: bool = False
 
-@unique
 class AllowDelete(IntEnum):
     NONE = 0
     ALL = 1

@@ -88,7 +88,7 @@ class TestSettingsScreenModel(unittest.TestCase):
 
     def test_all_database_variables_are_declared_in_the_model_except_update_all(self):
         db_variables = set(db_ids_by_model_variables())
-        model_variables = set(gather_variable_declarations(self.model, 'db'))
+        model_variables = set(gather_variable_declarations(self.model, 'db')) | set(gather_variable_declarations(self.model, 'separate_db'))
 
         self.assertGreaterEqual(len(db_variables), 5)
         self.assertEqual(db_variables - {all_dbs('').UPDATE_ALL_MISTER.db_id}, model_variables)

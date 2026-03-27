@@ -132,7 +132,7 @@ def _add_used_effects(result: List[str], item: Dict[str, Any]):
     if 'type' not in item:
         return
 
-    if item['type'] not in ['ui', 'rotate_variable', 'fixed', 'symbol', 'navigate', 'condition']:
+    if item['type'] not in ['ui', 'rotate_variable', 'set_variable', 'fixed', 'symbol', 'navigate', 'condition']:
         result.append(item['type'])
 
 

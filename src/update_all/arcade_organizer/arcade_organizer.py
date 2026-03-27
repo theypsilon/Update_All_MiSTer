@@ -26,7 +26,7 @@ import shutil
 import json
 import zipfile
 import xml.etree.cElementTree as ET
-from enum import IntEnum, unique
+from enum import IntEnum
 from typing import List, Dict, Any, Tuple, Optional
 
 from update_all.config import Config
@@ -36,7 +36,6 @@ from update_all.logger import Logger
 from update_all.other import str_to_bool, GenericProvider
 
 
-@unique
 class BoolFlagPresence(IntEnum):
     DEACTIVATED = 0
     ONLY_IN_OWN_FOLDER = 1

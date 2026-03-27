@@ -154,7 +154,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.save(ui)
 
         ini_sections = len(read_ini_contents(fs.files[downloader_ini.lower()]['content']).sections())
-        self.assertEqual(len(db_ids_to_model_variable_pairs()), ini_sections)
+        self.assertEqual(len(db_ids_to_model_variable_pairs()) - 2, ini_sections)  # @TODO: Remove the -2 when Arcade ROMs DB and BIOS DB are gone.
         self.assertGreaterEqual(ini_sections, 10)
 
     def test_save__when_disabling_autoreboot___writes_changes_on_local_store(self):

@@ -19,7 +19,8 @@ from collections import Counter
 from typing import Dict
 from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
-    FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
+    FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh, \
+    DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI
 from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, \
     DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ALL_DB_IDS
 from update_all.ini_parser import IniParser
@@ -275,6 +276,31 @@ class TransitionService:
 
         self._ini_repository.write_downloader_ini(config)
         self._logger.print(f'Adding DB with id [{ALL_DB_IDS["UPDATE_ALL_MISTER"]}] to downloader.ini.')
+        self._logger.print()
+        self._logger.print('Waiting 5 seconds...')
+        self._os_utils.sleep(5.0)
+
+    def from_downloader_ini_to_separate_db_ini_files(self, downloader_ini: Dict[str, IniParser]):
+        if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
+            return
+
+        db_ids_to_separate = {
+            ALL_DB_IDS['BIOS']: DOWNLOADER_BIOS_DB_INI,
+            ALL_DB_IDS['ARCADE_ROMS']: DOWNLOADER_ARCADE_ROMS_DB_INI,
+        }
+
+        extracted = []
+        for db_id, ini_filename in db_ids_to_separate.items():
+            if self._ini_repository.extract_db_to_separate_ini(db_id, ini_filename, downloader_ini):
+                extracted.append((db_id, ini_filename))
+
+        if len(extracted) == 0:
+            return
+
+        self._logger.print()
+        self._logger.print('Splitting databases into separate INI files:')
+        for db_id, ini_filename in extracted:
+            self._logger.print(f'  - Moved [{db_id}] from downloader.ini to {ini_filename}.')
         self._logger.print()
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)

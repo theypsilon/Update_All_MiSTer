@@ -17,6 +17,7 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 import hashlib
 from functools import cached_property
+from typing import Optional, Final
 
 from update_all.analogue_pocket.firmware_update import pocket_firmware_update
 from update_all.analogue_pocket.pocket_backup import pocket_backup
@@ -25,6 +26,7 @@ from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
     ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
 from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, ALL_DB_IDS
+from update_all.ini_repository import SEPARATE_DB_INI_FILES
 from update_all.encryption import Encryption
 from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
@@ -33,7 +35,7 @@ from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, calculate_overscan
 from update_all.logger import Logger, CollectorLoggerDecorator
 from update_all.os_utils import OsUtils
-from update_all.retroaccount import RetroAccountService
+from update_all.retroaccount import RetroAccountService, BenefitState
 from update_all.settings_screen_model import settings_screen_model
 from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
@@ -104,6 +106,9 @@ class SettingsScreen(UiApplication):
         for variable in gather_variable_declarations(settings_screen_model(), "db"):
             ui.set_value(variable, 'true' if db_ids[variable] in config.databases else 'false')
 
+        for variable in gather_variable_declarations(settings_screen_model(), "separate_db"):
+            ui.set_value(variable, 'true' if db_ids[variable] in config.databases else 'false')
+
         local_store = self._store_provider.get()
         ui.set_value('ui_theme', local_store.get_theme())
         mirror = local_store.get_mirror()
@@ -156,6 +161,7 @@ class SettingsScreen(UiApplication):
             'pocket_firmware_update': lambda effect: self.pocket_firmware_update(ui),
             'pocket_backup': lambda effect: self.pocket_backup(ui),
             'apply_overscan': lambda effect: self.apply_overscan(ui),
+            'retroaccount_check_state': lambda effect: self.retroaccount_check_state(ui),
             'retroaccount_device_logout': lambda effect: self.retroaccount_device_logout(ui),
         })
 
@@ -223,6 +229,17 @@ class SettingsScreen(UiApplication):
         if self._ini_repository.does_downloader_ini_need_save(temp_config):
             needs_save_file_set.add("downloader.ini")
 
+        db_ids = db_ids_by_model_variables()
+        current_config = self._config_provider.get()
+        for variable in gather_variable_declarations(settings_screen_model(), "separate_db"):
+            db_id = db_ids[variable]
+            was_active = db_id in current_config.databases
+            is_active = ui.get_value(variable) == 'true'
+            if was_active != is_active:
+                ini_filename = SEPARATE_DB_INI_FILES.get(db_id.lower())
+                if ini_filename is not None:
+                    needs_save_file_set.add(ini_filename)
+
         if self._does_arcade_oganizer_need_save(ui):
             needs_save_file_set.add("update_arcade-organizer.ini")
 
@@ -258,6 +275,7 @@ class SettingsScreen(UiApplication):
             self._ini_repository.write_arcade_organizer_active_at_arcade_organizer_ini(config)
 
         self._ini_repository.write_downloader_ini(config)
+        self._ini_repository.write_separate_db_ini_files(config)
 
         local_store = self._store_provider.get()
         self._fill_store(local_store, ui, config)
@@ -313,6 +331,12 @@ class SettingsScreen(UiApplication):
                 setattr(config, variable, value)
 
         for variable in gather_variable_declarations(settings_screen_model(), "db"):
+            if ui.get_value(variable) == 'false':
+                continue
+
+            config.databases.add(db_ids[variable])
+
+        for variable in gather_variable_declarations(settings_screen_model(), "separate_db"):
             if ui.get_value(variable) == 'false':
                 continue
 
@@ -442,5 +466,53 @@ class SettingsScreen(UiApplication):
 
         self._ui_runtime.resume()
 
+    def retroaccount_check_state(self, ui: UiContext) -> Optional[str]:
+        state_changed = False
+
+        update_all_extras = benefit_state_to_message(self._retroaccount.update_all_extras_sync_state())
+        update_all_extras_ui_key = 'retroaccount_update_all_extras'
+        if ui.get_value(update_all_extras_ui_key) != update_all_extras:
+            ui.set_value(update_all_extras_ui_key, update_all_extras)
+            ui.set_value('retroaccount_update_all_extras_support', 'This benefit is active!' if update_all_extras == ACTIVE_BENEFIT_MSG else 'Support theypsilon on Patreon to unlock this benefit.')
+            state_changed = True
+
+        jtbeta_access = benefit_state_to_message(self._retroaccount.jtbeta_access_sync_state())
+        jtbeta_access_ui_key = 'retroaccount_jtbeta_access'
+        if ui.get_value(jtbeta_access_ui_key) != jtbeta_access:
+            ui.set_value(jtbeta_access_ui_key, jtbeta_access)
+            ui.set_value('retroaccount_jtbeta_access_support', 'This benefit is active!' if jtbeta_access == ACTIVE_BENEFIT_MSG else 'Support JOTEGO and theypsilon on Patreon to unlock this benefit.')
+            state_changed = True
+
+        checking_ui_key = 'retroaccount_checking'
+        checking_ui_value = ui.get_value(checking_ui_key)
+        if checking_ui_value != RETROACCOUNT_STATE_ONLINE:
+            dots = checking_ui_value.count(".")
+            if state_changed:
+                ui.set_value(checking_ui_key, RETROACCOUNT_STATE_ONLINE)
+            elif dots >= len(RETROACCOUNT_STATE_ONLINE):
+                ui.set_value(checking_ui_key, dots * ' ')
+            else:
+                ui.set_value(checking_ui_key, (dots + 1) * '.')
+
+        if state_changed:
+            return 'clear_window'
+
     def retroaccount_device_logout(self, _ui: UiContext) -> None:
         self._retroaccount.device_logout()
+
+RETROACCOUNT_STATE_ONLINE: Final[str] = 'Online.'
+ACTIVE_BENEFIT_MSG: Final[str] = 'Active'
+
+def benefit_state_to_message(benefit_state: BenefitState) -> str:
+    if benefit_state == BenefitState.CHECKING:
+        return 'Checking...'
+    elif benefit_state == BenefitState.ACTIVE:
+        return 'Active'
+    elif benefit_state == BenefitState.INACTIVE:
+        return 'Inactive'
+    elif benefit_state == BenefitState.CONNECTION_FAILED:
+        return 'Could not connect to the server. Try again later'
+    elif benefit_state == BenefitState.NEED_LOGIN:
+        return 'Login again please.'
+    else:
+        return ''

@@ -18,7 +18,7 @@
 
 import hashlib
 import json
-from enum import unique, Enum
+from enum import Enum
 from typing import Optional, Tuple, Any, TypedDict, Union
 
 from update_all.config import Config
@@ -41,7 +41,6 @@ class MisterSyncResponse(TypedDict, total=False):
     update_all_extras: bool
 
 
-@unique
 class SessionResult(Enum):
     VALID = 'valid'
     REVOKED = 'revoked'
@@ -58,10 +57,12 @@ class RetroAccountGateway:
     def _server_url(self) -> str:
         return self._config_provider.get().retroaccount_domain
 
-    def mister_sync(self, device_id: str, refresh_token: str, update_all_patreon_key_fingerprint: Optional[str]) -> Tuple[SessionResult, Union[MisterSyncResponse, int]]:
+    def mister_sync(self, device_id: str, refresh_token: str, update_all_patreon_key_fingerprint: Optional[str], jtbeta_fingerprint: Optional[str]) -> Tuple[SessionResult, Union[MisterSyncResponse, int]]:
         body = {}
         if update_all_patreon_key_fingerprint:
             body['update_all_patreon_key_fingerprint'] = update_all_patreon_key_fingerprint
+        if jtbeta_fingerprint:
+            body['jtbeta_fingerprint'] = jtbeta_fingerprint
         headers = {
             'x-refresh-token': refresh_token,
             'x-device-id': device_id,

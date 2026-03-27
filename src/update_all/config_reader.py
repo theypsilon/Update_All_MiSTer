@@ -69,7 +69,7 @@ class ConfigReader:
         config.timeline_short_path = self._env.get('TIMELINE_SHORT_PATH', config.timeline_short_path).strip()
         config.timeline_plus_path = self._env.get('TIMELINE_PLUS_PATH', config.timeline_plus_path).strip()
         config.mirror = self._env.get('MIRROR_ID', config.mirror).strip().lower()
-        config.retroaccount_domain = self._env.get(KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount).strip().rstrip('/')
+        config.retroaccount_domain = self._env.get('RETROACCOUNT_DOMAIN', DOMAIN_default_retroaccount).strip().rstrip('/')
         if self._env['HTTP_PROXY'] or self._env['HTTPS_PROXY']:
             config.http_config = http_config(http_proxy=self._env['HTTP_PROXY'], https_proxy=self._env['HTTPS_PROXY'])
             config.http_proxy = self._env['HTTP_PROXY'] or self._env['HTTPS_PROXY']  # @TODO: Remove this line when this is not used by the Arcade Organizer or any other part
@@ -79,9 +79,14 @@ class ConfigReader:
         if not is_mister_environment(self._env):
             config.not_mister = True
 
+        config.boot_time = config.start_time - self._env.get('real_start_time')
+
     def fill_config_with_database_sections(self, config: Config, downloader_ini: Dict[str, IniParser]) -> None:
+        separate_ini = self._ini_repository.read_separate_db_ini_files()
+        all_ini = {**downloader_ini, **separate_ini}
+
         for db_id, variable in model_variables_by_db_id().items():
-            is_present = db_id.lower() in downloader_ini
+            is_present = db_id.lower() in all_ini
             config.__setattr__(variable, is_present)
             if is_present:
                 config.databases.add(db_id)
@@ -89,23 +94,23 @@ class ConfigReader:
         db_defs = all_dbs(config.mirror)
         config.databases.add(ALL_DB_IDS['UPDATE_ALL_MISTER'])
 
-        if DB_ID_DISTRIBUTION_MISTER in downloader_ini:
-            parser = downloader_ini[DB_ID_DISTRIBUTION_MISTER]
+        if DB_ID_DISTRIBUTION_MISTER in all_ini:
+            parser = all_ini[DB_ID_DISTRIBUTION_MISTER]
             config.encc_forks = db_defs.encc_forks_by_distribution_mister_db_url(parser.get_string('db_url', None))
 
-        if ALL_DB_IDS['JTCORES'] in downloader_ini:
-            parser = downloader_ini[ALL_DB_IDS['JTCORES']]
+        if ALL_DB_IDS['JTCORES'] in all_ini:
+            parser = all_ini[ALL_DB_IDS['JTCORES']]
             if db_defs.should_download_beta_cores(parser.get_string('db_url', None), parser.get_string('filter', None)):
                 config.download_beta_cores = True
 
-        if DB_ID_NAMES_TXT in downloader_ini:
-            parser = downloader_ini[DB_ID_NAMES_TXT]
+        if DB_ID_NAMES_TXT in all_ini:
+            parser = all_ini[DB_ID_NAMES_TXT]
             (config.names_region,
              config.names_char_code,
              config.names_sort_code) = db_defs.names_locale_by_db_url(parser.get_string('db_url', None))
 
-        if ALL_DB_IDS['ARCADE_ROMS'] in downloader_ini:
-            parser = downloader_ini[ALL_DB_IDS['ARCADE_ROMS']]
+        if ALL_DB_IDS['ARCADE_ROMS'] in all_ini:
+            parser = all_ini[ALL_DB_IDS['ARCADE_ROMS']]
             config.hbmame_filter = '!hbmame' in parser.get_string('filter', '')
 
         if ALL_DB_IDS['RANNYSNICE_WALLPAPERS'].lower() in downloader_ini:

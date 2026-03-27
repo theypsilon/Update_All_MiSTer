@@ -17,6 +17,8 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+import time
+real_start_time = time.monotonic()
 try:
     from update_all.main import main, read_env
 except (ImportError, SyntaxError) as e:
@@ -35,4 +37,4 @@ except ImportError as e:
     default_commit = DEFAULT_COMMIT  # type: ignore[assignment]
 
 if __name__ == '__main__':
-    exit(main(read_env(default_commit)))
+    exit(main(read_env(default_commit, real_start_time)))

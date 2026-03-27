@@ -53,7 +53,7 @@ class TestIniRepository(unittest.TestCase):
             DB_ID_NAMES_TXT,
             all_dbs('').THEYPSILON_UNOFFICIAL_DISTRIBUTION.db_id,
             all_dbs('').LLAPI_FOLDER.db_id,
-            all_dbs('').ARCADE_ROMS.db_id,
+            all_dbs('').UBERYOJI_BOOT_ROMS.db_id,
             all_dbs('').ARCADE_OFFSET_FOLDER.db_id,
             all_dbs('').TTY2OLED_FILES.db_id,
             all_dbs('').I2C2OLED_FILES.db_id,
@@ -66,10 +66,10 @@ class TestIniRepository(unittest.TestCase):
 
     def test_write_downloader_ini___over_bug_names_txt_updater_disabled_downloader_ini_after_changing_some_options___writes_changed_downloader(self):
         config = Config(download_beta_cores=True, databases=default_databases(sub=[DB_ID_NAMES_TXT], add=[
-            all_dbs('').BIOS.db_id,
+            all_dbs('').AGG23_DB.db_id,
             all_dbs('').THEYPSILON_UNOFFICIAL_DISTRIBUTION.db_id,
             all_dbs('').LLAPI_FOLDER.db_id,
-            all_dbs('').ARCADE_ROMS.db_id,
+            all_dbs('').UBERYOJI_BOOT_ROMS.db_id,
             all_dbs('').ARCADE_OFFSET_FOLDER.db_id,
             all_dbs('').TTY2OLED_FILES.db_id,
             all_dbs('').I2C2OLED_FILES.db_id,
@@ -87,61 +87,33 @@ class TestIniRepository(unittest.TestCase):
         }, config=config)
         assertEqualIni(self, 'test/fixtures/downloader_ini/coin_op_uppercase_plus_names_downloader.ini', fs.files[downloader_ini]['content'])
 
-    def test_write_downloader_ini___with_roms_db_and_filtered_hbmame___adds_expected_db_with_expected_filter_field(self):
+    def test_write_downloader_ini___with_separate_db_and_filtered_hbmame___does_not_add_arcade_roms_to_downloader_ini(self):
         config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=True)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()}
         }, config=config)
-        assertEqualIni(self, 'test/fixtures/downloader_ini/filtered_hbmame_downloader.ini', fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/default_downloader.ini', fs.files[downloader_ini]['content'])
 
-    def test_write_downloader_ini___with_already_existing_roms_db_and_filtered_hbmame___keeps_it_the_same(self):
+    def test_write_downloader_ini___with_existing_arcade_roms_in_downloader_ini___removes_it(self):
         config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=True)
-        fs = test_write_downloader_ini(files={
-            downloader_ini: {'content': Path('test/fixtures/downloader_ini/filtered_hbmame_downloader.ini').read_text()}
-        }, config=config)
-        assertEqualIni(self, 'test/fixtures/downloader_ini/filtered_hbmame_downloader.ini', fs.files[downloader_ini]['content'])
-
-    def test_write_downloader_ini___when_removing_filtered_hbmame___removes_expected_filter_field(self):
-        config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=False)
-        fs = test_write_downloader_ini(files={
-            downloader_ini: {'content': Path('test/fixtures/downloader_ini/filtered_hbmame_downloader.ini').read_text()}
-        }, config=config)
-        assertEqualIni(self, 'test/fixtures/downloader_ini/arcade_roms_downloader.ini', fs.files[downloader_ini]['content'])
-
-    def test_write_downloader_ini___when_removing_arcade_roms_db_altogether___removes_the_db_from_downloader_ini(self):
-        config = Config(databases=default_databases())
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/filtered_hbmame_downloader.ini').read_text()}
         }, config=config)
         assertEqualIni(self, 'test/fixtures/downloader_ini/default_downloader.ini', fs.files[downloader_ini]['content'])
 
-    def test_write_downloader_ini___with_roms_db_and_mister_filtered_hbmame___adds_expected_composed_filter_field(self):
-        config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=True)
-        fs = test_write_downloader_ini(files={
-            downloader_ini: {'content': Path('test/fixtures/downloader_ini/mister_filtered_downloader.ini').read_text()}
-        }, config=config)
-        assertEqualIni(self, 'test/fixtures/downloader_ini/mister_filtered_plus_hbmame_downloader.ini', fs.files[downloader_ini]['content'])
-
-    def test_write_downloader_ini__removes_hbmame_from_mister_filtered_roms_db___restores_previous_filters(self):
+    def test_write_downloader_ini___with_existing_arcade_roms_and_mister_filter___removes_arcade_roms_keeps_mister(self):
         config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=False)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/mister_filtered_plus_hbmame_downloader.ini').read_text()}
         }, config=config)
-        assertEqualIni(self, 'test/fixtures/downloader_ini/mister_filtered_downloader.ini', fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/mister_filtered_no_arcade_roms_downloader.ini', fs.files[downloader_ini]['content'])
 
-    def test_write_downloader_ini___with_roms_db_and_heavily_filtered_hbmame___adds_expected_composed_filter_field(self):
-        config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=True)
-        fs = test_write_downloader_ini(files={
-            downloader_ini: {'content': Path('test/fixtures/downloader_ini/heavily_filtered_downloader.ini').read_text()}
-        }, config=config)
-        assertEqualIni(self, 'test/fixtures/downloader_ini/heavily_filtered_plus_hbmame_downloader.ini', fs.files[downloader_ini]['content'])
-
-    def test_write_downloader_ini___removes_hbmame_from_heavily_filtered_roms_db___restores_previous_filters(self):
+    def test_write_downloader_ini___with_existing_arcade_roms_and_heavy_filter___removes_arcade_roms_keeps_rest(self):
         config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=False)
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/heavily_filtered_plus_hbmame_downloader.ini').read_text()}
         }, config=config)
-        assertEqualIni(self, 'test/fixtures/downloader_ini/heavily_filtered_downloader.ini', fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/heavily_filtered_no_arcade_roms_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___with_negated_jtbeta_but_beta_cores_activated___writes_jtcores_without_negated_jtbeta(self):
         config = Config(databases={all_dbs('').JTCORES.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id}, download_beta_cores=True)

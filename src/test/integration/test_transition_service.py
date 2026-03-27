@@ -118,22 +118,6 @@ class TestTransitionService(unittest.TestCase):
             downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/mistersam_on_db.ini',
         }, fs.files)
 
-    def test_old_bios_db_url_in_ini___writes_downloader_ini_with_ajgowans_db_url(self):
-        fs = test_transitions(files={
-            downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_bios_before.ini',
-        })
-        self.assertEqualFiles({
-            downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_bios_after.ini',
-        }, fs.files)
-
-    def test_old_arcade_roms_db_url_in_ini___writes_downloader_ini_with_zakk4223_db_urls(self):
-        fs = test_transitions(files={
-            downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_arcade_roms_before.ini',
-        })
-        self.assertEqualFiles({
-            downloader_ini: 'test/fixtures/downloader_ini/db_url_changes/old_arcade_roms_after.ini',
-        }, fs.files)
-
     def test_coin_op_from_atrac17_ini___writes_downloader_ini_with_coin_op_org_db_id_and_url(self):
         fs = test_transitions(files={
             downloader_store: 'test/fixtures/downloader_ini/db_id_changes/old_coin_op_to_new_before.json',

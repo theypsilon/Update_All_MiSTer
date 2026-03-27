@@ -16,7 +16,7 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-from enum import unique, Enum
+from enum import Enum
 from typing import Final
 
 # From patreon.com/theypsilon
@@ -31,6 +31,7 @@ DEFAULT_TRANSITION_SERVICE_ONLY: Final[str] = 'false'
 DEFAULT_SKIP_DOWNLOADER: Final[str] = 'false'
 
 MISTER_ENVIRONMENT: Final[str] = 'mister'
+FILE_mister_version: Final[str] = '/MiSTer.version'
 DEFAULT_SETTINGS_SCREEN_THEME: Final[str] = 'Blue Installer'
 DEFAULT_LOG_VIEWER_THEME: Final[str] = 'Mono'
 
@@ -65,10 +66,15 @@ FILE_update_names_txt_sh: Final[str] = 'Scripts/update_names-txt.sh'
 FILE_patreon_key: Final[str] = 'Scripts/update_all.patreonkey'
 FILE_patreon_key_md5: Final[str] = 'Scripts/.config/update_all/update_all.patreonkey.md5'
 FILE_patreon_key_prev: Final[str] = 'Scripts/.config/update_all/update_all.patreonkey_prev'
+FILE_jtbeta: Final[str] = 'games/mame/jtbeta.zip'
+FILE_jtbeta_alt: Final[str] = '_Arcade/mame/jtbeta.zip'
+FILE_jtbeta_md5: Final[str] = 'Scripts/.config/update_all/jtbeta.zip.md5'
 FILE_names_txt: Final[str] = 'names.txt'
 FILE_MiSTer: Final[str] = 'MiSTer'
 FILE_MiSTer_delme: Final[str] = '.MiSTer.delme'
 FILE_MiSTer_ini: Final[str] = 'MiSTer.ini'
+FILE_JOTEGO_mra_pack_json: Final[str] = '/tmp/update_all_jt_mra_pack.json'
+FILE_JOTEGO_mra_pack_ini: Final[str] = '/tmp/update_all_jt_mra_pack.ini'
 FOLDER_scripts: Final[str] = 'Scripts'
 FOLDER_scripts_config_lc: Final[str] = 'scripts/.config'
 FILE_downloader_temp_ini: Final[str] = '/tmp/temp_downloader.ini'
@@ -80,8 +86,29 @@ FILE_downloader_launcher_downloader_script: Final[str] = 'Scripts/downloader.sh'
 FILE_downloader_needs_reboot_after_linux_update: Final[str] = '/tmp/downloader_needs_reboot_after_linux_update'
 FILE_mister_downloader_needs_reboot: Final[str] = '/tmp/MiSTer_downloader_needs_reboot'
 
-BACKGROUND_JOBS_TIMEOUT: Final[int] = 60
+BACKGROUND_JOBS_SOFT_TIMEOUT: Final[int] = 5
+BACKGROUND_JOBS_HARD_TIMEOUT: Final[int] = 60
+
+# Standard Drives
 MEDIA_FAT: Final[str] = '/media/fat'
+MEDIA_USB0: Final[str] = '/media/usb0'
+MEDIA_USB1: Final[str] = '/media/usb1'
+MEDIA_USB2: Final[str] = '/media/usb2'
+MEDIA_USB3: Final[str] = '/media/usb3'
+MEDIA_USB4: Final[str] = '/media/usb4'
+MEDIA_USB5: Final[str] = '/media/usb5'
+MEDIA_FAT_CIFS: Final[str] = '/media/fat/cifs'
+
+# Media list that does not include MEDIA_FAT
+OTHER_MEDIA: Final[list[str]] = [
+    MEDIA_USB0,
+    MEDIA_USB1,
+    MEDIA_USB2,
+    MEDIA_USB3,
+    MEDIA_USB4,
+    MEDIA_USB5,
+    MEDIA_FAT_CIFS
+]
 
 # Dictionary Keys:
 
@@ -146,7 +173,6 @@ KENV_MIRROR_ID: Final[str] = 'MIRROR_ID'
 EXIT_CODE_REQUIRES_EARLY_EXIT: Final[int] = 1
 EXIT_CODE_CAN_CONTINUE: Final[int] = 2
 
-@unique
 class PathType(Enum):
     FILE: str = 0
     FOLDER: str = 1
@@ -159,6 +185,8 @@ ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organ
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"
 DOWNLOADER_URL: Final[str] = "https://github.com/MiSTer-devel/Downloader_MiSTer/releases/download/latest/dont_download.zip"
 DOWNLOADER_INI_STANDARD_PATH: Final[str] = "downloader.ini"
+DOWNLOADER_BIOS_DB_INI: Final[str] = "downloader_bios_db.ini"
+DOWNLOADER_ARCADE_ROMS_DB_INI: Final[str] = "downloader_arcade_roms_db.ini"
 DOWNLOADER_STORE_STANDARD_PATH: Final[str] = "Scripts/.config/downloader/downloader.json"
 DOWNLOADER_LATEST_ZIP_PATH: Final[str] = "Scripts/.config/downloader/downloader_latest.zip"
 DOWNLOADER_LATEST_BIN_PATH: Final[str] = "Scripts/.config/downloader/downloader_bin"

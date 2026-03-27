@@ -224,6 +224,7 @@ class _Menu(UiSection):
         self._state = state
         self._hotkeys = {}
         self._separators = {}
+        self._first_render = True
         entries = []
         for entry in self._data['entries']:
             target_index = len(entries)
@@ -239,6 +240,11 @@ class _Menu(UiSection):
         self._data['entries'] = entries
 
     def process_key(self) -> Optional[ProcessKeyResult]:
+        if self._first_render:
+            self._first_render = False
+            if 'on_idle' in self._data:
+                return EffectChain(self._data['on_idle'])
+
         self._drawer.start(self._data)
 
         any_text = False
@@ -281,6 +287,8 @@ class _Menu(UiSection):
         elif key in self._hotkeys:
             self._state.reset_position(self._hotkeys[key])
             self._clamp_to_active_action()
+        elif key == Key.NONE and 'on_idle' in self._data:
+            return EffectChain(self._data['on_idle'])
 
         return key
 

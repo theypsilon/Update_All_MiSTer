@@ -20,17 +20,16 @@ import os
 import sys
 import time
 from abc import ABC, abstractmethod
-from enum import unique, IntEnum, auto
+from enum import IntEnum
 from multiprocessing import Process, Value
 
 from update_all.cli_output_formatting import bold
 from update_all.logger import Logger, PrintLogger
 
 
-@unique
 class CountdownOutcome(IntEnum):
-    CONTINUE = auto()
-    SETTINGS_SCREEN = auto()
+    CONTINUE = 0
+    SETTINGS_SCREEN = 1
 
 
 class Countdown(ABC):

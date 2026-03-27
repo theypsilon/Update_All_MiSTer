@@ -18,7 +18,6 @@
 import datetime
 import enum
 import os
-import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Optional
@@ -38,8 +37,8 @@ from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_m
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, FILE_update_all_pyz, \
     EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update, \
     FILE_downloader_run_signal, FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script, \
-    COMMAND_TIMELINE, COMMAND_LATEST_LOG, BACKGROUND_JOBS_TIMEOUT, \
-    FILE_patreon_key_md5, FILE_update_all_print_tmp_log
+    COMMAND_TIMELINE, COMMAND_LATEST_LOG, BACKGROUND_JOBS_HARD_TIMEOUT, \
+    FILE_update_all_print_tmp_log, FILE_mister_version, FILE_JOTEGO_mra_pack_ini, BACKGROUND_JOBS_SOFT_TIMEOUT
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
@@ -229,6 +228,11 @@ class UpdateAllService:
         self._update_all_md5: Optional[str] = None
 
     def full_run(self, run_pass: UpdateAllServicePass) -> int:
+        if self._is_media_fat_read_only():
+            self._logger.print('The SD card is temporarily not writable.')
+            self._logger.print('This is usually resolved by rebooting your MiSTer.')
+            return 0
+
         ts = terminal_size()
         if run_pass == UpdateAllServicePass.Continue:
             self._environment_setup.setup_environment(ts)
@@ -252,6 +256,7 @@ class UpdateAllService:
             self._countdown_for_settings_screen()
             self._print_sequence()
             self._pre_run_tweaks()
+            self._soft_wait_background_jobs()
             self._run_downloader()
             self._sync_downloader_launcher()
 
@@ -263,12 +268,25 @@ class UpdateAllService:
 
         self._run_pocket_tools()
         self._run_arcade_organizer()
-        self._run_linux_update()
         self._cleanup()
+        self._hard_wait_background_jobs()
         self._show_outro()
         self._show_interactive_log_viewer_and_timeline()
         self._reboot_if_needed()
         return self._exit_code
+
+    def _is_media_fat_read_only(self) -> bool:
+        if not os.path.isfile(FILE_mister_version):
+            return False
+        try:
+            with open('/proc/mounts') as f:
+                for line in f:
+                    parts = line.split()
+                    if len(parts) >= 4 and parts[1] == MEDIA_FAT:
+                        return 'ro' in parts[3].split(',')
+        except OSError:
+            pass
+        return False
 
     def _test_routine(self) -> None:
         test_routine = os.environ.get('TEST_ROUTINE', None)
@@ -308,8 +326,10 @@ class UpdateAllService:
         self._background_job_future = self._executor.submit(self._background_job)
 
     def _background_job(self) -> None:
+        self._logger.bench('UpdateAllService: Background job START')
         self._update_all_md5 = self._calc_md5()
         self._retroaccount.mister_sync()
+        self._logger.bench('UpdateAllService: Background job END')
 
     def _show_intro(self) -> None:
         config = self._config_provider.get()
@@ -412,14 +432,8 @@ class UpdateAllService:
         if len(active_databases(config)) == 0 or config.skip_downloader:
             return
 
-        update_linux = config.update_linux
-        arcade_organizer = config.arcade_organizer
-
-        if update_linux and arcade_organizer:
-            update_linux = False
-
         self._draw_separator()
-        return_code = self._execute_downloader(config, self._ini_repository.downloader_ini_path_tweaked_by_config(config), update_linux, None, None)
+        return_code = self._execute_downloader(config, self._ini_repository.downloader_ini_path_tweaked_by_config(config), config.update_linux, None, None)
         if return_code != 0:
             self._exit_code = 10
             self._error_reports.append('Scripts/.config/downloader/downloader.log')
@@ -433,8 +447,10 @@ class UpdateAllService:
             'CURL_SSL': config.curl_ssl,
             'COLUMNS': str(ts.columns - oc.cols * 2),
             'LINES': str(ts.lines - oc.lines * 2),
-            'UPDATE_LINUX': 'true' if update_linux else 'false',
+            'UPDATE_LINUX': 'true' if update_linux else 'false'
         }
+        if self._file_system.is_file(FILE_JOTEGO_mra_pack_ini):
+            env['EXTRA_DROP_IN_DATABASE_FILES'] = FILE_JOTEGO_mra_pack_ini
         if logfile is not None:
             env['LOGFILE'] = logfile
         if default_db is not None:
@@ -544,26 +560,28 @@ class UpdateAllService:
         self._logger.print()
         self._logger.print("FINISHED: Arcade Organizer")
 
-    def _run_linux_update(self) -> None:
-        config = self._config_provider.get()
-        if not config.update_linux:
+    def _soft_wait_background_jobs(self) -> None:
+        if self._executor is None:
             return
 
-        if len(active_databases(config)) == 0 or not config.arcade_organizer:
+        if self._background_job_future is None:
             return
 
-        linux_db = Database(db_id='theypsilon/LinuxDB', db_url='https://raw.githubusercontent.com/theypsilon/LinuxDB_MiSTer/db/linuxdb.json', title='Linux Update')
-        self._draw_separator()
-        return_code = self._execute_downloader(config, '/tmp/linux_update.ini', True, f'{config.base_system_path}/Scripts/.config/downloader/update_linux.log', linux_db)
-        if return_code != 0:
-            self._exit_code = 11
-            self._error_reports.append('Scripts/.config/downloader/update_linux.log')
+        deadline = time.monotonic() + BACKGROUND_JOBS_SOFT_TIMEOUT
+        self._logger.bench("UpdateAllService: Background Soft Wait START")
+        while not self._retroaccount.has_synced() and time.monotonic() < deadline:
+            time.sleep(0.1)
 
-    def _cleanup(self) -> None:
+        if self._retroaccount.has_synced():
+            self._logger.bench("UpdateAllService: Background Soft Wait END completed")
+        else:
+            self._logger.bench("UpdateAllService: Background Soft Wait END pending")
+
+    def _hard_wait_background_jobs(self) -> None:
         if self._executor is not None:
             if self._background_job_future is not None:
                 try:
-                    deadline = time.monotonic() + BACKGROUND_JOBS_TIMEOUT
+                    deadline = time.monotonic() + BACKGROUND_JOBS_HARD_TIMEOUT
                     while not self._background_job_future.done() and time.monotonic() < deadline:
                         self._logger.print('.', end='', flush=True)
                         time.sleep(0.25)
@@ -581,6 +599,7 @@ class UpdateAllService:
             self._executor.shutdown(wait=False)
             self._executor = None
 
+    def _cleanup(self) -> None:
         for file in self._temp_launchers:
             if self._file_system.is_file(file):
                 self._file_system.unlink(file, verbose=False)
@@ -595,17 +614,11 @@ class UpdateAllService:
         run_time = str(datetime.timedelta(seconds=self._end_time - config.start_time))[2:-4]
         self._logger.print(calculate_outro_summary(config, run_time, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         self._logger.debug(f"Commit: {config.commit}")
-        if self._retroaccount.has_installed_update_all_patreon_key():
-            self._logger.print('Patreon Key installed!')
-            try:
-                self._logger.debug(f"MD5: {self._file_system.read_file_contents(FILE_patreon_key_md5)}")
-            except:
-                pass
-        retroaccount_forced_logout = self._retroaccount.has_forced_logout()
-        if retroaccount_forced_logout is not None:
-            self._logger.print('\nYou\'ve been logged out from RetroAccount.')
-            self._logger.print(retroaccount_forced_logout)
-            self._logger.print('Please log in again from the Settings Screen.')
+        self._logger.debug(f"Boot time: {config.boot_time}")
+        for kind, debug_msg in self._retroaccount.consume_important_messages():
+            if kind == 'debug': self._logger.debug(debug_msg)
+            elif kind == 'print': self._logger.print(debug_msg)
+            else: self._logger.debug(f'Unknown message kind from RetroAccount: {kind} with message: {debug_msg}')
 
         self._logger.print()
 

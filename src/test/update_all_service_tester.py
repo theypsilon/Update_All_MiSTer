@@ -70,6 +70,7 @@ def default_env():
         KENV_HTTPS_PROXY: '',
         KENV_MIRROR_ID: '',
         KENV_RETROACCOUNT_DOMAIN: DOMAIN_default_retroaccount,
+        'real_start_time': 0.0,
     }
 
 
@@ -282,6 +283,12 @@ class UpdateAllServiceTester(UpdateAllService):
             retroaccount=RetroAccountServiceTester(),
             fetcher=MagicMock()
         )
+
+    def _soft_wait_background_jobs(self) -> None:
+        pass
+
+    def _hard_wait_background_jobs(self) -> None:
+        pass
 
 class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
     def __init__(self):

@@ -69,7 +69,7 @@ def pass_parameter(args: list[str]) -> UpdateAllServicePass:
         return UpdateAllServicePass.NewRun
 
 
-def read_env(default_commit: str) -> EnvDict:
+def read_env(default_commit: str, real_start_time: float) -> EnvDict:
     return {
         KENV_CURL_SSL: os.getenv(KENV_CURL_SSL, DEFAULT_CURL_SSL_OPTIONS),
         KENV_COMMIT: os.getenv(KENV_COMMIT, default_commit),
@@ -83,5 +83,6 @@ def read_env(default_commit: str) -> EnvDict:
         KENV_TIMELINE_PLUS_PATH: os.getenv(KENV_TIMELINE_PLUS_PATH, FILE_timeline_plus),
         KENV_HTTP_PROXY: os.getenv(KENV_HTTP_PROXY) or os.getenv(KENV_LC_HTTP_PROXY),
         KENV_HTTPS_PROXY: os.getenv(KENV_HTTPS_PROXY) or os.getenv(KENV_LC_HTTPS_PROXY),
-        KENV_MIRROR_ID: os.getenv(KENV_MIRROR_ID, '')
+        KENV_MIRROR_ID: os.getenv(KENV_MIRROR_ID, ''),
+        'real_start_time': real_start_time
     }

@@ -42,6 +42,7 @@ class CursesRuntime(UiRuntime):
         if self._window is None:
             self._window = self.screen.subwin(0, 0)
             self._window.keypad(True)
+            self._window.timeout(300)
             curses.cbreak()
 
         return self._window
@@ -67,6 +68,8 @@ class CursesRuntime(UiRuntime):
             return Key.RIGHT
         elif key in [curses.KEY_ENTER, ord("\n"), ord(" ")]:
             return Key.ENTER
+        elif key == -1:
+            return Key.NONE
 
         return key
 

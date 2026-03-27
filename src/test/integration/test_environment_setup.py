@@ -52,6 +52,7 @@ class TestEnvironmentSetup(unittest.TestCase):
 
         config = config_provider.get()
         config.start_time = 0.0
+        config.boot_time = 0.0
         self.assertEqual(expected_files, {k: processIni(v['content'].strip()) for k, v in state.files.items() if 'content' in v and not k.endswith(FILE_update_all_storage.lower())})
         self.assertEqual(expected_config or Config(), config)
         self.assertEqual(expected_result or EnvironmentSetupResult(), result)

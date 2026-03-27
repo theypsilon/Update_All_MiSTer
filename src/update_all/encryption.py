@@ -19,18 +19,16 @@
 
 import subprocess
 import platform
-from enum import unique, Enum
-from functools import cache
+from enum import Enum
 from typing import Optional
 
 from update_all.config import Config
-from update_all.constants import FILE_patreon_key_md5
+from update_all.constants import FILE_patreon_key_md5, FILE_mister_version
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
 from update_all.other import GenericProvider
 
 
-@unique
 class EncryptionResult(Enum):
     Success = 0
     MissingKey = 1
@@ -125,7 +123,7 @@ class Encryption:
         return EncryptionResult.Success
 
     def _validate_environment(self) -> Optional[EncryptionResult]:
-        if self._check_env and (platform.system() != 'Linux' or not self._file_system.is_file('/MiSTer.version')):
+        if self._check_env and (platform.system() != 'Linux' or not self._file_system.is_file(FILE_mister_version)):
             self._logger.debug("Encryption: Not running on MiSTer, abort.")
             return EncryptionResult.ImproperEnvironment
 

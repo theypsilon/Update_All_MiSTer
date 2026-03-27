@@ -25,9 +25,10 @@ from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.logger_tester import NoLogger
 from update_all.config import Config
-from update_all.constants import FILE_patreon_key, FILE_patreon_key_md5, FILE_retroaccount_device_id, FILE_retroaccount_user_json
+from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbeta_alt, FILE_patreon_key, FILE_patreon_key_md5, \
+    FILE_retroaccount_device_id, FILE_retroaccount_user_json
 from update_all.other import GenericProvider
-from update_all.retroaccount import RetroAccountService
+from update_all.retroaccount import RetroAccountService, any_to_retroaccount_file_description
 from update_all.retroaccount_gateway import SessionResult
 
 
@@ -36,6 +37,21 @@ _REVOKED_CREDENTIALS_MESSAGE = 'Your credentials were revoked!\nYour account mus
 
 
 class TestRetroAccountService(unittest.TestCase):
+    def test_consume_important_messages___returns_tuples_and_clears_the_buffer(self):
+        sut, _file_system, _gateway, _encryption = tester()
+
+        sut._report_forced_logout('custom message')
+
+        messages = sut.consume_important_messages()
+
+        self.assertEqual([
+            ('print', '\nYou\'ve been logged out from RetroAccount.'),
+            ('print', 'custom message'),
+            ('print', 'Please log in again from the Settings Screen.'),
+        ], messages)
+        self.assertTrue(all(isinstance(message, tuple) for message in messages))
+        self.assertEqual([], sut.consume_important_messages())
+
     def test_mister_sync___when_no_user_json___removes_stale_patreon_key(self):
         sut, file_system, _gateway, _encryption = tester(files={
             FILE_patreon_key: {'hash': 'stale-md5', 'content': 'old-key'},
@@ -47,7 +63,7 @@ class TestRetroAccountService(unittest.TestCase):
 
         self.assertFalse(file_system.is_file(FILE_patreon_key))
         self.assertFalse(file_system.is_file(FILE_patreon_key_md5))
-        self.assertIsNone(sut.has_forced_logout())
+        self.assertEqual([], sut.consume_important_messages())
         self.assertFalse(sut.has_installed_update_all_patreon_key())
         self.assertFalse(sut.has_prev_patreon_key_url())
 
@@ -64,7 +80,7 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertFalse(file_system.is_file(FILE_retroaccount_user_json))
         self.assertFalse(file_system.is_file(FILE_patreon_key))
         self.assertFalse(file_system.is_file(FILE_patreon_key_md5))
-        self.assertEqual(_CORRUPTED_CREDENTIALS_MESSAGE, sut.has_forced_logout())
+        self.assertEqual(_forced_logout_messages(_CORRUPTED_CREDENTIALS_MESSAGE), sut.consume_important_messages())
         self.assertFalse(sut.has_installed_update_all_patreon_key())
         self.assertFalse(sut.has_prev_patreon_key_url())
 
@@ -82,7 +98,7 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertFalse(file_system.is_file(FILE_retroaccount_user_json))
         self.assertFalse(file_system.is_file(FILE_patreon_key))
         self.assertFalse(file_system.is_file(FILE_patreon_key_md5))
-        self.assertEqual(_REVOKED_CREDENTIALS_MESSAGE, sut.has_forced_logout())
+        self.assertEqual(_forced_logout_messages(_REVOKED_CREDENTIALS_MESSAGE), sut.consume_important_messages())
         self.assertFalse(sut.has_installed_update_all_patreon_key())
         self.assertFalse(sut.has_prev_patreon_key_url())
 
@@ -91,7 +107,7 @@ class TestRetroAccountService(unittest.TestCase):
             'tokens': {'refresh_token': 'refresh-2'},
             'benefits': {
                 'update_all_patreon_key_remove': True,
-                'update_all_patreon_key_url': 'https://example.com/update_all.patreonkey',
+                'update_all_patreon_key_file': {'url': 'https://example.com/update_all.patreonkey', 'md5': 'expected-md5', 'size': 32},
             },
         }
         sut, file_system, gateway, _encryption = tester(
@@ -104,12 +120,43 @@ class TestRetroAccountService(unittest.TestCase):
 
         saved_user = file_system.load_dict_from_file(FILE_retroaccount_user_json)
         self.assertEqual('refresh-2', saved_user['refresh_token'])
-        self.assertEqual(('device-1', 'refresh-1', 'old-md5'), gateway.mister_sync_calls[0])
+        self.assertEqual(('device-1', 'refresh-1', 'old-md5', None), gateway.mister_sync_calls[0])
         self.assertEqual([(FILE_patreon_key, 'https://example.com/update_all.patreonkey')], gateway.install_calls)
         self.assertTrue(file_system.is_file(FILE_patreon_key))
         self.assertEqual('installed-md5', file_system.read_file_contents(FILE_patreon_key_md5))
         self.assertTrue(sut.has_installed_update_all_patreon_key())
-        self.assertIsNone(sut.has_forced_logout())
+        self.assertEqual([
+            ('print', 'Update All Patreon Key installed!'),
+            ('debug', 'update_all.patreonkey MD5: installed-md5'),
+        ], sut.consume_important_messages())
+
+    def test_mister_sync___when_session_returns_jtbeta_url___installs_jtbeta_and_copies_it_to_existing_media(self):
+        alt_jtbeta_path = f'{MEDIA_FAT}/{FILE_jtbeta_alt}'
+        usb_jtbeta_path = f'{OTHER_MEDIA[0]}/{FILE_jtbeta}'
+        sut, file_system, gateway, _encryption = tester(
+            files={
+                **default_sync_files(),
+                alt_jtbeta_path: {'hash': 'old-alt-md5', 'content': 'old-alt'},
+                usb_jtbeta_path: {'hash': 'old-usb-md5', 'content': 'old-usb'},
+            },
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'jtbeta_file': {'url': 'https://example.com/jtbeta.zip', 'md5': 'expected-md5', 'size': 1024}}},
+        )
+
+        sut.mister_sync()
+
+        self.assertEqual(('device-1', 'refresh-1', 'old-md5', None), gateway.mister_sync_calls[0])
+        self.assertEqual([(FILE_jtbeta, 'https://example.com/jtbeta.zip')], gateway.install_calls)
+        self.assertTrue(sut.has_installed_jtbeta())
+        self.assertTrue(file_system.is_file(FILE_jtbeta))
+        self.assertTrue(file_system.compare_files(FILE_jtbeta, alt_jtbeta_path))
+        self.assertTrue(file_system.compare_files(FILE_jtbeta, usb_jtbeta_path))
+        self.assertEqual([
+            ('print', 'New jtbeta.zip from JOTEGO installed!'),
+            ('debug', 'jtbeta.zip MD5: installed-md5'),
+            ('debug', f'jtbeta.zip also copied to {alt_jtbeta_path}'),
+            ('debug', f'jtbeta.zip also copied to {usb_jtbeta_path}'),
+        ], sut.consume_important_messages())
 
     def test_mister_sync___when_previous_sync_enabled_extras_and_next_sync_has_no_user_json___disables_extras(self):
         sut, file_system, gateway, _encryption = tester(
@@ -149,6 +196,70 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertFalse(sut.has_prev_patreon_key_url())
 
 
+class TestAnyToRetroAccountFileDescription(unittest.TestCase):
+    def test_any_to_retroaccount_file_description___returns_normalized_recursive_description(self):
+        self.assertEqual({
+            'url': 'https://example.com/file.zip',
+            'md5': 'abc123',
+            'size': 10,
+            'meta': None,
+            'prev': {
+                'url': 'https://example.com/prev.zip',
+                'md5': 'def456',
+                'size': 9,
+                'meta': None,
+            },
+        }, any_to_retroaccount_file_description({
+            'url': '  https://example.com/file.zip  ',
+            'md5': '  abc123  ',
+            'size': 10,
+            'prev': {
+                'url': 'https://example.com/prev.zip',
+                'md5': 'def456',
+                'size': 9,
+            },
+            'ignored': True,
+        }))
+
+    def test_any_to_retroaccount_file_description___accepts_missing_or_null_prev(self):
+        self.assertEqual({
+            'url': 'https://example.com/file.zip',
+            'md5': 'abc123',
+            'size': 10,
+            'meta': None,
+        }, any_to_retroaccount_file_description({
+            'url': 'https://example.com/file.zip',
+            'md5': 'abc123',
+            'size': 10,
+        }))
+        self.assertEqual({
+            'url': 'https://example.com/file.zip',
+            'md5': 'abc123',
+            'size': 10,
+            'meta': None,
+        }, any_to_retroaccount_file_description({
+            'url': 'https://example.com/file.zip',
+            'md5': 'abc123',
+            'size': 10,
+            'prev': None,
+        }))
+
+    def test_any_to_retroaccount_file_description___returns_none_for_invalid_values(self):
+        cases = [
+            None,
+            'abc',
+            {},
+            {'url': 'https://example.com/file.zip', 'md5': 'abc123'},
+            {'url': 'https://example.com/file.zip', 'md5': 'abc123', 'size': '10'},
+            {'url': 'https://example.com/file.zip', 'md5': 'abc123', 'size': True},
+            {'url': 'https://example.com/file.zip', 'md5': 'abc123', 'size': 10, 'prev': 'bad'},
+            {'url': 'https://example.com/file.zip', 'md5': 'abc123', 'size': 10, 'prev': {'url': 'https://example.com/prev.zip', 'size': 9}},
+        ]
+        for value in cases:
+            with self.subTest(value=value):
+                self.assertIsNone(any_to_retroaccount_file_description(value))
+
+
 def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None):
     config = Config()
     config_provider = GenericProvider[Config]()
@@ -172,6 +283,14 @@ def activate_prev_patreon_key_url(sut: RetroAccountService):
     sut._update_all_patreon_key_prev_url = 'https://example.com/update_all_prev.patreonkey'
 
 
+def _forced_logout_messages(message: str):
+    return [
+        ('print', '\nYou\'ve been logged out from RetroAccount.'),
+        ('print', message),
+        ('print', 'Please log in again from the Settings Screen.'),
+    ]
+
+
 class _EncryptionSpy:
     def __init__(self):
         self.clear_cache_calls = 0
@@ -189,8 +308,8 @@ class _RetroAccountGatewayStub:
         self.install_calls = []
         self.logout_calls = []
 
-    def mister_sync(self, device_id, refresh_token, update_all_patreon_key_fingerprint):
-        self.mister_sync_calls.append((device_id, refresh_token, update_all_patreon_key_fingerprint))
+    def mister_sync(self, device_id, refresh_token, update_all_patreon_key_fingerprint, jtbeta_fingerprint=None):
+        self.mister_sync_calls.append((device_id, refresh_token, update_all_patreon_key_fingerprint, jtbeta_fingerprint))
         return self._result, self._response
 
     def install_file(self, file_path, file_url):

@@ -202,6 +202,29 @@ class TestApplyOverscanToText(unittest.TestCase):
 
         self.assertEqual('  START!\n  SECTION: jtcores', stdout.getvalue())
 
+    def test_print_logger___with_streamed_progress_chunks___does_not_reapply_padding_between_chunks(self):
+        logger = PrintLogger()
+        logger._overscan = 13
+        logger._columns = 80
+
+        with patch('sys.stdout', new_callable=StringIO) as stdout:
+            logger.print('*', end='')
+            logger.print('*', end='')
+            logger.print('*', end='')
+
+        self.assertEqual('             ***', stdout.getvalue())
+
+    def test_print_logger___with_streamed_chunks_crossing_wrap_boundary___wraps_without_extra_padding(self):
+        logger = PrintLogger()
+        logger._overscan = 2
+        logger._columns = 8
+
+        with patch('sys.stdout', new_callable=StringIO) as stdout:
+            logger.print('abc', end='')
+            logger.print('de', end='')
+
+        self.assertEqual('  abcd\n  e', stdout.getvalue())
+
 
 if __name__ == '__main__':
     unittest.main()

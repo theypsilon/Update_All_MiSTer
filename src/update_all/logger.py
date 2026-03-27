@@ -99,12 +99,61 @@ def apply_overscan_preserving_newlines(args, sep: str, columns: int, overscan: i
     return rendered_lines
 
 
+def apply_overscan_continuing_line(args, sep: str, columns: int, overscan: int, current_line: str,
+                                   end: str) -> tuple[list[tuple[str, str]], str]:
+    text = sep.join(str(a) for a in args) + end
+    if text == '':
+        return [], current_line
+
+    pad = ' ' * overscan
+    usable = columns - overscan * 2
+    rendered_lines: list[tuple[str, str]] = []
+    current_chars: list[str] = []
+
+    for char in text:
+        if char == '\n':
+            rendered_lines.append((''.join(current_chars), '\n'))
+            current_chars = []
+            current_line = ''
+            continue
+
+        if current_line == '':
+            current_chars.append(pad)
+
+        current_chars.append(char)
+        current_line += char
+        if len(current_line) >= usable:
+            rendered_lines.append((''.join(current_chars), '\n'))
+            current_chars = []
+            current_line = ''
+
+    if len(current_chars) > 0:
+        rendered_lines.append((''.join(current_chars), ''))
+
+    return rendered_lines, current_line
+
+
+def get_unterminated_overscan_line(rendered_lines: list[tuple[str, str]], overscan: int) -> str:
+    if len(rendered_lines) == 0:
+        return ''
+
+    line, line_end = rendered_lines[-1]
+    if line_end == '\n':
+        return ''
+
+    pad = ' ' * overscan
+    if overscan > 0 and line.startswith(pad):
+        return line[overscan:]
+    return line
+
+
 class PrintLogger(Logger):
     def __init__(self):
         self._verbose_mode = False
         self._start_time = None
         self._overscan = 0
         self._columns = 0
+        self._overscan_current_line = ''
 
     def set_local_repository(self, local_repository):
         pass
@@ -115,13 +164,22 @@ class PrintLogger(Logger):
             self._start_time = config.start_time
         self._overscan = config.overscan_dim.cols
         self._columns = config.term_size.columns
+        self._overscan_current_line = ''
         open_print_tmp_log_file()
 
     def print(self, *args, sep='', end='\n', flush=True):
         if self._overscan == 0:
             self._do_print(*args, sep=sep, end=end, file=sys.stdout, flush=flush)
         else:
-            for line, line_end in apply_overscan_preserving_newlines(args, sep, self._columns, self._overscan, end):
+            if self._overscan_current_line == '':
+                rendered_lines = apply_overscan_preserving_newlines(args, sep, self._columns, self._overscan, end)
+                self._overscan_current_line = get_unterminated_overscan_line(rendered_lines, self._overscan)
+            else:
+                rendered_lines, self._overscan_current_line = apply_overscan_continuing_line(
+                    args, sep, self._columns, self._overscan, self._overscan_current_line, end
+                )
+
+            for line, line_end in rendered_lines:
                 self._do_print(line, sep='', end=line_end, file=sys.stdout, flush=flush)
         if _print_tmp_log_file is not None:
             self._do_print(*args, sep=sep, end=end, file=_print_tmp_log_file, flush=flush)

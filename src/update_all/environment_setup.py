@@ -78,6 +78,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._transition_service.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store)
         self._transition_service.from_old_db_urls_to_actual_db_urls(config, downloader_ini)
         self._transition_service.from_no_update_all_mister_db_to_adding_it(config, downloader_ini)
+        self._transition_service.from_downloader_ini_to_separate_db_ini_files(downloader_ini)
         if local_store.needs_save():
             self._local_repository.save_store(local_store)
 
