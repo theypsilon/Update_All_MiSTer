@@ -761,6 +761,10 @@ class UpdateAllService:
             lines += 1
             self._logger.print('- Analogue Pocket Backup')
 
+        if self._file_system.is_file(FILE_JOTEGO_mra_pack_ini):
+            lines += 1
+            self._logger.print('- JT MRA Kai')
+
         if lines == 0:
             self._logger.print('- Nothing to do!')
 

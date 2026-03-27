@@ -415,7 +415,7 @@ class RetroAccountService(RetroAccountClient):
             if isinstance(db, str) and db:
                 try:
                     self._file_system.write_file_contents(FILE_JOTEGO_mra_pack_json, db)
-                    self._file_system.write_file_contents(FILE_JOTEGO_mra_pack_ini,f"[jt_mra_pack]\ndb_url = {FILE_JOTEGO_mra_pack_json}\n")
+                    self._file_system.write_file_contents(FILE_JOTEGO_mra_pack_ini,f"[jt_mra_kai]\ndb_url = {FILE_JOTEGO_mra_pack_json}\n")
                     self._logger.debug(f'RetroAccountService: Installed {FILE_JOTEGO_mra_pack_ini}')
                     return
                 except Exception as e:

@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.7 - 2026-03-27
+
+### Added
+- Support for installing JOTEGO private releases from RetroAccount, including automatic `jtbeta.zip` updates and the JT MRA Kai drop-in when available.
+- New Anime0t4ku Wallpapers menu with two databases: Unrestricted Anime0t4ku 16:9 Wallpapers and PCN Challenge 16:9 Wallpapers.
+- Added email login to RetroAccount.
+- Account menu now shows the live state of your Update All Extras and JOTEGO JTBeta benefits.
+- Update All now detects when the SD card is temporarily mounted read-only and exits early with a clearer message instead of failing later in the run.
+
+### Changed
+- BIOS DB and Arcade ROMs DB now use their own Downloader drop-in INI files, with automatic migration from older `downloader.ini` setups.
+- Linux updates now happen during the main downloader run instead of in a separated step after making sure it's a safe procedure.
+- Improved Settings Screen rendering on narrow terminals and overscanned displays thanks to a refactor of the drawer paint/layout logic.
+- Improved certificate checking at the corresponding launcher section.
+- Improved launcher error reporting and removed unhelpful “read-only” error messages that appeared when the SD partition was mounted read-only.
+- Fixed a bug where overscan caused asterisk printing with additional spaces.
+- Standard output and the Log Viewer now preserve continued lines better when overscan wrapping is active.
+- A few other tweaks, fixes and optimizations.
+
 ## Version 2.6 - 2026-03-13
 
 ### Added

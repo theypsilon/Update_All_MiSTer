@@ -125,13 +125,15 @@ class IniRepository:
         return FILE_downloader_temp_ini if config.temporary_downloader_ini else self.downloader_ini_standard_path()
 
     def write_downloader_ini(self, config: Config, target_path: str = None) -> None:
-        new_ini_contents = self._try_build_new_downloader_ini_contents(config)
-        if new_ini_contents is None:
-            return
-
         downloader_ini_path = self.downloader_ini_standard_path()
         if target_path is None:
             target_path = downloader_ini_path
+
+        new_ini_contents = self._try_build_new_downloader_ini_contents(config)
+        if new_ini_contents is None:
+            if target_path == downloader_ini_path:
+                return
+            new_ini_contents = self._file_system.read_file_contents(downloader_ini_path)
 
         self._file_system.make_dirs_parent(target_path)
         self._file_system.write_file_contents(target_path, new_ini_contents)
@@ -304,14 +306,19 @@ class IniRepository:
                 self._logger.debug(e)
         return result
 
-    def write_separate_db_ini_files(self, config: Config) -> None:
+    def write_separate_db_ini_files(self, config: Config, base_path: str = None) -> None:
+        if base_path is None:
+            base_path = self._base_path
         active = {db.db_id.lower(): db for _, db in candidate_databases(config) if db.db_id in config.databases}
         for lower_id, ini_filename in SEPARATE_DB_INI_FILES.items():
-            target_path = f'{self._base_path}/{ini_filename}'
+            target_path = f'{base_path}/{ini_filename}'
             if lower_id in active:
                 db = active[lower_id]
                 self._file_system.make_dirs_parent(target_path)
-                self._file_system.write_file_contents(target_path, f'[{db.db_id}]\ndb_url = {db.db_url}\n')
+                section_lines = [f'[{db.db_id}]', f'db_url = {db.db_url}']
+                if lower_id == ALL_DB_IDS['ARCADE_ROMS'].lower() and config.hbmame_filter:
+                    section_lines.append('filter = !hbmame')
+                self._file_system.write_file_contents(target_path, '\n'.join(section_lines) + '\n')
             elif self._file_system.is_file(target_path):
                 self._file_system.unlink(target_path, verbose=False)
 

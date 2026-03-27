@@ -19,6 +19,7 @@ from pathlib import Path
 from test.ini_assertions import assertEqualIni
 from test.testing_objects import downloader_ini
 from update_all.config import Config
+from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, MEDIA_FAT
 from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, all_dbs
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
@@ -115,6 +116,21 @@ class TestIniRepository(unittest.TestCase):
         }, config=config)
         assertEqualIni(self, 'test/fixtures/downloader_ini/heavily_filtered_no_arcade_roms_downloader.ini', fs.files[downloader_ini]['content'])
 
+    def test_write_separate_db_ini_files___with_filtered_hbmame___writes_filter_to_arcade_roms_ini(self):
+        state = FileSystemState()
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=True)
+
+        ini_repository.write_separate_db_ini_files(config)
+
+        self.assertEqual(
+            '[arcade_roms_db]\n'
+            'db_url = https://raw.githubusercontent.com/zakk4223/ArcadeROMsDB_MiSTer/db/arcade_roms_db.json.zip\n'
+            'filter = !hbmame\n',
+            state.files[f'{MEDIA_FAT}/{DOWNLOADER_ARCADE_ROMS_DB_INI}'.lower()]['content']
+        )
+
     def test_write_downloader_ini___with_negated_jtbeta_but_beta_cores_activated___writes_jtcores_without_negated_jtbeta(self):
         config = Config(databases={all_dbs('').JTCORES.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id}, download_beta_cores=True)
         fs = test_write_downloader_ini(files={
@@ -128,4 +144,3 @@ class TestIniRepository(unittest.TestCase):
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/default_downloader_unsorted.ini').read_text()}
         }, config=config)
         self.assertEqual(Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
-

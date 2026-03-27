@@ -16,6 +16,7 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import hashlib
+from pathlib import Path
 from functools import cached_property
 from typing import Optional, Final
 
@@ -240,6 +241,11 @@ class SettingsScreen(UiApplication):
                 if ini_filename is not None:
                     needs_save_file_set.add(ini_filename)
 
+        arcade_roms_db_id = ALL_DB_IDS['ARCADE_ROMS']
+        if arcade_roms_db_id in current_config.databases and ui.get_value('arcade_roms_db_downloader') == 'true':
+            if current_config.hbmame_filter != (ui.get_value('hbmame_filter') == 'true'):
+                needs_save_file_set.add(SEPARATE_DB_INI_FILES[arcade_roms_db_id.lower()])
+
         if self._does_arcade_oganizer_need_save(ui):
             needs_save_file_set.add("update_arcade-organizer.ini")
 
@@ -422,6 +428,7 @@ class SettingsScreen(UiApplication):
         config.temporary_downloader_ini = True
         self._logger.configure(config)
         self._ini_repository.write_downloader_ini(config, FILE_downloader_temp_ini)
+        self._ini_repository.write_separate_db_ini_files(config, str(Path(FILE_downloader_temp_ini).parent))
         self._logger.debug(f'Written temporary {FILE_downloader_temp_ini} file.')
 
     def pocket_firmware_update(self, ui):

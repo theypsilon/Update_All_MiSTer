@@ -20,10 +20,11 @@ from pathlib import Path
 from typing import Tuple
 
 from update_all.config import Config
+from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, FILE_downloader_temp_ini, MEDIA_FAT
 from update_all.ini_repository import read_ini_contents
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, TerminalSize
-from update_all.databases import db_ids_to_model_variable_pairs
+from update_all.databases import db_ids_to_model_variable_pairs, all_dbs
 from update_all.settings_screen import SettingsScreen
 from update_all.store_migrator import make_new_local_store
 
@@ -58,6 +59,25 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.save(ui)
         self.assertEqual(default_downloader_ini_content(), fs.files[downloader_ini]['content'])
 
+    def test_prepare_exit_dont_save_and_run___with_separate_db_only_changes___writes_temp_main_and_separate_db_inis(self) -> None:
+        sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('bios_getter', 'true')
+        ui.set_value('arcade_roms_db_downloader', 'true')
+        ui.set_value('hbmame_filter', 'true')
+
+        sut.prepare_exit_dont_save_and_run(ui)
+
+        self.assertEqual(default_downloader_ini_content(), fs.files[FILE_downloader_temp_ini.lower()]['content'])
+        self.assertEqual(
+            f'[bios_db]\ndb_url = {all_dbs("").BIOS.db_url}\n',
+            fs.files[f'/tmp/{DOWNLOADER_BIOS_DB_INI}'.lower()]['content']
+        )
+        self.assertEqual(
+            f'[arcade_roms_db]\ndb_url = {all_dbs("").ARCADE_ROMS.db_url}\nfilter = !hbmame\n',
+            fs.files[f'/tmp/{DOWNLOADER_ARCADE_ROMS_DB_INI}'.lower()]['content']
+        )
+
     def test_calculate_needs_save___with_default_downloader_ini_and_disabled_names_txt_updater___returns_downloader_ini_changes(self) -> None:
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
         ui.set_value('names_txt_updater', 'true')
@@ -70,6 +90,19 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.calculate_needs_save(ui)
         self.assertEqual('', ui.get_value('needs_save_file_list'))
         self.assertEqual('false', ui.get_value('needs_save'))
+
+    def test_calculate_needs_save___with_hbmame_filter_changed_on_separate_arcade_roms_db___returns_separate_ini_changes(self) -> None:
+        sut, ui, _ = tester(files={
+            downloader_ini: {'content': default_downloader_ini_content()},
+            f'{MEDIA_FAT}/{DOWNLOADER_ARCADE_ROMS_DB_INI}': {'content': Path('test/fixtures/downloader_ini/arcade_roms_downloader.ini').read_text()}
+        })
+
+        ui.set_value('hbmame_filter', 'true')
+
+        sut.calculate_needs_save(ui)
+
+        self.assertEqual('  - downloader_arcade_roms_db.ini', ui.get_value('needs_save_file_list'))
+        self.assertEqual('true', ui.get_value('needs_save'))
 
     def test_calculate_needs_save___with_bug_names_txt_updater_disabled_downloader_and_matching_options___returns_no_changes(self):
         sut, ui, _ = tester(files={
