@@ -1,0 +1,97 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Blue Print Core",
+              "type": "standalone"
+            },
+            {
+              "name": "QBert Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Tutankham Core",
+              "type": "standalone"
+            },
+            {
+              "name": "QBert MRA: Reactor",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "Atari800",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Atari5200",
+              "type": "standalone"
+            },
+            {
+              "name": "CreatiVision",
+              "type": "standalone"
+            },
+            {
+              "name": "SNES",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "MiSTer Firmware",
+              "type": "standalone"
+            },
+            {
+              "name": "MiSTer_example.ini",
+              "type": "standalone"
+            },
+            {
+              "name": "Downloader",
+              "type": "standalone"
+            },
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1774241921,
+        1774265483,
+        1774438003,
+        1774440251,
+        1774450122,
+        1774528807,
+        1774646616,
+        1774667707,
+        1774762084
+      ],
+      "title": "Files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1475,
+    "total_file_updates": 2119,
+    "unique_files": 1413
+  }
+}
