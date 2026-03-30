@@ -91,6 +91,7 @@ class AllDBs:
         self.MISTERSAM_FILES = Database(db_id='MiSTer_SAM_files', db_url='https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/db/db.json.zip', title='MiSTer SAM files')
         self.WIZZO_MREXT_FILES = Database(db_id='mrext/all', db_url='https://raw.githubusercontent.com/wizzomafizzo/mrext/main/releases/all.json', title='MiSTer Extensions (wizzo)')
         self.RETROSPY = Database(db_id='retrospy/retrospy-MiSTer', db_url='https://raw.githubusercontent.com/retrospy/retrospy-MiSTer/db/db.json.zip', title='RetroSpy')
+        self.ANIME0T4KU_MISTER_SCRIPTS = Database(db_id='anime0t4ku_mister_scripts', db_url='https://raw.githubusercontent.com/Anime0t4ku/0t4ku-mister-scripts/db/db/scripts.json.zip', title='Anime0t4ku MiSTer Scripts')
 
         # BORDERS
         self.DINIERTO_GBA_BORDERS = Database(db_id='Dinierto/MiSTer-GBA-Borders', db_url='https://raw.githubusercontent.com/Dinierto/MiSTer-GBA-Borders/db/db.json.zip', title='Dinierto GBA Borders')
