@@ -555,6 +555,7 @@ def settings_screen_model(): return {
             "variables": {
                 "mistersam_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "mrext/all": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "anime0t4ku_mister_scripts": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "tty2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "i2c2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "retrospy/retrospy-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -587,17 +588,22 @@ def settings_screen_model(): return {
                     "actions": {"ok": [{"type": "rotate_variable", "target": "mistersam_files_downloader"}]}
                 },
                 {
-                    "title": "5 tty2oled Add-on script",
+                    "title": "5 Anime0t4ku MiSTer Scripts",
+                    "description": "{anime0t4ku_mister_scripts:enabled}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "anime0t4ku_mister_scripts"}]}
+                },
+                {
+                    "title": "6 tty2oled Add-on script",
                     "description": "{tty2oled_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "tty2oled_files_downloader"}]}
                 },
                 {
-                    "title": "6 i2c2oled Add-on script",
+                    "title": "7 i2c2oled Add-on script",
                     "description": "{i2c2oled_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "i2c2oled_files_downloader"}]}
                 },
                 {
-                    "title": "7 RetroSpy utility",
+                    "title": "8 RetroSpy utility",
                     "description": "{retrospy/retrospy-MiSTer:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "retrospy/retrospy-MiSTer"}]}
                 }
