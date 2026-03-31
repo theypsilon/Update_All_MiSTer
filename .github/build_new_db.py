@@ -101,6 +101,7 @@ subprocess.run(['git', 'add', '.gitattributes'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
 
 new_db = copy.deepcopy(old_db)
+new_db['v'] = 1
 
 subprocess.run(["gh", "release", "download", "-p", "update_all.pyz", "-p", "update_all.pyz.sha256"], check=True)
 hashsum = subprocess.run(['sha256sum', 'update_all.pyz'], check=True, capture_output=True, text=True).stdout.strip().split()[0]
