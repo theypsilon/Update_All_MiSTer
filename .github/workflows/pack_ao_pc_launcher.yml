@@ -27,7 +27,7 @@ jobs:
       with:
         python-version: '3.9'
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: PC Launcher Test on ${{ matrix.os }}
       shell: bash
@@ -43,7 +43,7 @@ jobs:
     needs: test
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Pack Arcade Organizer PC Launcher
       run: |

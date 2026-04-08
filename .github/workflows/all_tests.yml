@@ -16,7 +16,7 @@ jobs:
       with:
         python-version: '3.9'
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Unit Tests
       run: cd src && python3 -m unittest discover -s test/unit

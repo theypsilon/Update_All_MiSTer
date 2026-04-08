@@ -17,7 +17,7 @@ jobs:
       with:
         python-version: '3.9'
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         ref: ${{ inputs.sha || github.ref }}
 
@@ -48,7 +48,7 @@ jobs:
       with:
         python-version: '3.9'
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Build update_all.pyz
       shell: bash
@@ -84,7 +84,7 @@ jobs:
       with:
         python-version: '3.9'
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Build
       run: |
