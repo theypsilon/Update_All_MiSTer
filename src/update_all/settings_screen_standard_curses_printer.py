@@ -108,7 +108,7 @@ class SettingsScreenStandardCursesPrinter(CursesRuntime, SettingsScreenPrinter):
         except curses.error:
             pass
         layout = _Layout(self, screen_dims)
-        return _DrawerFactory(self, layout, screen_dims), layout, CursesDeviceLoginRenderer(self)
+        return _DrawerFactory(self, layout, screen_dims), layout, CursesDeviceLoginRenderer(self, screen_dims)
 
 
 class _Layout(ColorThemeManager):
@@ -339,9 +339,9 @@ class _Drawer(UiDialogDrawer):
         offset_actions = paint_layout.offset_actions
         for action, is_selected in self._actions:
             if is_selected:
-                self._write_line(line_index, offset_actions, action[0:1], curses.A_BLINK | curses.color_pair(colors.SELECTED_ACTION_BORDER_COLOR))
-                self._write_line(line_index, offset_actions + 1, action[1:-1], curses.A_BLINK | curses.color_pair(colors.SELECTED_ACTION_INTERIOR_COLOR))
-                self._write_line(line_index, offset_actions + len(action) - 1, action[-1:], curses.A_BLINK | curses.color_pair(colors.SELECTED_ACTION_BORDER_COLOR))
+                self._write_line(line_index, offset_actions, action[0:1], curses.A_BOLD | curses.color_pair(colors.SELECTED_ACTION_BORDER_COLOR))
+                self._write_line(line_index, offset_actions + 1, action[1:-1], curses.A_BOLD | curses.color_pair(colors.SELECTED_ACTION_INTERIOR_COLOR))
+                self._write_line(line_index, offset_actions + len(action) - 1, action[-1:], curses.A_BOLD | curses.color_pair(colors.SELECTED_ACTION_BORDER_COLOR))
             else:
                 self._write_line(line_index, offset_actions, action, curses.A_NORMAL | curses.color_pair(colors.UNSELECTED_ACTION_COLOR))
             offset_actions += len(action) + paint_layout.action_gap
@@ -478,8 +478,9 @@ class _Drawer(UiDialogDrawer):
 
 
 class CursesDeviceLoginRenderer(DeviceLoginRenderer):
-    def __init__(self, runtime: CursesRuntime):
+    def __init__(self, runtime: CursesRuntime, screen_dims: ScreenDims):
         self._runtime = runtime
+        self._sd = screen_dims
 
     def render_requesting(self, header: str) -> None:
         win = self._runtime.window
@@ -503,32 +504,56 @@ class CursesDeviceLoginRenderer(DeviceLoginRenderer):
         link_attr = curses.color_pair(colors.DEVICE_LOGIN_LINK_COLOR) | colors.DEVICE_LOGIN_LINK_EXTRA_ATTR
         highlight_attr = curses.A_REVERSE | curses.A_BOLD | curses.color_pair(colors.DEVICE_LOGIN_TEXT_COLOR)
 
-        self._draw_centered(win, 1, w, f"═══ {header} ═══", header_attr)
+        available_lines = self._sd.term_size.lines - self._sd.overscan_dim.lines * 2
+        available_columns = self._sd.term_size.columns - self._sd.overscan_dim.cols * 2
 
-        qr_fits = qr_lines and w >= len(qr_lines[0]) + 4 and h >= len(qr_lines) + 12
-        url_complete = qr_fits and len(f"at {verification_uri}") < w
-        display_uri = verification_uri if url_complete else \
-            verification_uri.split('?')[0].removeprefix('https://').removeprefix('http://')
-        code_action = "authorize" if url_complete else "enter"
+        spare_lines = available_lines - len(qr_lines)
+        spare_columns = available_columns - len(qr_lines[0])
 
-        if qr_fits:
-            self._draw_centered(win, 3, w, "Scan QR to link this device", text_attr)
-            for i, line in enumerate(qr_lines):
-                if 5 + i < h - 6:
-                    self._draw_centered(win, 5 + i, w, line, text_attr)
-            row = 5 + len(qr_lines) + 2
-            self._draw_centered(win, row, w, f"or {code_action} the code:", text_attr)
-            self._draw_centered(win, row + 2, w, f"   {user_code}   ", highlight_attr)
-            self._draw_centered(win, row + 4, w, f"at {display_uri}", link_attr)
+        if spare_lines >= -4 and spare_lines < 4 and spare_columns >= 30:
+            qr_state = 0 # 1
+        elif spare_lines >= 4:
+            qr_state = 2
         else:
-            self._draw_centered(win, 3, w, "On your phone, visit:", bold_attr)
-            self._draw_centered(win, 5, w, display_uri, curses.A_UNDERLINE | link_attr)
-            self._draw_centered(win, 7, w, f"And {code_action} the code:", text_attr)
-            self._draw_centered(win, 9, w, f"  {user_code}  ", highlight_attr)
+            qr_state = 0
 
-        time_label = f"({remaining:>3d}s remaining)" if url_complete else f"{remaining:>3d}s"
-        self._draw_centered(win, h - 3, w, f"Waiting for verification{dots:<3s} {time_label}", text_attr)
-        self._draw_centered(win, h - 2, w, "[ Cancel ]", bold_attr)
+        #win.addstr(0, 0, f"sl{spare_lines}, al{available_lines}, ql{len(qr_lines)}, sc{spare_columns}, ac{available_columns}, qc{len(qr_lines[0])}, s{qr_state}", 0)
+
+        if qr_state == 1:
+            row = self._sd.overscan_dim.lines
+            col = self._sd.overscan_dim.cols
+            win.addstr(row + 0, col, f"═══ {header} ═══", 0)
+
+            for i, line in enumerate(qr_lines[2:-2]):
+                win.addstr(row + i, spare_columns, line, 0)
+        elif qr_state == 0 or qr_state == 2:
+            self._draw_centered(win, 1, w, f"═══ {header} ═══", header_attr)
+
+            qr_fits = qr_lines and w >= len(qr_lines[0]) + 4 and h >= len(qr_lines) + 12
+            url_complete = qr_fits and len(f"at {verification_uri}") < w
+            display_uri = verification_uri if url_complete else \
+                verification_uri.split('?')[0].removeprefix('https://').removeprefix('http://')
+            code_action = "authorize" if url_complete else "enter"
+
+            if qr_fits:
+                self._draw_centered(win, 3, w, "Scan QR to link this device", text_attr)
+                for i, line in enumerate(qr_lines):
+                    if 5 + i < h - 6:
+                        self._draw_centered(win, 4 + i, w, line, text_attr)
+                row = 4 + len(qr_lines)
+
+                self._draw_centered(win, row, w, f"or {code_action} the code:", text_attr)
+                self._draw_centered(win, row + 2, w, f"   {user_code}   ", highlight_attr)
+                self._draw_centered(win, row + 4, w, f"at {display_uri}", link_attr)
+            else:
+                self._draw_centered(win, 3, w, "On your phone, visit:", bold_attr)
+                self._draw_centered(win, 5, w, display_uri, curses.A_UNDERLINE | link_attr)
+                self._draw_centered(win, 7, w, f"And {code_action} the code:", text_attr)
+                self._draw_centered(win, 9, w, f"  {user_code}  ", highlight_attr)
+
+            time_label = f"({remaining:>3d}s remaining)" if url_complete else f"{remaining:>3d}s"
+            self._draw_centered(win, h - 3, w, f"Waiting for verification{dots:<3s} {time_label}", text_attr)
+            self._draw_centered(win, h - 2, w, "[ Cancel ]", bold_attr)
         win.refresh()
 
     def render_cancel_dialog(self, header: str, user_code: str,

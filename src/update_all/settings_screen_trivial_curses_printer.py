@@ -39,7 +39,7 @@ class SettingsScreenTrivialCursesPrinter(CursesRuntime, SettingsScreenPrinter, C
         self.window.clear()
         self.window.bkgd(' ', curses.color_pair(1) | curses.A_BOLD)
 
-        return self, self, CursesDeviceLoginRenderer(self)
+        return self, self, CursesDeviceLoginRenderer(self, screen_dims)
 
     def set_theme(self, new_theme):
         pass

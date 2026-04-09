@@ -27,6 +27,7 @@ from update_all.ui_model_utilities import Key
 
 _POLL_TIMEOUT_SECONDS = 600  # 10 minutes
 _POLL_INTERVAL = 5
+_DEFAULT_KEY_TIMEOUT_MS = 300
 
 
 class RetroAccountClient(Protocol):
@@ -223,46 +224,49 @@ class DeviceLogin(UiSection):
 
     def _show_drawer_dialog(self, header_text, text_lines, options) -> int:
         self._drawer.clear()
+        self._renderer.set_key_timeout(-1)
         dialog_data = {
             'header': f"{header_text}",
             'text': text_lines,
             'actions': [{"title": o} for o in options],
         }
+        try:
+            if len(options) == 1:
+                self._drawer.start(dialog_data)
+                for line in text_lines:
+                    self._drawer.add_text_line(line)
+                self._drawer.add_action(options[0], is_selected=True)
+                while True:
+                    key = self._drawer.paint()
+                    if key == Key.ENTER:
+                        return 0
 
-        if len(options) == 1:
-            self._drawer.start(dialog_data)
-            for line in text_lines:
-                self._drawer.add_text_line(line)
-            self._drawer.add_action(options[0], is_selected=True)
-            while True:
-                key = self._drawer.paint()
-                if key == Key.ENTER:
-                    return 0
-
-        state = _NavigationState(0, len(options))
-        self._drawer.start(dialog_data)
-        for line in text_lines:
-            self._drawer.add_text_line(line)
-        for i, option in enumerate(options):
-            self._drawer.add_action(option, i == state.lateral_position())
-
-        while True:
-            key = self._drawer.paint()
-            if key == Key.LEFT:
-                state.navigate_left()
-            elif key == Key.RIGHT:
-                state.navigate_right()
-            elif key == 27:
-                return len(options) - 1
-            elif key == Key.ENTER:
-                return state.lateral_position()
-
-            self._drawer.clear()
+            state = _NavigationState(0, len(options))
             self._drawer.start(dialog_data)
             for line in text_lines:
                 self._drawer.add_text_line(line)
             for i, option in enumerate(options):
                 self._drawer.add_action(option, i == state.lateral_position())
+
+            while True:
+                key = self._drawer.paint()
+                if key == Key.LEFT:
+                    state.navigate_left()
+                elif key == Key.RIGHT:
+                    state.navigate_right()
+                elif key == 27:
+                    return len(options) - 1
+                elif key == Key.ENTER:
+                    return state.lateral_position()
+
+                self._drawer.clear()
+                self._drawer.start(dialog_data)
+                for line in text_lines:
+                    self._drawer.add_text_line(line)
+                for i, option in enumerate(options):
+                    self._drawer.add_action(option, i == state.lateral_position())
+        finally:
+            self._renderer.set_key_timeout(_DEFAULT_KEY_TIMEOUT_MS)
 
     def reset(self) -> None:
         pass

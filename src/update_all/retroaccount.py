@@ -242,16 +242,14 @@ class RetroAccountService(RetroAccountClient):
         self._logger.bench('RetroAccountService Gateway mister_sync end')
 
         if result == SessionResult.VALID and isinstance(response, dict):
-            updated_user_data = None
-            new_refresh_token = any_to_nonfalsy_str(response.get('tokens', {}).get('refresh_token'))
-            if new_refresh_token:
-                self._logger.debug(f'RetroAccountService: New refresh token!')
-                updated_user_data = {'device_id': device_id, 'refresh_token': new_refresh_token}
+            new_tokens = response.get('tokens', None)
+            if isinstance(new_tokens, dict) and len(new_tokens) > 1:
+                self._logger.debug(f'RetroAccountService: New token!')
 
             benefits = response.get('benefits', {})
             self._logger.debug(f'RetroAccountService: Benefits after mister_sync ', benefits)
             return _SyncTransition(
-                save_user_json=updated_user_data,
+                save_user_json=new_tokens,
                 install_update_all_patreon_key_file=any_to_retroaccount_file_description(benefits.get('update_all_patreon_key_file', None)),
                 install_jtbeta_file=any_to_retroaccount_file_description(benefits.get('jtbeta_file', None), discard_prev=True),
                 install_jt_mra_pack=any_to_retroaccount_file_description(benefits.get('jt_mra_pack', None), discard_prev=True),
@@ -338,7 +336,7 @@ class RetroAccountService(RetroAccountClient):
             self._report_forced_logout('Your credentials are corrupted!\nDo you have any problems with your storage (SD)?')
 
         if transition.credentials_were_revoked:
-            self._report_forced_logout('Your credentials were revoked!\nYour account must be active, and you have to log in on each device you use.')
+            self._report_forced_logout('Your credentials were revoked!')
 
         self._sync_done = True
 

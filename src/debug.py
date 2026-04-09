@@ -22,7 +22,7 @@ def exec_ssh(cmd, env=None, **kwargs): return _ssh_pass('ssh', [f'root@{mister_i
 def run_build(**kwargs): send_build(env={"SKIP_REMOVALS": "true"}), exec_ssh(f'/media/fat/update_all.sh --no-continue', **kwargs)
 def local_run(env=None): subprocess.run(['python3', './src/__main__.py'], env={**({} if env is None else env), 'LOCATION_STR': '.local_drv'}, check=True)
 def local_run_tiny(): subprocess.run(['script', '-q', '/dev/null', '-c', 'stty rows 15 cols 40 && python3 ./src/__main__.py'], env={**os.environ.copy(), 'LOCATION_STR': '.local_drv'}, check=True)
-def local_run_small(): subprocess.run(['script', '-q', '/dev/null', '-c', 'stty rows 15 cols 80 && python3 ./src/__main__.py'], env={**os.environ.copy(), 'LOCATION_STR': '.local_drv'}, check=True)
+def local_run_small(): subprocess.run(['script', '-q', '/dev/null', '-c', 'stty rows 18 cols 80 && python3 ./src/__main__.py'], env={**os.environ.copy(), 'LOCATION_STR': '.local_drv'}, check=True)
 def run_launcher(**kwargs): send_build(**kwargs), exec_ssh(f'/media/fat/Scripts/update_all.sh', **kwargs)
 def store_push(**kwargs): scp_file('update_all.json', '/media/fat/Scripts/.config/update_all/update_all.json', **kwargs)
 def store_pull(**kwargs): scp_file('/media/fat/Scripts/.config/update_all/update_all.json', 'update_all.json', **kwargs)
