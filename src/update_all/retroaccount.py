@@ -242,14 +242,15 @@ class RetroAccountService(RetroAccountClient):
         self._logger.bench('RetroAccountService Gateway mister_sync end')
 
         if result == SessionResult.VALID and isinstance(response, dict):
-            new_tokens = response.get('tokens', None)
-            if isinstance(new_tokens, dict) and len(new_tokens) > 1:
+            new_user_json = response.get('tokens', None)
+            if isinstance(new_user_json, dict) and len(new_user_json) >= 1:
                 self._logger.debug(f'RetroAccountService: New token!')
+                new_user_json['device_id'] = device_id
 
             benefits = response.get('benefits', {})
             self._logger.debug(f'RetroAccountService: Benefits after mister_sync ', benefits)
             return _SyncTransition(
-                save_user_json=new_tokens,
+                save_user_json=new_user_json,
                 install_update_all_patreon_key_file=any_to_retroaccount_file_description(benefits.get('update_all_patreon_key_file', None)),
                 install_jtbeta_file=any_to_retroaccount_file_description(benefits.get('jtbeta_file', None), discard_prev=True),
                 install_jt_mra_pack=any_to_retroaccount_file_description(benefits.get('jt_mra_pack', None), discard_prev=True),
