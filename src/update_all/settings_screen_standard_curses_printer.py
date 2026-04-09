@@ -74,7 +74,6 @@ class _VisibleTextLayout:
 class _VerticalLayout:
     action_y: Optional[int]
     has_gap: bool
-    layout_reset: bool
     menu_entries: list[tuple[str, str, bool]]
     menu_scroll_offset: int
     offset_vertical: int
@@ -290,6 +289,7 @@ class _Drawer(UiDialogDrawer):
             paint_layout.offset_horizontal() - 1,
             paint_layout.has_header(),
         )
+        self._clear_content_area(paint_layout)
 
         line_index = paint_layout.offset_vertical
 
@@ -402,6 +402,17 @@ class _Drawer(UiDialogDrawer):
 
     def clear(self) -> None:
         self._layout.reset()
+
+    def _clear_content_area(self, paint_layout: DrawerPaintLayout) -> None:
+        clear_mode = ord(' ') | curses.A_NORMAL | curses.color_pair(colors.BOX_BACKGROUND_COLOR)
+        separator_y = None
+        if paint_layout.has_header() and not paint_layout.text_has_up_scroll:
+            separator_y = paint_layout.offset_vertical + 1
+
+        for clear_y in range(paint_layout.offset_vertical, paint_layout.offset_vertical + paint_layout.total_lines):
+            if clear_y == separator_y:
+                continue
+            self._clear_line(clear_y, paint_layout.offset_horizontal(), clear_mode, paint_layout.total_width)
 
     def _clear_line(self, y, x, ch, n):
         ts = self._sd.term_size
@@ -672,13 +683,11 @@ def _calc_compact_vertical_layout(ts, oc, max_length_header: int, visible_text_l
     available = action_y - oc.lines
     content_lines = len(visible_text_lines) + len(all_menu_entries)
     menu_entries = all_menu_entries
-    layout_reset = False
 
     if content_lines > available:
         max_entries = max(1, available - len(visible_text_lines))
         menu_entries, menu_scroll_offset = _build_visible_menu_entries(list(all_menu_entries), menu_scroll_offset, max_entries)
         content_lines = len(visible_text_lines) + len(menu_entries)
-        layout_reset = True
 
     has_gap = content_lines + 1 <= available
     has_box_top = has_gap and content_lines + 2 <= available
@@ -689,7 +698,6 @@ def _calc_compact_vertical_layout(ts, oc, max_length_header: int, visible_text_l
     return _VerticalLayout(
         action_y=action_y,
         has_gap=has_gap,
-        layout_reset=layout_reset,
         menu_entries=menu_entries,
         menu_scroll_offset=menu_scroll_offset,
         offset_vertical=max(min_top, min_top + int((action_y - min_top - total_lines + 1) / 2)),
@@ -708,7 +716,6 @@ def _calc_standard_vertical_layout(ts, oc, max_length_header: int, visible_text:
     return _VerticalLayout(
         action_y=None,
         has_gap=has_gap,
-        layout_reset=False,
         menu_entries=all_menu_entries,
         menu_scroll_offset=menu_scroll_offset,
         offset_vertical=oc.lines + int(usable_lines / 2 - total_lines / 2),
@@ -772,7 +779,7 @@ def calc_drawer_paint(sd: ScreenDims, text_lines, text_scroll_offset, header, al
         action_gap=horizontal.action_gap,
         action_y=vertical.action_y,
         has_gap=vertical.has_gap,
-        layout_reset=visible_text.layout_reset or vertical.layout_reset,
+        layout_reset=visible_text.layout_reset,
         max_length_header=horizontal.max_length_header,
         max_length_option=horizontal.max_length_option,
         menu_entries=vertical.menu_entries,

@@ -33,7 +33,7 @@ from update_all.retroaccount_gateway import SessionResult
 
 
 _CORRUPTED_CREDENTIALS_MESSAGE = 'Your credentials are corrupted!\nDo you have any problems with your storage (SD)?'
-_REVOKED_CREDENTIALS_MESSAGE = 'Your credentials were revoked!\nYour account must be active, and you have to log in on each device you use.'
+_REVOKED_CREDENTIALS_MESSAGE = 'Your credentials were revoked!'
 
 
 class TestRetroAccountService(unittest.TestCase):

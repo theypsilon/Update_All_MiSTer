@@ -82,7 +82,7 @@ class TestCalcDrawerPaint(unittest.TestCase):
         expected = drawer_paint_layout(
             action_y=13,
             has_gap=False,
-            layout_reset=True,
+            layout_reset=False,
             max_length_option=3,
             menu_entries=[('--- ↑ ↑ ↑ ---', '', False)] + _menu_entries(14, 12)[2:14],
             menu_scroll_offset=2,
@@ -103,7 +103,7 @@ class TestCalcDrawerPaint(unittest.TestCase):
         expected = drawer_paint_layout(
             action_y=13,
             has_gap=False,
-            layout_reset=True,
+            layout_reset=False,
             max_length_option=3,
             menu_entries=OVERFLOW_SHORT_TOP_SELECTED_MENU_ENTRIES,
             menu_scroll_offset=0,
@@ -124,7 +124,7 @@ class TestCalcDrawerPaint(unittest.TestCase):
         expected = drawer_paint_layout(
             action_y=13,
             has_gap=False,
-            layout_reset=True,
+            layout_reset=False,
             max_length_option=3,
             menu_entries=OVERFLOW_SHORT_BOTTOM_SELECTED_MENU_ENTRIES,
             menu_scroll_offset=2,
@@ -468,7 +468,7 @@ class TestCalcDrawerPaint(unittest.TestCase):
         expected = drawer_paint_layout(
             action_y=13,
             has_gap=False,
-            layout_reset=True,
+            layout_reset=False,
             max_length_option=3,
             menu_entries=OVERFLOW_SHORT_NO_OVERSCAN_MENU_ENTRIES,
             menu_scroll_offset=27,
@@ -489,7 +489,7 @@ class TestCalcDrawerPaint(unittest.TestCase):
         expected = drawer_paint_layout(
             action_y=12,
             has_gap=False,
-            layout_reset=True,
+            layout_reset=False,
             max_length_option=3,
             menu_entries=OVERFLOW_SHORT_WITH_OVERSCAN_MENU_ENTRIES,
             menu_scroll_offset=29,
@@ -510,7 +510,7 @@ class TestCalcDrawerPaint(unittest.TestCase):
         expected = drawer_paint_layout(
             action_y=13,
             has_gap=False,
-            layout_reset=True,
+            layout_reset=False,
             max_length_option=3,
             menu_entries=OVERFLOW_SHORT_NO_OVERSCAN_MENU_ENTRIES,
             menu_scroll_offset=27,
@@ -533,7 +533,7 @@ class TestCalcDrawerPaint(unittest.TestCase):
         expected = drawer_paint_layout(
             action_y=12,
             has_gap=False,
-            layout_reset=True,
+            layout_reset=False,
             max_length_option=3,
             menu_entries=OVERFLOW_SHORT_WITH_OVERSCAN_MENU_ENTRIES,
             menu_scroll_offset=29,
