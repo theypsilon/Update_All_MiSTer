@@ -633,16 +633,17 @@ class Infrastructure:
         fields = {i: '' for i in tags}
 
         try:
-            context = ET.iterparse(str(mra_path), events=("start",))
-            for event, elem in context:
-                elem_tag = elem.tag.lower()
-                if elem_tag in tags:
-                    tags.remove(elem_tag)
-                    elem_value = elem.text
-                    if isinstance(elem_value, str):
-                        fields[elem_tag] = elem_value
-                    if len(tags) == 0:
-                        break
+            with Path(mra_path).open('rb') as mra_file:
+                context = ET.iterparse(mra_file, events=("start",))
+                for event, elem in context:
+                    elem_tag = elem.tag.lower()
+                    if elem_tag in tags:
+                        tags.remove(elem_tag)
+                        elem_value = elem.text
+                        if isinstance(elem_value, str):
+                            fields[elem_tag] = elem_value
+                        if len(tags) == 0:
+                            break
         except Exception as e:
             self._printer.print("Line %s || %s (%s)" % (lineno(), e, mra_path))
 
