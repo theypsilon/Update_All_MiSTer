@@ -1,0 +1,116 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Cave Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Cave MRA: Hotdog Storm",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-04-20",
+      "timestamps": [
+        1776683325
+      ],
+      "title": "Updated TODAY (2026-04-20)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Darius Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Star Force Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Starforce Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Darius MRA: Darius, + 4 alts",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix MRAs: Kram, Space Dungeon, Complex X, Qix, Qix II",
+              "type": "standalone"
+            },
+            {
+              "name": "Starforce MRAs: StarForce, Baluba-louk no Densetsu, + 2 alts",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "PC88",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "AdventureVision",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1776092778,
+        1776118014,
+        1776125062,
+        1776138413,
+        1776186462,
+        1776200118,
+        1776230064,
+        1776236760,
+        1776319368,
+        1776337426,
+        1776467142,
+        1776533046,
+        1776575929
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1491,
+    "total_file_updates": 2149,
+    "unique_files": 1433
+  }
+}
