@@ -203,6 +203,7 @@ class _Drawer(UiDialogDrawer):
         self._narrow_selected_info = ''
         self._text_scroll_offset = 0
         self._menu_scroll_offset = 0
+        self._show_overscan_preview = False
         self._printed_overscan_preview = False
 
     def start(self, data):
@@ -211,6 +212,7 @@ class _Drawer(UiDialogDrawer):
         self._actions = []
         self._effects = {}
         self._narrow_selected_info = ''
+        self._show_overscan_preview = False
 
         new_header = self._interpolator.interpolate(data['header']) if 'header' in data else ''
         if new_header != self._header:
@@ -243,6 +245,9 @@ class _Drawer(UiDialogDrawer):
     def total_text_lines(self) -> int:
         return len(self._text_lines)
 
+    def set_key_timeout(self, timeout_ms: int) -> None:
+        self._runtime.window.timeout(timeout_ms)
+
     def add_menu_entry(self, option, info, is_selected=False):
         ts = self._sd.term_size
         if ts.lnarrow and option == '' and info == '' and not is_selected:
@@ -262,6 +267,9 @@ class _Drawer(UiDialogDrawer):
     def add_inactive_action(self, length: int, is_selected=False):
         self._actions.append((' ' * (length + 2), is_selected))
 
+    def show_overscan_preview(self) -> None:
+        self._show_overscan_preview = True
+
     def paint(self) -> int:
         paint_layout: DrawerPaintLayout = calc_drawer_paint(
             self._sd,
@@ -275,7 +283,8 @@ class _Drawer(UiDialogDrawer):
 
         should_reset_layout = paint_layout.layout_reset
         is_selected_overscan = _is_selected_overscan_entry(self._menu_entries)
-        if not is_selected_overscan and self._printed_overscan_preview:
+        should_show_overscan_preview = is_selected_overscan or self._show_overscan_preview
+        if not should_show_overscan_preview and self._printed_overscan_preview:
             self._printed_overscan_preview = False
             should_reset_layout = True
 
@@ -363,7 +372,7 @@ class _Drawer(UiDialogDrawer):
                 x = max(co, (ts.columns - len(text)) // 2)
                 self._write_line(desc_y, x, text, mode)
 
-        if is_selected_overscan:
+        if should_show_overscan_preview:
             self._paint_overscan_preview()
             self._printed_overscan_preview = True
 
@@ -451,41 +460,47 @@ class _Drawer(UiDialogDrawer):
         self._runtime.window.addstr(y, x, text, mode)
 
     def _paint_overscan_preview(self) -> None:
-        preview_border = calculate_outer_box(self._sd)
-        if preview_border is None:
-            return
-        top, bottom, left, right = preview_border
-        ts = self._sd.term_size
-        attr = curses.A_NORMAL | curses.color_pair(colors.OVERSCAN_BOX_COLOR)
-        win = self._runtime.window
-        block = '█'
-        try:
-            for y in range(0, min(ts.lines, top + 1)):
-                width = ts.columns - (1 if y == ts.lines - 1 else 0)
-                if width > 0:
-                    win.addstr(y, 0, block * width, attr)
+        paint_overscan_preview(
+            self._runtime.window,
+            self._sd,
+            curses.A_NORMAL | curses.color_pair(colors.OVERSCAN_BOX_COLOR),
+        )
 
-            for y in range(max(0, bottom), ts.lines):
-                width = ts.columns - (1 if y == ts.lines - 1 else 0)
-                if width > 0:
-                    win.addstr(y, 0, block * width, attr)
 
-            start_y = max(0, top + 1)
-            end_y = min(ts.lines, bottom)
-            if start_y < end_y:
-                if 0 <= left < ts.columns:
-                    left_width = left + 1
-                    for y in range(start_y, end_y):
-                        width = min(left_width, ts.columns - (1 if y == ts.lines - 1 else 0))
-                        if width > 0:
-                            win.addstr(y, 0, block * width, attr)
-                if 0 <= right < ts.columns:
-                    for y in range(start_y, end_y):
-                        width = ts.columns - right - (1 if y == ts.lines - 1 else 0)
-                        if width > 0:
-                            win.addstr(y, right, block * width, attr)
-        except curses.error:
-            pass
+def paint_overscan_preview(win, screen_dims: ScreenDims, attr: int) -> None:
+    preview_border = calculate_outer_box(screen_dims)
+    if preview_border is None:
+        return
+    top, bottom, left, right = preview_border
+    ts = screen_dims.term_size
+    block = '█'
+    try:
+        for y in range(0, min(ts.lines, top + 1)):
+            width = ts.columns - (1 if y == ts.lines - 1 else 0)
+            if width > 0:
+                win.addstr(y, 0, block * width, attr)
+
+        for y in range(max(0, bottom), ts.lines):
+            width = ts.columns - (1 if y == ts.lines - 1 else 0)
+            if width > 0:
+                win.addstr(y, 0, block * width, attr)
+
+        start_y = max(0, top + 1)
+        end_y = min(ts.lines, bottom)
+        if start_y < end_y:
+            if 0 <= left < ts.columns:
+                left_width = left + 1
+                for y in range(start_y, end_y):
+                    width = min(left_width, ts.columns - (1 if y == ts.lines - 1 else 0))
+                    if width > 0:
+                        win.addstr(y, 0, block * width, attr)
+            if 0 <= right < ts.columns:
+                for y in range(start_y, end_y):
+                    width = ts.columns - right - (1 if y == ts.lines - 1 else 0)
+                    if width > 0:
+                        win.addstr(y, right, block * width, attr)
+    except curses.error:
+        pass
 
 
 class CursesDeviceLoginRenderer(DeviceLoginRenderer):

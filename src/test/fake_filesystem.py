@@ -67,8 +67,17 @@ class FileSystemFactory:
         return [record.__dict__.copy() for record in self._write_records]
 
     @staticmethod
-    def from_state(files=None, folders=None, config=None, base_path=None, path_dictionary=None):
-        return FileSystemFactory(state=FileSystemState(files=files, folders=folders, config=config, base_path=base_path, path_dictionary=path_dictionary))
+    def from_state(files=None, folders=None, config=None, base_path=None, path_dictionary=None, available_space=None):
+        return FileSystemFactory(
+            state=FileSystemState(
+                files=files,
+                folders=folders,
+                config=config,
+                base_path=base_path,
+                path_dictionary=path_dictionary,
+                available_space=available_space,
+            )
+        )
 
 
 class _TempFileWithId:
@@ -304,6 +313,9 @@ class _FileSystem(ProductionFileSystem):
 
     def file_mtime(self, path):
         return self._state.files[self._path(path)].get('mtime', 0.0)
+
+    def available_space(self, path):
+        return self._state.available_space.get(self._path(path), 0)
 
     def save_json_on_zip(self, db, path):
         if self._path(path) not in self._state.files:

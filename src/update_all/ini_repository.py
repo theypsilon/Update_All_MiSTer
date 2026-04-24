@@ -24,8 +24,8 @@ from typing import Optional, Dict, List, Tuple, Any
 
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini, DOWNLOADER_STORE_STANDARD_PATH, \
-    DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI
-from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS
+    DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI
+from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, ajgowans_manualsdbs
 from update_all.file_system import FileSystem
 from update_all.ini_parser import IniParser
 from update_all.logger import Logger
@@ -34,7 +34,19 @@ from update_all.os_utils import OsUtils
 SEPARATE_DB_INI_FILES: Dict[str, str] = {
     ALL_DB_IDS['BIOS'].lower(): DOWNLOADER_BIOS_DB_INI,
     ALL_DB_IDS['ARCADE_ROMS'].lower(): DOWNLOADER_ARCADE_ROMS_DB_INI,
+    **{db.db_id.lower(): DOWNLOADER_AJGOWANS_MANUALSDB_INI for db in ajgowans_manualsdbs()},
 }
+
+
+def _build_separate_db_ini_files_by_filename() -> Dict[str, List[str]]:
+    lower_to_canonical = {db_id.lower(): db_id for db_id in ALL_DB_IDS.values()}
+    result: Dict[str, List[str]] = {}
+    for lower_id, filename in SEPARATE_DB_INI_FILES.items():
+        result.setdefault(filename, []).append(lower_to_canonical.get(lower_id, lower_id))
+    return result
+
+
+SEPARATE_DB_INI_FILES_BY_FILENAME: Dict[str, List[str]] = _build_separate_db_ini_files_by_filename()
 
 
 class IniRepository:
@@ -251,47 +263,89 @@ class IniRepository:
 
         self._file_system.save_json(store, store_path)
 
-    def extract_db_to_separate_ini(self, db_id: str, target_ini_filename: str, downloader_ini: Dict[str, IniParser]) -> bool:
-        lower_id = db_id.lower()
-        if lower_id not in downloader_ini:
-            return False
+    def extract_dbs_to_separate_ini(self, db_ids: List[str], target_ini_filename: str, downloader_ini: Dict[str, IniParser]) -> List[str]:
+        lower_to_canonical = {db_id.lower(): db_id for db_id in db_ids}
+        present = [db_id for db_id in db_ids if db_id.lower() in downloader_ini]
+        if not present:
+            return []
 
         downloader_ini_txt = self._read_downloader_ini_rawtext()
         if downloader_ini_txt is None:
-            self._logger.debug(f'WARNING! Could not extract db_id {db_id} because downloader ini is not readable.')
-            return False
+            self._logger.debug(f'WARNING! Could not extract dbs because downloader ini is not readable.')
+            return []
 
-        section_lines = []
-        remaining_lines = []
-        capturing = False
+        extract_set = set(lower_to_canonical.keys())
+        extracted_sections: OrderedDict[str, List[str]] = OrderedDict()
+        remaining_lines: List[str] = []
+        capturing_lower_id: Optional[str] = None
+
         for line in downloader_ini_txt.splitlines():
-            if capturing:
-                if line.strip().startswith('['):
-                    capturing = False
-                    remaining_lines.append(line)
-                else:
-                    section_lines.append(line)
+            stripped = line.strip()
+            if stripped.startswith('[') and ']' in stripped:
+                header = stripped[1:stripped.find(']')].lower()
+                if header in extract_set:
+                    capturing_lower_id = header
+                    if capturing_lower_id not in extracted_sections:
+                        extracted_sections[capturing_lower_id] = []
+                    extracted_sections[capturing_lower_id].append(f'[{lower_to_canonical[capturing_lower_id]}]')
+                    continue
+                capturing_lower_id = None
+                remaining_lines.append(line)
                 continue
 
-            if line.lower().strip() == f'[{lower_id}]':
-                capturing = True
-                section_lines.append(f'[{db_id}]')
+            if capturing_lower_id is not None:
+                extracted_sections[capturing_lower_id].append(line)
             else:
                 remaining_lines.append(line)
 
+        if not extracted_sections:
+            return []
+
         target_path = f'{self._base_path}/{target_ini_filename}'
+        existing_sections: Dict[str, str] = {}
+        if self._file_system.is_file(target_path):
+            try:
+                existing_contents = self._file_system.read_file_contents(target_path)
+                existing_sections = self._split_ini_contents_into_sections(existing_contents)
+            except Exception as e:
+                self._logger.debug(f'Could not read existing separate DB INI file at: {target_path}')
+                self._logger.debug(e)
+
+        merged_sections: OrderedDict[str, str] = OrderedDict()
+        for lower_id, section_text in existing_sections.items():
+            if lower_id not in extracted_sections:
+                merged_sections[lower_id] = section_text.rstrip('\n')
+        for lower_id, section_lines in extracted_sections.items():
+            merged_sections[lower_id] = '\n'.join(section_lines).rstrip('\n')
+
         self._file_system.make_dirs_parent(target_path)
-        self._file_system.write_file_contents(target_path, '\n'.join(section_lines) + '\n')
+        self._file_system.write_file_contents(target_path, '\n\n'.join(merged_sections.values()) + '\n')
 
         self._file_system.write_file_contents(self.downloader_ini_standard_path(), '\n'.join(remaining_lines).rstrip() + '\n')
         self._downloader_ini = None
 
-        del downloader_ini[lower_id]
-        return True
+        for lower_id in extracted_sections:
+            if lower_id in downloader_ini:
+                del downloader_ini[lower_id]
+
+        return [lower_to_canonical[lid] for lid in extracted_sections if lid in lower_to_canonical]
+
+    @staticmethod
+    def _split_ini_contents_into_sections(contents: str) -> Dict[str, str]:
+        sections: Dict[str, str] = {}
+        current: Optional[str] = None
+        for line in contents.splitlines():
+            stripped = line.strip()
+            if stripped.startswith('[') and ']' in stripped:
+                current = stripped[1:stripped.find(']')].lower()
+                sections[current] = line + '\n'
+            elif current is not None:
+                sections[current] += line + '\n'
+        return sections
 
     def read_separate_db_ini_files(self) -> Dict[str, IniParser]:
         result = {}
-        for lower_id, ini_filename in SEPARATE_DB_INI_FILES.items():
+        for ini_filename in set(SEPARATE_DB_INI_FILES.values()):
             target_path = f'{self._base_path}/{ini_filename}'
             if not self._file_system.is_file(target_path):
                 continue
@@ -310,17 +364,23 @@ class IniRepository:
         if base_path is None:
             base_path = self._base_path
         active = {db.db_id.lower(): db for _, db in candidate_databases(config) if db.db_id in config.databases}
-        for lower_id, ini_filename in SEPARATE_DB_INI_FILES.items():
+
+        for ini_filename, canonical_db_ids in SEPARATE_DB_INI_FILES_BY_FILENAME.items():
             target_path = f'{base_path}/{ini_filename}'
-            if lower_id in active:
-                db = active[lower_id]
+            active_dbs = [active[db_id.lower()] for db_id in canonical_db_ids if db_id.lower() in active]
+            if active_dbs:
                 self._file_system.make_dirs_parent(target_path)
-                section_lines = [f'[{db.db_id}]', f'db_url = {db.db_url}']
-                if lower_id == ALL_DB_IDS['ARCADE_ROMS'].lower() and config.hbmame_filter:
-                    section_lines.append('filter = !hbmame')
-                self._file_system.write_file_contents(target_path, '\n'.join(section_lines) + '\n')
+                sections = [self._build_separate_db_section(db, config) for db in active_dbs]
+                self._file_system.write_file_contents(target_path, '\n\n'.join(sections) + '\n')
             elif self._file_system.is_file(target_path):
                 self._file_system.unlink(target_path, verbose=False)
+
+    @staticmethod
+    def _build_separate_db_section(db: Database, config: Config) -> str:
+        lines = [f'[{db.db_id}]', f'db_url = {db.db_url}']
+        if db.db_id.lower() == ALL_DB_IDS['ARCADE_ROMS'].lower() and config.hbmame_filter:
+            lines.append('filter = !hbmame')
+        return '\n'.join(lines)
 
     def write_arcade_organizer_active_at_arcade_organizer_ini(self, config: Config) -> None:
         contents = ''

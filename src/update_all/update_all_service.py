@@ -57,6 +57,7 @@ from update_all.config_reader import ConfigReader
 from update_all.timeline import Timeline
 from update_all.transition_service import TransitionService
 from update_all.fetcher import Fetcher
+from update_all.mister_video_mode_ui import MisterVideoModeService
 from update_all.retroaccount import RetroAccountService
 from update_all.retroaccount_gateway import RetroAccountGateway
 
@@ -90,12 +91,14 @@ class UpdateAllServiceFactory:
         encryption = Encryption(self._logger, config_provider, file_system)
         retroaccount_gateway = RetroAccountGateway(config_provider, self._logger, file_system, fetcher)
         retroaccount = RetroAccountService(self._logger, file_system, config_provider, retroaccount_gateway, encryption)
+        mister_video_mode_service = MisterVideoModeService(self._logger, file_system, config_provider, os_utils)
         settings_screen = SettingsScreen(
             logger=self._logger,
             config_provider=config_provider,
             file_system=file_system,
             ini_repository=ini_repository,
             os_utils=os_utils,
+            mister_video_mode_service=mister_video_mode_service,
             settings_screen_printer=printer,
             local_repository=local_repository,
             store_provider=store_provider,
@@ -447,7 +450,7 @@ class UpdateAllService:
             'CURL_SSL': config.curl_ssl,
             'COLUMNS': str(ts.columns - oc.cols * 2),
             'LINES': str(ts.lines - oc.lines * 2),
-            'UPDATE_LINUX': 'true' if update_linux else 'false'
+            'UPDATE_LINUX': 'true' if update_linux else 'false',
         }
         if self._file_system.is_file(FILE_JOTEGO_mra_pack_ini):
             env['EXTRA_DROP_IN_DATABASE_FILES'] = FILE_JOTEGO_mra_pack_ini
@@ -747,9 +750,16 @@ class UpdateAllService:
         self._logger.print('Sequence:')
         lines = 0
         config = self._config_provider.get()
+        manuals_cnt = 0
         for db in active_databases(config):
+            if db.db_id.startswith('ajgowans/manualsdb-'):
+                manuals_cnt += 1
+            else:
+                lines += 1
+                self._logger.print(f'- {db.title}')
+        if manuals_cnt > 0:
             lines += 1
-            self._logger.print(f'- {db.title}')
+            self._logger.print(f'- {manuals_cnt} Game Manuals (EN) DBs')
         if config.arcade_organizer:
             lines += 1
             self._logger.print('- Arcade Organizer')

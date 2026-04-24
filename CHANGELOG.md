@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.8 - 2026-04-24
+
+### Added
+- New CRT Video Mode and CRT Screen Position tools in the System Options menu from the Settings Screen, with live preview, overscan preview, keep/revert flow, and guard rails aimed at 15 KHz CRT users on the VGA output.
+- New Game Manuals (EN) section in Extra Content with 47 manuals databases by Moondandy.
+- New Anime0t4ku MiSTer Scripts database in the Tools & Scripts menu.
+
+### Changed
+- Manuals DB menu now includes bulk enable/disable controls, and per-database file count / size information.
+- Manuals databases now use their own dedicated Downloader drop-in INI file `downloader_ajgowans_manualsdb.ini`.
+- CRT video mode changes now detect the active MiSTer configuration file, including `MiSTer_*.ini` alternatives, and save the selected mode into the `[menu]` section with `vga_scaler=1`.
+- Improved Settings Screen rendering and scrolling behavior with fixes for stalled text and other small interaction issues.
+- A few other tweaks, fixes and optimizations.
+
 ## Version 2.7 - 2026-03-27
 
 ### Added

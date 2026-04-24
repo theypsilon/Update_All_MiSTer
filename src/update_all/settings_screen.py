@@ -25,7 +25,7 @@ from update_all.analogue_pocket.pocket_backup import pocket_backup
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
-    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme
+    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme, MEDIA_FAT
 from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, ALL_DB_IDS
 from update_all.ini_repository import SEPARATE_DB_INI_FILES
 from update_all.encryption import Encryption
@@ -35,6 +35,7 @@ from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, calculate_overscan
 from update_all.logger import Logger, CollectorLoggerDecorator
+from update_all.mister_video_mode_ui import MisterVideoModeService, MisterVideoModeMenu, MisterVideoAdjustMenu
 from update_all.os_utils import OsUtils
 from update_all.retroaccount import RetroAccountService, BenefitState
 from update_all.settings_screen_model import settings_screen_model
@@ -46,7 +47,8 @@ from update_all.ui_model_utilities import gather_variable_declarations, dynamic_
 
 class SettingsScreen(UiApplication):
     def __init__(self, logger: Logger, config_provider: GenericProvider[Config], file_system: FileSystem,
-                 ini_repository: IniRepository, os_utils: OsUtils, settings_screen_printer: SettingsScreenPrinter,
+                 ini_repository: IniRepository, os_utils: OsUtils, mister_video_mode_service: MisterVideoModeService,
+                 settings_screen_printer: SettingsScreenPrinter,
                  local_repository: LocalRepository, store_provider: GenericProvider[LocalStore],
                  ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService, encryption: Encryption,
                  retroaccount: RetroAccountService):
@@ -62,6 +64,7 @@ class SettingsScreen(UiApplication):
         self._ao_service = ao_service
         self._encryption = encryption
         self._retroaccount = retroaccount
+        self._mister_video_mode_service = mister_video_mode_service
         self._original_firmware = None
         self._theme_manager = None
 
@@ -78,7 +81,11 @@ class SettingsScreen(UiApplication):
     def _load_menu_entry(self, menu_entry) -> None:
         def loader():
             model = settings_screen_model()
-            execute_ui_engine(menu_entry, model, self, self._ui_runtime)
+            try:
+                execute_ui_engine(menu_entry, model, self, self._ui_runtime)
+            except Exception:
+                self._mister_video_mode_service.restore_mode_before_unsaved_keeps()
+                raise
 
         self._ui_runtime.initialize_runtime(loader)
 
@@ -124,6 +131,12 @@ class SettingsScreen(UiApplication):
         ui.set_value('retroaccount_domain', config.retroaccount_domain)
         ui.set_value('overscan', local_store.get_overscan())
         ui.set_value('monochrome_ui', str(local_store.get_monochrome_ui()).lower())
+        ui.set_value(
+            'ajgowans_manuals_dbs_general_selector',
+            str(local_store.get_ajgowans_manuals_dbs_general_selector()).lower()
+            if local_store.has_field('ajgowans_manuals_dbs_general_selector')
+            else 'false'
+        )
 
         if ALL_DB_IDS['JTCORES'] not in config.databases:
             ui.set_value('download_beta_cores', str(local_store.get_download_beta_cores()).lower())
@@ -132,6 +145,16 @@ class SettingsScreen(UiApplication):
             ui.set_value('names_region', local_store.get_names_region())
             ui.set_value('names_char_code', local_store.get_names_char_code())
             ui.set_value('names_sort_code', local_store.get_names_sort_code())
+
+        ui.set_value(
+            'mister_video_direct_video_warning',
+            str(self._mister_video_mode_service.current_direct_video() and not self._mister_video_mode_service.current_vga_scaler()).lower()
+        )
+        ui.set_value('media_fat_available_space', self._read_media_fat_available_space())
+
+        ui.add_custom_formatters({
+            'bytes_to_gb': self._format_available_space,
+        })
 
         drawer_factory, theme_manager, device_login_renderer = self._settings_screen_printer.initialize_screen(config)
         if local_store.get_monochrome_ui():
@@ -159,20 +182,22 @@ class SettingsScreen(UiApplication):
             'calculate_names_txt_file_warning': lambda effect: self.calculate_names_txt_file_warning(ui),
             'disable_monochrome_ui': lambda effect: self.disable_monochrome_ui(ui),
             'apply_theme': lambda effect: self.apply_theme(ui),
+            'prepare_exit_without_save': lambda effect: self.prepare_exit_without_save(),
             'pocket_firmware_update': lambda effect: self.pocket_firmware_update(ui),
             'pocket_backup': lambda effect: self.pocket_backup(ui),
             'apply_overscan': lambda effect: self.apply_overscan(ui),
+            'select_all_ajgowans_manuals_dbs': lambda effect: self.select_all_ajgowans_manuals_dbs(ui, effect),
             'retroaccount_check_state': lambda effect: self.retroaccount_check_state(ui),
             'retroaccount_device_logout': lambda effect: self.retroaccount_device_logout(ui),
         })
 
         self._theme_manager = theme_manager
 
-        def device_login_factory(interpolator, data):
-            drawer = drawer_factory.create_ui_dialog_drawer(interpolator)
-            return self._retroaccount.create_device_login_ui(drawer, device_login_renderer, data)
-
-        return DialogSectionFactory(drawer_factory, device_login_factory)
+        return DialogSectionFactory(drawer_factory, {
+            'device_login': lambda drawer, _interpolator, data: self._retroaccount.create_device_login_ui(drawer, device_login_renderer, data),
+            'mister_video_mode': lambda drawer, _interpolator, data: MisterVideoModeMenu(drawer, self._mister_video_mode_service, data),
+            'mister_video_adjust': lambda drawer, _interpolator, data: MisterVideoAdjustMenu(drawer, self._mister_video_mode_service, data),
+        })
 
     def calculate_file_exists(self, ui, effect) -> None:
         ui.set_value('file_exists', 'true' if self._file_system.is_file(effect['target']) else 'false')
@@ -255,6 +280,10 @@ class SettingsScreen(UiApplication):
         if temp_store.needs_save():
             needs_save_file_set.add(f"Internals ({', '.join(temp_store.changed_fields())})")
 
+        if self._mister_video_mode_service.has_unsaved_kept_mode():
+            ini_filename = self._mister_video_mode_service.unsaved_kept_mode_filename() or FILE_MiSTer_ini
+            needs_save_file_set.add(f"MiSTer video mode ({ini_filename})")
+
         if len(needs_save_file_set) > 0:
             needs_save_file_list = "  - " + "\n  - ".join(sorted(needs_save_file_set))
         else:
@@ -282,6 +311,7 @@ class SettingsScreen(UiApplication):
 
         self._ini_repository.write_downloader_ini(config)
         self._ini_repository.write_separate_db_ini_files(config)
+        self._mister_video_mode_service.save_unsaved_kept_mode_to_active_ini()
 
         local_store = self._store_provider.get()
         self._fill_store(local_store, ui, config)
@@ -308,6 +338,7 @@ class SettingsScreen(UiApplication):
         store.set_pocket_backup(config.pocket_backup)
         store.set_overscan(config.overscan)
         store.set_monochrome_ui(config.monochrome_ui)
+        store.set_ajgowans_manuals_dbs_general_selector(ui.get_value('ajgowans_manuals_dbs_general_selector') != 'false')
         # @TODO (mirror) store.set_mirror(ui.get_value('mirror'))
 
     def _does_arcade_oganizer_need_save(self, ui: UiContext):
@@ -362,6 +393,10 @@ class SettingsScreen(UiApplication):
             *gather_variable_declarations(settings_screen_model(), "rannysnice_wallpapers"),
             *gather_variable_declarations(settings_screen_model(), "pocket"),
         ]
+
+    @cached_property
+    def _ajgowans_manuals_db_variables(self):
+        return list(gather_variable_declarations(settings_screen_model(), "manuals"))
 
     def calculate_names_char_code_warning(self, ui: UiContext) -> None:
 
@@ -422,7 +457,79 @@ class SettingsScreen(UiApplication):
         config.overscan = ui.get_value('overscan')
         config.overscan_dim = calculate_overscan(config.overscan, config.term_size)
 
+    def _read_media_fat_available_space(self) -> str:
+        try:
+            available_space = self._file_system.available_space(MEDIA_FAT)
+            return str(available_space)
+        except Exception as e:
+            self._logger.debug('Could not calculate available space for /media/fat')
+            self._logger.debug(e)
+            return str(10**15)
+
+    def select_all_ajgowans_manuals_dbs(self, ui: UiContext, effect) -> Optional[str]:
+        changed = False
+        action = effect['action']
+        current_selector = ui.get_value('ajgowans_manuals_dbs_general_selector')
+        all_active = all(
+            ui.get_value(variable) == 'true'
+            for variable in self._ajgowans_manuals_db_variables
+        )
+
+        if action == 'toggle':
+            if current_selector == 'false':
+                changed = self._set_all_ajgowans_manuals_dbs(ui, 'true') or changed
+                changed = self._set_ajgowans_manuals_dbs_general_selector(ui, 'true') or changed
+            else:
+                if all_active:
+                    changed = self._set_all_ajgowans_manuals_dbs(ui, 'false') or changed
+                changed = self._set_ajgowans_manuals_dbs_general_selector(ui, 'false') or changed
+        elif action == 'unapply':
+            changed = self._set_ajgowans_manuals_dbs_general_selector(ui, 'false') or changed
+        else:
+            raise ValueError(f'Unknown ajgowans manuals selector action value: {action}')
+
+        return 'clear_window' if changed else None
+
+    def _set_ajgowans_manuals_dbs_general_selector(self, ui: UiContext, value: str) -> bool:
+        if ui.get_value('ajgowans_manuals_dbs_general_selector') == value:
+            return False
+
+        ui.set_value('ajgowans_manuals_dbs_general_selector', value)
+        return True
+
+    def _set_all_ajgowans_manuals_dbs(self, ui: UiContext, value: str) -> bool:
+        changed = False
+        for variable in self._ajgowans_manuals_db_variables:
+            if ui.get_value(variable) != value:
+                ui.set_value(variable, value)
+                changed = True
+        return changed
+
+    @staticmethod
+    def _format_available_space(available_space: str) -> str:
+        try:
+            available_space_value = int(available_space)
+        except ValueError:
+            return 'unknown'
+
+        if available_space_value < 0:
+            return 'unknown'
+
+        units = ['B', 'KB', 'MB', 'GB', 'TB']
+        value = float(available_space_value)
+
+        for unit in units:
+            if value < 1024 or unit == units[-1]:
+                if unit == 'B':
+                    return f'{int(value)} {unit}'
+                return f'{value:.1f} {unit}'
+            value /= 1024
+
+    def prepare_exit_without_save(self) -> None:
+        self._mister_video_mode_service.restore_mode_before_unsaved_keeps()
+
     def prepare_exit_dont_save_and_run(self, ui):
+        self._mister_video_mode_service.restore_mode_before_unsaved_keeps()
         self._copy_ui_options_to_current_config(ui)
         config = self._config_provider.get()
         config.temporary_downloader_ini = True

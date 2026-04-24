@@ -46,7 +46,12 @@ def ensure_node_is_correct(item):
         _ensure_field_least_length_1(item['fixed'], item)
 
     elif node_type == 'condition':
-        _ensure_field_least_length_1(item['true'] + item['false'], item)
+        combined_branches = []
+        for key, branch in item.items():
+            if key in ('type', 'variable') or not isinstance(branch, list):
+                continue
+            combined_branches.extend(branch)
+        _ensure_field_least_length_1(combined_branches, item)
 
     return item
 
@@ -132,7 +137,7 @@ def _add_used_effects(result: List[str], item: Dict[str, Any]):
     if 'type' not in item:
         return
 
-    if item['type'] not in ['ui', 'rotate_variable', 'set_variable', 'fixed', 'symbol', 'navigate', 'condition']:
+    if item['type'] not in ['ui', 'rotate_variable', 'set_variable', 'fixed', 'symbol', 'navigate', 'condition', 'compare_bigger']:
         result.append(item['type'])
 
 

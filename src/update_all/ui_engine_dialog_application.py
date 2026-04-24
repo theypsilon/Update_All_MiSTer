@@ -38,6 +38,9 @@ class UiDialogDrawer(abc.ABC):
     def add_inactive_action(self, length: int, is_selected=False):
         """"Adds action"""
 
+    def show_overscan_preview(self) -> None:
+        """Requests an overscan boundary preview when the drawer paints the current screen."""
+
     def paint(self) -> Union[Key, int]:
         """"Paints all screen UI and returns char"""
 
@@ -47,6 +50,9 @@ class UiDialogDrawer(abc.ABC):
     def max_text_lines(self) -> int:
         """Returns max number of text lines that fit on screen. 0 means unlimited."""
         return 0
+
+    def set_key_timeout(self, timeout_ms: int) -> None:
+        """Sets read timeout for subsequent paint() calls. -1 means blocking."""
 
     def set_text_scroll(self, offset: int) -> None:
         """Sets scroll offset for text lines. Applied after wrapping in paint()."""
@@ -60,6 +66,9 @@ class UiDialogDrawer(abc.ABC):
 class UiDialogDrawerFactory(abc.ABC):
     def create_ui_dialog_drawer(self, interpolator: Interpolator) -> UiDialogDrawer:
         """Creates instances of DialogDrawer"""
+
+
+CustomUiSectionFactory = Callable[[UiDialogDrawer, Interpolator, Dict[str, Any]], UiSection]
 
 
 class _NavigationState:
@@ -185,25 +194,24 @@ class _Confirm(UiSection):
 
 
 class DialogSectionFactory(UiSectionFactory):
-    def __init__(self, dialog_drawer_factory: UiDialogDrawerFactory, device_login_factory: Optional[Callable[[Interpolator, Dict[str, Any]], UiSection]] = None):
+    def __init__(self, dialog_drawer_factory: UiDialogDrawerFactory, custom_ui_factories: Optional[Dict[str, CustomUiSectionFactory]] = None):
         self._dialog_drawer_factory = dialog_drawer_factory
-        self._device_login_factory = device_login_factory
+        self._custom_ui_factories = custom_ui_factories or {}
 
     def create_ui_section(self, ui_type: str, data: Dict[str, Any], interpolator: Interpolator) -> UiSection:
-        state = _NavigationState(self._count_entries(data), len(data.get('actions', {})))
         drawer = self._dialog_drawer_factory.create_ui_dialog_drawer(interpolator)
-        if ui_type == 'menu':
+        if ui_type in self._custom_ui_factories:
+            return self._custom_ui_factories[ui_type](drawer, interpolator, data)
+        elif ui_type == 'menu':
+            state = _NavigationState(self._count_entries(data), len(data.get('actions', {})))
             return _Menu(drawer, data, state)
         elif ui_type == 'confirm':
+            state = _NavigationState(self._count_entries(data), len(data.get('actions', {})))
             return _Confirm(drawer, data, state)
         elif ui_type == 'message':
             if 'effects' not in data:
                 data['effects'] = [{"type": "navigate", "target": "back"}]
             return _Message(drawer, data)
-        elif ui_type == 'device_login':
-            if self._device_login_factory is None:
-                raise ValueError('device_login is not supported')
-            return self._device_login_factory(interpolator, data)
         else:
             raise ValueError(f'Not implemented ui_type: {ui_type}')
 

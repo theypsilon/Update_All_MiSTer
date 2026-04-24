@@ -16,6 +16,158 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+
+def _crt_warning(target): return {
+    "ui": "confirm",
+    "header": "CRT WARNING",
+    "alert_level": "red",
+    "text": [
+        "Access this only if you are reading this from an old TV-style CRT right now.",
+        "Flat screens, PC CRT monitors and other 24-31 KHz CRTs are not supported.",
+        "If you are not sure, go back.",
+    ],
+    "preselected_action": "Back",
+    "actions": [
+        {"title": "Continue", "type": "fixed", "fixed": [_crt_direct_video_warning(target)]},
+        {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+    ],
+}
+
+
+def _crt_direct_video_warning(target): return {
+    "type": "condition",
+    "variable": "mister_video_direct_video_warning",
+    "true": [{
+        "ui": "confirm",
+        "header": "DIRECT VIDEO WARNING",
+        "alert_level": "red",
+        "text": [
+            "direct_video=1 is enabled in the active MiSTer config.",
+            "Saving a CRT resolution change will remove direct_video=1 and use vga_scaler=1 instead.",
+            "Do not continue if you are using a Direct Video HDMI-to-VGA DAC.",
+            "Continue only if that matches your setup.",
+        ],
+        "preselected_action": "Back",
+        "actions": [
+            {"title": "Continue", "type": "fixed", "fixed": [{"type": "navigate", "target": target}]},
+            {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+        ],
+    }],
+    "false": [{"type": "navigate", "target": target}],
+}
+
+
+_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 23506059264  # ~21.9 GB at 128KB cluster, see estimate_manuals_db_space.json
+
+
+def _enable_all_manuals_confirm(): return {
+    "ui": "confirm",
+    "header": "Enable All Manuals DBs?",
+    "text": [
+        "This will activate all manuals databases.",
+        "That is a large download, 8010 files and around 22 GB.",
+        "It will take hours!",
+        "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
+        "Are you sure you want to continue?",
+    ],
+    "actions": [
+        {"title": "Continue", "type": "fixed", "fixed": [
+            {"type": "select_all_ajgowans_manuals_dbs", "action": "toggle"},
+            {"type": "navigate", "target": "back"},
+        ]},
+        {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+    ],
+}
+
+
+def _not_enough_space_for_manuals_warning(): return {
+    "ui": "confirm",
+    "header": "Not Enough Free Space!",
+    "alert_level": "black",
+    "text": [
+        "Enabling all manuals DBs requires 8010 files and around 22 GB.",
+        "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
+        "Installing all manuals will likely fill up your storage and cause problems.",
+        "Free up space or enable only individual manuals instead.",
+    ],
+    "preselected_action": "Back",
+    "actions": [
+        {"title": "Continue", "type": "fixed", "fixed": [
+            {"type": "select_all_ajgowans_manuals_dbs", "action": "toggle"},
+            {"type": "navigate", "target": "back"},
+        ]},
+        {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+    ],
+}
+
+
+def _try_select_all_ajgowans_manuals_dbs(): return [
+    {
+        "type": "condition",
+        "variable": "ajgowans_manuals_dbs_general_selector",
+        "true": [{"type": "select_all_ajgowans_manuals_dbs", "action": "toggle"}],
+        "false": [
+            {
+                "type": "compare_bigger",
+                "left": _ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES,
+                "right": "media_fat_available_space",
+                "target": "manuals_space_fits"
+            },
+            {
+                "type": "condition",
+                "variable": "manuals_space_fits",
+                "left": [_not_enough_space_for_manuals_warning()],
+                "right": [_enable_all_manuals_confirm()],
+                "equal": [_not_enough_space_for_manuals_warning()],
+            }
+        ]
+    }
+]
+
+
+def _try_toggle_big_manual_db(target, title, count, size): return [
+    {
+        "type": "condition",
+        "variable": target,
+        "true": [
+            {"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"},
+            {"type": "rotate_variable", "target": target},
+        ],
+        "false": [{
+            "ui": "confirm",
+            "header": f"Enable {title}?",
+            "text": [
+                f"This will activate {title}.",
+                f"Around {count} files | {size}.",
+                "It could take more than one hour!",
+                "Are you sure you want to continue?",
+            ],
+            "actions": [
+                {"title": "Continue", "type": "fixed", "fixed": [
+                    {"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"},
+                    {"type": "rotate_variable", "target": target},
+                    {"type": "navigate", "target": "back"},
+                ]},
+                {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+            ],
+        }],
+    }
+]
+
+
+def _manuals_early_access_notice(target): return {
+    "ui": "message",
+    "header": "Manuals on MiSTer",
+    "text": [
+        "Manuals on MiSTer should still be considered an early access feature.",
+        "There are still rough edges, including a viewer that needs improvement.",
+        "Manuals DBs are also fairly large and download many files.",
+        "That means installs will take more time when they are enabled.",
+    ],
+    "effects": [{"type": "navigate", "target": target}],
+}
+
+
 def settings_screen_model(): return {
     "formatters": {
         "yesno": {"false": "No", "true": "Yes"},
@@ -26,6 +178,7 @@ def settings_screen_model(): return {
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
 # @TODO (mirror)       "mirror": {"": "Off.", "off": "Off.", "mysticalrealm": "Mystical Realm"},
         "overscan": {"none": "None", "low": "Low", "medium": "Medium", "high": "High", "maximum": "Max"},
+        "bytes_to_gb": {},
         "bool_flag_presence_text": {
             "0": "Ignore them entirely",
             "1": "Place them only on its {0} folder",
@@ -34,7 +187,7 @@ def settings_screen_model(): return {
     },
     "variables": {
         # Global variables
-        "update_all_version": {"default": "2.7"},
+        "update_all_version": {"default": "2.8"},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -48,6 +201,9 @@ def settings_screen_model(): return {
         "file_exists": {"default": "false", "values": ["false", "true"]},
         "needs_save": {"default": "false", "values": ["false", "true"]},
         "needs_save_file_list": {"default": ""},
+        "mister_video_direct_video_warning": {"default": "false", "values": ["false", "true"]},
+        "media_fat_available_space": {"default": "-1"},
+        "manuals_space_fits": {"default": ""},
         "has_arcade_organizer_folders": {"default": "false", "values": ["false", "true"]},
         "has_right_available_code": {"default": "false", "values": ["false", "true"]},
     },
@@ -176,9 +332,7 @@ def settings_screen_model(): return {
                     "title": "1 Update All Extras",
                     "description": "{retroaccount_update_all_extras}",
                     "actions": {"ok": [{
-                        "ui": "message",
-                        "header": "Update All Extras",
-                        "text": [
+                        "ui": "message", "header": "Update All Extras", "text": [
                             "Access the Extended Timeline, Patrons Menu, custom UI themes, and more!",
                             "",
                             "{retroaccount_update_all_extras_support}",
@@ -189,11 +343,9 @@ def settings_screen_model(): return {
                     "title": "2 JOTEGO Patreon Access",
                     "description": "{retroaccount_jtbeta_access}",
                     "actions": {"ok": [{
-                        "ui": "message",
-                        "header": "JOTEGO Patreon Access",
-                        "text": [
+                        "ui": "message", "header": "JOTEGO Patreon Access", "text": [
                             "Get access to JOTEGO beta and release candidate core versions weeks or even months before public release!",
-                            "With this benefit, jtbeta.zip is installed automatically, so you don’t have to reinstall it by hand with every new release.",
+                            "With this benefit, jtbeta.zip is installed automatically, so you don't have to reinstall it by hand with every new release.",
                             "Other Patreon attachments, such as the KAI MRAs, are also installed automatically."
                             "\n",
                             "{retroaccount_jtbeta_access_support}",
@@ -614,6 +766,7 @@ def settings_screen_model(): return {
             "header": "Extra Content",
             "formatters": {
                 "rannysnice_wallpapers_filter": {"ar16-9": "16x9", "ar4-3": "4x3", "all": "all"},
+                "ajgowans_manuals_dbs_general_selector_description": {"false": "Many DBs. ", "true": "All DBs enabled. "},
             },
             "variables": {
                 "Ranny-Snice/Ranny-Snice-Wallpapers": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -639,7 +792,22 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "3 Ranny Snice Wallpapers",
+                    "title": "3 Game Manuals (EN) DBs",
+                    "description": "{ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_description}By Moondandy",
+                    "actions": {
+                        "ok": [_manuals_early_access_notice("game_manuals_en_db_menu")],
+                    }
+                },
+                {
+                    "title": "4 Dinierto GBA Borders",
+                    "description": "{Dinierto/MiSTer-GBA-Borders:enabled} Borders for the GBA Core",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
+                        "toggle": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
+                    }
+                },
+                {
+                    "title": "5 Ranny Snice Wallpapers",
                     "description": "{Ranny-Snice/Ranny-Snice-Wallpapers:enabled} Wallpapers for {rannysnice_wallpapers_filter} screens",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "rannysnice_wallpapers_menu"}],
@@ -647,27 +815,329 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "4 Anime0t4ku Wallpapers",
+                    "title": "6 Anime0t4ku Wallpapers",
                     "description": "",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "anime0t4ku_wallpapers_menu"}],
                     }
                 },
                 {
-                    "title": "5 Uberyoji Boot ROMs",
+                    "title": "7 Uberyoji Boot ROMs",
                     "description": "{uberyoji_mister_boot_roms_mgl:enabled} Boot ROMs for popular consoles",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
                         "toggle": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
                     }
                 },
+            ]
+        },
+        "game_manuals_en_db_menu": {
+            "type": "dialog_sub_menu_toggle",
+            "header": "Game Manuals (EN) DBs",
+            "text": ["Game Manuals (EN) DBs"],
+            "formatters": {
+                "ajgowans_manuals_dbs_general_selector_title": {
+                    "false": "Select All",
+                    "true": "Select None",
+                },
+                "select_all_toggle": {
+                    "false": "",
+                    "true": "All Selected. ",
+                }
+            },
+            "variables": {
+                "ajgowans_manuals_dbs_general_selector": {"group": "store", "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-3do": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-arcadia2001": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-atari2600": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-atari5200": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-atari7800": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-atarilynx": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-atarixegs": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-avision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-ballyastrocade": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-bbcbridge": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-cdi": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-channelf": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-colecovision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-creativision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-fds": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-gameandwatch": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-gameboy": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-gamegear": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-gba": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-gbc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-intellivision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-jaguar": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-jaguarcd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-lcdhandhelds": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-megadrive": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-n64": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-neogeoaes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-neogeocd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-nes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-ngp": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-ngpc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-odyssey2": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-pokemonmini": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-psx": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-pyuutajr": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-sega32x": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-segacd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-segasaturn": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-segasg1000": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-sms": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-snes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-supervision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-turbografx16": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-turbografxcd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-vc4000": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-vectrex": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/manualsdb-wonderswanc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+            },
+            "entries": [
                 {
-                    "title": "6 Dinierto GBA Borders",
-                    "description": "{Dinierto/MiSTer-GBA-Borders:enabled} Borders for the GBA Core",
+                    "title": " {ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_title}",
+                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8010 files | 21.9GB total",
                     "actions": {
-                        "ok": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
-                        "toggle": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
+                        "ok": _try_select_all_ajgowans_manuals_dbs(),
                     }
+                },
+                {},
+                {
+                    "title": "1 3DO",
+                    "description": "{ajgowans/manualsdb-3do:enabled} 133 | 310MB",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-3do"}]}
+                },
+                {
+                    "title": "2 Arcadia 2001",
+                    "description": "{ajgowans/manualsdb-arcadia2001:enabled} 47",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-arcadia2001"}]}
+                },
+                {
+                    "title": "3 Atari 2600",
+                    "description": "{ajgowans/manualsdb-atari2600:enabled} 490 | 445MB",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atari2600"}]}
+                },
+                {
+                    "title": "4 Atari 5200",
+                    "description": "{ajgowans/manualsdb-atari5200:enabled} 77",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atari5200"}]}
+                },
+                {
+                    "title": "5 Atari 7800",
+                    "description": "{ajgowans/manualsdb-atari7800:enabled} 61",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atari7800"}]}
+                },
+                {
+                    "title": "6 Atari Lynx",
+                    "description": "{ajgowans/manualsdb-atarilynx:enabled} 74",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atarilynx"}]}
+                },
+                {
+                    "title": "7 Atari XEGS",
+                    "description": "{ajgowans/manualsdb-atarixegs:enabled} 31",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atarixegs"}]}
+                },
+                {
+                    "title": "8 AVision",
+                    "description": "{ajgowans/manualsdb-avision:enabled} 5",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-avision"}]}
+                },
+                {
+                    "title": "9 Bally Astrocade",
+                    "description": "{ajgowans/manualsdb-ballyastrocade:enabled} 41",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-ballyastrocade"}]}
+                },
+                {
+                    "title": "10 BBC Bridge",
+                    "description": "{ajgowans/manualsdb-bbcbridge:enabled} 3",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-bbcbridge"}]}
+                },
+                {
+                    "title": "11 CD-i",
+                    "description": "{ajgowans/manualsdb-cdi:enabled} 65",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-cdi"}]}
+                },
+                {
+                    "title": "12 Channel F",
+                    "description": "{ajgowans/manualsdb-channelf:enabled} 30",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-channelf"}]}
+                },
+                {
+                    "title": "13 ColecoVision",
+                    "description": "{ajgowans/manualsdb-colecovision:enabled} 138",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-colecovision"}]}
+                },
+                {
+                    "title": "14 CreatiVision",
+                    "description": "{ajgowans/manualsdb-creativision:enabled} 19",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-creativision"}]}
+                },
+                {
+                    "title": "15 FDS",
+                    "description": "{ajgowans/manualsdb-fds:enabled} 3",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-fds"}]}
+                },
+                {
+                    "title": "16 Game & Watch",
+                    "description": "{ajgowans/manualsdb-gameandwatch:enabled} 19",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-gameandwatch"}]}
+                },
+                {
+                    "title": "17 Game Boy",
+                    "description": "{ajgowans/manualsdb-gameboy:enabled} 441 | 1.2GB",
+                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-gameboy", "Game Boy Manuals", "441", "1.2 GB")}
+                },
+                {
+                    "title": "18 Game Gear",
+                    "description": "{ajgowans/manualsdb-gamegear:enabled} 202 | 600MB",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-gamegear"}]}
+                },
+                {
+                    "title": "19 GBA",
+                    "description": "{ajgowans/manualsdb-gba:enabled} 742 | 3.0GB",
+                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-gba", "GBA Manuals", "742", "3.0 GB")}
+                },
+                {
+                    "title": "20 Game Boy Color",
+                    "description": "{ajgowans/manualsdb-gbc:enabled} 308 | 1.1GB",
+                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-gbc", "Game Boy Color Manuals", "308", "1.1 GB")}
+                },
+                {
+                    "title": "21 Intellivision",
+                    "description": "{ajgowans/manualsdb-intellivision:enabled} 148",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-intellivision"}]}
+                },
+                {
+                    "title": "22 Jaguar",
+                    "description": "{ajgowans/manualsdb-jaguar:enabled} 60",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-jaguar"}]}
+                },
+                {
+                    "title": "23 Jaguar CD",
+                    "description": "{ajgowans/manualsdb-jaguarcd:enabled} 16",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-jaguarcd"}]}
+                },
+                {
+                    "title": "24 LCD Handhelds",
+                    "description": "{ajgowans/manualsdb-lcdhandhelds:enabled} 2",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-lcdhandhelds"}]}
+                },
+                {
+                    "title": "25 Mega Drive",
+                    "description": "{ajgowans/manualsdb-megadrive:enabled} 635 | 1.7GB",
+                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-megadrive", "Mega Drive Manuals", "635", "1.7 GB")}
+                },
+                {
+                    "title": "26 N64",
+                    "description": "{ajgowans/manualsdb-n64:enabled} 293 | 856MB",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-n64"}]}
+                },
+                {
+                    "title": "27 Neo Geo AES",
+                    "description": "{ajgowans/manualsdb-neogeoaes:enabled} 42",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-neogeoaes"}]}
+                },
+                {
+                    "title": "28 Neo Geo CD",
+                    "description": "{ajgowans/manualsdb-neogeocd:enabled} 35",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-neogeocd"}]}
+                },
+                {
+                    "title": "29 NES",
+                    "description": "{ajgowans/manualsdb-nes:enabled} 759 | 960MB",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-nes"}]}
+                },
+                {
+                    "title": "30 Neo Geo Pocket",
+                    "description": "{ajgowans/manualsdb-ngp:enabled} 3",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-ngp"}]}
+                },
+                {
+                    "title": "31 Neo Geo Pocket Color",
+                    "description": "{ajgowans/manualsdb-ngpc:enabled} 28",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-ngpc"}]}
+                },
+                {
+                    "title": "32 Odyssey 2",
+                    "description": "{ajgowans/manualsdb-odyssey2:enabled} 79",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-odyssey2"}]}
+                },
+                {
+                    "title": "33 Pokemon Mini",
+                    "description": "{ajgowans/manualsdb-pokemonmini:enabled} 7",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-pokemonmini"}]}
+                },
+                {
+                    "title": "34 PSX",
+                    "description": "{ajgowans/manualsdb-psx:enabled} 1295 | 6.1GB",
+                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-psx", "PSX Manuals", "1295", "6.1 GB")}
+                },
+                {
+                    "title": "35 Pyuuta Jr",
+                    "description": "{ajgowans/manualsdb-pyuutajr:enabled} 9",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-pyuutajr"}]}
+                },
+                {
+                    "title": "36 Sega 32X",
+                    "description": "{ajgowans/manualsdb-sega32x:enabled} 32",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-sega32x"}]}
+                },
+                {
+                    "title": "37 Sega CD",
+                    "description": "{ajgowans/manualsdb-segacd:enabled} 149",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-segacd"}]}
+                },
+                {
+                    "title": "38 Sega Saturn",
+                    "description": "{ajgowans/manualsdb-segasaturn:enabled} 256 | 1.4GB",
+                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-segasaturn", "Sega Saturn Manuals", "256", "1.4 GB")}
+                },
+                {
+                    "title": "39 Sega SG-1000",
+                    "description": "{ajgowans/manualsdb-segasg1000:enabled} 12",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-segasg1000"}]}
+                },
+                {
+                    "title": "40 SMS",
+                    "description": "{ajgowans/manualsdb-sms:enabled} 202 | 540MB",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-sms"}]}
+                },
+                {
+                    "title": "41 SNES",
+                    "description": "{ajgowans/manualsdb-snes:enabled} 766 | 1.9GB",
+                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-snes", "SNES Manuals", "766", "1.9 GB")}
+                },
+                {
+                    "title": "42 Supervision",
+                    "description": "{ajgowans/manualsdb-supervision:enabled} 53",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-supervision"}]}
+                },
+                {
+                    "title": "43 TurboGrafx-16",
+                    "description": "{ajgowans/manualsdb-turbografx16:enabled} 77",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-turbografx16"}]}
+                },
+                {
+                    "title": "44 TurboGrafx CD",
+                    "description": "{ajgowans/manualsdb-turbografxcd:enabled} 44",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-turbografxcd"}]}
+                },
+                {
+                    "title": "45 VC 4000",
+                    "description": "{ajgowans/manualsdb-vc4000:enabled} 47",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-vc4000"}]}
+                },
+                {
+                    "title": "46 Vectrex",
+                    "description": "{ajgowans/manualsdb-vectrex:enabled} 31",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-vectrex"}]}
+                },
+                {
+                    "title": "47 WonderSwan Color",
+                    "description": "{ajgowans/manualsdb-wonderswanc:enabled} 1",
+                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-wonderswanc"}]}
                 },
             ]
         },
@@ -789,16 +1259,85 @@ def settings_screen_model(): return {
                     "actions": {"ok": [{"type": "rotate_variable", "target": "overscan"}, {"type": "apply_overscan"}]}
                 },
                 {
-                    "title": "5 Accessibility: Monochrome UI",
+                    "title": "5 CRT Video Mode",
+                    "description": "Select different resolutions",
+                    "actions": {"ok": [_crt_warning("system_video_mode_menu")]}
+                },
+                {
+                    "title": "6 CRT Screen Position",
+                    "description": "Adjust ←↑↓→ the image.",
+                    "actions": {"ok": [_crt_warning("system_video_adjust_menu")]}
+                },
+                {
+                    "title": "7 Accessibility: Monochrome UI",
                     "description": "{monochrome_ui:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "monochrome_ui"}, {"type": "apply_theme"}]}
                 },
                 # {
-                #     "title": "6 Mirror",
+                #     "title": "8 Mirror",
                 #     "description": "{mirror}",
                 #     "actions": {"ok": [{"type": "rotate_variable", "target": "mirror"}]}
                 # }
             ]
+        },
+        "system_video_mode_menu": {
+            "type": "dialog_sub_menu",
+            "header": "Select CRT Resolution",
+            "text": [
+                "IMPORTANT: Choose the option that matches your CRT equipment.",
+            ],
+            "entries": [
+                {
+                    "title": "1 NTSC 60Hz",
+                    "description": "America, JP, PH, MN, KR, TW, EH",
+                    "actions": {"ok": [{"type": "navigate", "target": "system_video_mode_menu_ntsc"}]}
+                },
+                {
+                    "title": "2 PAL 50Hz",
+                    "description": "Europe, Asia, Africa, BR, AR, AU, PY, NZ, UY",
+                    "actions": {"ok": [{"type": "navigate", "target": "system_video_mode_menu_pal"}]}
+                },
+            ]
+        },
+        "system_video_mode_menu_ntsc": {
+            "ui": "mister_video_mode",
+            "header": "Select NTSC CRT Resolution",
+            "text": [
+                "Try a video mode:",
+            ],
+            "resolutions": [
+                {"name": "1 720x240", "video_mode": "720,24,65,71,240,4,3,15,13820"},
+                {"name": "2 640x240", "video_mode": "640,30,60,70,240,4,4,14,12587"},
+                {"name": "3 512x240", "video_mode": "512,32,72,64,240,8,10,4,10690"},
+                {"name": "4 352x240", "video_mode": "352,32,24,64,240,8,10,4,7427"},
+                {"name": "5 336x240", "video_mode": "336,16,64,32,240,8,10,4,7043"},
+                {"name": "6 320x240 a", "video_mode": "320,13,31,52,240,2,3,16,6515"},
+                {"name": "7 320x240 b", "video_mode": "320,8,32,24,240,4,3,16,6048"},
+                {"name": "8 304x240", "video_mode": "304,16,56,32,240,8,10,4,6414"},
+            ],
+        },
+        "system_video_mode_menu_pal": {
+            "ui": "mister_video_mode",
+            "header": "Select PAL CRT Resolution",
+            "text": [
+                "Try a video mode:",
+            ],
+            "resolutions": [
+                {"name": "1 640x288", "video_mode": "640,32,64,96,288,1,3,17,13100"},
+                {"name": "2 640x240", "video_mode": "640,30,60,70,288,6,4,14,12587"},
+                {"name": "3 512x288", "video_mode": "512,32,56,72,288,1,3,20,10680"},
+                {"name": "4 384x288", "video_mode": "384,16,40,56,288,1,3,17,7850"},
+                {"name": "5 352x288", "video_mode": "352,16,40,56,288,1,3,20,7400"},
+                {"name": "6 320x288", "video_mode": "320,13,31,52,288,4,3,18,6510"},
+            ],
+        },
+        "system_video_adjust_menu": {
+            "ui": "mister_video_adjust",
+            "header": "Adjust CRT Screen Position",
+            "text": [
+                "Press ←↑↓→ to move the image.",
+                "ESC to restore.",
+            ],
         },
         "rannysnice_wallpapers_menu": {
             "type": "dialog_sub_menu",
@@ -1689,11 +2228,11 @@ def _try_abort(): return [
             "header": "INI file/s were not saved",
             "text": ["Do you really want to abort Update All without saving your changes?"],
             "actions": [
-                {"title": "Yes", "type": "fixed", "fixed": [{"type": "navigate", "target": "abort"}]},
+                {"title": "Yes", "type": "fixed", "fixed": [{"type": "prepare_exit_without_save"}, {"type": "navigate", "target": "abort"}]},
                 {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]}
             ],
         }],
-        "false": [{"ui": "message", "text": ["Pressed ESC/Abort", "Closing Update All..."], "hotkeys": [{"keys": [27], "action": [{"type": "navigate", "target": "abort"}]}], "effects": [{"type": "navigate", "target": "abort"}]}]
+        "false": [{"ui": "message", "text": ["Pressed ESC/Abort", "Closing Update All..."], "hotkeys": [{"keys": [27], "action": [{"type": "prepare_exit_without_save"}, {"type": "navigate", "target": "abort"}]}], "effects": [{"type": "prepare_exit_without_save"}, {"type": "navigate", "target": "abort"}]}]
     }
 ]
 

@@ -131,11 +131,11 @@ def search_in_model(result: TResult, base_types: Dict[str, Any], item, cb: Calla
             search_in_model(result, base_types, fixed, cb)
 
     elif node_type == 'condition':
-        for true in item['true']:
-            search_in_model(result, base_types, true, cb)
-
-        for false in item['false']:
-            search_in_model(result, base_types, false, cb)
+        for key, branch in item.items():
+            if key in ('type', 'variable') or not isinstance(branch, list):
+                continue
+            for effect in branch:
+                search_in_model(result, base_types, effect, cb)
 
 
 def dynamic_convert_string(value):

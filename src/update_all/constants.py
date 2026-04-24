@@ -179,7 +179,7 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION: Final[str] = "2.7"
+UPDATE_ALL_VERSION: Final[str] = "2.8"
 MISTER_DOWNLOADER_VERSION: Final[str] = "2.4"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"
@@ -187,6 +187,7 @@ DOWNLOADER_URL: Final[str] = "https://github.com/MiSTer-devel/Downloader_MiSTer/
 DOWNLOADER_INI_STANDARD_PATH: Final[str] = "downloader.ini"
 DOWNLOADER_BIOS_DB_INI: Final[str] = "downloader_bios_db.ini"
 DOWNLOADER_ARCADE_ROMS_DB_INI: Final[str] = "downloader_arcade_roms_db.ini"
+DOWNLOADER_AJGOWANS_MANUALSDB_INI: Final[str] = "downloader_ajgowans_manualsdb.ini"
 DOWNLOADER_STORE_STANDARD_PATH: Final[str] = "Scripts/.config/downloader/downloader.json"
 DOWNLOADER_LATEST_ZIP_PATH: Final[str] = "Scripts/.config/downloader/downloader_latest.zip"
 DOWNLOADER_LATEST_BIN_PATH: Final[str] = "Scripts/.config/downloader/downloader_bin"

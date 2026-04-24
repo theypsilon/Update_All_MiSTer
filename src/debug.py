@@ -20,6 +20,7 @@ def exports(env=None): return " ".join(f"export {key}={value};" for key, value i
 def scp_file(src, dest, **kwargs): _ssh_pass('scp', [scp_path(src), scp_path(dest)], **kwargs)
 def exec_ssh(cmd, env=None, **kwargs): return _ssh_pass('ssh', [f'root@{mister_ip()}', f'{exports(env)}{cmd}'], **kwargs)
 def run_build(**kwargs): send_build(env={"SKIP_REMOVALS": "true"}), exec_ssh(f'/media/fat/update_all.sh --no-continue', **kwargs)
+def install_rc(**kwargs): send_build(debug='false', build_target='/media/fat/Scripts/update_all_rc.sh', launcher_target=False, **kwargs)
 def local_run(env=None): subprocess.run(['python3', './src/__main__.py'], env={**({} if env is None else env), 'LOCATION_STR': '.local_drv'}, check=True)
 def local_run_tiny(): subprocess.run(['script', '-q', '/dev/null', '-c', 'stty rows 15 cols 40 && python3 ./src/__main__.py'], env={**os.environ.copy(), 'LOCATION_STR': '.local_drv'}, check=True)
 def local_run_small(): subprocess.run(['script', '-q', '/dev/null', '-c', 'stty rows 18 cols 80 && python3 ./src/__main__.py'], env={**os.environ.copy(), 'LOCATION_STR': '.local_drv'}, check=True)
@@ -28,13 +29,14 @@ def store_push(**kwargs): scp_file('update_all.json', '/media/fat/Scripts/.confi
 def store_pull(**kwargs): scp_file('/media/fat/Scripts/.config/update_all/update_all.json', 'update_all.json', **kwargs)
 def log_pull(**kwargs): scp_file('/media/fat/Scripts/.config/update_all/update_all.log', 'update_all.log', **kwargs)
 
-def send_build(env=None, **kwargs):
-    env = {'DEBUG': 'true', **os.environ.copy(), **(env or {}), 'MISTER': 'true'}
+def send_build(env=None, build_target=None, launcher_target=None, debug=None, **kwargs):
+    env = {'DEBUG': debug or 'true', **os.environ.copy(), **(env or {}), 'MISTER': 'true'}
     with tempfile.NamedTemporaryFile(delete=False) as tmp: subprocess.run(['./src/build.sh'], stderr=sys.stdout, stdout=tmp, env=env, check=True)
     os.chmod(tmp.name, 0o755)
 
-    scp_file(tmp.name, '/media/fat/update_all.sh', **kwargs)
-    scp_file('update_all.sh', '/media/fat/Scripts/update_all.sh', **kwargs)
+    scp_file(tmp.name, build_target or '/media/fat/update_all.sh', **kwargs)
+    if launcher_target is not False:
+        scp_file('update_all.sh', launcher_target or '/media/fat/Scripts/update_all.sh', **kwargs)
 
     os.remove(tmp.name)
 
@@ -50,6 +52,7 @@ def operations_dict(env=None, retries=False):
         'local_run': lambda: local_run(env=env),
         'local_run_tiny': lambda: local_run_tiny(),
         'local_run_small': lambda: local_run_small(),
+        'install_rc': lambda: install_rc()
     }
 
 def _ssh_pass(cmd, args, out=None, retries=True):

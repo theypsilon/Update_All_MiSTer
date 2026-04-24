@@ -101,6 +101,55 @@ class AllDBs:
         self.ANIME0T4KU_WALLPAPERS = Database(db_id='anime0t4ku_wallpapers', db_url='https://raw.githubusercontent.com/Anime0t4ku/MiSTerWallpapers/db/db/0t4kuwallpapers.json.zip', title='Anime0t4ku Wallpapers')
         self.PCN_CHALLENGE_WALLPAPERS = Database(db_id='pcn_challenge_wallpapers', db_url='https://raw.githubusercontent.com/Anime0t4ku/MiSTerWallpapers/db/db/pcnchallenge.json.zip', title='PCN Challenge Wallpapers')
 
+        # MANUALS
+        self.MANUALSDB_3DO = Database(db_id='ajgowans/manualsdb-3do', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-3do/db/db.json.zip', title='3DO Manuals')
+        self.MANUALSDB_ARCADIA2001 = Database(db_id='ajgowans/manualsdb-arcadia2001', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-arcadia2001/db/db.json.zip', title='Arcadia 2001 Manuals')
+        self.MANUALSDB_ATARI2600 = Database(db_id='ajgowans/manualsdb-atari2600', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-atari2600/db/db.json.zip', title='Atari 2600 Manuals')
+        self.MANUALSDB_ATARI5200 = Database(db_id='ajgowans/manualsdb-atari5200', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-atari5200/db/db.json.zip', title='Atari 5200 Manuals')
+        self.MANUALSDB_ATARI7800 = Database(db_id='ajgowans/manualsdb-atari7800', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-atari7800/db/db.json.zip', title='Atari 7800 Manuals')
+        self.MANUALSDB_ATARILYNX = Database(db_id='ajgowans/manualsdb-atarilynx', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-atarilynx/db/db.json.zip', title='Atari Lynx Manuals')
+        self.MANUALSDB_ATARIXEGS = Database(db_id='ajgowans/manualsdb-atarixegs', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-atarixegs/db/db.json.zip', title='Atari XEGS Manuals')
+        self.MANUALSDB_AVISION = Database(db_id='ajgowans/manualsdb-avision', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-avision/db/db.json.zip', title='AVision Manuals')
+        self.MANUALSDB_BALLYASTROCADE = Database(db_id='ajgowans/manualsdb-ballyastrocade', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-ballyastrocade/db/db.json.zip', title='Bally Astrocade Manuals')
+        self.MANUALSDB_BBCBRIDGE = Database(db_id='ajgowans/manualsdb-bbcbridge', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-bbcbridge/db/db.json.zip', title='BBC Bridge Manuals')
+        self.MANUALSDB_CDI = Database(db_id='ajgowans/manualsdb-cdi', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-cdi/db/db.json.zip', title='CD-i Manuals')
+        self.MANUALSDB_CHANNELF = Database(db_id='ajgowans/manualsdb-channelf', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-channelf/db/db.json.zip', title='Channel F Manuals')
+        self.MANUALSDB_COLECOVISION = Database(db_id='ajgowans/manualsdb-colecovision', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-colecovision/db/db.json.zip', title='ColecoVision Manuals')
+        self.MANUALSDB_CREATIVISION = Database(db_id='ajgowans/manualsdb-creativision', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-creativision/db/db.json.zip', title='CreatiVision Manuals')
+        self.MANUALSDB_FDS = Database(db_id='ajgowans/manualsdb-fds', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-fds/db/db.json.zip', title='FDS Manuals')
+        self.MANUALSDB_GAMEANDWATCH = Database(db_id='ajgowans/manualsdb-gameandwatch', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-gameandwatch/db/db.json.zip', title='Game & Watch Manuals')
+        self.MANUALSDB_GAMEBOY = Database(db_id='ajgowans/manualsdb-gameboy', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-gameboy/db/db.json.zip', title='Game Boy Manuals')
+        self.MANUALSDB_GAMEGEAR = Database(db_id='ajgowans/manualsdb-gamegear', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-gamegear/db/db.json.zip', title='Game Gear Manuals')
+        self.MANUALSDB_GBA = Database(db_id='ajgowans/manualsdb-gba', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-gba/db/db.json.zip', title='GBA Manuals')
+        self.MANUALSDB_GBC = Database(db_id='ajgowans/manualsdb-gbc', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-gbc/db/db.json.zip', title='Game Boy Color Manuals')
+        self.MANUALSDB_INTELLIVISION = Database(db_id='ajgowans/manualsdb-intellivision', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-intellivision/db/db.json.zip', title='Intellivision Manuals')
+        self.MANUALSDB_JAGUAR = Database(db_id='ajgowans/manualsdb-jaguar', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-jaguar/db/db.json.zip', title='Jaguar Manuals')
+        self.MANUALSDB_JAGUARCD = Database(db_id='ajgowans/manualsdb-jaguarcd', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-jaguarcd/db/db.json.zip', title='Jaguar CD Manuals')
+        self.MANUALSDB_LCDHANDHELDS = Database(db_id='ajgowans/manualsdb-lcdhandhelds', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-lcdhandhelds/db/db.json.zip', title='LCD Handhelds Manuals')
+        self.MANUALSDB_MEGADRIVE = Database(db_id='ajgowans/manualsdb-megadrive', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-megadrive/db/db.json.zip', title='Mega Drive Manuals')
+        self.MANUALSDB_N64 = Database(db_id='ajgowans/manualsdb-n64', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-n64/db/db.json.zip', title='N64 Manuals')
+        self.MANUALSDB_NEOGEOAES = Database(db_id='ajgowans/manualsdb-neogeoaes', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-neogeoaes/db/db.json.zip', title='Neo Geo AES Manuals')
+        self.MANUALSDB_NEOGEOCD = Database(db_id='ajgowans/manualsdb-neogeocd', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-neogeocd/db/db.json.zip', title='Neo Geo CD Manuals')
+        self.MANUALSDB_NES = Database(db_id='ajgowans/manualsdb-nes', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-nes/db/db.json.zip', title='NES Manuals')
+        self.MANUALSDB_NGP = Database(db_id='ajgowans/manualsdb-ngp', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-ngp/db/db.json.zip', title='Neo Geo Pocket Manuals')
+        self.MANUALSDB_NGPC = Database(db_id='ajgowans/manualsdb-ngpc', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-ngpc/db/db.json.zip', title='Neo Geo Pocket Color Manuals')
+        self.MANUALSDB_ODYSSEY2 = Database(db_id='ajgowans/manualsdb-odyssey2', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-odyssey2/db/db.json.zip', title='Odyssey 2 Manuals')
+        self.MANUALSDB_POKEMONMINI = Database(db_id='ajgowans/manualsdb-pokemonmini', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-pokemonmini/db/db.json.zip', title='Pokemon Mini Manuals')
+        self.MANUALSDB_PSX = Database(db_id='ajgowans/manualsdb-psx', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-psx/db/db.json.zip', title='PSX Manuals')
+        self.MANUALSDB_PYUUTAJR = Database(db_id='ajgowans/manualsdb-pyuutajr', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-pyuutajr/db/db.json.zip', title='Pyuuta Jr Manuals')
+        self.MANUALSDB_SEGA32X = Database(db_id='ajgowans/manualsdb-sega32x', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-sega32x/db/db.json.zip', title='Sega 32X Manuals')
+        self.MANUALSDB_SEGACD = Database(db_id='ajgowans/manualsdb-segacd', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-segacd/db/db.json.zip', title='Sega CD Manuals')
+        self.MANUALSDB_SEGASATURN = Database(db_id='ajgowans/manualsdb-segasaturn', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-segasaturn/db/db.json.zip', title='Sega Saturn Manuals')
+        self.MANUALSDB_SEGASG1000 = Database(db_id='ajgowans/manualsdb-segasg1000', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-segasg1000/db/db.json.zip', title='Sega SG-1000 Manuals')
+        self.MANUALSDB_SMS = Database(db_id='ajgowans/manualsdb-sms', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-sms/db/db.json.zip', title='SMS Manuals')
+        self.MANUALSDB_SNES = Database(db_id='ajgowans/manualsdb-snes', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-snes/db/db.json.zip', title='SNES Manuals')
+        self.MANUALSDB_SUPERVISION = Database(db_id='ajgowans/manualsdb-supervision', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-supervision/db/db.json.zip', title='Supervision Manuals')
+        self.MANUALSDB_TURBOGRAFX16 = Database(db_id='ajgowans/manualsdb-turbografx16', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-turbografx16/db/db.json.zip', title='TurboGrafx-16 Manuals')
+        self.MANUALSDB_TURBOGRAFXCD = Database(db_id='ajgowans/manualsdb-turbografxcd', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-turbografxcd/db/db.json.zip', title='TurboGrafx CD Manuals')
+        self.MANUALSDB_VC4000 = Database(db_id='ajgowans/manualsdb-vc4000', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-vc4000/db/db.json.zip', title='VC 4000 Manuals')
+        self.MANUALSDB_VECTREX = Database(db_id='ajgowans/manualsdb-vectrex', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-vectrex/db/db.json.zip', title='Vectrex Manuals')
+        self.MANUALSDB_WONDERSWANC = Database(db_id='ajgowans/manualsdb-wonderswanc', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-wonderswanc/db/db.json.zip', title='WonderSwan Color Manuals')
+
     def all_dbs_list(self) -> List[Database]:
         return [db for field_name, db in self.__dict__.items() if not field_name.startswith('_')]
 
@@ -253,6 +302,10 @@ def changed_db_ids() -> Dict[str, str]:
         DB_ID_COIN_OP_COLLECTION_DEPRECATED: ALL_DB_IDS['COIN_OP_COLLECTION'],
         DB_ID_UBERYOJI_BOOT_ROMS_DEPRECATED: ALL_DB_IDS['UBERYOJI_BOOT_ROMS'],
     }
+
+def ajgowans_manualsdbs() -> List[Database]:
+    dbs = AllDBs()
+    return [getattr(dbs, name) for name, db_id in ALL_DB_IDS.items() if db_id.startswith('ajgowans/manualsdb-')]
 
 def removed_db_ids() -> dict[str, str]:
     return {

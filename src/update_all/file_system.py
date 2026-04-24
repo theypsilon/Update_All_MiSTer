@@ -164,6 +164,10 @@ class FileSystem(ABC):
         """interface"""
 
     @abstractmethod
+    def available_space(self, path):
+        """interface"""
+
+    @abstractmethod
     def save_json_on_zip(self, db, path):
         """interface"""
 
@@ -384,6 +388,10 @@ class _FileSystem(FileSystem):
 
     def file_mtime(self, path: str):
         return os.path.getmtime(self._path(path))
+
+    def available_space(self, path: str):
+        stats = os.statvfs(self._path(path))
+        return stats.f_bavail * stats.f_frsize
 
     def save_json_on_zip(self, db, path):
         json_name = Path(path).stem

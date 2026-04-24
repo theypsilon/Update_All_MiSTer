@@ -20,12 +20,13 @@ from update_all.constants import MEDIA_FAT
 
 
 class FileSystemState:
-    def __init__(self, files=None, folders=None, base_path=None, config=None, path_dictionary=None):
+    def __init__(self, files=None, folders=None, base_path=None, config=None, path_dictionary=None, available_space=None):
         self.path_dictionary = path_dictionary if path_dictionary is not None else {}
         self.config = config if config is not None else Config(base_path=base_path or MEDIA_FAT)
         base_path = _fix_base_path(self.config.base_path)
         self.files = _fs_paths(files, base_path) if files is not None else {}
         self.folders = _fs_folders(folders, base_path) if folders is not None else {}
+        self.available_space = {k.lower(): v for k, v in available_space.items()} if available_space is not None else {}
         self.temp_files_with_ids = {}
 
     def add_file(self, base_path, file, description):

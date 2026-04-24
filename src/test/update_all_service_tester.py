@@ -40,6 +40,7 @@ from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer
+from update_all.mister_video_mode_ui import MisterVideoModeService
 from update_all.os_utils import OsUtils
 from update_all.other import GenericProvider, TerminalSize
 from update_all.settings_screen import SettingsScreen
@@ -153,16 +154,19 @@ class SettingsScreenTester(SettingsScreen):
                  local_repository: LocalRepository = None,
                  store_provider: GenericProvider[LocalStore] = None,
                  ao_service: ArcadeOrganizerService = None,
-                 retroaccount: RetroAccountService = None):
+                 retroaccount: RetroAccountService = None,
+                 mister_video_mode_service: MisterVideoModeService = None):
 
         config_provider = config_provider or GenericProvider[Config]()
         file_system = file_system or FileSystemFactory(config_provider=config_provider).create_for_system_scope()
+        os_utils = os_utils or SpyOsUtils()
         super().__init__(
             logger=NoLogger(),
             config_provider=config_provider,
             file_system=file_system,
             ini_repository=ini_repository or IniRepositoryTester(file_system=file_system),
-            os_utils=os_utils or SpyOsUtils(),
+            os_utils=os_utils,
+            mister_video_mode_service=mister_video_mode_service or MisterVideoModeService(NoLogger(), file_system, config_provider, os_utils),
             settings_screen_printer=settings_screen_printer or SettingsScreenPrinterStub(),
             ui_runtime=ui_runtime or UiRuntimeStub(),
             encryption=encryption or EncryptionTester(file_system=file_system),
@@ -308,15 +312,16 @@ class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
 
 
 class RetroAccountServiceTester(RetroAccountService):
-    def __init__(self, file_system: FileSystem = None, config_provider: GenericProvider[Config] = None, retroaccount_gateway: RetroAccountGateway = None, encryption: Encryption = None):
+    def __init__(self, file_system: FileSystem = None, config_provider: GenericProvider[Config] = None, retroaccount_gateway: RetroAccountGateway = None, encryption: Encryption = None, store_provider: GenericProvider[LocalStore] = None):
         config_provider = config_provider or GenericProvider[Config]()
         file_system = file_system or FileSystemFactory().create_for_system_scope()
+        del store_provider
         super().__init__(
             NoLogger(),
             file_system,
             config_provider,
             retroaccount_gateway or RetroAccountGateway(config_provider, NoLogger(), file_system, MagicMock()),
-            encryption or EncryptionTester()
+            encryption or EncryptionTester(),
         )
 
     def mister_sync(self) -> None:

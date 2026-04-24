@@ -381,6 +381,20 @@ class _EffectResolver:
                     self._ui.set_value(target_variable, possible_values[cur_index])
                     result = 'clear_window'
 
+            elif effect['type'] == 'compare_bigger':
+                left = self._resolve_number_operand(effect['left'])
+                right = self._resolve_number_operand(effect['right'])
+                if left == right:
+                    outcome = 'equal'
+                elif left > right:
+                    outcome = 'left'
+                else:
+                    outcome = 'right'
+                target_variable = effect['target']
+                if self._ui.get_value(target_variable) != outcome:
+                    self._ui.set_value(target_variable, outcome)
+                    result = 'clear_window'
+
             elif effect['type'] == 'set_variable':
                 target_variable = effect['target']
                 target_value = effect['value']
@@ -405,3 +419,12 @@ class _EffectResolver:
                 raise NotImplementedError(f'Wrong effect type :"{effect["type"]}"')
 
         return result
+
+    def _resolve_number_operand(self, operand):
+        if isinstance(operand, bool):
+            raise ValueError(f'compare_bigger: boolean operand not allowed: {operand!r}')
+        if isinstance(operand, (int, float)):
+            return float(operand)
+        if isinstance(operand, str):
+            return float(self._ui.get_value(operand))
+        raise ValueError(f'compare_bigger: unsupported operand type: {type(operand).__name__}')

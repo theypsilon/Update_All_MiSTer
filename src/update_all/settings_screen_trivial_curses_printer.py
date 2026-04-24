@@ -62,6 +62,9 @@ class SettingsScreenTrivialCursesPrinter(CursesRuntime, SettingsScreenPrinter, C
         self.window.addstr(self._index_vertical, 1, self._interpolator.interpolate(text), curses.A_NORMAL)
         self._index_vertical += 1
 
+    def set_key_timeout(self, timeout_ms: int) -> None:
+        self.window.timeout(timeout_ms)
+
     def add_menu_entry(self, option, info, is_selected=False):
         mode = curses.A_REVERSE if is_selected else curses.A_NORMAL
         self.window.addstr(self._index_vertical, 1, self._interpolator.interpolate(option), mode)

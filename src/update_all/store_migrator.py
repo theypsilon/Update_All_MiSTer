@@ -68,6 +68,7 @@ def make_new_local_store(store_migrator):
         'timeline_after_logs': default_config.timeline_after_logs,
         'overscan': default_config.overscan,
         'monochrome_ui': default_config.monochrome_ui,
+        'ajgowans_manuals_dbs_general_selector': False,
     }
 
 

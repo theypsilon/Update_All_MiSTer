@@ -16,15 +16,14 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 from collections import Counter
-from typing import Dict
+from typing import Dict, List
 from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
-    FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh, \
-    DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI
+    FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
 from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, \
     DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ALL_DB_IDS
 from update_all.ini_parser import IniParser
-from update_all.ini_repository import IniRepository
+from update_all.ini_repository import IniRepository, SEPARATE_DB_INI_FILES_BY_FILENAME
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
 from update_all.logger import Logger
@@ -284,23 +283,23 @@ class TransitionService:
         if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
             return
 
-        db_ids_to_separate = {
-            ALL_DB_IDS['BIOS']: DOWNLOADER_BIOS_DB_INI,
-            ALL_DB_IDS['ARCADE_ROMS']: DOWNLOADER_ARCADE_ROMS_DB_INI,
-        }
+        extracted_by_filename: Dict[str, List[str]] = {}
+        for ini_filename, canonical_db_ids in SEPARATE_DB_INI_FILES_BY_FILENAME.items():
+            moved = self._ini_repository.extract_dbs_to_separate_ini(canonical_db_ids, ini_filename, downloader_ini)
+            if moved:
+                extracted_by_filename[ini_filename] = moved
 
-        extracted = []
-        for db_id, ini_filename in db_ids_to_separate.items():
-            if self._ini_repository.extract_db_to_separate_ini(db_id, ini_filename, downloader_ini):
-                extracted.append((db_id, ini_filename))
-
-        if len(extracted) == 0:
+        if not extracted_by_filename:
             return
 
         self._logger.print()
         self._logger.print('Splitting databases into separate INI files:')
-        for db_id, ini_filename in extracted:
-            self._logger.print(f'  - Moved [{db_id}] from downloader.ini to {ini_filename}.')
+        for ini_filename, moved in extracted_by_filename.items():
+            if len(moved) <= 3:
+                for db_id in moved:
+                    self._logger.print(f'  - Moved [{db_id}] from downloader.ini to {ini_filename}.')
+            else:
+                self._logger.print(f'  - Moved {len(moved)} databases from downloader.ini to {ini_filename}.')
         self._logger.print()
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)

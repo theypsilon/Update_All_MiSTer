@@ -20,8 +20,8 @@ from pathlib import Path
 from typing import Tuple
 
 from update_all.config import Config
-from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, FILE_downloader_temp_ini, MEDIA_FAT
-from update_all.ini_repository import read_ini_contents
+from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, FILE_downloader_temp_ini, MEDIA_FAT
+from update_all.ini_repository import read_ini_contents, SEPARATE_DB_INI_FILES
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, TerminalSize
 from update_all.databases import db_ids_to_model_variable_pairs, all_dbs
@@ -90,6 +90,34 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.calculate_needs_save(ui)
         self.assertEqual('', ui.get_value('needs_save_file_list'))
         self.assertEqual('false', ui.get_value('needs_save'))
+
+    def test_calculate_needs_save___when_toggling_a_manualsdb___returns_manualsdbs_ini_in_needs_save_list(self) -> None:
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('ajgowans/manualsdb-nes', 'true')
+
+        sut.calculate_needs_save(ui)
+
+        self.assertEqual(f'  - {DOWNLOADER_AJGOWANS_MANUALSDB_INI}', ui.get_value('needs_save_file_list'))
+        self.assertEqual('true', ui.get_value('needs_save'))
+
+    def test_save___with_multiple_manualsdbs_toggled_on___writes_expected_manualsdbs_ini_with_multiple_sections(self) -> None:
+        sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('ajgowans/manualsdb-3do', 'true')
+        ui.set_value('ajgowans/manualsdb-nes', 'true')
+        ui.set_value('ajgowans/manualsdb-snes', 'true')
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        matching = [p for p in fs.files if p.endswith(DOWNLOADER_AJGOWANS_MANUALSDB_INI.lower())]
+        self.assertEqual(1, len(matching), f'Expected one manualsdbs ini, got: {matching}')
+        parsed = read_ini_contents(fs.files[matching[0]]['content'])
+        self.assertEqual(
+            {'ajgowans/manualsdb-3do', 'ajgowans/manualsdb-nes', 'ajgowans/manualsdb-snes'},
+            set(parsed.sections())
+        )
 
     def test_calculate_needs_save___with_hbmame_filter_changed_on_separate_arcade_roms_db___returns_separate_ini_changes(self) -> None:
         sut, ui, _ = tester(files={
@@ -187,7 +215,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.save(ui)
 
         ini_sections = len(read_ini_contents(fs.files[downloader_ini.lower()]['content']).sections())
-        self.assertEqual(len(db_ids_to_model_variable_pairs()) - 2, ini_sections)  # @TODO: Remove the -2 when Arcade ROMs DB and BIOS DB are gone.
+        self.assertEqual(len(db_ids_to_model_variable_pairs()) - len(SEPARATE_DB_INI_FILES), ini_sections)
         self.assertGreaterEqual(ini_sections, 10)
 
     def test_save__when_disabling_autoreboot___writes_changes_on_local_store(self):

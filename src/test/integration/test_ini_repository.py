@@ -19,8 +19,9 @@ from pathlib import Path
 from test.ini_assertions import assertEqualIni
 from test.testing_objects import downloader_ini
 from update_all.config import Config
-from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, MEDIA_FAT
+from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, DOWNLOADER_INI_STANDARD_PATH, MEDIA_FAT
 from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, all_dbs
+from update_all.ini_repository import read_ini_contents
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.update_all_service_tester import default_databases, IniRepositoryTester
@@ -144,3 +145,168 @@ class TestIniRepository(unittest.TestCase):
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/default_downloader_unsorted.ini').read_text()}
         }, config=config)
         self.assertEqual(Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(), fs.files[downloader_ini]['content'])
+
+    def test_write_separate_db_ini_files___with_multiple_active_manualsdbs___writes_single_file_with_multiple_sections(self):
+        state = FileSystemState()
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        config = Config(databases=default_databases(add=[
+            all_dbs('').MANUALSDB_3DO.db_id,
+            all_dbs('').MANUALSDB_NES.db_id,
+            all_dbs('').MANUALSDB_SNES.db_id,
+        ]))
+
+        ini_repository.write_separate_db_ini_files(config)
+
+        path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
+        contents = state.files[path]['content']
+        parsed = read_ini_contents(contents)
+        self.assertEqual(
+            {'ajgowans/manualsdb-3do', 'ajgowans/manualsdb-nes', 'ajgowans/manualsdb-snes'},
+            {s for s in parsed.sections()}
+        )
+        self.assertEqual(
+            'https://raw.githubusercontent.com/ajgowans/manualsdb-nes/db/db.json.zip',
+            parsed['ajgowans/manualsdb-nes']['db_url']
+        )
+
+    def test_write_separate_db_ini_files___with_some_manualsdbs_deactivated___shrinks_file_to_remaining_sections(self):
+        state = FileSystemState(files={
+            f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}': {'content':
+                '[ajgowans/manualsdb-3do]\n'
+                'db_url = https://raw.githubusercontent.com/ajgowans/manualsdb-3do/db/db.json.zip\n\n'
+                '[ajgowans/manualsdb-nes]\n'
+                'db_url = https://raw.githubusercontent.com/ajgowans/manualsdb-nes/db/db.json.zip\n\n'
+                '[ajgowans/manualsdb-snes]\n'
+                'db_url = https://raw.githubusercontent.com/ajgowans/manualsdb-snes/db/db.json.zip\n'
+            }
+        })
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        config = Config(databases=default_databases(add=[all_dbs('').MANUALSDB_NES.db_id]))
+
+        ini_repository.write_separate_db_ini_files(config)
+
+        path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
+        parsed = read_ini_contents(state.files[path]['content'])
+        self.assertEqual({'ajgowans/manualsdb-nes'}, {s for s in parsed.sections()})
+
+    def test_write_separate_db_ini_files___with_all_manualsdbs_deactivated___deletes_file(self):
+        state = FileSystemState(files={
+            f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}': {'content':
+                '[ajgowans/manualsdb-nes]\n'
+                'db_url = https://raw.githubusercontent.com/ajgowans/manualsdb-nes/db/db.json.zip\n'
+            }
+        })
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        config = Config(databases=default_databases())
+
+        ini_repository.write_separate_db_ini_files(config)
+
+        path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
+        self.assertNotIn(path, state.files)
+
+    def test_write_separate_db_ini_files___with_bios_and_manualsdbs_active___writes_them_to_different_files(self):
+        state = FileSystemState()
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        config = Config(databases=default_databases(add=[
+            all_dbs('').BIOS.db_id,
+            all_dbs('').MANUALSDB_NES.db_id,
+        ]))
+
+        ini_repository.write_separate_db_ini_files(config)
+
+        bios_path = f'{MEDIA_FAT}/{DOWNLOADER_BIOS_DB_INI}'.lower()
+        manuals_path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
+        self.assertIn('[bios_db]', state.files[bios_path]['content'])
+        self.assertNotIn('manualsdb', state.files[bios_path]['content'])
+        self.assertIn('[ajgowans/manualsdb-nes]', state.files[manuals_path]['content'])
+        self.assertNotIn('bios_db', state.files[manuals_path]['content'])
+
+    def test_extract_dbs_to_separate_ini___with_multiple_manualsdbs_in_downloader_ini___extracts_all_into_single_file_in_one_pass(self):
+        state = FileSystemState(files={
+            downloader_ini: {'content':
+                '[update_all_mister]\n'
+                'db_url = https://update_all\n\n'
+                '[ajgowans/manualsdb-3do]\n'
+                'db_url = https://raw.githubusercontent.com/ajgowans/manualsdb-3do/db/db.json.zip\n\n'
+                '[ajgowans/manualsdb-nes]\n'
+                'db_url = https://raw.githubusercontent.com/ajgowans/manualsdb-nes/db/db.json.zip\n\n'
+                '[distribution_mister]\n'
+                'db_url = https://distribution\n'
+            }
+        })
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        downloader_ini_dict = {
+            'update_all_mister': None, 'distribution_mister': None,
+            'ajgowans/manualsdb-3do': None, 'ajgowans/manualsdb-nes': None,
+        }
+
+        moved = ini_repository.extract_dbs_to_separate_ini(
+            ['ajgowans/manualsdb-3do', 'ajgowans/manualsdb-nes', 'ajgowans/manualsdb-snes'],
+            DOWNLOADER_AJGOWANS_MANUALSDB_INI,
+            downloader_ini_dict,
+        )
+
+        self.assertEqual({'ajgowans/manualsdb-3do', 'ajgowans/manualsdb-nes'}, set(moved))
+        remaining = read_ini_contents(state.files[downloader_ini]['content'])
+        self.assertEqual({'update_all_mister', 'distribution_mister'}, set(remaining.sections()))
+        manuals_path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
+        extracted = read_ini_contents(state.files[manuals_path]['content'])
+        self.assertEqual({'ajgowans/manualsdb-3do', 'ajgowans/manualsdb-nes'}, set(extracted.sections()))
+        self.assertNotIn('ajgowans/manualsdb-3do', downloader_ini_dict)
+        self.assertNotIn('ajgowans/manualsdb-nes', downloader_ini_dict)
+
+    def test_extract_dbs_to_separate_ini___with_existing_target_file___merges_preserving_non_conflicting_sections(self):
+        state = FileSystemState(files={
+            downloader_ini: {'content':
+                '[ajgowans/manualsdb-nes]\n'
+                'db_url = https://raw.githubusercontent.com/ajgowans/manualsdb-nes/db/db.json.zip\n'
+            },
+            f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}': {'content':
+                '[ajgowans/manualsdb-3do]\n'
+                'db_url = https://raw.githubusercontent.com/ajgowans/manualsdb-3do/db/db.json.zip\n'
+            },
+        })
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        downloader_ini_dict = {'ajgowans/manualsdb-nes': None}
+
+        moved = ini_repository.extract_dbs_to_separate_ini(
+            ['ajgowans/manualsdb-3do', 'ajgowans/manualsdb-nes'],
+            DOWNLOADER_AJGOWANS_MANUALSDB_INI,
+            downloader_ini_dict,
+        )
+
+        self.assertEqual(['ajgowans/manualsdb-nes'], moved)
+        manuals_path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
+        merged = read_ini_contents(state.files[manuals_path]['content'])
+        self.assertEqual({'ajgowans/manualsdb-3do', 'ajgowans/manualsdb-nes'}, set(merged.sections()))
+
+    def test_extract_dbs_to_separate_ini___with_colliding_section_in_target_file___downloader_ini_version_wins(self):
+        state = FileSystemState(files={
+            downloader_ini: {'content':
+                '[ajgowans/manualsdb-nes]\n'
+                'db_url = https://new-url.example/db.json.zip\n'
+            },
+            f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}': {'content':
+                '[ajgowans/manualsdb-nes]\n'
+                'db_url = https://old-url.example/db.json.zip\n'
+            },
+        })
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        downloader_ini_dict = {'ajgowans/manualsdb-nes': None}
+
+        ini_repository.extract_dbs_to_separate_ini(
+            ['ajgowans/manualsdb-nes'],
+            DOWNLOADER_AJGOWANS_MANUALSDB_INI,
+            downloader_ini_dict,
+        )
+
+        manuals_path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
+        merged = read_ini_contents(state.files[manuals_path]['content'])
+        self.assertEqual('https://new-url.example/db.json.zip', merged['ajgowans/manualsdb-nes']['db_url'])
