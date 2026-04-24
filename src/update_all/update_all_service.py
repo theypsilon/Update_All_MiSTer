@@ -167,6 +167,16 @@ def calculate_outro_summary(config: Config, run_time: str, timestamp: str) -> st
     return message_tiers[-1]
 
 
+def format_run_time(elapsed_seconds: float) -> str:
+    total_seconds = int(elapsed_seconds)
+    centiseconds = int((elapsed_seconds - total_seconds) * 100)
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours > 0:
+        return f'{hours}:{minutes:02}:{seconds:02}.{centiseconds:02}'
+    return f'{minutes:02}:{seconds:02}.{centiseconds:02}'
+
+
 def calculate_success_summary(config: Config, log_path: str) -> str:
     usable_columns = config.term_size.columns - config.overscan_dim.cols * 2
     message_tiers = [
@@ -614,7 +624,7 @@ class UpdateAllService:
         config = self._config_provider.get()
 
         self._end_time = time.monotonic()
-        run_time = str(datetime.timedelta(seconds=self._end_time - config.start_time))[2:-4]
+        run_time = format_run_time(self._end_time - config.start_time)
         self._logger.print(calculate_outro_summary(config, run_time, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         self._logger.debug(f"Commit: {config.commit}")
         self._logger.debug(f"Boot time: {config.boot_time}")

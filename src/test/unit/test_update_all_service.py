@@ -26,10 +26,15 @@ from update_all.encryption import EncryptionResult
 from update_all.other import GenericProvider
 from update_all.other import TerminalSize, OverscanDim
 from update_all.timeline import Timeline
-from update_all.update_all_service import calculate_supporter_shoutout, calculate_outro_summary, calculate_success_summary, calculate_reading_sections_summary
+from update_all.update_all_service import calculate_supporter_shoutout, calculate_outro_summary, calculate_success_summary, calculate_reading_sections_summary, format_run_time
 
 
 class TestUpdateAllService(unittest.TestCase):
+    def test_format_run_time___omits_hours_below_one_hour_and_keeps_them_after(self):
+        self.assertEqual('59:59.30', format_run_time(3599.3))
+        self.assertEqual('1:00:00.30', format_run_time(3600.3))
+        self.assertEqual('2:02:05.30', format_run_time(7325.3))
+
     def test_calculate_supporter_shoutout___selects_tier_from_usable_width(self):
         supporter_name = 'Patron TesterXX'
 
