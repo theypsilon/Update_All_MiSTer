@@ -770,7 +770,11 @@ def calc_drawer_paint(sd: ScreenDims, text_lines, text_scroll_offset, header, al
     visible_text = _calc_visible_text_layout(max_text_lines(sd, header), text_lines, text_scroll_offset, header)
     horizontal = _calc_horizontal_layout(ts, oc, header, text_lines, all_menu_entries, actions)
 
-    if ts.lnarrow and all_menu_entries:
+    standard_total_lines = len(visible_text.lines) + len(all_menu_entries) + 1 + (2 if horizontal.max_length_header > 0 else 0)
+    usable_lines = max(1, ts.lines - oc.lines * 2)
+    content_overflows = standard_total_lines > usable_lines
+
+    if all_menu_entries and (ts.lnarrow or content_overflows):
         vertical = _calc_compact_vertical_layout(
             ts,
             oc,

@@ -388,75 +388,85 @@ class TestCalcDrawerPaint(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    def test_calc_drawer_paint___when_many_entries_on_wide_tall_screen_without_overscan___then_returns_standard_overflow_layout(self):
+    def test_calc_drawer_paint___when_many_entries_on_wide_tall_screen_without_overscan___then_returns_compact_overflow_layout(self):
         actual = sut(columns=80, lines=40, menu_entries=MANY_MENU_ENTRIES, actions=ONE_ACTION)
 
         expected = drawer_paint_layout(
+            action_y=38,
             has_gap=False,
             max_length_option=3,
-            menu_entries=MANY_MENU_ENTRIES,
+            menu_entries=OVERFLOW_TALL_NO_OVERSCAN_MENU_ENTRIES,
+            menu_scroll_offset=2,
             offset_actions=38,
             offset_horizontal=37,
             offset_menu=37,
             offset_vertical=0,
-            total_lines=41,
+            skip_header=True,
+            total_lines=39,
             total_width=5,
         )
 
         self.assertEqual(expected, actual)
 
-    def test_calc_drawer_paint___when_many_entries_on_wide_tall_screen_with_overscan___then_returns_standard_overflow_layout(self):
+    def test_calc_drawer_paint___when_many_entries_on_wide_tall_screen_with_overscan___then_returns_compact_overflow_layout(self):
         actual = sut(columns=80, lines=40, overscan_cols=2, overscan_lines=1, menu_entries=MANY_MENU_ENTRIES, actions=ONE_ACTION)
 
         expected = drawer_paint_layout(
+            action_y=37,
             has_gap=False,
             max_length_option=3,
-            menu_entries=MANY_MENU_ENTRIES,
+            menu_entries=OVERFLOW_TALL_WITH_OVERSCAN_MENU_ENTRIES,
+            menu_scroll_offset=4,
             offset_actions=38,
             offset_horizontal=37,
             offset_menu=37,
-            offset_vertical=0,
-            total_lines=41,
+            offset_vertical=1,
+            skip_header=True,
+            total_lines=37,
             total_width=5,
         )
 
         self.assertEqual(expected, actual)
 
-    def test_calc_drawer_paint___when_many_entries_on_cnarrow_tall_screen_without_overscan___then_returns_standard_overflow_layout(self):
+    def test_calc_drawer_paint___when_many_entries_on_cnarrow_tall_screen_without_overscan___then_returns_compact_overflow_layout(self):
         actual = sut(columns=40, lines=40, menu_entries=MANY_MENU_ENTRIES, actions=ONE_ACTION)
 
         expected = drawer_paint_layout(
+            action_y=38,
             has_gap=False,
             max_length_option=3,
-            menu_entries=MANY_MENU_ENTRIES,
+            menu_entries=OVERFLOW_TALL_NO_OVERSCAN_MENU_ENTRIES,
+            menu_scroll_offset=2,
             offset_actions=18,
             offset_header=20,
             offset_horizontal=17,
             offset_menu=17,
             offset_text_line=20,
             offset_vertical=0,
-            skip_header=False,
-            total_lines=41,
+            skip_header=True,
+            total_lines=39,
             total_width=5,
         )
 
         self.assertEqual(expected, actual)
 
-    def test_calc_drawer_paint___when_many_entries_on_cnarrow_tall_screen_with_overscan___then_returns_standard_overflow_layout(self):
+    def test_calc_drawer_paint___when_many_entries_on_cnarrow_tall_screen_with_overscan___then_returns_compact_overflow_layout(self):
         actual = sut(columns=40, lines=40, overscan_cols=2, overscan_lines=1, menu_entries=MANY_MENU_ENTRIES, actions=ONE_ACTION)
 
         expected = drawer_paint_layout(
+            action_y=37,
             has_gap=False,
             max_length_option=3,
-            menu_entries=MANY_MENU_ENTRIES,
+            menu_entries=OVERFLOW_TALL_WITH_OVERSCAN_MENU_ENTRIES,
+            menu_scroll_offset=4,
             offset_actions=18,
             offset_header=20,
             offset_horizontal=17,
             offset_menu=17,
             offset_text_line=20,
-            offset_vertical=0,
-            skip_header=False,
-            total_lines=41,
+            offset_vertical=1,
+            skip_header=True,
+            total_lines=37,
             total_width=5,
         )
 
