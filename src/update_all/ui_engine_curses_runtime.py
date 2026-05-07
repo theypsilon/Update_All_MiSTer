@@ -28,7 +28,7 @@ class CursesRuntime(UiRuntime):
     _screen = None
     _window = None
     _last_key_pressed = -1
-    _key_ignore_time: float = 0.1
+    _key_ignore_time: float = 0.02
 
     @property
     def screen(self) -> curses.window:
@@ -79,7 +79,7 @@ class CursesRuntime(UiRuntime):
             cb()
 
         try:
-            key_ignore_time = float(os.getenv('KEY_IGNORE_TIME', '0.1'))  # @TODO: Remove at some point when I decide for a final value
+            key_ignore_time = float(os.getenv('KEY_IGNORE_TIME', '0.02'))  # @TODO: Remove at some point when I decide for a final value
             self._key_ignore_time = key_ignore_time
         except Exception as e:
             print('WARNING: KEY_IGNORE_TIME environment variable invalid.', e)
