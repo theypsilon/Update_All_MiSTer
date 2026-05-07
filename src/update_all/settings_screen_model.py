@@ -772,6 +772,7 @@ def settings_screen_model(): return {
                 "Ranny-Snice/Ranny-Snice-Wallpapers": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "uberyoji_mister_boot_roms_mgl": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "Dinierto/MiSTer-GBA-Borders": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MiSTerOrganize/MiSTer_Frontier": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "rannysnice_wallpapers_filter": {"group": "rannysnice_wallpapers", "default": "ar16-9", "values": ["ar16-9", "ar4-3", "all"]},
             },
             "entries": [
@@ -799,7 +800,28 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "4 Dinierto GBA Borders",
+                    "title": "4 MiSTer Frontier",
+                    "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} Hybrid FPGA+ARM cores",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "MiSTerOrganize/MiSTer_Frontier"}],
+                        "toggle": [{"type": "rotate_variable", "target": "MiSTerOrganize/MiSTer_Frontier"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "MiSTer Frontier",
+                            "text": [
+                                "Software-based gaming platforms on MiSTer:",
+                                "fantasy consoles, game engines, and retro",
+                                "graphics systems as hybrid FPGA+ARM cores.",
+                                " ",
+                                "ARM runs the emulator/engine, FPGA drives",
+                                "video and audio directly to hardware for",
+                                "native CRT-friendly, zero-lag output.",
+                            ],
+                        }]
+                    }
+                },
+                {
+                    "title": "5 Dinierto GBA Borders",
                     "description": "{Dinierto/MiSTer-GBA-Borders:enabled} Borders for the GBA Core",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
@@ -807,7 +829,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "5 Ranny Snice Wallpapers",
+                    "title": "6 Ranny Snice Wallpapers",
                     "description": "{Ranny-Snice/Ranny-Snice-Wallpapers:enabled} Wallpapers for {rannysnice_wallpapers_filter} screens",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "rannysnice_wallpapers_menu"}],
@@ -815,14 +837,14 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "6 Anime0t4ku Wallpapers",
+                    "title": "7 Anime0t4ku Wallpapers",
                     "description": "",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "anime0t4ku_wallpapers_menu"}],
                     }
                 },
                 {
-                    "title": "7 Uberyoji Boot ROMs",
+                    "title": "8 Uberyoji Boot ROMs",
                     "description": "{uberyoji_mister_boot_roms_mgl:enabled} Boot ROMs for popular consoles",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
