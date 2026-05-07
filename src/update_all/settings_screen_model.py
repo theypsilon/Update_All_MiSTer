@@ -559,6 +559,7 @@ def settings_screen_model(): return {
                 "MikeS11/YC_Builds-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "ajgowans/alt-cores": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "TheJesusFish/Dual-Ram-Console-Cores": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MiSTerOrganize/MiSTer_Frontier": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
@@ -696,6 +697,26 @@ def settings_screen_model(): return {
                             "ui": "message",
                             "header": "Dual RAM Console Cores",
                             "text": ["Console cores with dual SDRAM support."],
+                        }]
+                    }
+                },
+                {
+                    "title": "9 MiSTer Frontier",
+                    "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} Hybrid FPGA+ARM cores",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "MiSTerOrganize/MiSTer_Frontier"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "MiSTer Frontier",
+                            "text": [
+                                "Software-based gaming platforms on MiSTer:",
+                                "fantasy consoles, game engines, and retro",
+                                "graphics systems as hybrid FPGA+ARM cores.",
+                                " ",
+                                "ARM runs the emulator/engine, FPGA drives",
+                                "video and audio directly to hardware for",
+                                "native CRT-friendly, zero-lag output.",
+                            ],
                         }]
                     }
                 },
