@@ -87,9 +87,16 @@ class CountdownImpl(Countdown):
             time.sleep(1.0 / 60.0)
 
             child_process.terminate()
-            time.sleep(1.0 / 60.0)
-
-            child_process.close()
+            child_process.join(timeout=1.0)
+            try:
+                child_process.close()
+            except ValueError:
+                child_process.kill()
+                child_process.join(timeout=1.0)
+                try:
+                    child_process.close()
+                except ValueError:
+                    pass
             os_specifics.finalize()
             print('', flush=True)
 
