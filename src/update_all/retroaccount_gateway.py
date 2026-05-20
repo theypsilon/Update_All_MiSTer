@@ -80,7 +80,7 @@ class RetroAccountGateway:
         if status_code == 200:
             response_data = json.loads(body_response)
             return SessionResult.VALID, response_data
-        elif status_code in (401, 403):
+        elif status_code == 401:
             return SessionResult.REVOKED, status_code
         else:
             return SessionResult.ERROR, status_code

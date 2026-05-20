@@ -20,7 +20,9 @@ from unittest.mock import MagicMock
 
 from test.countdown_stub import CountdownStub
 from test.fake_filesystem import FileSystemFactory
+from test.fetcher_stub import FetcherStub
 from test.logger_tester import NoLogger
+from test.retroaccount_gateway_tester import RetroAccountGatewayTester
 from test.spy_os_utils import SpyOsUtils
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
@@ -140,8 +142,16 @@ class EncryptionTester(Encryption):
 
 
 class TimelineTester(Timeline):
-    def __init__(self, file_system: FileSystem = None):
-        super().__init__(NoLogger(), GenericProvider[Config](), file_system or FileSystemFactory().create_for_system_scope(), EncryptionTester(file_system=file_system), RetroAccountServiceTester())
+    def __init__(self, file_system: FileSystem = None, config_provider: GenericProvider[Config] = None, encryption: Encryption = None, retroaccount: RetroAccountService = None):
+        config_provider = config_provider or GenericProvider[Config]()
+        file_system = file_system or FileSystemFactory().create_for_system_scope()
+        super().__init__(
+            NoLogger(),
+            config_provider,
+            file_system,
+            encryption or EncryptionTester(config_provider=config_provider, file_system=file_system),
+            retroaccount or RetroAccountServiceTester(file_system=file_system, config_provider=config_provider)
+        )
 
 class SettingsScreenTester(SettingsScreen):
     def __init__(self, config_provider: GenericProvider[Config] = None,
@@ -169,7 +179,7 @@ class SettingsScreenTester(SettingsScreen):
             mister_video_mode_service=mister_video_mode_service or MisterVideoModeService(NoLogger(), file_system, config_provider, os_utils),
             settings_screen_printer=settings_screen_printer or SettingsScreenPrinterStub(),
             ui_runtime=ui_runtime or UiRuntimeStub(),
-            encryption=encryption or EncryptionTester(file_system=file_system),
+            encryption=encryption or EncryptionTester(config_provider=config_provider, file_system=file_system),
             local_repository=local_repository or LocalRepositoryTester(file_system=file_system),
             store_provider=store_provider or GenericProvider[LocalStore](),
             ao_service=ao_service or ArcadeOrganizerServiceStub(),
@@ -264,10 +274,12 @@ class UpdateAllServiceTester(UpdateAllService):
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
         config_provider = config_provider or GenericProvider[Config]()
+        store_provider = store_provider or GenericProvider[LocalStore]()
 
         ao_service = ArcadeOrganizerServiceStub()
+        retroaccount = RetroAccountServiceTester(file_system=file_system, config_provider=config_provider)
         environment_setup = environment_setup or EnvironmentSetupTester(file_system=file_system, os_utils=os_utils, config_provider=config_provider)
-        settings_screen = settings_screen or SettingsScreenTester(config_provider=config_provider, file_system=file_system, os_utils=os_utils, ao_service=ao_service)
+        settings_screen = settings_screen or SettingsScreenTester(config_provider=config_provider, file_system=file_system, os_utils=os_utils, ao_service=ao_service, retroaccount=retroaccount)
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
 
         super().__init__(
@@ -277,15 +289,15 @@ class UpdateAllServiceTester(UpdateAllService):
             os_utils=os_utils,
             countdown=countdown or CountdownStub(),
             settings_screen=settings_screen,
-            store_provider=store_provider or GenericProvider[LocalStore](),
+            store_provider=store_provider,
             ini_repository=self.ini_repository,
             environment_setup=environment_setup,
             ao_service=ao_service,
             local_repository=local_repository or LocalRepositoryTester(file_system=file_system),
-            log_viewer=LogViewerTester(file_system, config_provider, store_provider, RetroAccountServiceTester()),
-            timeline=TimelineTester(file_system),
-            retroaccount=RetroAccountServiceTester(),
-            fetcher=MagicMock()
+            log_viewer=LogViewerTester(file_system, config_provider, store_provider, retroaccount),
+            timeline=TimelineTester(file_system=file_system, config_provider=config_provider, retroaccount=retroaccount),
+            retroaccount=retroaccount,
+            fetcher=FetcherStub(config_provider=config_provider)
         )
 
     def _soft_wait_background_jobs(self) -> None:
@@ -320,8 +332,8 @@ class RetroAccountServiceTester(RetroAccountService):
             NoLogger(),
             file_system,
             config_provider,
-            retroaccount_gateway or RetroAccountGateway(config_provider, NoLogger(), file_system, MagicMock()),
-            encryption or EncryptionTester(),
+            retroaccount_gateway or RetroAccountGatewayTester(config_provider=config_provider, file_system=file_system),
+            encryption or EncryptionTester(config_provider=config_provider, file_system=file_system),
         )
 
     def mister_sync(self) -> None:

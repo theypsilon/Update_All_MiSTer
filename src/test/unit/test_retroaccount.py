@@ -28,7 +28,7 @@ from update_all.config import Config
 from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbeta_alt, FILE_patreon_key, FILE_patreon_key_md5, \
     FILE_retroaccount_device_id, FILE_retroaccount_user_json
 from update_all.other import GenericProvider
-from update_all.retroaccount import RetroAccountService, any_to_retroaccount_file_description
+from update_all.retroaccount import BenefitState, RetroAccountService, any_to_retroaccount_file_description
 from update_all.retroaccount_gateway import SessionResult
 
 
@@ -101,6 +101,23 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertEqual(_forced_logout_messages(_REVOKED_CREDENTIALS_MESSAGE), sut.consume_important_messages())
         self.assertFalse(sut.has_installed_update_all_patreon_key())
         self.assertFalse(sut.has_prev_patreon_key_url())
+
+    def test_mister_sync___when_connection_fails___keeps_credentials_and_entitlement_files(self):
+        sut, file_system, gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.ERROR,
+            gateway_response=403,
+        )
+
+        sut.mister_sync()
+
+        self.assertEqual([('device-1', 'refresh-1', 'old-md5', None)], gateway.mister_sync_calls)
+        self.assertTrue(file_system.is_file(FILE_retroaccount_user_json))
+        self.assertTrue(file_system.is_file(FILE_patreon_key))
+        self.assertTrue(file_system.is_file(FILE_patreon_key_md5))
+        self.assertEqual([], sut.consume_important_messages())
+        self.assertEqual(BenefitState.CONNECTION_FAILED, sut.update_all_extras_sync_state())
+        self.assertEqual(BenefitState.CONNECTION_FAILED, sut.jtbeta_access_sync_state())
 
     def test_mister_sync___when_session_is_valid___applies_one_explicit_transition_for_refresh_and_entitlement_replacement(self):
         gateway_response = {
