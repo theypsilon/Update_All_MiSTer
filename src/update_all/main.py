@@ -28,7 +28,8 @@ from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, \
     DEFAULT_DEBUG, DEFAULT_TRANSITION_SERVICE_ONLY, KENV_TRANSITION_SERVICE_ONLY, KENV_SKIP_DOWNLOADER, \
     DEFAULT_SKIP_DOWNLOADER, KENV_PATREON_KEY_PATH, FILE_patreon_key, KENV_COMMAND, COMMAND_STANDARD, \
     KENV_TIMELINE_SHORT_PATH, FILE_timeline_short, KENV_TIMELINE_PLUS_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, \
-    KENV_LC_HTTP_PROXY, KENV_LC_HTTPS_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID
+    KENV_LC_HTTP_PROXY, KENV_LC_HTTPS_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID, KENV_RETROACCOUNT_DOMAIN, \
+    DOMAIN_default_retroaccount
 from update_all.local_repository import LocalRepository
 from update_all.logger import FileLoggerDecorator, PrintLogger
 from update_all.other import GenericProvider
@@ -84,5 +85,6 @@ def read_env(default_commit: str, real_start_time: float) -> EnvDict:
         KENV_HTTP_PROXY: os.getenv(KENV_HTTP_PROXY) or os.getenv(KENV_LC_HTTP_PROXY),
         KENV_HTTPS_PROXY: os.getenv(KENV_HTTPS_PROXY) or os.getenv(KENV_LC_HTTPS_PROXY),
         KENV_MIRROR_ID: os.getenv(KENV_MIRROR_ID, ''),
+        KENV_RETROACCOUNT_DOMAIN: os.getenv(KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount),
         'real_start_time': real_start_time
     }
