@@ -21,6 +21,7 @@ set -euo pipefail
 
 LOCATION_STR="${LOCATION_STR:-/media/fat}"
 RUN_TOOL_PATH="/tmp/update_all.sh"
+LAUNCHER_ERRORS="/tmp/ua_launcher_errors.log"
 REMOTE_TOOL_URL="https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
 LATEST_TOOL_PATH="${LOCATION_STR}/Scripts/.config/update_all/update_all.pyz"
 MIRROR_FILE_PATH="${LOCATION_STR}/Scripts/update_all.mirror"
@@ -63,20 +64,29 @@ if [ -s "${MIRROR_FILE_PATH}" ] ; then
 fi
 
 # NTP SETUP
-if (( 10#$(date +%Y) < 2000 )) ; then
+CURRENT_YEAR="$(date +%Y 2>>"${LAUNCHER_ERRORS}" || true)"
+if ! [[ "${CURRENT_YEAR}" =~ ^[0-9]+$ ]] ; then
+    CURRENT_YEAR=0
+fi
+if (( 10#${CURRENT_YEAR} < 2000 )) ; then
     NTP_CONF="/etc/ntp.conf"
     for server in "${NTP_SERVERS[@]}"; do
         if ! grep -qF "${server}" "${NTP_CONF}"; then
-            { echo "server $server iburst" >> "${NTP_CONF}" ; } 2>>/tmp/ua_launcher_errors.log || true
+            { echo "server $server iburst" >> "${NTP_CONF}" ; } 2>>"${LAUNCHER_ERRORS}" || true
         fi
     done
     NTP_PID="/var/run/ntpd.pid"
-    start-stop-daemon -K -p "${NTP_PID}" || true
-    rm -f "${NTP_PID}" 2>>/tmp/ua_launcher_errors.log || true
-    start-stop-daemon -S -q -p "${NTP_PID}" -x "/usr/sbin/ntpd" -- -g -p "${NTP_PID}" || true
+    { start-stop-daemon -K -p "${NTP_PID}" ; } 2>>"${LAUNCHER_ERRORS}" || true
+    rm -f "${NTP_PID}" 2>>"${LAUNCHER_ERRORS}" || true
+    { start-stop-daemon -S -q -p "${NTP_PID}" -x "/usr/sbin/ntpd" -- -g -p "${NTP_PID}" ; } 2>>"${LAUNCHER_ERRORS}" || true
     connected=0
     for ((i=1; i<=10; i++)); do
-        if ntpq -c "rv 0" 2>&1 | grep -qiE "connection refused|sync_unspec" ; then
+        set +e
+        ntpq_output="$(ntpq -c "rv 0" 2>&1)"
+        NTPQ_RET=$?
+        set -e
+        if [[ ${NTPQ_RET} -ne 0 ]] || grep -qiE "connection refused|sync_unspec" <<< "${ntpq_output}" ; then
+            echo "ntpq[${NTPQ_RET}]: ${ntpq_output}" >> "${LAUNCHER_ERRORS}" || true
             printf "."
             sleep 3
         else
@@ -87,7 +97,7 @@ if (( 10#$(date +%Y) < 2000 )) ; then
     printf "\n"
     if (( connected )); then
         echo "Date and time is:"
-        date
+        date 2>>"${LAUNCHER_ERRORS}" || echo "Unable to print current date."
         echo
     elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
         echo "Unable to sync."
@@ -141,7 +151,7 @@ elif [[ "${CURL_SSL:-}" != "--insecure" ]] ; then
             RO_ROOT="true"
         fi
         [ "${RO_ROOT}" == "true" ] && mount / -o remount,rw
-        rm -f /etc/ssl/certs/* 2>>/tmp/ua_launcher_errors.log || true
+        rm -f /etc/ssl/certs/* 2>>"${LAUNCHER_ERRORS}" || true
         echo
         echo "Installing cacert.pem from ${CACERT_PEM_INSTALL_URL}"
         curl --insecure --location -o /tmp/cacert.pem "${CACERT_PEM_INSTALL_URL}"
@@ -193,7 +203,7 @@ download_file() {
     esac
 }
 
-rm -f ${RUN_TOOL_PATH} 2>>/tmp/ua_launcher_errors.log || true
+rm -f ${RUN_TOOL_PATH} 2>>"${LAUNCHER_ERRORS}" || true
 
 if [ -s "${LATEST_TOOL_PATH}" ] ; then
     cp "${LATEST_TOOL_PATH}" "${RUN_TOOL_PATH}"
@@ -223,6 +233,6 @@ if [[ ${UA_RET} -ne 0 ]] ; then
     exit 1
 fi
 
-rm -f ${RUN_TOOL_PATH} 2>>/tmp/ua_launcher_errors.log || true
+rm -f ${RUN_TOOL_PATH} 2>>"${LAUNCHER_ERRORS}" || true
 
 exit 0
