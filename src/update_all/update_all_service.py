@@ -37,7 +37,7 @@ from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_m
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, FILE_update_all_pyz, \
     EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update, \
     FILE_downloader_run_signal, FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script, \
-    COMMAND_TIMELINE, COMMAND_LATEST_LOG, BACKGROUND_JOBS_HARD_TIMEOUT, \
+    COMMAND_TIMELINE, COMMAND_LATEST_LOG, COMMAND_SHOW_CHIP_ID_RESULT, BACKGROUND_JOBS_HARD_TIMEOUT, \
     FILE_update_all_print_tmp_log, FILE_mister_version, FILE_JOTEGO_mra_pack_ini, BACKGROUND_JOBS_SOFT_TIMEOUT
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
@@ -262,11 +262,15 @@ class UpdateAllService:
             elif command == COMMAND_LATEST_LOG:
                 self._show_log_viewer_with_latest_log()
                 return self._exit_code
+            elif command == COMMAND_SHOW_CHIP_ID_RESULT:
+                self._show_chip_id_result()
+                return self._exit_code
+            else:
+                self._test_routine()
+                self._start_background_jobs()
+                self._show_intro()
+                self._countdown_for_settings_screen()
 
-            self._test_routine()
-            self._start_background_jobs()
-            self._show_intro()
-            self._countdown_for_settings_screen()
             self._print_sequence()
             self._pre_run_tweaks()
             self._soft_wait_background_jobs()
@@ -333,6 +337,15 @@ class UpdateAllService:
             return
 
         exit(0)
+
+    def _show_chip_id_result(self) -> None:
+        self._logger.debug('Loading Settings Screen FPGA ID result menu.')
+        try:
+            self._settings_screen.load_chip_id_result_menu()
+        except Exception as e:
+            self._logger.print()
+            self._logger.debug(e)
+            self._logger.print('Could not open FPGA ID result screen.\n')
 
     def _start_background_jobs(self) -> None:
         self._executor = ThreadPoolExecutor(max_workers=1)

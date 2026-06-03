@@ -26,9 +26,9 @@ from test.file_system_tester_state import FileSystemState
 from test.logger_tester import NoLogger
 from update_all.config import Config
 from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbeta_alt, FILE_patreon_key, FILE_patreon_key_md5, \
-    FILE_retroaccount_device_id, FILE_retroaccount_user_json
+    FILE_retroaccount_device_id, FILE_retroaccount_user_json, FILE_retroaccount_verified_chip_id
 from update_all.other import GenericProvider
-from update_all.retroaccount import BenefitState, RetroAccountService, any_to_retroaccount_file_description
+from update_all.retroaccount import BenefitState, ChipIdAttachResult, RetroAccountService, any_to_retroaccount_file_description
 from update_all.retroaccount_gateway import SessionResult
 
 
@@ -122,6 +122,7 @@ class TestRetroAccountService(unittest.TestCase):
     def test_mister_sync___when_session_is_valid___applies_one_explicit_transition_for_refresh_and_entitlement_replacement(self):
         gateway_response = {
             'tokens': {'refresh_token': 'refresh-2'},
+            'device': {'label': '  MiSTer Living Room  '},
             'benefits': {
                 'update_all_patreon_key_remove': True,
                 'update_all_patreon_key_file': {'url': 'https://example.com/update_all.patreonkey', 'md5': 'expected-md5', 'size': 32},
@@ -138,6 +139,7 @@ class TestRetroAccountService(unittest.TestCase):
         saved_user = file_system.load_dict_from_file(FILE_retroaccount_user_json)
         self.assertEqual('refresh-2', saved_user['refresh_token'])
         self.assertEqual(('device-1', 'refresh-1', 'old-md5', None), gateway.mister_sync_calls[0])
+        self.assertEqual('MiSTer Living Room', sut.get_device_label())
         self.assertEqual([(FILE_patreon_key, 'https://example.com/update_all.patreonkey')], gateway.install_calls)
         self.assertTrue(file_system.is_file(FILE_patreon_key))
         self.assertEqual('installed-md5', file_system.read_file_contents(FILE_patreon_key_md5))
@@ -195,22 +197,72 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertFalse(sut.has_prev_patreon_key_url())
 
     def test_device_logout___when_previous_sync_enabled_extras___disables_extras_in_current_process(self):
+        files = default_sync_files()
+        files[FILE_retroaccount_verified_chip_id] = {'content': '0123456789abcdef'}
         sut, file_system, gateway, _encryption = tester(
-            files=default_sync_files(),
+            files=files,
             gateway_result=SessionResult.VALID,
-            gateway_response={'benefits': {'update_all_extras': True}},
+            gateway_response={'device': {'label': 'MiSTer Living Room'}, 'benefits': {'update_all_extras': True}},
         )
         activate_prev_patreon_key_url(sut)
 
         sut.mister_sync()
         self.assertTrue(sut.is_update_all_extras_active())
+        self.assertEqual('MiSTer Living Room', sut.get_device_label())
 
         self.assertTrue(sut.device_logout())
 
         self.assertFalse(sut.is_update_all_extras_active())
+        self.assertIsNone(sut.get_device_label())
         self.assertFalse(file_system.is_file(FILE_retroaccount_user_json))
+        self.assertFalse(file_system.is_file(FILE_retroaccount_verified_chip_id))
         self.assertEqual([('refresh-1', 'device-1')], gateway.logout_calls)
         self.assertFalse(sut.has_prev_patreon_key_url())
+
+    def test_attach_chip_id_to_current_device___with_valid_session___stores_verified_chip_id(self):
+        logger = _LoggerSpy()
+        sut, file_system, gateway, _encryption = tester(files=default_sync_files(), logger=logger)
+
+        result = sut.attach_chip_id_to_current_device('0123456789ABCDEF')
+
+        self.assertEqual(ChipIdAttachResult(True, 200), result)
+        self.assertTrue(result)
+        self.assertEqual([('device-1', 'refresh-1', '0123456789abcdef')], gateway.attach_chip_id_calls)
+        self.assertEqual('0123456789abcdef', file_system.read_file_contents(FILE_retroaccount_verified_chip_id))
+        self.assertTrue(sut.is_device_verified())
+        self.assertIn('RetroAccountService: FPGA ID attach succeeded with status 200', logger.debug_messages)
+
+    def test_attach_chip_id_to_current_device___when_endpoint_fails___does_not_store_verified_chip_id(self):
+        logger = _LoggerSpy()
+        sut, file_system, gateway, _encryption = tester(files=default_sync_files(), logger=logger)
+        gateway.attach_chip_id_status = 500
+
+        result = sut.attach_chip_id_to_current_device('0123456789abcdef')
+
+        self.assertEqual(ChipIdAttachResult(False, 500), result)
+        self.assertFalse(result)
+        self.assertEqual([('device-1', 'refresh-1', '0123456789abcdef')], gateway.attach_chip_id_calls)
+        self.assertFalse(file_system.is_file(FILE_retroaccount_verified_chip_id))
+        self.assertIn('RetroAccountService: FPGA ID attach failed with status 500', logger.debug_messages)
+
+    def test_attach_chip_id_to_current_device___with_invalid_chip_id___does_not_call_endpoint(self):
+        sut, file_system, gateway, _encryption = tester(files=default_sync_files())
+
+        result = sut.attach_chip_id_to_current_device('FAILURE_MEM_SIGBUS')
+
+        self.assertEqual(ChipIdAttachResult(False), result)
+        self.assertFalse(result)
+        self.assertEqual([], gateway.attach_chip_id_calls)
+        self.assertFalse(file_system.is_file(FILE_retroaccount_verified_chip_id))
+
+    def test_mister_sync___when_login_is_lost___removes_verified_chip_id(self):
+        sut, file_system, _gateway, _encryption = tester(files={
+            FILE_retroaccount_verified_chip_id: {'content': '0123456789abcdef'},
+        })
+
+        sut.mister_sync()
+
+        self.assertFalse(file_system.is_file(FILE_retroaccount_verified_chip_id))
 
 
 class TestAnyToRetroAccountFileDescription(unittest.TestCase):
@@ -277,7 +329,7 @@ class TestAnyToRetroAccountFileDescription(unittest.TestCase):
                 self.assertIsNone(any_to_retroaccount_file_description(value))
 
 
-def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None):
+def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None, logger=None):
     config = Config()
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config)
@@ -285,7 +337,7 @@ def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None
     file_system = FileSystemFactory(state=state).create_for_system_scope()
     gateway = _RetroAccountGatewayStub(file_system, gateway_result, gateway_response)
     encryption = _EncryptionSpy()
-    return RetroAccountService(NoLogger(), file_system, config_provider, gateway, encryption), file_system, gateway, encryption
+    return RetroAccountService(logger or NoLogger(), file_system, config_provider, gateway, encryption), file_system, gateway, encryption
 
 
 def default_sync_files():
@@ -316,6 +368,15 @@ class _EncryptionSpy:
         self.clear_cache_calls += 1
 
 
+class _LoggerSpy(NoLogger):
+    def __init__(self):
+        self.debug_messages = []
+
+    def debug(self, *args, sep='', end='\n', flush=False):
+        del end, flush
+        self.debug_messages.append(sep.join(str(arg) for arg in args))
+
+
 class _RetroAccountGatewayStub:
     def __init__(self, file_system, result, response):
         self._file_system = file_system
@@ -324,6 +385,8 @@ class _RetroAccountGatewayStub:
         self.mister_sync_calls = []
         self.install_calls = []
         self.logout_calls = []
+        self.attach_chip_id_calls = []
+        self.attach_chip_id_status = 200
 
     def mister_sync(self, device_id, refresh_token, update_all_patreon_key_fingerprint, jtbeta_fingerprint=None):
         self.mister_sync_calls.append((device_id, refresh_token, update_all_patreon_key_fingerprint, jtbeta_fingerprint))
@@ -336,3 +399,7 @@ class _RetroAccountGatewayStub:
 
     def post_device_logout(self, refresh_token, device_id):
         self.logout_calls.append((refresh_token, device_id))
+
+    def put_device_hardware_id(self, device_id, refresh_token, chip_id):
+        self.attach_chip_id_calls.append((device_id, refresh_token, chip_id))
+        return self.attach_chip_id_status

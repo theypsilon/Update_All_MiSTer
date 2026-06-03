@@ -15,8 +15,11 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import unittest
+from unittest.mock import MagicMock
+
 from update_all.config import Config
-from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_REQUIRES_EARLY_EXIT
+from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_REQUIRES_EARLY_EXIT, COMMAND_SHOW_CHIP_ID_RESULT
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
@@ -25,10 +28,10 @@ from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.update_all_service_tester import UpdateAllServiceFactoryTester, UpdateAllServiceTester, \
     default_env, EnvironmentSetupStub, default_databases, local_store
-import unittest
 
 
-def tester(files=None, folders=None, config: Config = None, store: LocalStore = None, env_stub: EnvironmentSetupStub = None):
+def tester(files=None, folders=None, config: Config = None, store: LocalStore = None, env_stub: EnvironmentSetupStub = None,
+           settings_screen=None):
     state = FileSystemState(files=files, folders=folders)
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config or Config(databases=default_databases()))
@@ -39,7 +42,8 @@ def tester(files=None, folders=None, config: Config = None, store: LocalStore = 
         environment_setup=env_stub or EnvironmentSetupStub(),
         file_system=FileSystemFactory(state=state, config_provider=config_provider).create_for_system_scope(),
         config_provider=config_provider,
-        store_provider=store_provider
+        store_provider=store_provider,
+        settings_screen=settings_screen,
     ), state
 
 
@@ -89,3 +93,41 @@ class TestUpdateAllService(unittest.TestCase):
         stub = EnvironmentSetupStub(EnvironmentSetupResult(requires_early_exit=True))
         sut, _ = tester(config=Config(databases=default_databases(), transition_service_only=True), env_stub=stub)
         self.assertEqual(EXIT_CODE_REQUIRES_EARLY_EXIT, sut.full_run(UpdateAllServicePass.NewRun))
+
+    def test_full_run___with_show_chip_id_result_command___opens_chip_id_result_menu_and_returns_without_update_flow(self):
+        events = []
+        settings_screen = MagicMock()
+        settings_screen.load_chip_id_result_menu.side_effect = lambda: events.append('menu')
+        sut, _ = tester(
+            config=Config(databases=default_databases(), command=COMMAND_SHOW_CHIP_ID_RESULT),
+            settings_screen=settings_screen,
+        )
+        sut._start_background_jobs = MagicMock(side_effect=lambda: events.append('start_background_jobs'))
+        sut._hard_wait_background_jobs = MagicMock(side_effect=lambda: events.append('hard_wait_background_jobs'))
+
+        result = sut.full_run(UpdateAllServicePass.NewRun)
+
+        self.assertEqual(0, result)
+        self.assertEqual(['menu'], events)
+        sut._start_background_jobs.assert_not_called()
+        settings_screen.load_chip_id_result_menu.assert_called_once_with()
+        sut._hard_wait_background_jobs.assert_not_called()
+
+    def test_full_run___with_show_chip_id_result_command_and_menu_failure___returns_without_update_flow(self):
+        events = []
+        settings_screen = MagicMock()
+        settings_screen.load_chip_id_result_menu.side_effect = RuntimeError('boom')
+        sut, _ = tester(
+            config=Config(databases=default_databases(), command=COMMAND_SHOW_CHIP_ID_RESULT),
+            settings_screen=settings_screen,
+        )
+        sut._start_background_jobs = MagicMock(side_effect=lambda: events.append('start_background_jobs'))
+        sut._hard_wait_background_jobs = MagicMock(side_effect=lambda: events.append('hard_wait_background_jobs'))
+
+        result = sut.full_run(UpdateAllServicePass.NewRun)
+
+        self.assertEqual(0, result)
+        self.assertEqual([], events)
+        sut._start_background_jobs.assert_not_called()
+        settings_screen.load_chip_id_result_menu.assert_called_once_with()
+        sut._hard_wait_background_jobs.assert_not_called()

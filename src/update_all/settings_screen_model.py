@@ -179,6 +179,7 @@ def settings_screen_model(): return {
 # @TODO (mirror)       "mirror": {"": "Off.", "off": "Off.", "mysticalrealm": "Mystical Realm"},
         "overscan": {"none": "None", "low": "Low", "medium": "Medium", "high": "High", "maximum": "Max"},
         "bytes_to_gb": {},
+        "device_label_message": {},
         "bool_flag_presence_text": {
             "0": "Ignore them entirely",
             "1": "Place them only on its {0} folder",
@@ -188,6 +189,7 @@ def settings_screen_model(): return {
     "variables": {
         # Global variables
         "update_all_version": {"default": "2.8"},
+        "device_label": {"default": ""},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -326,6 +328,10 @@ def settings_screen_model(): return {
                 "retroaccount_update_all_extras_support": {"default": ""},
                 "retroaccount_jtbeta_access": {"default": "Checking..."},
                 "retroaccount_jtbeta_access_support": {"default": ""},
+                "retroaccount_device_verified": {"default": "false", "values": ["false", "true"]},
+                "retroaccount_device_verification_description": {"default": "FPGA ID not linked"},
+                "retroaccount_device_verification_message": {"default": "Linking FPGA ID..."},
+                "retroaccount_verified_chip_id_message": {"default": ""},
             },
             "entries": [
                 {
@@ -353,18 +359,56 @@ def settings_screen_model(): return {
                     }]}
                 },
                 {
-                    "title": "3 Manage Your Account",
+                    "title": "3 Link FPGA ID",
+                    "description": "{retroaccount_device_verification_description}",
+                    "actions": {"ok": [{
+                        "type": "condition",
+                        "variable": "retroaccount_device_verified",
+                        "true": [{
+                            "ui": "message",
+                            "header": "FPGA ID Linked",
+                            "text": [
+                                "This device's FPGA ID is linked to RetroAccount.",
+                                "{retroaccount_verified_chip_id_message}",
+                            ],
+                        }],
+                        "false": [{
+                            "ui": "confirm",
+                            "header": "Link FPGA ID",
+                            "text": [
+                                "Optional. Some benefits require linking this device's FPGA ID.",
+                                "",
+                                "What happens next:",
+                                "Update All loads a small linker core to read the FPGA ID.",
+                                "Then Update All links the ID with RetroAccount.",
+                                "The process usually takes around 10 seconds.",
+                            ],
+                            "preselected_action": "Back",
+                            "actions": [
+                                {"title": "Continue", "type": "fixed", "fixed": [
+                                    {"type": "extract_chip_id"},
+                                    {"type": "navigate", "target": "retroaccount_device_verification_status"},
+                                ]},
+                                {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                            ],
+                        }],
+                    }]}
+                },
+                {
+                    "title": "4 Manage Your Account",
                     "description": "More options at {retroaccount_domain}",
                     "actions": {"ok": [{
                         "ui": "message",
                         "header": "Manage Your Account",
                         "text": [
+                            "{device_label:device_label_message}",
+                            "",
                             "Visit ~{retroaccount_domain}~ to manage your account and explore available features.",
                         ],
                     }]}
                 },
                 {
-                    "title": "4 Logout Device",
+                    "title": "5 Logout Device",
                     "description": "Log out from this device",
                     "actions": {"ok": [{
                         "ui": "confirm",
@@ -388,6 +432,35 @@ def settings_screen_model(): return {
                 }
             ],
             "on_idle": [{"type": "retroaccount_check_state"}]
+        },
+        "retroaccount_device_verification_result": {
+            "ui": "message",
+            "header": "Link FPGA ID",
+            "variables": {
+                "retroaccount_device_verified": {"default": "false", "values": ["false", "true"]},
+                "retroaccount_device_verification_description": {"default": "FPGA ID not linked"},
+                "retroaccount_device_verification_message": {"default": "Linking FPGA ID..."},
+                "retroaccount_verified_chip_id_message": {"default": ""},
+            },
+            "text": [
+                "{retroaccount_device_verification_message}",
+                "{retroaccount_verified_chip_id_message}",
+            ],
+            "on_idle": [{"type": "retroaccount_attach_chip_id_to_device"}],
+        },
+        "retroaccount_device_verification_status": {
+            "ui": "message",
+            "header": "Link FPGA ID",
+            "variables": {
+                "retroaccount_device_verified": {"default": "false", "values": ["false", "true"]},
+                "retroaccount_device_verification_description": {"default": "FPGA ID not linked"},
+                "retroaccount_device_verification_message": {"default": "Linking FPGA ID..."},
+                "retroaccount_verified_chip_id_message": {"default": ""},
+            },
+            "text": [
+                "{retroaccount_device_verification_message}",
+                "{retroaccount_verified_chip_id_message}",
+            ],
         },
         "main_distribution_menu": {
             "type": "dialog_sub_menu",
@@ -2008,7 +2081,11 @@ def _retroaccount_login_entry(): return {
     "actions": {"ok": [{
         "ui": "device_login",
         "header": "Device Login",
-        "success_effects": [{"type": "apply_theme"}, {"type": "navigate", "target": "main_menu_account"}],
+        "success_effects": [
+            {"type": "set_variable", "target": "retroaccount_open_account_after_login", "value": "true"},
+            {"type": "apply_theme"},
+            {"type": "navigate", "target": "main_menu_account"},
+        ],
         "failure_effects": [{"type": "navigate", "target": "back"}],
     }]}
 }
@@ -2017,7 +2094,8 @@ def _main_menu(retroaccount_logged_in): return {
     "ui": "menu",
     "header": "Update All {update_all_version} Settings",
     "variables": {
-        "retroaccount_checking": {"default": ""}
+        "retroaccount_checking": {"default": ""},
+        "retroaccount_open_account_after_login": {"default": "false", "values": ["false", "true"]},
     },
     "hotkeys": [{"keys": [27], "action": _try_abort()}],
     "actions": [
@@ -2192,7 +2270,18 @@ def _main_menu(retroaccount_logged_in): return {
             ]}
         }
     ],
-    "on_idle": [{"type": "retroaccount_check_state"}]
+    "on_idle": [
+        {"type": "retroaccount_check_state"},
+        {
+            "type": "condition",
+            "variable": "retroaccount_open_account_after_login",
+            "true": [
+                {"type": "set_variable", "target": "retroaccount_open_account_after_login", "value": "false"},
+                {"type": "navigate", "target": "retroaccount_account_menu"},
+            ],
+            "false": [],
+        },
+    ]
 }
 
 

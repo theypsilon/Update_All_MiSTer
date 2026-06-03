@@ -34,7 +34,7 @@ from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OP
     KENV_TRANSITION_SERVICE_ONLY, FILE_patreon_key, COMMAND_STANDARD, FILE_timeline_short, KENV_TIMELINE_PLUS_PATH, \
     DEFAULT_TRANSITION_SERVICE_ONLY, KENV_SKIP_DOWNLOADER, DEFAULT_SKIP_DOWNLOADER, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
     KENV_TIMELINE_SHORT_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID, \
-    KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount
+    KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, KENV_UPDATE_ALL_CHIP_ID_RESULT
 from update_all.countdown import Countdown
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs, all_dbs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
@@ -67,6 +67,7 @@ def default_env():
         KENV_TRANSITION_SERVICE_ONLY: DEFAULT_TRANSITION_SERVICE_ONLY,
         KENV_PATREON_KEY_PATH: FILE_patreon_key,
         KENV_COMMAND: COMMAND_STANDARD,
+        KENV_UPDATE_ALL_CHIP_ID_RESULT: '',
         KENV_TIMELINE_SHORT_PATH: FILE_timeline_short,
         KENV_TIMELINE_PLUS_PATH: FILE_timeline_plus,
         KENV_HTTP_PROXY: '',

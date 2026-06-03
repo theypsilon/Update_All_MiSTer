@@ -28,24 +28,20 @@ from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, \
     DEFAULT_DEBUG, DEFAULT_TRANSITION_SERVICE_ONLY, KENV_TRANSITION_SERVICE_ONLY, KENV_SKIP_DOWNLOADER, \
     DEFAULT_SKIP_DOWNLOADER, KENV_PATREON_KEY_PATH, FILE_patreon_key, KENV_COMMAND, COMMAND_STANDARD, \
     KENV_TIMELINE_SHORT_PATH, FILE_timeline_short, KENV_TIMELINE_PLUS_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, \
-    KENV_LC_HTTP_PROXY, KENV_LC_HTTPS_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID, KENV_RETROACCOUNT_DOMAIN, \
-    DOMAIN_default_retroaccount
-from update_all.local_repository import LocalRepository
+    KENV_LC_HTTP_PROXY, KENV_LC_HTTPS_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID, KENV_UPDATE_ALL_CHIP_ID_RESULT, \
+    KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, MEDIA_FAT, FILE_update_all_log
+
 from update_all.logger import FileLoggerDecorator, PrintLogger
 from update_all.other import GenericProvider
-from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllServicePass
 
 
-def main(env):
+def main(env, args=None):
     locale.setlocale(locale.LC_CTYPE, "")
-    local_repository_provider = GenericProvider[LocalRepository]()
-    logger = FileLoggerDecorator(PrintLogger(), local_repository_provider)
+    local_repository_provider = GenericProvider()
+    logger = FileLoggerDecorator(PrintLogger(), initial_logfile_path())
     # noinspection PyBroadException
     try:
-        exit_code = execute_update_all(
-            UpdateAllServiceFactory(logger, local_repository_provider=local_repository_provider),
-            env
-        )
+        exit_code = execute_update_all(logger, local_repository_provider, env, args=args)
     except KeyboardInterrupt as _:
         logger.print('\nExecution aborted by the user.')
         return 1
@@ -58,16 +54,28 @@ def main(env):
     return exit_code
 
 
-def execute_update_all(factory, env):
-    return factory.create(env).full_run(pass_parameter(sys.argv))
+def initial_logfile_path():
+    media_fat_logfile_dir = os.path.join(MEDIA_FAT, os.path.dirname(FILE_update_all_log))
+    media_fat_logfile_path = os.path.join(MEDIA_FAT, FILE_update_all_log)
+    return media_fat_logfile_path if os.path.isdir(media_fat_logfile_dir) else os.path.basename(FILE_update_all_log)
 
-def pass_parameter(args: list[str]) -> UpdateAllServicePass:
+
+def execute_update_all(logger: FileLoggerDecorator, local_repository_provider, env, args=None):
+    args = sys.argv if args is None else args
+    if len(args) > 1 and args[1] == '--chip-id-linker':
+        from update_all.chip_id_linker import run_chip_id_linker_command
+        return run_chip_id_linker_command(logger, args[2:])
+
+    from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllServicePass
     if len(args) > 1 and args[1] == '--continue':
-        return UpdateAllServicePass.Continue
+        full_run_param = UpdateAllServicePass.Continue
     elif len(args) > 1 and args[1] == '--no-continue':
-        return UpdateAllServicePass.NewRunNonStop
+        full_run_param = UpdateAllServicePass.NewRunNonStop
     else:
-        return UpdateAllServicePass.NewRun
+        full_run_param = UpdateAllServicePass.NewRun
+
+    factory = UpdateAllServiceFactory(logger, local_repository_provider=local_repository_provider)
+    return factory.create(env).full_run(full_run_param)
 
 
 def read_env(default_commit: str, real_start_time: float) -> EnvDict:
@@ -80,6 +88,7 @@ def read_env(default_commit: str, real_start_time: float) -> EnvDict:
         KENV_SKIP_DOWNLOADER: os.getenv(KENV_SKIP_DOWNLOADER, DEFAULT_SKIP_DOWNLOADER),
         KENV_PATREON_KEY_PATH: os.getenv(KENV_PATREON_KEY_PATH, FILE_patreon_key),
         KENV_COMMAND: os.getenv(KENV_COMMAND, COMMAND_STANDARD),
+        KENV_UPDATE_ALL_CHIP_ID_RESULT: os.getenv(KENV_UPDATE_ALL_CHIP_ID_RESULT, ''),
         KENV_TIMELINE_SHORT_PATH: os.getenv(KENV_TIMELINE_SHORT_PATH, FILE_timeline_short),
         KENV_TIMELINE_PLUS_PATH: os.getenv(KENV_TIMELINE_PLUS_PATH, FILE_timeline_plus),
         KENV_HTTP_PROXY: os.getenv(KENV_HTTP_PROXY) or os.getenv(KENV_LC_HTTP_PROXY),

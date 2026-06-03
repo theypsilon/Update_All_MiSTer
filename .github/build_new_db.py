@@ -130,6 +130,7 @@ with zipfile.ZipFile('mad_db.json.zip') as z:
 
 fetch_file('update_all_latest_log.sh', 'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/master/src/update_all_latest_log.sh')
 fetch_file('update_all_timeline.sh', 'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/master/src/update_all_timeline.sh')
+fetch_file('Linker.rbf', 'https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/refs/heads/bin/Linker.rbf')
 
 save_json(generate_pocket_firmware_details(), 'pocket_firmware_details.json')
 
@@ -142,7 +143,7 @@ fetch_file('timeline.json', 'https://raw.githubusercontent.com/theypsilon/Timeli
 
 subprocess.run(['zip', 'update_all.zip', 'update_all.sh'], check=True)
 
-subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all_timeline.sh', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'timeline_plus.enc', 'timeline.json'], check=True)
+subprocess.run(['git', 'add', 'update_all.pyz', 'update_all.pyz.sha256', 'update_all.sh', 'update_all_latest_log.sh', 'update_all_timeline.sh', 'Linker.rbf', 'update_all.zip', 'mad_db.json.zip', 'pocket_firmware_details.json', 'timeline_plus.enc', 'timeline.json'], check=True)
 subprocess.run(['git', 'commit', '-m', '-'], check=True)
 
 new_db['files'] = {
@@ -170,6 +171,11 @@ new_db['files'] = {
         'size': os.path.getsize('timeline.json'),
         'hash': hash_file('timeline.json'),
         'tags': [2, 1]
+    },
+    'Scripts/.config/update_all/Linker.rbf': {
+        'size': os.path.getsize('Linker.rbf'),
+        'hash': hash_file('Linker.rbf'),
+        'tags': [2],
     },
     'Scripts/update_all.sh': {
         'size': os.path.getsize('update_all.sh'),

@@ -15,8 +15,12 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import os
+import subprocess
+import tempfile
 import unittest
-from unittest.mock import patch
+import zipfile
+from unittest.mock import MagicMock, patch
 from typing import Tuple
 
 from test.fake_filesystem import FileSystemFactory
@@ -26,7 +30,8 @@ from update_all.config import Config
 from update_all.databases import DB_ID_NAMES_TXT, AllDBs, all_dbs
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
-from update_all.settings_screen import SettingsScreen
+from update_all.retroaccount import BenefitState, ChipIdAttachResult
+from update_all.settings_screen import CHIP_ID_DEBUG_LOG_PATH, SettingsScreen
 from update_all.settings_screen_model import settings_screen_model
 from update_all.ui_model_utilities import gather_variable_declarations
 
@@ -183,6 +188,295 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_general_selector'))
         self.assertEqual('true', ui.get_value('ajgowans/manualsdb-3do'))
 
+    def test_extract_chip_id___when_not_mister___stores_failure_and_does_not_start_extraction(self):
+        sut, ui = tester(config=Config(databases=default_databases(), not_mister=True))
+        sut._queue_detached_chip_id_extraction = MagicMock()
+        sut._run_chip_id_extraction_without_update_all_relaunch = MagicMock()
+
+        result = sut.extract_chip_id(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('FAILURE_NOT_MISTER', ui.get_value('retroaccount_extract_chip_id_result'))
+        sut._queue_detached_chip_id_extraction.assert_not_called()
+        sut._run_chip_id_extraction_without_update_all_relaunch.assert_not_called()
+
+    def test_extract_chip_id___when_linker_pyz_is_missing___asks_for_full_update_and_does_not_start_extraction(self):
+        config = Config(databases=default_databases())
+        file_system = chip_id_linker_file_system(config, pyz=False)
+        sut, ui = tester(config=config, file_system=file_system)
+        sut._run_chip_id_extraction_without_update_all_relaunch = MagicMock()
+
+        with patch('update_all.settings_screen.is_mister_scripts_menu_fb_launch') as is_menu_launch:
+            result = sut.extract_chip_id(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('FAILURE_LINKER_PYZ_MISSING', ui.get_value('retroaccount_extract_chip_id_result'))
+        self.assertEqual('Full update required', ui.get_value('retroaccount_device_verification_description'))
+        self.assertEqual(
+            'Run a full Update All before linking FPGA ID.',
+            ui.get_value('retroaccount_device_verification_message')
+        )
+        self.assertEqual('', ui.get_value('retroaccount_verified_chip_id_message'))
+        is_menu_launch.assert_not_called()
+        sut._run_chip_id_extraction_without_update_all_relaunch.assert_not_called()
+
+    def test_extract_chip_id___when_rbf_is_missing___asks_for_full_update_and_does_not_start_extraction(self):
+        config = Config(databases=default_databases())
+        file_system = chip_id_linker_file_system(config, rbf=False)
+        sut, ui = tester(config=config, file_system=file_system)
+        sut._run_chip_id_extraction_without_update_all_relaunch = MagicMock()
+
+        with patch('update_all.settings_screen.is_mister_scripts_menu_fb_launch') as is_menu_launch:
+            result = sut.extract_chip_id(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('FAILURE_RBF_MISSING', ui.get_value('retroaccount_extract_chip_id_result'))
+        self.assertEqual('Full update required', ui.get_value('retroaccount_device_verification_description'))
+        self.assertEqual(
+            'Run a full Update All before linking FPGA ID.',
+            ui.get_value('retroaccount_device_verification_message')
+        )
+        self.assertEqual('', ui.get_value('retroaccount_verified_chip_id_message'))
+        is_menu_launch.assert_not_called()
+        sut._run_chip_id_extraction_without_update_all_relaunch.assert_not_called()
+
+    def test_extract_chip_id___when_not_scripts_menu_framebuffer_launch___runs_extraction_without_relaunch_and_attaches(self):
+        retroaccount = _RetroAccountStub()
+        config = Config(databases=default_databases())
+        sut, ui = tester(config=config, file_system=chip_id_linker_file_system(config), retroaccount=retroaccount)
+        sut._run_chip_id_extraction_without_update_all_relaunch = MagicMock(return_value='0123456789abcdef')
+
+        with patch('update_all.settings_screen.is_mister_scripts_menu_fb_launch', return_value=False):
+            result = sut.extract_chip_id(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('0123456789abcdef', ui.get_value('retroaccount_extract_chip_id_result'))
+        self.assertEqual('0123456789abcdef', config.chip_id_result)
+        self.assertEqual(['0123456789abcdef'], retroaccount.attach_calls)
+        self.assertEqual(1, retroaccount.mister_sync_calls)
+        self.assertEqual('true', ui.get_value('retroaccount_device_verified'))
+        self.assertEqual('Linking successful!', ui.get_value('retroaccount_device_verification_message'))
+        self.assertEqual('FPGA ID: 0123456789abcdef', ui.get_value('retroaccount_verified_chip_id_message'))
+
+    def test_extract_chip_id___when_not_scripts_menu_framebuffer_launch_and_extraction_fails___does_not_attach(self):
+        retroaccount = _RetroAccountStub()
+        config = Config(databases=default_databases())
+        sut, ui = tester(config=config, file_system=chip_id_linker_file_system(config), retroaccount=retroaccount)
+        sut._run_chip_id_extraction_without_update_all_relaunch = MagicMock(return_value='FAILURE_LOAD_CORE_FIFO')
+
+        with patch('update_all.settings_screen.is_mister_scripts_menu_fb_launch', return_value=False):
+            result = sut.extract_chip_id(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('FAILURE_LOAD_CORE_FIFO', ui.get_value('retroaccount_extract_chip_id_result'))
+        self.assertEqual([], retroaccount.attach_calls)
+        self.assertEqual(0, retroaccount.mister_sync_calls)
+
+    def test_extract_chip_id___when_mister___queues_detached_worker_and_exits_immediately(self):
+        config = Config(databases=default_databases())
+        sut, ui = tester(config=config, file_system=chip_id_linker_file_system(config))
+        sut._queue_detached_chip_id_extraction = MagicMock(return_value='EXTRACTION_STARTED')
+
+        with patch('update_all.settings_screen.is_mister_scripts_menu_fb_launch', return_value=True):
+            with self.assertRaises(SystemExit) as e:
+                sut.extract_chip_id(ui)
+
+        self.assertEqual(0, e.exception.code)
+        self.assertEqual('EXTRACTION_STARTED', ui.get_value('retroaccount_extract_chip_id_result'))
+        sut._queue_detached_chip_id_extraction.assert_called_once_with()
+
+    def test_initialize_ui___loads_chip_id_result_from_config_for_retroaccount_menu(self):
+        _sut, ui = tester(config=Config(databases=default_databases(), chip_id_result='0123456789abcdef'))
+
+        self.assertEqual('FPGA ID link pending', ui.get_value('retroaccount_device_verification_description'))
+
+    def test_initialize_ui___loads_verified_device_state_for_retroaccount_menu(self):
+        retroaccount = _RetroAccountStub(device_verified=True)
+
+        _sut, ui = tester(retroaccount=retroaccount)
+
+        self.assertEqual('true', ui.get_value('retroaccount_device_verified'))
+        self.assertEqual('FPGA ID linked: 0123456789abcdef', ui.get_value('retroaccount_device_verification_description'))
+        self.assertEqual('FPGA ID: 0123456789abcdef', ui.get_value('retroaccount_verified_chip_id_message'))
+
+    def test_initialize_ui___loads_device_label_and_account_description_formatters(self):
+        retroaccount = _RetroAccountStub(device_label='MiSTer Living Room Cabinet')
+
+        _sut, ui = tester(retroaccount=retroaccount)
+
+        self.assertEqual('MiSTer Living Room Cabinet', ui.get_value('device_label'))
+        self.assertEqual(
+            'Device label: MiSTer Living Room Cabinet',
+            ui.formatters['device_label_message']('MiSTer Living Room Cabinet')
+        )
+        self.assertEqual('Device label: Not available', ui.formatters['device_label_message'](''))
+
+    def test_retroaccount_check_state___refreshes_device_verification_state(self):
+        retroaccount = _RetroAccountStub(device_verified=True)
+        sut, ui = tester(config=Config(databases=default_databases(), chip_id_result='0123456789abcdef'), retroaccount=retroaccount)
+        retroaccount._device_verified = False
+        ui.set_value('retroaccount_update_all_extras', 'Checking...')
+        ui.set_value('retroaccount_jtbeta_access', 'Checking...')
+        ui.set_value('retroaccount_checking', '')
+
+        result = sut.retroaccount_check_state(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('false', ui.get_value('retroaccount_device_verified'))
+        self.assertEqual('FPGA ID link pending', ui.get_value('retroaccount_device_verification_description'))
+
+    def test_retroaccount_check_state___refreshes_device_label(self):
+        retroaccount = _RetroAccountStub()
+        sut, ui = tester(retroaccount=retroaccount)
+        retroaccount._device_label = 'MiSTer Living Room'
+        ui.set_value('retroaccount_update_all_extras', 'Checking...')
+        ui.set_value('retroaccount_jtbeta_access', 'Checking...')
+        ui.set_value('retroaccount_checking', '')
+
+        result = sut.retroaccount_check_state(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('MiSTer Living Room', ui.get_value('device_label'))
+
+    def test_start_detached_chip_id_extraction___starts_linker_command_with_resolved_paths(self):
+        with tempfile.TemporaryDirectory() as base_path:
+            config = Config(base_path=base_path, base_system_path=base_path, databases=default_databases())
+            file_system = FileSystemFactory.from_state(config=config, files={
+                'Scripts/.config/update_all/update_all.pyz': {'content': 'pyz'},
+                'Scripts/.config/update_all/Linker.rbf': {'content': 'rbf'},
+            }).create_for_system_scope()
+            sut, _ui = tester(config=config, file_system=file_system)
+            process = MagicMock()
+            process.pid = 456
+            pyz_path = f'{base_path}/scripts/.config/update_all/update_all.pyz'
+            rbf_path = f'{base_path}/scripts/.config/update_all/linker.rbf'
+            update_all_dir = f'{base_path}/scripts'
+
+            with patch('update_all.settings_screen.sys.executable', '/usr/bin/python3'), \
+                    patch('update_all.settings_screen.subprocess.Popen', return_value=process) as popen:
+                result = _start_detached_chip_id_extraction(sut)
+
+            self.assertEqual('EXTRACTION_STARTED', result)
+            popen.assert_called_once_with(
+                [
+                    '/usr/bin/python3',
+                    pyz_path,
+                    '--chip-id-linker',
+                    '--rbf',
+                    rbf_path,
+                    '--update-all-dir',
+                    update_all_dir,
+                    '--log',
+                    CHIP_ID_DEBUG_LOG_PATH,
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+                close_fds=True,
+            )
+
+    def test_start_detached_chip_id_extraction___uses_current_update_all_archive_even_without_pyz_extension(self):
+        with tempfile.TemporaryDirectory() as base_path:
+            config = Config(base_path=base_path, base_system_path=base_path, databases=default_databases())
+            file_system = FileSystemFactory.from_state(config=config, files={
+                'Scripts/.config/update_all/update_all.pyz': {'content': 'stale cached pyz'},
+                'Scripts/.config/update_all/Linker.rbf': {'content': 'rbf'},
+            }).create_for_system_scope()
+            sut, _ui = tester(config=config, file_system=file_system)
+            process = MagicMock()
+            process.pid = 456
+            current_archive_path = _temp_zipapp_with_suffix('.sh')
+            rbf_path = f'{base_path}/scripts/.config/update_all/linker.rbf'
+            update_all_dir = f'{base_path}/scripts'
+
+            with patch('update_all.settings_screen.sys.argv', [current_archive_path]), \
+                    patch('update_all.settings_screen.sys.executable', '/usr/bin/python3'), \
+                    patch('update_all.settings_screen.subprocess.Popen', return_value=process) as popen:
+                result = _start_detached_chip_id_extraction(sut)
+
+            self.assertEqual('EXTRACTION_STARTED', result)
+            popen.assert_called_once_with(
+                [
+                    '/usr/bin/python3',
+                    current_archive_path,
+                    '--chip-id-linker',
+                    '--rbf',
+                    rbf_path,
+                    '--update-all-dir',
+                    update_all_dir,
+                    '--log',
+                    CHIP_ID_DEBUG_LOG_PATH,
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+                close_fds=True,
+            )
+            _remove(current_archive_path)
+
+    def test_start_detached_chip_id_extraction___when_linker_pyz_is_missing___stores_failure(self):
+        with tempfile.TemporaryDirectory() as base_path:
+            config = Config(base_path=base_path, base_system_path=base_path, databases=default_databases())
+            file_system = FileSystemFactory.from_state(config=config, files={
+                'Scripts/.config/update_all/Linker.rbf': {'content': 'rbf'},
+            }).create_for_system_scope()
+            sut, _ui = tester(config=config, file_system=file_system)
+
+            with patch('update_all.settings_screen.subprocess.Popen') as popen:
+                result = _start_detached_chip_id_extraction(sut)
+
+            self.assertEqual('FAILURE_LINKER_PYZ_MISSING', result)
+            popen.assert_not_called()
+
+    def test_start_detached_chip_id_extraction___when_rbf_is_missing___stores_failure(self):
+        with tempfile.TemporaryDirectory() as base_path:
+            config = Config(base_path=base_path, base_system_path=base_path, databases=default_databases())
+            file_system = FileSystemFactory.from_state(config=config, files={
+                'Scripts/.config/update_all/update_all.pyz': {'content': 'pyz'},
+            }).create_for_system_scope()
+            sut, _ui = tester(config=config, file_system=file_system)
+
+            with patch('update_all.settings_screen.subprocess.Popen') as popen:
+                result = _start_detached_chip_id_extraction(sut)
+
+            self.assertEqual('FAILURE_RBF_MISSING', result)
+            popen.assert_not_called()
+
+    def test_run_chip_id_extraction_without_update_all_relaunch___calls_linker_extract_only_and_returns_stdout(self):
+        with tempfile.TemporaryDirectory() as base_path:
+            config = Config(base_path=base_path, base_system_path=base_path, databases=default_databases())
+            file_system = FileSystemFactory.from_state(config=config, files={
+                'Scripts/.config/update_all/update_all.pyz': {'content': 'pyz'},
+                'Scripts/.config/update_all/Linker.rbf': {'content': 'rbf'},
+            }).create_for_system_scope()
+            sut, _ui = tester(config=config, file_system=file_system)
+            process = subprocess.CompletedProcess([], 0, stdout='0123456789abcdef\n', stderr='')
+            pyz_path = f'{base_path}/scripts/.config/update_all/update_all.pyz'
+            rbf_path = f'{base_path}/scripts/.config/update_all/linker.rbf'
+
+            with patch('update_all.settings_screen.sys.executable', '/usr/bin/python3'), \
+                    patch('update_all.settings_screen.subprocess.run', return_value=process) as run:
+                result = sut._run_chip_id_extraction_without_update_all_relaunch()
+
+            self.assertEqual('0123456789abcdef', result)
+            run.assert_called_once_with(
+                [
+                    '/usr/bin/python3',
+                    pyz_path,
+                    '--chip-id-linker',
+                    '--extract-only',
+                    '--rbf',
+                    rbf_path,
+                    '--log',
+                    CHIP_ID_DEBUG_LOG_PATH,
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
     def test_load_menu_entry___restores_pending_unsaved_video_mode_when_ui_engine_raises(self):
         service = _MisterVideoModeServiceStub()
         sut, _ui = tester(mister_video_mode_service=service, initialize_ui=False, ui_runtime=_ImmediateUiRuntimeStub())
@@ -193,8 +487,93 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual(1, service.restore_calls)
 
+    def test_load_chip_id_result_menu___starts_link_result_with_retroaccount_menu_history(self):
+        sut, _ui = tester(initialize_ui=False, ui_runtime=_ImmediateUiRuntimeStub())
 
-def tester(config: Config = None, store: LocalStore = None, mister_video_mode_service=None, initialize_ui=True, ui_runtime=None, file_system=None) -> Tuple[SettingsScreen, UiContextStub]:
+        with patch('update_all.settings_screen.execute_ui_engine') as execute:
+            sut.load_chip_id_result_menu()
+
+        execute.assert_called_once()
+        self.assertEqual('retroaccount_device_verification_result', execute.call_args[0][0])
+        self.assertEqual(['main_menu_account', 'retroaccount_account_menu'], execute.call_args.kwargs['initial_history'])
+
+    def test_retroaccount_attach_chip_id_to_device___when_attach_succeeds___shows_completion(self):
+        config = Config(databases=default_databases(), chip_id_result='0123456789abcdef')
+        retroaccount = _RetroAccountStub(attach_result=True)
+        sut, ui = tester(config=config, retroaccount=retroaccount, initialize_ui=False)
+
+        result = sut.retroaccount_attach_chip_id_to_device(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual(['0123456789abcdef'], retroaccount.attach_calls)
+        self.assertEqual(1, retroaccount.mister_sync_calls)
+        self.assertEqual('true', ui.get_value('retroaccount_device_verified'))
+        self.assertEqual('FPGA ID linked: 0123456789abcdef', ui.get_value('retroaccount_device_verification_description'))
+        self.assertEqual('Linking successful!', ui.get_value('retroaccount_device_verification_message'))
+        self.assertEqual('FPGA ID: 0123456789abcdef', ui.get_value('retroaccount_verified_chip_id_message'))
+
+    def test_retroaccount_attach_chip_id_to_device___when_attach_fails___shows_failure(self):
+        config = Config(databases=default_databases(), chip_id_result='0123456789abcdef')
+        retroaccount = _RetroAccountStub(attach_result=False, attach_status_code=409)
+        sut, ui = tester(config=config, retroaccount=retroaccount, initialize_ui=False)
+
+        result = sut.retroaccount_attach_chip_id_to_device(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual(['0123456789abcdef'], retroaccount.attach_calls)
+        self.assertEqual(1, retroaccount.mister_sync_calls)
+        self.assertEqual('false', ui.get_value('retroaccount_device_verified'))
+        self.assertEqual('FPGA ID linking failed', ui.get_value('retroaccount_device_verification_description'))
+        self.assertEqual('Could not link FPGA ID. Try again later.', ui.get_value('retroaccount_device_verification_message'))
+
+    def test_retroaccount_attach_chip_id_to_device___when_result_is_not_chip_id___does_not_call_endpoint(self):
+        config = Config(databases=default_databases(), chip_id_result='FAILURE_MEM_SIGBUS')
+        retroaccount = _RetroAccountStub(attach_result=True)
+        sut, ui = tester(config=config, retroaccount=retroaccount, initialize_ui=False)
+
+        result = sut.retroaccount_attach_chip_id_to_device(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual([], retroaccount.attach_calls)
+        self.assertEqual(0, retroaccount.mister_sync_calls)
+        self.assertEqual('Could not link FPGA ID. Try again later.', ui.get_value('retroaccount_device_verification_message'))
+
+    def test_retroaccount_device_logout___clears_live_device_verification_state(self):
+        config = Config(databases=default_databases(), chip_id_result='0123456789abcdef')
+        retroaccount = _RetroAccountStub(device_verified=True)
+        sut, ui = tester(config=config, retroaccount=retroaccount)
+
+        result = sut.retroaccount_device_logout(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual(1, retroaccount.logout_calls)
+        self.assertEqual('', config.chip_id_result)
+        self.assertEqual('false', ui.get_value('retroaccount_device_verified'))
+        self.assertEqual('FPGA ID not linked', ui.get_value('retroaccount_device_verification_description'))
+        self.assertEqual('', ui.get_value('retroaccount_verified_chip_id_message'))
+        self.assertEqual('', ui.get_value('device_label'))
+
+    def test_load_menu_entry___starts_pending_chip_id_extraction_after_curses_exits(self):
+        sut, _ui = tester(initialize_ui=False, ui_runtime=_ImmediateUiRuntimeStub())
+        sut._pending_chip_id_extraction = ['/usr/bin/python3', '/tmp/update_all_chipid.pyz']
+
+        with patch('update_all.settings_screen.execute_ui_engine', side_effect=SystemExit(0)), \
+                patch('update_all.settings_screen.subprocess.Popen') as popen:
+            with self.assertRaises(SystemExit):
+                sut._load_menu_entry('main_menu_login')
+
+        popen.assert_called_once_with(
+            ['/usr/bin/python3', '/tmp/update_all_chipid.pyz'],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            close_fds=True,
+        )
+        self.assertIsNone(sut._pending_chip_id_extraction)
+
+
+def tester(config: Config = None, store: LocalStore = None, mister_video_mode_service=None, initialize_ui=True, ui_runtime=None, file_system=None, retroaccount=None) -> Tuple[SettingsScreen, UiContextStub]:
     ui = UiContextStub()
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config or Config(databases=default_databases()))
@@ -206,10 +585,43 @@ def tester(config: Config = None, store: LocalStore = None, mister_video_mode_se
         mister_video_mode_service=mister_video_mode_service,
         ui_runtime=ui_runtime,
         file_system=file_system,
+        retroaccount=retroaccount,
     )
     if initialize_ui:
         settings_screen.initialize_ui(ui)
     return settings_screen, ui
+
+
+def chip_id_linker_file_system(config: Config, pyz: bool = True, rbf: bool = True):
+    files = {}
+    if pyz:
+        files['Scripts/.config/update_all/update_all.pyz'] = {'content': 'pyz'}
+    if rbf:
+        files['Scripts/.config/update_all/Linker.rbf'] = {'content': 'rbf'}
+    return FileSystemFactory.from_state(config=config, files=files).create_for_system_scope()
+
+
+def _temp_zipapp_with_suffix(suffix: str) -> str:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as file:
+        path = file.name
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr('__main__.py', '')
+    return path
+
+
+def _remove(*paths: str) -> None:
+    for path in paths:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+
+
+def _start_detached_chip_id_extraction(sut: SettingsScreen) -> str:
+    result = sut._queue_detached_chip_id_extraction()
+    if result == 'EXTRACTION_STARTED':
+        sut._start_pending_chip_id_extraction_after_ui_shutdown()
+    return result
 
 
 class _MisterVideoModeServiceStub:
@@ -222,7 +634,6 @@ class _MisterVideoModeServiceStub:
 
     def restore_mode_before_unsaved_keeps(self):
         self.restore_calls += 1
-        return True
 
     def has_unsaved_kept_mode(self):
         return self._has_unsaved_kept_mode
@@ -235,6 +646,56 @@ class _MisterVideoModeServiceStub:
 
     def current_vga_scaler(self):
         return self._vga_scaler
+
+
+class _RetroAccountStub:
+    def __init__(self, device_verified=False, attach_result=True, device_label=None, attach_status_code=200):
+        self._device_verified = device_verified
+        self._verified_chip_id = '0123456789abcdef' if device_verified else None
+        self._device_label = device_label
+        self._attach_result = attach_result
+        self._attach_status_code = attach_status_code
+        self.attach_calls = []
+        self.mister_sync_calls = 0
+        self.logout_calls = 0
+
+    def get_login_state(self):
+        return True
+
+    def is_update_all_extras_active(self):
+        return False
+
+    def is_device_verified(self):
+        return self._device_verified
+
+    def get_verified_chip_id(self):
+        return self._verified_chip_id
+
+    def get_device_label(self):
+        return self._device_label
+
+    def update_all_extras_sync_state(self):
+        return BenefitState.CHECKING
+
+    def jtbeta_access_sync_state(self):
+        return BenefitState.CHECKING
+
+    def attach_chip_id_to_current_device(self, chip_id):
+        self.attach_calls.append(chip_id)
+        if self._attach_result:
+            self._device_verified = True
+            self._verified_chip_id = chip_id.lower()
+        return ChipIdAttachResult(self._attach_result, self._attach_status_code)
+
+    def mister_sync(self):
+        self.mister_sync_calls += 1
+
+    def device_logout(self):
+        self.logout_calls += 1
+        self._device_verified = False
+        self._verified_chip_id = None
+        self._device_label = None
+        return True
 
 
 class _ImmediateUiRuntimeStub:

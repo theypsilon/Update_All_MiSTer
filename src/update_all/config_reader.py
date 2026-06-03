@@ -24,7 +24,7 @@ from update_all.file_system import FileSystem
 from update_all.config import Config, EnvDict
 from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, KENV_DEBUG, \
     KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, \
-    FILE_retroaccount_cfg, K_RETROACCOUNT_DOMAIN
+    FILE_retroaccount_cfg, K_RETROACCOUNT_DOMAIN, KENV_UPDATE_ALL_CHIP_ID_RESULT
 from update_all.databases import DB_ID_NAMES_TXT, model_variables_by_db_id, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS
 from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
@@ -66,6 +66,11 @@ class ConfigReader:
         config.transition_service_only = str_to_bool(self._env['TRANSITION_SERVICE_ONLY'].strip().lower())
         config.patreon_key_path = self._env['PATREON_KEY_PATH'].strip()
         config.command = self._env.get('COMMAND', config.command).strip().upper()
+        config.chip_id_result = valid_max_length(
+            KENV_UPDATE_ALL_CHIP_ID_RESULT,
+            self._env.get(KENV_UPDATE_ALL_CHIP_ID_RESULT, config.chip_id_result),
+            100
+        ).strip()
         config.timeline_short_path = self._env.get('TIMELINE_SHORT_PATH', config.timeline_short_path).strip()
         config.timeline_plus_path = self._env.get('TIMELINE_PLUS_PATH', config.timeline_plus_path).strip()
         config.mirror = self._env.get('MIRROR_ID', config.mirror).strip().lower()

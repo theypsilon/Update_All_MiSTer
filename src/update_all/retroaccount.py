@@ -26,7 +26,7 @@ from update_all.file_system import FileSystem
 from update_all.config import Config
 from update_all.other import GenericProvider, any_to_bool, any_to_nonfalsy_str
 from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbeta_alt, FILE_retroaccount_user_json, \
-    FILE_retroaccount_device_id, FILE_patreon_key_md5, \
+    FILE_retroaccount_device_id, FILE_retroaccount_verified_chip_id, FILE_patreon_key_md5, \
     FILE_patreon_key_prev, FILE_JOTEGO_mra_pack_json, FILE_JOTEGO_mra_pack_ini
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.retroaccount_gateway import RetroAccountGateway, SessionResult
@@ -48,6 +48,15 @@ ImportantMessageKind = Literal['print', 'debug']
 ImportantMessage = tuple[ImportantMessageKind, str]
 
 
+@dataclass(frozen=True)
+class ChipIdAttachResult:
+    attached: bool
+    status_code: Optional[int] = None
+
+    def __bool__(self) -> bool:
+        return self.attached
+
+
 class _RetroAccountFileDescriptionRequired(TypedDict):
     url: str
     md5: str
@@ -63,6 +72,7 @@ class _RetroAccountFileDescription(_RetroAccountFileDescriptionRequired, total=F
 class _SyncTransition:
     update_all_extras_active: Optional[bool] = None
     jtbeta_access_active: Optional[bool] = None
+    device_label: Optional[str] = None
     save_device_id: Optional[str] = None
     save_user_json: Optional[dict[str, Any]] = field(default=None, repr=False)
     remove_user_json: bool = False
@@ -116,6 +126,7 @@ class RetroAccountService(RetroAccountClient):
         self._update_all_extras: Optional[bool] = None
         self._update_all_extras_sync_state: BenefitState = BenefitState.CHECKING
         self._jtbeta_access_sync_state: BenefitState = BenefitState.CHECKING
+        self._device_label: Optional[str] = None
         self._update_all_patreon_key_prev_file: Optional[_RetroAccountFileDescription] = None
         self._important_messages: list[ImportantMessage] = []
         self._sync_done = False
@@ -128,6 +139,9 @@ class RetroAccountService(RetroAccountClient):
 
     def has_synced(self) -> bool:
         return self._sync_done
+
+    def get_device_label(self) -> Optional[str]:
+        return self._device_label
 
     def has_installed_update_all_patreon_key(self) -> bool: return self._has_installed_update_all_patreon_key
     def has_installed_jtbeta(self) -> bool: return self._has_installed_jtbeta
@@ -156,6 +170,67 @@ class RetroAccountService(RetroAccountClient):
         if self._file_system.is_file(FILE_retroaccount_device_id):
             return self._file_system.read_file_contents(FILE_retroaccount_device_id).strip() or None
         return None
+
+    def is_device_verified(self) -> bool:
+        return self.get_login_state() and self.get_verified_chip_id() is not None
+
+    def get_verified_chip_id(self) -> Optional[str]:
+        if self._file_system.is_file(FILE_retroaccount_verified_chip_id):
+            return self._file_system.read_file_contents(FILE_retroaccount_verified_chip_id).strip() or None
+        return None
+
+    def attach_chip_id_to_current_device(self, chip_id: str) -> ChipIdAttachResult:
+        normalized_chip_id = self._normalize_chip_id(chip_id)
+        if normalized_chip_id is None:
+            self._logger.debug(f'RetroAccountService: Invalid FPGA ID for device verification: {chip_id}')
+            return ChipIdAttachResult(False)
+
+        if not self._file_system.is_file(FILE_retroaccount_user_json):
+            self._logger.debug('RetroAccountService: Cannot attach FPGA ID without user credentials')
+            return ChipIdAttachResult(False)
+
+        try:
+            user_data = self._file_system.load_dict_from_file(FILE_retroaccount_user_json)
+        except Exception as e:
+            self._logger.debug('RetroAccountService: Could not read user data for FPGA ID attach')
+            self._logger.debug(e)
+            return ChipIdAttachResult(False)
+
+        device_id = any_to_nonfalsy_str(user_data.get('device_id'))
+        refresh_token = any_to_nonfalsy_str(user_data.get('refresh_token'))
+        if not device_id or not refresh_token:
+            self._logger.debug('RetroAccountService: Cannot attach FPGA ID with incomplete user credentials')
+            return ChipIdAttachResult(False)
+
+        status_code = self._retroaccount_gateway.put_device_hardware_id(device_id, refresh_token, normalized_chip_id)
+        if 200 <= status_code < 300:
+            try:
+                self._file_system.make_dirs_parent(FILE_retroaccount_verified_chip_id)
+                self._file_system.write_file_contents(FILE_retroaccount_verified_chip_id, normalized_chip_id)
+            except Exception as e:
+                self._logger.debug('RetroAccountService: Could not store verified FPGA ID')
+                self._logger.debug(e)
+                return ChipIdAttachResult(False, status_code)
+            self._logger.debug(f'RetroAccountService: FPGA ID attach succeeded with status {status_code}')
+            return ChipIdAttachResult(True, status_code)
+
+        self._logger.debug(f'RetroAccountService: FPGA ID attach failed with status {status_code}')
+        return ChipIdAttachResult(False, status_code)
+
+    @staticmethod
+    def _normalize_chip_id(chip_id: str) -> Optional[str]:
+        value = any_to_nonfalsy_str(chip_id)
+        if value is None:
+            return None
+
+        value = value.lower()
+        if len(value) != 16:
+            return None
+
+        if any(c not in '0123456789abcdef' for c in value):
+            return None
+
+        return value
 
     def create_device_login_ui(self, drawer: UiDialogDrawer, renderer: DeviceLoginRenderer, data: dict[str, Any]) -> UiSection:
         return DeviceLogin(drawer, renderer, self, data)
@@ -247,9 +322,12 @@ class RetroAccountService(RetroAccountClient):
                 self._logger.debug(f'RetroAccountService: New token!')
                 new_user_json['device_id'] = device_id
 
+            device = response.get('device', None)
+            device_label = any_to_nonfalsy_str(device.get('label', None)) if isinstance(device, dict) else None
             benefits = response.get('benefits', {})
             self._logger.debug(f'RetroAccountService: Benefits after mister_sync ', benefits)
             return _SyncTransition(
+                device_label=device_label,
                 save_user_json=new_user_json,
                 install_update_all_patreon_key_file=any_to_retroaccount_file_description(benefits.get('update_all_patreon_key_file', None)),
                 install_jtbeta_file=any_to_retroaccount_file_description(benefits.get('jtbeta_file', None), discard_prev=True),
@@ -300,9 +378,14 @@ class RetroAccountService(RetroAccountClient):
             self._jtbeta_access_sync_state = BenefitState.CONNECTION_FAILED
             self._update_all_extras_sync_state = BenefitState.CONNECTION_FAILED
 
+        if transition.device_label is not None:
+            self._device_label = transition.device_label
+
         if transition.need_login:
             self._jtbeta_access_sync_state = BenefitState.NEED_LOGIN
             self._update_all_extras_sync_state = BenefitState.NEED_LOGIN
+            self._device_label = None
+            self._file_system.unlink(FILE_retroaccount_verified_chip_id, verbose=False)
 
         if transition.save_device_id:
             self._file_system.make_dirs_parent(FILE_retroaccount_device_id)
@@ -450,10 +533,12 @@ class RetroAccountService(RetroAccountClient):
 
     def _apply_local_device_logout_effects(self) -> None:
         self._file_system.unlink(FILE_retroaccount_user_json, verbose=False)
+        self._file_system.unlink(FILE_retroaccount_verified_chip_id, verbose=False)
         self._file_system.unlink(FILE_JOTEGO_mra_pack_ini, verbose=False)
         self._update_all_extras = False
         self._has_installed_update_all_patreon_key = False
         self._has_installed_jtbeta = False
+        self._device_label = None
         self._update_all_patreon_key_prev_file = None
         self.consume_important_messages()
 

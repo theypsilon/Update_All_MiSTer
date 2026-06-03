@@ -86,17 +86,20 @@ class UiApplication(abc.ABC):
         """Initializes the theme at the start"""
 
 
-def execute_ui_engine(entrypoint: str, model: Dict[str, Any], ui_application: UiApplication, ui_runtime: UiRuntime):
-    ui = _UiSystem(entrypoint, model, ui_application, ui_runtime)
+def execute_ui_engine(entrypoint: str, model: Dict[str, Any], ui_application: UiApplication, ui_runtime: UiRuntime,
+                      initial_history: Optional[List[str]] = None):
+    ui = _UiSystem(entrypoint, model, ui_application, ui_runtime, initial_history)
     ui.execute()
 
 
 class _UiSystem(UiContext):
-    def __init__(self, entrypoint, model, ui_application: UiApplication, ui_runtime: UiRuntime):
+    def __init__(self, entrypoint, model, ui_application: UiApplication, ui_runtime: UiRuntime,
+                 initial_history: Optional[List[str]] = None):
         self._entrypoint = entrypoint
         self._model = model
         self._ui_application = ui_application
         self._ui_runtime = ui_runtime
+        self._initial_history = list(initial_history or [])
         self._values = {}
         self._custom_effects = {}
         self._custom_formatters = {}
@@ -117,7 +120,14 @@ class _UiSystem(UiContext):
 
         self._is_initializing = False
 
-        runtime = _UiMainLoop(self._model, self._entrypoint, self, ui_section_factory, self._ui_runtime)
+        runtime = _UiMainLoop(
+            self._model,
+            self._entrypoint,
+            self,
+            ui_section_factory,
+            self._ui_runtime,
+            self._initial_history,
+        )
         runtime.execute()
 
     def add_custom_effects(self, effects: Dict[str, Callable[[], None]]):
@@ -144,12 +154,13 @@ class _UiSystem(UiContext):
 
 
 class _UiMainLoop:
-    def __init__(self, model, entrypoint, ui_system: _UiSystem, ui_section_factory: UiSectionFactory, ui_runtime: UiRuntime):
+    def __init__(self, model, entrypoint, ui_system: _UiSystem, ui_section_factory: UiSectionFactory,
+                 ui_runtime: UiRuntime, initial_history: Optional[List[str]] = None):
         self._model = model
         self._section = entrypoint
         self._items = self._model['items']
         self._section_states = {}
-        self._history = []
+        self._history = list(initial_history or [])
         self._ui_system = ui_system
         self._ui_section_factory = ui_section_factory
         self._ui_runtime = ui_runtime

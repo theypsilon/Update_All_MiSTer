@@ -17,15 +17,18 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 import hashlib
 from pathlib import Path
+import subprocess
+import sys
 from functools import cached_property
-from typing import Optional, Final
+from typing import Optional, Final, List
 
 from update_all.analogue_pocket.firmware_update import pocket_firmware_update
 from update_all.analogue_pocket.pocket_backup import pocket_backup
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
-    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme, MEDIA_FAT
+    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme, \
+    MEDIA_FAT, FILE_update_all_chip_id_linker_log, FILE_update_all_chip_id_rbf, FILE_update_all_launcher, FILE_update_all_pyz
 from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, ALL_DB_IDS
 from update_all.ini_repository import SEPARATE_DB_INI_FILES
 from update_all.encryption import Encryption
@@ -33,7 +36,7 @@ from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
-from update_all.other import GenericProvider, calculate_overscan
+from update_all.other import GenericProvider, calculate_overscan, current_update_all_archive_path, is_mister_scripts_menu_fb_launch
 from update_all.logger import Logger, CollectorLoggerDecorator
 from update_all.mister_video_mode_ui import MisterVideoModeService, MisterVideoModeMenu, MisterVideoAdjustMenu
 from update_all.os_utils import OsUtils
@@ -43,6 +46,9 @@ from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
 from update_all.ui_engine_dialog_application import DialogSectionFactory
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string
+
+
+CHIP_ID_DEBUG_LOG_PATH: Final[str] = f'{MEDIA_FAT}/{FILE_update_all_chip_id_linker_log}'
 
 
 class SettingsScreen(UiApplication):
@@ -67,6 +73,7 @@ class SettingsScreen(UiApplication):
         self._mister_video_mode_service = mister_video_mode_service
         self._original_firmware = None
         self._theme_manager = None
+        self._pending_chip_id_extraction: Optional[List[str]] = None
 
     def load_main_menu(self) -> None:
         if self._retroaccount.get_login_state():
@@ -78,16 +85,28 @@ class SettingsScreen(UiApplication):
     def load_test_menu(self) -> None:
         self._load_menu_entry('test_menu')
 
-    def _load_menu_entry(self, menu_entry) -> None:
+    def load_chip_id_result_menu(self) -> None:
+        self._load_menu_entry('retroaccount_device_verification_result', initial_history=['main_menu_account', 'retroaccount_account_menu'])
+
+    def _load_menu_entry(self, menu_entry, initial_history: Optional[List[str]] = None) -> None:
         def loader():
             model = settings_screen_model()
             try:
-                execute_ui_engine(menu_entry, model, self, self._ui_runtime)
+                execute_ui_engine(menu_entry, model, self, self._ui_runtime, initial_history=initial_history)
             except Exception:
                 self._mister_video_mode_service.restore_mode_before_unsaved_keeps()
                 raise
 
-        self._ui_runtime.initialize_runtime(loader)
+        system_exit = None
+        try:
+            self._ui_runtime.initialize_runtime(loader)
+        except SystemExit as e:
+            system_exit = e
+
+        self._start_pending_chip_id_extraction_after_ui_shutdown()
+
+        if system_exit is not None:
+            raise system_exit
 
     def initialize_ui(self, ui: UiContext) -> UiSectionFactory:
         ui.set_value('needs_save', 'false')
@@ -129,6 +148,9 @@ class SettingsScreen(UiApplication):
         ui.set_value('pocket_firmware_update', str(local_store.get_pocket_firmware_update()).lower())
         ui.set_value('pocket_backup', str(local_store.get_pocket_backup()).lower())
         ui.set_value('retroaccount_domain', config.retroaccount_domain)
+        ui.set_value('device_label', self._device_label_for_ui())
+        chip_id_result = self._read_chip_id_result_for_ui()
+        self._set_retroaccount_device_verification_ui(ui, chip_id_result)
         ui.set_value('overscan', local_store.get_overscan())
         ui.set_value('monochrome_ui', str(local_store.get_monochrome_ui()).lower())
         ui.set_value(
@@ -154,6 +176,7 @@ class SettingsScreen(UiApplication):
 
         ui.add_custom_formatters({
             'bytes_to_gb': self._format_available_space,
+            'device_label_message': self._format_device_label_message,
         })
 
         drawer_factory, theme_manager, device_login_renderer = self._settings_screen_printer.initialize_screen(config)
@@ -189,6 +212,8 @@ class SettingsScreen(UiApplication):
             'select_all_ajgowans_manuals_dbs': lambda effect: self.select_all_ajgowans_manuals_dbs(ui, effect),
             'retroaccount_check_state': lambda effect: self.retroaccount_check_state(ui),
             'retroaccount_device_logout': lambda effect: self.retroaccount_device_logout(ui),
+            'extract_chip_id': lambda effect: self.extract_chip_id(ui),
+            'retroaccount_attach_chip_id_to_device': lambda effect: self.retroaccount_attach_chip_id_to_device(ui),
         })
 
         self._theme_manager = theme_manager
@@ -204,6 +229,312 @@ class SettingsScreen(UiApplication):
 
     def remove_file(self, ui, effect) -> None:
         ui.set_value('file_exists', self._file_system.unlink(effect['target']))
+
+    def _chip_id_result_from_config(self) -> str:
+        try:
+            return self._config_provider.get().chip_id_result
+        except Exception:
+            return ''
+
+    def _read_chip_id_result_for_ui(self) -> str:
+        try:
+            result = self._config_provider.get().chip_id_result
+            self._logger.debug(f'[fpga-id] _read_chip_id_result_for_ui: {result}')
+            return result
+        except Exception as e:
+            self._logger.debug(f'[fpga-id] _read_chip_id_result_for_ui: failed: {type(e).__name__}: {str(e)}')
+            return ''
+
+    def _device_label_for_ui(self) -> str:
+        return self._retroaccount.get_device_label() or ''
+
+    @staticmethod
+    def _format_device_label_message(device_label: str) -> str:
+        label = device_label.strip()
+        return f'Device label: {label}' if label else 'Device label: Not available'
+
+    def _refresh_device_label_ui(self, ui: UiContext) -> bool:
+        device_label = self._device_label_for_ui()
+        if ui.get_value('device_label') == device_label:
+            return False
+        ui.set_value('device_label', device_label)
+        return True
+
+    @staticmethod
+    def _verified_chip_id_message(chip_id: str) -> str:
+        return f'FPGA ID: {chip_id}' if chip_id else ''
+
+    def _verified_chip_id_for_ui(self, chip_id_result: str) -> str:
+        verified_chip_id = self._retroaccount.get_verified_chip_id() if self._retroaccount.is_device_verified() else None
+        if verified_chip_id:
+            return verified_chip_id
+        return chip_id_result.lower() if self._is_chip_id_value(chip_id_result) else ''
+
+    def _retroaccount_device_verification_ui_values(self, chip_id_result: str) -> tuple[str, str, str]:
+        verified = self._retroaccount.is_device_verified()
+        verified_chip_id = self._verified_chip_id_for_ui(chip_id_result) if verified else ''
+        description = self._device_verification_description(chip_id_result)
+        if verified:
+            description = f'FPGA ID linked: {verified_chip_id}' if verified_chip_id else 'FPGA ID linked'
+        return (
+            str(verified).lower(),
+            description,
+            self._verified_chip_id_message(verified_chip_id)
+        )
+
+    def _set_retroaccount_device_verification_ui(self, ui: UiContext, chip_id_result: str) -> None:
+        verified, description, chip_id_message = self._retroaccount_device_verification_ui_values(chip_id_result)
+        ui.set_value('retroaccount_device_verified', verified)
+        ui.set_value('retroaccount_device_verification_description', description)
+        ui.set_value('retroaccount_verified_chip_id_message', chip_id_message)
+        ui.set_value('retroaccount_device_verification_message', 'Linking FPGA ID...')
+
+    def _refresh_retroaccount_device_verification_ui(self, ui: UiContext) -> bool:
+        chip_id_result = self._chip_id_result_from_config()
+        verified, description, chip_id_message = self._retroaccount_device_verification_ui_values(chip_id_result)
+
+        changed = False
+        for key, value in [
+            ('retroaccount_device_verified', verified),
+            ('retroaccount_device_verification_description', description),
+            ('retroaccount_verified_chip_id_message', chip_id_message),
+        ]:
+            if ui.get_value(key) != value:
+                ui.set_value(key, value)
+                changed = True
+
+        return changed
+
+    @staticmethod
+    def _device_verification_description(chip_id_result: str) -> str:
+        if chip_id_result == 'EXTRACTION_STARTED':
+            return 'FPGA ID linking in progress'
+        if chip_id_result.startswith('FAILURE_'):
+            return 'FPGA ID linking failed'
+        if SettingsScreen._is_chip_id_value(chip_id_result):
+            return 'FPGA ID link pending'
+        return 'FPGA ID not linked'
+
+    @staticmethod
+    def _is_chip_id_value(value: str) -> bool:
+        if len(value) != 16:
+            return False
+        return all(c in '0123456789abcdefABCDEF' for c in value)
+
+    def retroaccount_attach_chip_id_to_device(self, ui: UiContext) -> str:
+        self._logger.debug('[fpga-id] retroaccount_attach_chip_id_to_device: started')
+        chip_id_result = self._read_chip_id_result_for_ui()
+        ui.set_value('retroaccount_extract_chip_id_result', chip_id_result)
+        if not self._is_chip_id_value(chip_id_result):
+            self._logger.debug(
+                f'[fpga-id] retroaccount_attach_chip_id_to_device: invalid FPGA ID result for attach: {chip_id_result}'
+            )
+            self._set_retroaccount_device_verification_failure(ui)
+            return 'clear_window'
+
+        try:
+            attach_result = self._retroaccount.attach_chip_id_to_current_device(chip_id_result)
+            attached = attach_result.attached
+        except Exception as e:
+            self._logger.debug('Could not attach FPGA ID to RetroAccount device')
+            self._logger.debug(e)
+            self._logger.debug(
+                f'[fpga-id] retroaccount_attach_chip_id_to_device: attach failed: {type(e).__name__}: {str(e)}'
+            )
+            attached = False
+
+        try:
+            self._retroaccount.mister_sync()
+        except Exception as e:
+            self._logger.debug('RetroAccount sync after FPGA ID attach failed')
+            self._logger.debug(e)
+            self._logger.debug(
+                f'[fpga-id] retroaccount_attach_chip_id_to_device: post-attach sync failed: {type(e).__name__}: {str(e)}'
+            )
+
+        if attached and self._retroaccount.is_device_verified():
+            self._logger.debug('[fpga-id] retroaccount_attach_chip_id_to_device: attach succeeded')
+            verified_chip_id = self._verified_chip_id_for_ui(chip_id_result)
+            ui.set_value('retroaccount_device_verified', 'true')
+            ui.set_value(
+                'retroaccount_device_verification_description',
+                f'FPGA ID linked: {verified_chip_id}' if verified_chip_id else 'FPGA ID linked'
+            )
+            ui.set_value('retroaccount_device_verification_message', 'Linking successful!')
+            ui.set_value('retroaccount_verified_chip_id_message', self._verified_chip_id_message(verified_chip_id))
+        else:
+            self._logger.debug(
+                f'[fpga-id] retroaccount_attach_chip_id_to_device: attach failed; attached={attached}; '
+                f'device_verified={self._retroaccount.is_device_verified()}'
+            )
+            self._set_retroaccount_device_verification_failure(ui)
+
+        return 'clear_window'
+
+    @staticmethod
+    def _set_retroaccount_device_verification_failure(ui: UiContext) -> None:
+        ui.set_value('retroaccount_device_verified', 'false')
+        ui.set_value('retroaccount_device_verification_description', 'FPGA ID linking failed')
+        ui.set_value('retroaccount_device_verification_message', 'Could not link FPGA ID. Try again later.')
+        ui.set_value('retroaccount_verified_chip_id_message', '')
+
+    @staticmethod
+    def _set_retroaccount_device_verification_requires_update(ui: UiContext) -> None:
+        ui.set_value('retroaccount_device_verified', 'false')
+        ui.set_value('retroaccount_device_verification_description', 'Full update required')
+        ui.set_value('retroaccount_device_verification_message', 'Run a full Update All before linking FPGA ID.')
+        ui.set_value('retroaccount_verified_chip_id_message', '')
+
+    def extract_chip_id(self, ui: UiContext) -> str:
+        self._logger.debug('[fpga-id] extract_chip_id: started')
+        if self._config_provider.get().not_mister:
+            self._logger.debug('[fpga-id] extract_chip_id: blocked because config.not_mister is true')
+            ui.set_value('retroaccount_extract_chip_id_result', 'FAILURE_NOT_MISTER')
+            self._set_retroaccount_device_verification_failure(ui)
+            return 'clear_window'
+
+        if self._chip_id_linker_pyz_path() is None:
+            self._logger.debug('[fpga-id] extract_chip_id: linker pyz missing; full update required')
+            ui.set_value('retroaccount_extract_chip_id_result', 'FAILURE_LINKER_PYZ_MISSING')
+            self._set_retroaccount_device_verification_requires_update(ui)
+            return 'clear_window'
+
+        if not self._file_system.is_file(FILE_update_all_chip_id_rbf):
+            self._logger.debug('[fpga-id] extract_chip_id: Linker RBF missing; full update required')
+            ui.set_value('retroaccount_extract_chip_id_result', 'FAILURE_RBF_MISSING')
+            self._set_retroaccount_device_verification_requires_update(ui)
+            return 'clear_window'
+
+        try:
+            if is_mister_scripts_menu_fb_launch():
+                self._logger.debug('[fpga-id] extract_chip_id: queueing detached extraction worker after UI shutdown')
+                result = self._queue_detached_chip_id_extraction()
+            else:
+                self._logger.debug('[fpga-id] extract_chip_id: running extraction without Update All relaunch')
+                result = self._run_chip_id_extraction_without_update_all_relaunch()
+        except Exception as e:
+            self._logger.debug('Could not start ChipId extraction')
+            self._logger.debug(e)
+            self._logger.debug(f'[fpga-id] extract_chip_id: extraction start failed: {type(e).__name__}: {str(e)}')
+            result = f'FAILURE_{type(e).__name__.upper()}'
+
+        ui.set_value('retroaccount_extract_chip_id_result', result)
+        ui.set_value('retroaccount_device_verification_description', self._device_verification_description(result))
+        self._logger.debug(f'[fpga-id] extract_chip_id: final UI result: {result}')
+        if result == 'EXTRACTION_STARTED':
+            self._logger.debug('[fpga-id] extract_chip_id: exiting settings screen so curses can shut down before helper start')
+            raise SystemExit(0)
+        if self._is_chip_id_value(result):
+            self._config_provider.get().chip_id_result = result
+            self.retroaccount_attach_chip_id_to_device(ui)
+        return 'clear_window'
+
+    def _queue_detached_chip_id_extraction(self) -> str:
+        pyz_path = self._chip_id_linker_pyz_path()
+        rbf_path = self._file_system.resolve(FILE_update_all_chip_id_rbf)
+        update_all_dir = str(Path(self._file_system.resolve(FILE_update_all_launcher)).parent)
+        self._logger.debug(f'[fpga-id] _queue_detached_chip_id_extraction: linker pyz path: {pyz_path}')
+        self._logger.debug(f'[fpga-id] _queue_detached_chip_id_extraction: rbf path: {rbf_path}')
+        self._logger.debug(f'[fpga-id] _queue_detached_chip_id_extraction: Update All dir: {update_all_dir}')
+
+        if pyz_path is None:
+            self._logger.debug('[fpga-id] _queue_detached_chip_id_extraction: linker pyz missing')
+            return 'FAILURE_LINKER_PYZ_MISSING'
+
+        if not self._file_system.is_file(FILE_update_all_chip_id_rbf):
+            self._logger.debug('[fpga-id] _queue_detached_chip_id_extraction: Linker RBF missing')
+            return 'FAILURE_RBF_MISSING'
+
+        python_executable = sys.executable or '/usr/bin/python3'
+        self._pending_chip_id_extraction = [
+            python_executable,
+            pyz_path,
+            '--chip-id-linker',
+            '--rbf',
+            rbf_path,
+            '--update-all-dir',
+            update_all_dir,
+            '--log',
+            CHIP_ID_DEBUG_LOG_PATH,
+        ]
+        self._logger.debug('[fpga-id] _queue_detached_chip_id_extraction: queued helper start after UI shutdown')
+        return 'EXTRACTION_STARTED'
+
+    def _run_chip_id_extraction_without_update_all_relaunch(self) -> str:
+        pyz_path = self._chip_id_linker_pyz_path()
+        rbf_path = self._file_system.resolve(FILE_update_all_chip_id_rbf)
+        self._logger.debug(f'[fpga-id] _run_chip_id_extraction_without_update_all_relaunch: linker pyz path: {pyz_path}')
+        self._logger.debug(f'[fpga-id] _run_chip_id_extraction_without_update_all_relaunch: rbf path: {rbf_path}')
+
+        if pyz_path is None:
+            self._logger.debug('[fpga-id] _run_chip_id_extraction_without_update_all_relaunch: linker pyz missing')
+            return 'FAILURE_LINKER_PYZ_MISSING'
+
+        if not self._file_system.is_file(FILE_update_all_chip_id_rbf):
+            self._logger.debug('[fpga-id] _run_chip_id_extraction_without_update_all_relaunch: Linker RBF missing')
+            return 'FAILURE_RBF_MISSING'
+
+        command = [
+            sys.executable or '/usr/bin/python3',
+            pyz_path,
+            '--chip-id-linker',
+            '--extract-only',
+            '--rbf',
+            rbf_path,
+            '--log',
+            CHIP_ID_DEBUG_LOG_PATH,
+        ]
+        process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if process.stderr:
+            self._logger.debug(
+                f'[fpga-id] _run_chip_id_extraction_without_update_all_relaunch: stderr: {process.stderr.strip()}'
+            )
+        if process.returncode != 0:
+            self._logger.debug(
+                f'[fpga-id] _run_chip_id_extraction_without_update_all_relaunch: helper exited with {process.returncode}'
+            )
+            return f'FAILURE_HELPER_EXIT_{process.returncode}'
+
+        result = process.stdout.strip().splitlines()
+        if not result:
+            self._logger.debug('[fpga-id] _run_chip_id_extraction_without_update_all_relaunch: helper returned no result')
+            return 'FAILURE_HELPER_NO_RESULT'
+
+        return result[-1].strip()
+
+    def _chip_id_linker_pyz_path(self) -> Optional[str]:
+        current_path = current_update_all_archive_path()
+        if current_path is not None:
+            return current_path
+
+        if self._file_system.is_file(FILE_update_all_pyz):
+            return self._file_system.resolve(FILE_update_all_pyz)
+
+        return None
+
+    def _start_pending_chip_id_extraction_after_ui_shutdown(self) -> None:
+        if self._pending_chip_id_extraction is None:
+            return
+
+        command = self._pending_chip_id_extraction
+        self._pending_chip_id_extraction = None
+        self._logger.debug('[fpga-id] _start_pending_chip_id_extraction_after_ui_shutdown: starting detached extraction worker')
+        try:
+            process = subprocess.Popen(
+                command,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+                close_fds=True,
+            )
+            self._logger.debug(f'[fpga-id] _start_pending_chip_id_extraction_after_ui_shutdown: started helper pid {process.pid}')
+        except Exception as e:
+            self._logger.debug('Could not start detached ChipId extraction after UI shutdown')
+            self._logger.debug(e)
+            self._logger.debug(
+                f'[fpga-id] _start_pending_chip_id_extraction_after_ui_shutdown: failed: {type(e).__name__}: {str(e)}'
+            )
 
     def calculate_has_right_available_code(self, ui: UiContext) -> None:
         is_test_firmware, firmware_md5 = self._is_test_firmware()
@@ -597,6 +928,9 @@ class SettingsScreen(UiApplication):
             ui.set_value('retroaccount_jtbeta_access_support', 'This benefit is active!' if jtbeta_access == ACTIVE_BENEFIT_MSG else 'Support JOTEGO and theypsilon on Patreon to unlock this benefit.')
             state_changed = True
 
+        state_changed = self._refresh_retroaccount_device_verification_ui(ui) or state_changed
+        state_changed = self._refresh_device_label_ui(ui) or state_changed
+
         checking_ui_key = 'retroaccount_checking'
         checking_ui_value = ui.get_value(checking_ui_key)
         if checking_ui_value != RETROACCOUNT_STATE_ONLINE:
@@ -611,8 +945,12 @@ class SettingsScreen(UiApplication):
         if state_changed:
             return 'clear_window'
 
-    def retroaccount_device_logout(self, _ui: UiContext) -> None:
+    def retroaccount_device_logout(self, ui: UiContext) -> str:
         self._retroaccount.device_logout()
+        self._config_provider.get().chip_id_result = ''
+        self._set_retroaccount_device_verification_ui(ui, '')
+        ui.set_value('device_label', '')
+        return 'clear_window'
 
 RETROACCOUNT_STATE_ONLINE: Final[str] = 'Online.'
 ACTIVE_BENEFIT_MSG: Final[str] = 'Active'

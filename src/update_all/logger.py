@@ -17,6 +17,7 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 import datetime
 import os
+import shutil
 import tempfile
 import sys
 import time
@@ -25,7 +26,7 @@ from abc import ABC, abstractmethod
 from io import TextIOWrapper
 from typing import Optional
 
-from update_all.constants import FILE_update_all_print_tmp_log
+from update_all.constants import FILE_update_all_log, FILE_update_all_print_tmp_log
 
 
 class Logger(ABC):
@@ -229,10 +230,19 @@ class TrivialLoggerDecorator(Logger):
 
 
 class FileLoggerDecorator(TrivialLoggerDecorator):
-    def __init__(self, decorated_logger, local_repository_provider):
+    def __init__(self, decorated_logger, initial_logfile_path):
         super().__init__(decorated_logger)
         self._logfile = tempfile.NamedTemporaryFile('w', delete=False)
-        self._local_repository_provider = local_repository_provider
+        self._final_logfile_path = initial_logfile_path
+        self._append_to_final_logfile = False
+
+    def set_logfile(self, logfile_path, append=False):
+        self._final_logfile_path = logfile_path
+        self._append_to_final_logfile = append
+
+    def configure(self, config):
+        self.set_logfile(os.path.join(config.base_system_path, FILE_update_all_log))
+        self._decorated_logger.configure(config)
 
     def finalize(self):
         self._decorated_logger.finalize()
@@ -241,10 +251,20 @@ class FileLoggerDecorator(TrivialLoggerDecorator):
 
         self._logfile.close()
         try:
-            self._local_repository_provider.get().save_log_from_tmp(self._logfile.name)
+            self._save_log_from_tmp(self._logfile.name)
         except:
             pass
         self._logfile = None
+
+    def _save_log_from_tmp(self, logfile_name):
+        parent = os.path.dirname(self._final_logfile_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        if self._append_to_final_logfile:
+            with open(logfile_name, 'rb') as source, open(self._final_logfile_path, 'ab') as destination:
+                shutil.copyfileobj(source, destination)
+        else:
+            shutil.copyfile(logfile_name, self._final_logfile_path)
 
     def print(self, *args, sep='', end='\n', flush=True):
         self._decorated_logger.print(*args, sep=sep, end=end, flush=flush)

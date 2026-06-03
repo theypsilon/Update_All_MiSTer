@@ -39,6 +39,7 @@ DEFAULT_LOG_VIEWER_THEME: Final[str] = 'Mono'
 FILE_retroaccount_cfg: Final[str] = 'Scripts/update_all.retroaccount.cfg'
 FILE_retroaccount_user_json: Final[str] = 'Scripts/.config/retroaccount/user.json'
 FILE_retroaccount_device_id: Final[str] = 'Scripts/.config/retroaccount/device.id'
+FILE_retroaccount_verified_chip_id: Final[str] = 'Scripts/.config/retroaccount/verified_chip_id'
 KENV_RETROACCOUNT_DOMAIN: Final[str] = 'RETROACCOUNT_DOMAIN'
 K_RETROACCOUNT_DOMAIN: Final[str] = 'retroaccount_domain'
 DOMAIN_default_retroaccount: Final[str] = "https://retroaccount.com"
@@ -46,15 +47,19 @@ API_retroaccount_mister_sync: Final[str] = '/api/mister/sync'
 API_retroaccount_token_poll: Final[str] = '/api/auth/token'
 API_retroaccount_device_login_code: Final[str] = '/api/auth/device/code'
 API_retroaccount_device_logout: Final[str] = '/api/auth/device/logout'
+API_retroaccount_device_hardware_id: Final[str] = '/api/mister/device/hardware-id'
 
 # Downloader files
 FILE_update_all_pyz: Final[str] = 'Scripts/.config/update_all/update_all.pyz'
 FILE_update_all_zipped_storage: Final[str] = 'Scripts/.config/update_all/update_all.json.zip'
 FILE_update_all_storage: Final[str] = 'Scripts/.config/update_all/update_all.json'
 FILE_update_all_log: Final[str] = 'Scripts/.config/update_all/update_all.log'
+FILE_update_all_chip_id_linker_log: Final[str] = 'Scripts/.config/update_all/chip-id-linker.log'
 FILE_update_all_print_tmp_log: Final[str] = '/tmp/update_all_print.log'
+FILE_update_all_launcher: Final[str] = 'Scripts/update_all.sh'
 FILE_pocket_firmware_details_json: Final[str] = "Scripts/.config/update_all/pocket_firmware_details.json"
 FILE_arcade_database_mad_db_json_zip: Final[str] = "Scripts/.config/update_all/mad_db.json.zip"
+FILE_update_all_chip_id_rbf: Final[str] = "Scripts/.config/update_all/Linker.rbf"
 FILE_timeline_short: Final[str] = "Scripts/.config/update_all/timeline.json"
 FILE_timeline_plus: Final[str] = "Scripts/.config/update_all/timeline_plus.enc"
 FILE_timeline_plus2: Final[str] = "Scripts/.config/update_all/timeline_plus2.enc"
@@ -150,6 +155,7 @@ K_KEEP_USBMOUNT_CONF: Final[str] = "keep_usbmount_conf"
 COMMAND_STANDARD: Final[str] = 'STANDARD'
 COMMAND_TIMELINE: Final[str] = 'TIMELINE'
 COMMAND_LATEST_LOG: Final[str] = 'LATEST_LOG'
+COMMAND_SHOW_CHIP_ID_RESULT: Final[str] = 'SHOW_CHIP_ID_RESULT'
 
 
 # Env
@@ -161,6 +167,7 @@ KENV_TRANSITION_SERVICE_ONLY: Final[str] = 'TRANSITION_SERVICE_ONLY'
 KENV_SKIP_DOWNLOADER: Final[str] = 'SKIP_DOWNLOADER'
 KENV_PATREON_KEY_PATH: Final[str] = 'PATREON_KEY_PATH'
 KENV_COMMAND: Final[str] = 'COMMAND'
+KENV_UPDATE_ALL_CHIP_ID_RESULT: Final[str] = 'UPDATE_ALL_CHIP_ID_RESULT'
 KENV_TIMELINE_SHORT_PATH: Final[str] = 'TIMELINE_SHORT_PATH'
 KENV_TIMELINE_PLUS_PATH: Final[str] = 'TIMELINE_PLUS_PATH'
 KENV_HTTP_PROXY: Final[str] = 'HTTP_PROXY'

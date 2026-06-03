@@ -122,11 +122,97 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual(non_target_formatters, intersection)
 
     def test_navigate_targets_except_main_menus_are_items_or_special_navigate_targets(self):
-        navigate_targets = gather_navigate_targets(self.model) | {'main_menu_login', 'main_menu_account', 'test_menu'}
+        navigate_targets = gather_navigate_targets(self.model) | {
+            'main_menu_login',
+            'main_menu_account',
+            'test_menu',
+            'retroaccount_device_verification_result',
+        }
         section_names = set(gather_section_names(self.model)) | set(special_navigate_targets())
 
         self.assertGreaterEqual(len(section_names), 1)
         self.assertEqual(navigate_targets, section_names)
+
+    def test_retroaccount_link_fpga_id_entry___confirms_before_extracting_chip_id(self):
+        entry = self.model['items']['retroaccount_account_menu']['entries'][2]
+        action = entry['actions']['ok'][0]
+        confirmation = action['false'][0]
+
+        self.assertEqual('3 Link FPGA ID', entry['title'])
+        self.assertEqual('{retroaccount_device_verification_description}', entry['description'])
+        self.assertEqual('condition', action['type'])
+        self.assertEqual('retroaccount_device_verified', action['variable'])
+        self.assertEqual('Link FPGA ID', confirmation['header'])
+        self.assertEqual('confirm', confirmation['ui'])
+        self.assertEqual('Back', confirmation['preselected_action'])
+        self.assertIn('around 10 seconds', confirmation['text'][-1])
+        self.assertEqual([
+            {'type': 'extract_chip_id'},
+            {'type': 'navigate', 'target': 'retroaccount_device_verification_status'},
+        ], confirmation['actions'][0]['fixed'])
+
+    def test_retroaccount_login_entry___opens_account_submenu_after_success(self):
+        entry = next(entry for entry in self.model['items']['main_menu_login']['entries'] if entry.get('title') == '7 Login')
+        device_login = entry['actions']['ok'][0]
+        main_menu_idle = self.model['items']['main_menu_account']['on_idle'][1]
+
+        self.assertEqual('7 Login', entry['title'])
+        self.assertEqual('device_login', device_login['ui'])
+        self.assertEqual([
+            {'type': 'set_variable', 'target': 'retroaccount_open_account_after_login', 'value': 'true'},
+            {'type': 'apply_theme'},
+            {'type': 'navigate', 'target': 'main_menu_account'},
+        ], device_login['success_effects'])
+        self.assertEqual('retroaccount_open_account_after_login', main_menu_idle['variable'])
+        self.assertEqual([
+            {'type': 'set_variable', 'target': 'retroaccount_open_account_after_login', 'value': 'false'},
+            {'type': 'navigate', 'target': 'retroaccount_account_menu'},
+        ], main_menu_idle['true'])
+
+    def test_retroaccount_account_entry___keeps_static_description(self):
+        entry = next(entry for entry in self.model['items']['main_menu_account']['entries'] if entry.get('title') == '7 Account')
+
+        self.assertEqual('From RetroAccount. {retroaccount_checking}', entry['description'])
+
+
+    def test_retroaccount_linked_fpga_id_entry___explains_that_fpga_id_is_linked(self):
+        entry = self.model['items']['retroaccount_account_menu']['entries'][2]
+        message = entry['actions']['ok'][0]['true'][0]
+
+        self.assertEqual('message', message['ui'])
+        self.assertEqual('FPGA ID Linked', message['header'])
+        self.assertIn('FPGA ID is linked', message['text'][0])
+        self.assertEqual('{retroaccount_verified_chip_id_message}', message['text'][1])
+
+    def test_retroaccount_manage_account_entry___shows_device_label(self):
+        entry = self.model['items']['retroaccount_account_menu']['entries'][3]
+        message = entry['actions']['ok'][0]
+
+        self.assertEqual('4 Manage Your Account', entry['title'])
+        self.assertEqual('Manage Your Account', message['header'])
+        self.assertEqual('{device_label:device_label_message}', message['text'][0])
+
+    def test_retroaccount_device_verification_result___attaches_chip_id_before_displaying_message(self):
+        screen = self.model['items']['retroaccount_device_verification_result']
+
+        self.assertEqual('message', screen['ui'])
+        self.assertEqual('Link FPGA ID', screen['header'])
+        self.assertEqual([
+            '{retroaccount_device_verification_message}',
+            '{retroaccount_verified_chip_id_message}',
+        ], screen['text'])
+        self.assertEqual([{'type': 'retroaccount_attach_chip_id_to_device'}], screen['on_idle'])
+
+    def test_retroaccount_device_verification_status___displays_message_without_attaching_again(self):
+        screen = self.model['items']['retroaccount_device_verification_status']
+
+        self.assertEqual('message', screen['ui'])
+        self.assertEqual('Link FPGA ID', screen['header'])
+        self.assertEqual([
+            '{retroaccount_device_verification_message}',
+            '{retroaccount_verified_chip_id_message}',
+        ], screen['text'])
+        self.assertNotIn('on_idle', screen)
 
     def test_all_nodes_are_correct(self):
         nodes = [ensure_node_is_correct(n) for n in gather_all_nodes(self.model)]

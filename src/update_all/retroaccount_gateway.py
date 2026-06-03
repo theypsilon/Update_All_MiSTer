@@ -22,7 +22,8 @@ from enum import Enum
 from typing import Optional, Tuple, Any, TypedDict, Union
 
 from update_all.config import Config
-from update_all.constants import API_retroaccount_mister_sync, API_retroaccount_device_logout, API_retroaccount_device_login_code, API_retroaccount_token_poll
+from update_all.constants import API_retroaccount_mister_sync, API_retroaccount_device_logout, API_retroaccount_device_login_code, API_retroaccount_token_poll, \
+    API_retroaccount_device_hardware_id
 from update_all.fetcher import Fetcher
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
@@ -34,8 +35,13 @@ class _MisterSyncTokens(TypedDict, total=False):
     access_token: str
 
 
+class _MisterSyncDevice(TypedDict, total=False):
+    label: str
+
+
 class MisterSyncResponse(TypedDict, total=False):
     tokens: _MisterSyncTokens
+    device: _MisterSyncDevice
     update_all_patreon_key_url: str
     update_all_patreon_key_remove: bool
     update_all_extras: bool
@@ -99,6 +105,26 @@ class RetroAccountGateway:
             self._logger.debug(e)
             return 0
         self._logger.debug(f'RetroAccountGateway: Device logout status: {status_code}')
+        return status_code
+
+    def put_device_hardware_id(self, device_id: str, refresh_token: str, hardware_id: str) -> int:
+        headers = {
+            'x-refresh-token': refresh_token,
+            'x-device-id': device_id,
+        }
+        body = {
+            'hardware_id_type': 'misterfpga.fpgaid',
+            'hardware_id': hardware_id,
+        }
+        url = f'{self._server_url()}{API_retroaccount_device_hardware_id}'
+        self._logger.debug(f'RetroAccountGateway: fetching {url}')
+        try:
+            status_code, _ = self._fetcher.fetch(url, method='PUT', body=body, headers=headers, timeout=10)
+        except Exception as e:
+            self._logger.debug('RetroAccountGateway: put_device_hardware_id fetch failed')
+            self._logger.debug(e)
+            return 0
+        self._logger.debug(f'RetroAccountGateway: Put device hardware ID status: {status_code}')
         return status_code
 
     def request_device_code(self, client_id: str, device_id: Optional[str] = None) -> Optional[dict]:

@@ -28,6 +28,9 @@ def run_launcher(**kwargs): send_build(**kwargs), exec_ssh(f'/media/fat/Scripts/
 def store_push(**kwargs): scp_file('update_all.json', '/media/fat/Scripts/.config/update_all/update_all.json', **kwargs)
 def store_pull(**kwargs): scp_file('/media/fat/Scripts/.config/update_all/update_all.json', 'update_all.json', **kwargs)
 def log_pull(**kwargs): scp_file('/media/fat/Scripts/.config/update_all/update_all.log', 'update_all.log', **kwargs)
+def send_linker(**kwargs):
+    exec_ssh('mkdir -p /media/fat/Scripts/.config/update_all', **kwargs)
+    scp_file('Linker.rbf', '/media/fat/Scripts/.config/update_all/Linker.rbf', **kwargs)
 
 def send_build(env=None, build_target=None, launcher_target=None, debug=None, **kwargs):
     env = {'DEBUG': debug or 'true', **os.environ.copy(), **(env or {}), 'MISTER': 'true'}
@@ -48,7 +51,9 @@ def operations_dict(env=None, retries=False):
         'build': lambda: [send_build(env=env, retries=retries), print('OK')],
         'run': lambda: run_build(env=env, retries=retries),
         'launcher': lambda: run_launcher(env=env, retries=retries),
+        'send_linker': lambda: [send_linker(retries=retries), print('OK')],
         'copy': lambda: scp_file(sys.argv[2], f'/media/fat/{sys.argv[2]}'),
+        'rcopy': lambda: [scp_file(f'/media/fat/{sys.argv[2]}', Path(sys.argv[2]).name), print('OK')],
         'local_run': lambda: local_run(env=env),
         'local_run_tiny': lambda: local_run_tiny(),
         'local_run_small': lambda: local_run_small(),

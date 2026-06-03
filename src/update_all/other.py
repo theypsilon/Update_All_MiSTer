@@ -18,6 +18,8 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 import sys
+import os
+import zipfile
 from typing import Generic, TypeVar, NamedTuple, Protocol
 import shutil
 import types
@@ -59,8 +61,75 @@ def any_to_nonfalsy_str(val):
     return val if val else None
 
 
+def current_update_all_archive_path():
+    current_path = sys.argv[0]
+    if not current_path or not os.path.isfile(current_path):
+        return None
+    return current_path if zipfile.is_zipfile(current_path) else None
+
+
 def empty_store_without_base_path():
     return {}
+
+
+def _current_tty() -> str:
+    try:
+        return os.ttyname(0)
+    except OSError:
+        return ''
+
+
+def _process_parent_pid(pid: int) -> int:
+    try:
+        with open(f'/proc/{pid}/status', 'r') as f:
+            for line in f:
+                if line.startswith('PPid:'):
+                    return int(line.split()[1])
+    except Exception:
+        pass
+    return 0
+
+
+def _process_comm(pid: int) -> str:
+    try:
+        with open(f'/proc/{pid}/comm', 'r') as f:
+            return f.read().strip()
+    except Exception:
+        return ''
+
+
+def _process_cmdline(pid: int) -> str:
+    try:
+        with open(f'/proc/{pid}/cmdline', 'rb') as f:
+            return f.read().replace(b'\0', b' ').decode(errors='replace').strip()
+    except Exception:
+        return ''
+
+
+def _ancestor_process_descriptions(max_depth: int = 16) -> list[tuple[str, str]]:
+    result = []
+    pid = os.getpid()
+    for _ in range(max_depth):
+        pid = _process_parent_pid(pid)
+        if pid in (0, 1):
+            break
+        result.append((_process_comm(pid), _process_cmdline(pid)))
+    return result
+
+
+def is_mister_scripts_menu_fb_launch() -> bool:
+    if _current_tty() != '/dev/tty2':
+        return False
+
+    has_script_wrapper = False
+    has_mister_firmware = False
+    for comm, cmdline in _ancestor_process_descriptions():
+        if '/tmp/script' in cmdline:
+            has_script_wrapper = True
+        if comm == 'MiSTer' or '/MiSTer' in cmdline:
+            has_mister_firmware = True
+
+    return has_script_wrapper and has_mister_firmware
 
 
 def test_only(func):

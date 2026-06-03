@@ -19,6 +19,38 @@
 
 set -euo pipefail
 
+reset_update_all_tty() {
+    local current_tty
+    if ! current_tty="$(tty 2>/dev/null)" ; then
+        return
+    fi
+
+    if [[ "${current_tty}" != "/dev/tty2" ]] ; then
+        return
+    fi
+
+    stty sane 2>/dev/null || true
+    stty echo icanon isig iexten opost onlcr 2>/dev/null || true
+    printf '\033[?25h'
+}
+
+prepare_update_all_tty() {
+    reset_update_all_tty
+    local current_tty
+    if ! current_tty="$(tty 2>/dev/null)" ; then
+        return
+    fi
+
+    if [[ "${current_tty}" != "/dev/tty2" ]] ; then
+        return
+    fi
+
+    printf '\033c\033[?25h'
+}
+
+prepare_update_all_tty
+trap reset_update_all_tty EXIT INT TERM HUP
+
 LOCATION_STR="${LOCATION_STR:-/media/fat}"
 RUN_TOOL_PATH="/tmp/update_all.sh"
 LAUNCHER_ERRORS="/tmp/ua_launcher_errors.log"

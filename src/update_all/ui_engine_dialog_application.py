@@ -116,8 +116,14 @@ class _Message(UiSection):
         self._drawer = drawer
         self._data = data
         self._text_scroll = 0
+        self._first_render = True
 
     def process_key(self) -> Optional[ProcessKeyResult]:
+        if self._first_render:
+            self._first_render = False
+            if 'on_idle' in self._data:
+                return EffectChain(self._data['on_idle'])
+
         self._drawer.start(self._data)
 
         for text_line in self._data['text']:
@@ -139,7 +145,8 @@ class _Message(UiSection):
         return key
 
     def reset(self) -> None:
-        pass
+        self._first_render = True
+        self._text_scroll = 0
 
     def clear(self) -> None:
         self._drawer.clear()

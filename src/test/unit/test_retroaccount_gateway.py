@@ -56,3 +56,20 @@ class TestRetroAccountGateway(unittest.TestCase):
             {'x-refresh-token': 'refresh-1', 'x-device-id': 'device-1'},
             10,
         )], sut.fetcher.calls)
+
+    def test_put_device_hardware_id___puts_device_auth_and_hardware_id_to_current_endpoint(self):
+        sut = RetroAccountGatewayTester(status=200, body=b'{"status":"attached"}')
+
+        result = sut.put_device_hardware_id('device-1', 'refresh-1', '0123456789abcdef')
+
+        self.assertEqual(200, result)
+        self.assertEqual([(
+            'https://retroaccount.test/api/mister/device/hardware-id',
+            'PUT',
+            {
+                'hardware_id_type': 'misterfpga.fpgaid',
+                'hardware_id': '0123456789abcdef',
+            },
+            {'x-refresh-token': 'refresh-1', 'x-device-id': 'device-1'},
+            10,
+        )], sut.fetcher.calls)

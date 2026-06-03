@@ -18,7 +18,7 @@
 
 from typing import TypedDict, Union
 from urllib.parse import urlparse
-from update_all.constants import FILE_update_all_zipped_storage, FILE_update_all_log, FILE_update_all_storage, \
+from update_all.constants import FILE_update_all_zipped_storage, FILE_update_all_storage, \
     FILE_pocket_firmware_details_json
 from update_all.local_store import LocalStore
 from update_all.store_migrator import make_new_local_store
@@ -88,7 +88,3 @@ class LocalRepository:
         self._file_system.make_dirs_parent(FILE_update_all_zipped_storage)
         self._file_system.save_json(local_store, FILE_update_all_storage)
         local_store_wrapper.mark_as_cleaned()
-
-    def save_log_from_tmp(self, path):
-        self._file_system.make_dirs_parent(FILE_update_all_log)
-        self._file_system.copy(path, FILE_update_all_log)

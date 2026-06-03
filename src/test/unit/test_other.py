@@ -16,9 +16,14 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+import os
+import tempfile
 import unittest
+import zipfile
+from unittest.mock import patch
 
-from update_all.other import any_to_bool, any_to_nonfalsy_str, calculate_overscan, TerminalSize, OverscanDim, calculate_outer_box
+from update_all.other import any_to_bool, any_to_nonfalsy_str, calculate_overscan, TerminalSize, OverscanDim, calculate_outer_box, \
+    current_update_all_archive_path, is_mister_scripts_menu_fb_launch
 
 
 class TestOther(unittest.TestCase):
@@ -46,6 +51,28 @@ class TestOther(unittest.TestCase):
         for value, expected in cases:
             with self.subTest(value=value, expected=expected):
                 self.assertEqual(expected, any_to_nonfalsy_str(value))
+
+    def test_current_update_all_archive_path___when_argv0_is_zipapp_with_any_extension___returns_path(self):
+        path = _temp_zipapp_with_suffix('.sh')
+        try:
+            with patch('update_all.other.sys.argv', [path]):
+                self.assertEqual(path, current_update_all_archive_path())
+        finally:
+            _remove(path)
+
+    def test_current_update_all_archive_path___when_argv0_is_not_zipapp___returns_none(self):
+        with tempfile.NamedTemporaryFile(delete=False) as file:
+            path = file.name
+            file.write(b'#!/bin/bash\n')
+        try:
+            with patch('update_all.other.sys.argv', [path]):
+                self.assertIsNone(current_update_all_archive_path())
+        finally:
+            _remove(path)
+
+    def test_current_update_all_archive_path___when_argv0_is_missing___returns_none(self):
+        with patch('update_all.other.sys.argv', ['/tmp/missing_update_all']):
+            self.assertIsNone(current_update_all_archive_path())
 
     def test_calculate_overscan(self):
         def _size(columns=100, lines=50):
@@ -85,8 +112,47 @@ class TestOther(unittest.TestCase):
         screen_dims = _ScreenDims(TerminalSize(columns=80, lines=40), OverscanDim(cols=1, lines=0))
         self.assertEqual((-1, 40, 0, 79), calculate_outer_box(screen_dims))
 
+    def test_is_mister_scripts_menu_fb_launch___when_tty2_with_script_wrapper_and_mister_ancestor___returns_true(self):
+        with patch('update_all.other._current_tty', return_value='/dev/tty2'), \
+                patch('update_all.other._ancestor_process_descriptions', return_value=[
+                    ('bash', '/bin/bash /tmp/script'),
+                    ('agetty', '/sbin/agetty -l /tmp/script tty2'),
+                    ('MiSTer', '/media/fat/MiSTer'),
+                ]):
+            self.assertTrue(is_mister_scripts_menu_fb_launch())
+
+    def test_is_mister_scripts_menu_fb_launch___when_tty2_without_mister_ancestor___returns_false(self):
+        with patch('update_all.other._current_tty', return_value='/dev/tty2'), \
+                patch('update_all.other._ancestor_process_descriptions', return_value=[
+                    ('bash', '/bin/bash /tmp/script'),
+                    ('agetty', '/sbin/agetty -l /tmp/script tty2'),
+                ]):
+            self.assertFalse(is_mister_scripts_menu_fb_launch())
+
+    def test_is_mister_scripts_menu_fb_launch___when_not_tty2___returns_false(self):
+        with patch('update_all.other._current_tty', return_value='/dev/pts/0'), \
+                patch('update_all.other._ancestor_process_descriptions') as ancestors:
+            self.assertFalse(is_mister_scripts_menu_fb_launch())
+            ancestors.assert_not_called()
+
 
 class _ScreenDims:
     def __init__(self, term_size: TerminalSize, overscan_dim: OverscanDim):
         self.term_size = term_size
         self.overscan_dim = overscan_dim
+
+
+def _temp_zipapp_with_suffix(suffix: str) -> str:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as file:
+        path = file.name
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr('__main__.py', '')
+    return path
+
+
+def _remove(*paths: str) -> None:
+    for path in paths:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
