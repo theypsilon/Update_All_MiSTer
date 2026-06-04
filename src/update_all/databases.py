@@ -33,6 +33,9 @@ class Database:
 DB_ID_DISTRIBUTION_MISTER = 'distribution_mister'
 DB_ID_NAMES_TXT = 'names_txt'
 DB_ID_ARCADE_NAMES_TXT = 'arcade_names_txt'
+DB_ID_MREXT_ALL = 'mrext/all'
+DB_ID_MREXT_TAPTO = 'mrext/tapto'
+DB_ID_ZAPAROO_MISTER = 'ZaparooProject/Zaparoo_MiSTer'
 DB_URL_JTPREMIUM_DEPRECATED = 'https://raw.githubusercontent.com/jotego/jtpremium/main/jtbindb.json.zip'
 DB_URL_MISTERSAM_FILES_DEPRECATED = 'https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/main/MiSTer_SAMdb.json'
 DB_ID_COIN_OP_COLLECTION_DEPRECATED = 'atrac17/Coin-Op_Collection'
@@ -89,9 +92,10 @@ class AllDBs:
         self.TTY2OLED_FILES = Database(db_id='tty2oled_files', db_url='https://raw.githubusercontent.com/venice1200/MiSTer_tty2oled/main/tty2oleddb.json', title='tty2oled files')
         self.I2C2OLED_FILES = Database(db_id='i2c2oled_files', db_url='https://raw.githubusercontent.com/venice1200/MiSTer_i2c2oled/main/i2c2oleddb.json', title='i2c2oled files')
         self.MISTERSAM_FILES = Database(db_id='MiSTer_SAM_files', db_url='https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/db/db.json.zip', title='MiSTer SAM files')
-        self.WIZZO_MREXT_FILES = Database(db_id='mrext/all', db_url='https://raw.githubusercontent.com/wizzomafizzo/mrext/main/releases/all.json', title='MiSTer Extensions (wizzo)')
+        self.WIZZO_MREXT_FILES = Database(db_id=DB_ID_MREXT_ALL, db_url='https://raw.githubusercontent.com/wizzomafizzo/mrext/main/releases/all.json', title='MiSTer Extensions (wizzo)')
         self.RETROSPY = Database(db_id='retrospy/retrospy-MiSTer', db_url='https://raw.githubusercontent.com/retrospy/retrospy-MiSTer/db/db.json.zip', title='RetroSpy')
         self.ANIME0T4KU_MISTER_SCRIPTS = Database(db_id='anime0t4ku_mister_scripts', db_url='https://raw.githubusercontent.com/Anime0t4ku/0t4ku-mister-scripts/db/db/scripts.json.zip', title='Anime0t4ku MiSTer Scripts')
+        self.ZAPAROO_MISTER = Database(db_id=DB_ID_ZAPAROO_MISTER, db_url='https://raw.githubusercontent.com/ZaparooProject/Zaparoo_MiSTer/db/db.json.zip', title='Zaparoo')
 
         # HYBRID CORES
         self.MISTER_FRONTIER = Database(db_id='MiSTerOrganize/MiSTer_Frontier', db_url='https://raw.githubusercontent.com/MiSTerOrganize/MiSTer_Frontier/db/db.json.zip', title='MiSTer Frontier')

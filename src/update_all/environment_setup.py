@@ -76,6 +76,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._transition_service.from_update_all_1(config, local_store)
         self._config_reader.fill_config_with_database_sections(config, downloader_ini)
         self._transition_service.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store)
+        self._transition_service.from_active_databases_to_related_databases(config, local_store)
         self._transition_service.from_old_db_urls_to_actual_db_urls(config, downloader_ini)
         self._transition_service.from_no_update_all_mister_db_to_adding_it(config, downloader_ini)
         self._transition_service.from_downloader_ini_to_separate_db_ini_files(downloader_ini)

@@ -185,6 +185,18 @@ class _FileSystem(ProductionFileSystem):
         self._write_records.append(_Record('write_file_bytes', (file, content_bytes)))
         self._state.files[file]['content_bytes'] = content_bytes
 
+    def fsync(self, path):
+        file = self._path(path)
+        if file not in self._state.files:
+            raise FileNotFoundError(file)
+        self._write_records.append(_Record('fsync', file))
+
+    def fsync_parent_dir(self, path):
+        file = self._path(path)
+        if file not in self._state.files:
+            raise FileNotFoundError(file)
+        self._write_records.append(_Record('fsync_parent_dir', file))
+
     def touch(self, path):
         file = self._path(path)
         self._write_records.append(_Record('touch', file))

@@ -155,6 +155,94 @@ def _try_toggle_big_manual_db(target, title, count, size): return [
 ]
 
 
+def _try_toggle_mrext_with_zaparoo_prompt(): return [
+    {
+        "type": "condition",
+        "variable": "mrext/all",
+        "true": [{"type": "rotate_variable", "target": "mrext/all"}],
+        "false": [
+            {
+                "type": "condition",
+                "variable": "ZaparooProject/Zaparoo_MiSTer",
+                "true": [{"type": "rotate_variable", "target": "mrext/all"}],
+                "false": [
+                    {"type": "rotate_variable", "target": "mrext/all"},
+                    {
+                        "ui": "confirm",
+                        "header": "Activate Zaparoo?",
+                        "preselected_action": "Yes",
+                        "text": [
+                            "Do you also want to activate Zaparoo?",
+                        ],
+                        "actions": [
+                            {"title": "Yes", "type": "fixed", "fixed": [
+                                *_activate_zaparoo_and_ask_options(_navigate_back_effects()),
+                            ]},
+                            {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
+]
+
+
+def _try_toggle_zaparoo_database_with_install_prompts(): return [
+    {
+        "type": "condition",
+        "variable": "ZaparooProject/Zaparoo_MiSTer",
+        "true": [{"type": "rotate_variable", "target": "ZaparooProject/Zaparoo_MiSTer"}],
+        "false": _activate_zaparoo_and_ask_options(_no_zaparoo_follow_up_prompt_effects()),
+    },
+]
+
+
+def _activate_zaparoo_and_ask_options(when_done): return [
+    {"type": "rotate_variable", "target": "ZaparooProject/Zaparoo_MiSTer"},
+    *_maybe_zaparoo_default_frontend_prompt(when_done),
+]
+
+
+def _maybe_zaparoo_default_frontend_prompt(when_done): return [
+    {
+        "type": "condition",
+        "variable": "zaparoo_frontend_default",
+        "true": when_done,
+        "false": [_zaparoo_default_frontend_prompt()],
+    },
+]
+
+
+def _navigate_back_effects(): return [{"type": "navigate", "target": "back"}]
+
+
+def _no_zaparoo_follow_up_prompt_effects(): return [
+    {"type": "set_variable", "target": "zaparoo_frontend_default", "value": "true"},
+]
+
+
+def _zaparoo_default_frontend_prompt(): return {
+    "ui": "confirm",
+    "header": "Zaparoo Frontend",
+    "preselected_action": "Yes",
+    "text": [
+        "Do you want the Zaparoo frontend to be",
+        "the default frontend after being installed?",
+    ],
+    "actions": [
+        {"title": "Yes", "type": "fixed", "fixed": [
+            {"type": "set_variable", "target": "zaparoo_frontend_default", "value": "true"},
+            {"type": "navigate", "target": "back"},
+        ]},
+        {"title": "No", "type": "fixed", "fixed": [
+            {"type": "set_variable", "target": "zaparoo_frontend_default", "value": "false"},
+            {"type": "navigate", "target": "back"},
+        ]},
+    ],
+}
+
+
 def _manuals_early_access_notice(target): return {
     "ui": "message",
     "header": "Manuals on MiSTer",
@@ -190,6 +278,7 @@ def settings_screen_model(): return {
         # Global variables
         "update_all_version": {"default": "2.8"},
         "device_label": {"default": ""},
+        "zaparoo_frontend_default": {"group": "store", "default": "false", "values": ["false", "true"]},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -805,10 +894,16 @@ def settings_screen_model(): return {
                 "tty2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "i2c2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "retrospy/retrospy-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "ZaparooProject/Zaparoo_MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
-                    "title": "1 Arcade Organizer",
+                    "title": "1 Zaparoo",
+                    "description": "{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher & Zaparoo Frontend",
+                    "actions": {"ok": [{"type": "navigate", "target": "zaparoo_menu"}]}
+                },
+                {
+                    "title": "2 Arcade Organizer",
                     "description": "{arcade_organizer:enabled} Creates folder for easy navigation",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "arcade_organizer_menu"}],
@@ -816,7 +911,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "2 Names TXT",
+                    "title": "3 Names TXT",
                     "description": "{names_txt_updater:enabled} Better core names in the menus",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "names_txt_menu"}],
@@ -824,35 +919,51 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "3 MiSTer Extensions (wizzo)",
+                    "title": "4 MiSTer Extensions (wizzo)",
                     "description": "{mrext/all:enabled}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "mrext/all"}]}
+                    "actions": {"ok": _try_toggle_mrext_with_zaparoo_prompt()}
                 },
                 {
-                    "title": "4 MiSTer Super Attract Mode",
+                    "title": "5 MiSTer Super Attract Mode",
                     "description": "{mistersam_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "mistersam_files_downloader"}]}
                 },
                 {
-                    "title": "5 Anime0t4ku MiSTer Scripts",
+                    "title": "6 Anime0t4ku MiSTer Scripts",
                     "description": "{anime0t4ku_mister_scripts:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "anime0t4ku_mister_scripts"}]}
                 },
                 {
-                    "title": "6 tty2oled Add-on script",
+                    "title": "7 tty2oled Add-on script",
                     "description": "{tty2oled_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "tty2oled_files_downloader"}]}
                 },
                 {
-                    "title": "7 i2c2oled Add-on script",
+                    "title": "8 i2c2oled Add-on script",
                     "description": "{i2c2oled_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "i2c2oled_files_downloader"}]}
                 },
                 {
-                    "title": "8 RetroSpy utility",
+                    "title": "9 RetroSpy utility",
                     "description": "{retrospy/retrospy-MiSTer:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "retrospy/retrospy-MiSTer"}]}
                 }
+            ]
+        },
+        "zaparoo_menu": {
+            "type": "dialog_sub_menu",
+            "header": "Zaparoo Settings",
+            "entries": [
+                {
+                    "title": "1 Zaparoo Database",
+                    "description": "{ZaparooProject/Zaparoo_MiSTer:enabled}",
+                    "actions": {"ok": _try_toggle_zaparoo_database_with_install_prompts()}
+                },
+                {
+                    "title": "2 Keep Zaparoo Frontend active",
+                    "description": "{zaparoo_frontend_default:yesno}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "zaparoo_frontend_default"}]}
+                },
             ]
         },
         "extra_content_menu": {
@@ -2130,7 +2241,7 @@ def _main_menu(retroaccount_logged_in): return {
         },
         {
             "title": "4 Tools & Scripts",
-            "description": "Names TXT, Arcade Organizer, Scripts...",
+            "description": "Zaparoo, Names TXT, Scripts...",
             "actions": {
                 "ok": [{"type": "navigate", "target": "tools_and_scripts_menu"}],
             }

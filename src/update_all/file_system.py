@@ -97,6 +97,14 @@ class FileSystem(ABC):
         """interface"""
 
     @abstractmethod
+    def fsync(self, path):
+        """interface"""
+
+    @abstractmethod
+    def fsync_parent_dir(self, path):
+        """interface"""
+
+    @abstractmethod
     def touch(self, path):
         """interface"""
 
@@ -236,6 +244,22 @@ class _FileSystem(FileSystem):
     def write_file_bytes(self, path, content_bytes):
         target = self._path(path)
         return self._safe_write(target, lambda f: f.write(content_bytes), mode='wb')
+
+    def fsync(self, path):
+        fd = os.open(self._path(path), os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
+    def fsync_parent_dir(self, path):
+        parent = os.path.dirname(self._path(path)) or "."
+        fd = os.open(parent, os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
 
     def touch(self, path):
         return Path(self._path(path)).touch()

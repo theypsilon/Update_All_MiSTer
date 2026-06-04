@@ -22,16 +22,29 @@ from typing import Dict, Any
 
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
-from test.ini_assertions import assertEqualIni
+from test.ini_assertions import assertEqualIni, testableIni
 from test.testing_objects import downloader_ini, update_all_ini, update_arcade_organizer_ini, update_names_txt_ini, \
     update_jtcores_ini, downloader_store
 from test.update_all_service_tester import TransitionServiceTester, local_store, IniRepositoryTester, ConfigReaderTester
 from update_all.config import Config
+from update_all.databases import ALL_DB_IDS, all_dbs, DB_ID_MREXT_ALL, DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER
+from update_all.transition_service import RELATED_DATABASE_ACTIVATION_RELATIONSHIPS
 
 
-def test_transitions(files: Dict[str, str] = None):
+def test_transitions(files: Dict[str, str] = None, store=None):
     config = Config()
     fs_state = FileSystemState(config=config, files=None if files is None else {filename: read_content(path) for filename, path in files.items()})
+    return test_transitions_with_state(config, fs_state, store)
+
+
+def test_transitions_with_contents(files: Dict[str, str], store=None):
+    config = Config()
+    fs_state = FileSystemState(config=config, files={filename: {'content': content} for filename, content in files.items()})
+    return test_transitions_with_state(config, fs_state, store)
+
+
+def test_transitions_with_state(config: Config, fs_state: FileSystemState, store=None):
+    store = store or local_store()
     fs = FileSystemFactory(state=fs_state).create_for_system_scope()
     ini_repos = IniRepositoryTester(file_system=fs)
     config_reader = ConfigReaderTester(downloader_ini_repository=ini_repos, file_system=fs)
@@ -43,11 +56,24 @@ def test_transitions(files: Dict[str, str] = None):
     config_reader.fill_config_with_environment(config)
     config_reader.fill_config_with_database_sections(config, downloader_ini)
     sut.from_not_existing_downloader_ini(config)
-    sut.from_update_all_1(config, local_store())
-    sut.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store())
+    sut.from_update_all_1(config, store)
+    sut.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, store)
+    sut.from_active_databases_to_related_databases(config, store)
     sut.from_old_db_urls_to_actual_db_urls(config, downloader_ini)
     sut.from_no_update_all_mister_db_to_adding_it(config, downloader_ini)
     return fs_state
+
+
+def downloader_ini_with_db_ids(*db_ids: str) -> str:
+    dbs_by_id = {db.db_id: db for db in all_dbs('').all_dbs_list()}
+    return '\n'.join(f'[{db_id}]\ndb_url = {db_url_for(db_id, dbs_by_id)}\n' for db_id in db_ids)
+
+
+def db_url_for(db_id: str, dbs_by_id) -> str:
+    if db_id in dbs_by_id:
+        return dbs_by_id[db_id].db_url
+
+    return 'https://example.com/external-db.json.zip'
 
 
 class TestTransitionService(unittest.TestCase):
@@ -137,6 +163,98 @@ class TestTransitionService(unittest.TestCase):
             downloader_store: 'test/fixtures/downloader_ini/db_id_removes/n64_dev_after.json',
             downloader_ini: 'test/fixtures/downloader_ini/db_id_removes/n64_dev_after.ini',
         }, fs.files)
+
+    def test_related_mrext_all___activates_zaparoo_without_deactivating_mrext(self):
+        source = DB_ID_MREXT_ALL
+        target = DB_ID_ZAPAROO_MISTER
+        store = local_store()
+        fs = test_transitions_with_contents({
+            downloader_ini: downloader_ini_with_db_ids(source),
+        }, store=store)
+
+        self.assertEqual(
+            testableIni(downloader_ini_with_db_ids(source, target, ALL_DB_IDS['UPDATE_ALL_MISTER'])),
+            testableIni(fs.files[downloader_ini]['content'])
+        )
+        self.assertEqual([target], store.get_introduced_related_database_ids())
+
+    def test_related_mrext_tapto___activates_zaparoo_without_deactivating_mrext_tapto(self):
+        source = DB_ID_MREXT_TAPTO
+        target = DB_ID_ZAPAROO_MISTER
+        fs = test_transitions_with_contents({
+            downloader_ini: downloader_ini_with_db_ids(source),
+        })
+
+        self.assertEqual(
+            testableIni(downloader_ini_with_db_ids(source, target, ALL_DB_IDS['UPDATE_ALL_MISTER'])),
+            testableIni(fs.files[downloader_ini]['content'])
+        )
+
+    def test_related_sources_for_single_relationship___activate_zaparoo_once(self):
+        source_1 = DB_ID_MREXT_ALL
+        source_2 = DB_ID_MREXT_TAPTO
+        target = DB_ID_ZAPAROO_MISTER
+        fs = test_transitions_with_contents({
+            downloader_ini: downloader_ini_with_db_ids(source_1, source_2),
+        })
+
+        self.assertEqual(
+            testableIni(downloader_ini_with_db_ids(source_1, source_2, target, ALL_DB_IDS['UPDATE_ALL_MISTER'])),
+            testableIni(fs.files[downloader_ini]['content'])
+        )
+
+    def test_without_related_source___does_not_activate_zaparoo(self):
+        source = ALL_DB_IDS['JTCORES']
+        target = DB_ID_ZAPAROO_MISTER
+        fs = test_transitions_with_contents({
+            downloader_ini: downloader_ini_with_db_ids(source),
+        })
+
+        self.assertEqual(
+            testableIni(downloader_ini_with_db_ids(source, ALL_DB_IDS['UPDATE_ALL_MISTER'])),
+            testableIni(fs.files[downloader_ini]['content'])
+        )
+        self.assertNotIn(target, fs.files[downloader_ini]['content'])
+
+    def test_related_zaparoo_already_active___records_target_as_introduced(self):
+        source = DB_ID_MREXT_ALL
+        target = DB_ID_ZAPAROO_MISTER
+        store = local_store()
+        fs = test_transitions_with_contents({
+            downloader_ini: downloader_ini_with_db_ids(source, target),
+        }, store=store)
+
+        self.assertEqual(
+            testableIni(downloader_ini_with_db_ids(source, target, ALL_DB_IDS['UPDATE_ALL_MISTER'])),
+            testableIni(fs.files[downloader_ini]['content'])
+        )
+        self.assertEqual([target], store.get_introduced_related_database_ids())
+
+    def test_related_zaparoo_previously_introduced___does_not_activate_it_again(self):
+        source = DB_ID_MREXT_ALL
+        target = DB_ID_ZAPAROO_MISTER
+        store = local_store()
+        store.set_introduced_related_database_ids([target])
+        store.mark_as_cleaned()
+        fs = test_transitions_with_contents({
+            downloader_ini: downloader_ini_with_db_ids(source),
+        }, store=store)
+
+        self.assertEqual(
+            testableIni(downloader_ini_with_db_ids(source, ALL_DB_IDS['UPDATE_ALL_MISTER'])),
+            testableIni(fs.files[downloader_ini]['content'])
+        )
+        self.assertEqual([target], store.get_introduced_related_database_ids())
+
+    def test_related_database_relationships___has_only_zaparoo_relationship(self):
+        self.assertEqual(1, len(RELATED_DATABASE_ACTIVATION_RELATIONSHIPS))
+        self.assertEqual((
+            DB_ID_ZAPAROO_MISTER,
+            (
+                DB_ID_MREXT_ALL,
+                DB_ID_MREXT_TAPTO,
+            ),
+        ), RELATED_DATABASE_ACTIVATION_RELATIONSHIPS[0])
 
     def assertEqualFiles(self, expected, actual):
         actual = {filename.lower(): read_description(description) for filename, description in actual.items()}

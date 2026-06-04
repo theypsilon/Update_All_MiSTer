@@ -154,6 +154,12 @@ class SettingsScreen(UiApplication):
         ui.set_value('overscan', local_store.get_overscan())
         ui.set_value('monochrome_ui', str(local_store.get_monochrome_ui()).lower())
         ui.set_value(
+            'zaparoo_frontend_default',
+            str(local_store.get_zaparoo_frontend_default()).lower()
+            if local_store.has_field('zaparoo_frontend_default')
+            else 'false'
+        )
+        ui.set_value(
             'ajgowans_manuals_dbs_general_selector',
             str(local_store.get_ajgowans_manuals_dbs_general_selector()).lower()
             if local_store.has_field('ajgowans_manuals_dbs_general_selector')
@@ -669,6 +675,7 @@ class SettingsScreen(UiApplication):
         store.set_pocket_backup(config.pocket_backup)
         store.set_overscan(config.overscan)
         store.set_monochrome_ui(config.monochrome_ui)
+        store.set_zaparoo_frontend_default(ui.get_value('zaparoo_frontend_default') != 'false')
         store.set_ajgowans_manuals_dbs_general_selector(ui.get_value('ajgowans_manuals_dbs_general_selector') != 'false')
         # @TODO (mirror) store.set_mirror(ui.get_value('mirror'))
 

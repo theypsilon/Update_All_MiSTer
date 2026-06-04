@@ -24,6 +24,7 @@ from test.fetcher_stub import FetcherStub
 from test.logger_tester import NoLogger
 from test.retroaccount_gateway_tester import RetroAccountGatewayTester
 from test.spy_os_utils import SpyOsUtils
+from test.zaparoo_service_tester import ZaparooServiceTester
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.config_reader import ConfigReader
@@ -55,6 +56,7 @@ from update_all.retroaccount_gateway import RetroAccountGateway
 from update_all.ui_engine import UiContext, UiRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllService
+from update_all.zaparoo_service import ZaparooService
 
 
 def default_env():
@@ -270,7 +272,8 @@ class UpdateAllServiceTester(UpdateAllService):
                  settings_screen: SettingsScreen = None,
                  store_provider: GenericProvider[LocalStore] = None,
                  ini_repository: IniRepository = None,
-                 local_repository: LocalRepository = None):
+                 local_repository: LocalRepository = None,
+                 zaparoo_service: ZaparooService = None):
 
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
@@ -298,6 +301,7 @@ class UpdateAllServiceTester(UpdateAllService):
             log_viewer=LogViewerTester(file_system, config_provider, store_provider, retroaccount),
             timeline=TimelineTester(file_system=file_system, config_provider=config_provider, retroaccount=retroaccount),
             retroaccount=retroaccount,
+            zaparoo_service=zaparoo_service or ZaparooServiceTester(),
             fetcher=FetcherStub(config_provider=config_provider)
         )
 

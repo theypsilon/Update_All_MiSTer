@@ -165,7 +165,7 @@ def _add_target_variables(result: Set[str], item: Dict[str, Any]) -> None:
         return
 
     node_type = item['type']
-    if node_type == 'rotate_variable':
+    if node_type in ('rotate_variable', 'set_variable'):
         result.add(item['target'])
 
     elif node_type == 'condition':

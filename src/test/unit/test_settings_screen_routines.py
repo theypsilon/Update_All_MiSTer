@@ -58,6 +58,14 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertGreaterEqual(len(initialized_effects), 5)
         self.assertEqual(used_effects, initialized_effects)
 
+    def test_initialize_ui___with_missing_zaparoo_frontend_store_field___defaults_it_to_false(self):
+        store = local_store()
+        del store.unwrap_props()['zaparoo_frontend_default']
+
+        _, ui = tester(store=store)
+
+        self.assertEqual('false', ui.get_value('zaparoo_frontend_default'))
+
     def test_calculate_names_char_code_warning___with_names_char18___returns_names_char_code_warning_equals_true(self):
         sut, ui = tester()
         ui.set_value('names_char_code', 'char18')

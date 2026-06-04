@@ -227,6 +227,9 @@ class TestSettingsScreenSaving(unittest.TestCase):
     def test_save__when_enabling_pocket_backup___writes_changes_on_local_store(self):
         self.assertStoreBooleanTransition('pocket_backup', False)
 
+    def test_save__when_enabling_zaparoo_frontend_default___writes_changes_on_local_store(self):
+        self.assertStoreBooleanTransition('zaparoo_frontend_default', False)
+
     def assertStoreBooleanTransition(self, field: str, initial_value: bool) -> None:
         sut, ui, fs = tester()
 

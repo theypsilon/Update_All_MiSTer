@@ -15,11 +15,11 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
-from typing import Dict, Union, List
+from typing import Any, Dict, List
 import copy
 
 class LocalStore:
-    def __init__(self, props: Dict[str, Union[str, int, bool]]):
+    def __init__(self, props: Dict[str, Any]):
         self._props = props
         self._dirty = set()
         if '_dirty' in self._props:
@@ -68,6 +68,18 @@ class LocalStore:
         value = self._props['introduced_arcade_names_txt']
         return value == 'true' if type(value) is str else value
 
+    def set_introduced_related_database_ids(self, db_ids: List[str]) -> None:
+        self.generic_set('introduced_related_database_ids', db_ids)
+
+    def get_introduced_related_database_ids(self) -> List[str]:
+        return self._props['introduced_related_database_ids']
+
+    def set_zaparoo_frontend_default(self, value: bool) -> None:
+        self.generic_set('zaparoo_frontend_default', value)
+
+    def get_zaparoo_frontend_default(self) -> bool:
+        return self._props['zaparoo_frontend_default']
+
     def unwrap_props(self):
         return self._props
 
@@ -84,7 +96,7 @@ class LocalStore:
         self._dirty = set()
 
     def generic_set(self, field, value) -> None:
-        if value == self._props[field]: return
+        if field in self._props and value == self._props[field]: return
         self._props[field] = value
         self._dirty.add(field)
 

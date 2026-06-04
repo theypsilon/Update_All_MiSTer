@@ -24,14 +24,16 @@ from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
 from update_all.update_all_service import UpdateAllService, UpdateAllServicePass
+from update_all.zaparoo_service import FILE_zaparoo_frontend
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.update_all_service_tester import UpdateAllServiceFactoryTester, UpdateAllServiceTester, \
     default_env, EnvironmentSetupStub, default_databases, local_store
+from test.zaparoo_service_tester import ZaparooServiceTester
 
 
 def tester(files=None, folders=None, config: Config = None, store: LocalStore = None, env_stub: EnvironmentSetupStub = None,
-           settings_screen=None):
+           settings_screen=None, zaparoo_service=None):
     state = FileSystemState(files=files, folders=folders)
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config or Config(databases=default_databases()))
@@ -44,6 +46,7 @@ def tester(files=None, folders=None, config: Config = None, store: LocalStore = 
         config_provider=config_provider,
         store_provider=store_provider,
         settings_screen=settings_screen,
+        zaparoo_service=zaparoo_service,
     ), state
 
 
@@ -54,6 +57,51 @@ class TestUpdateAllService(unittest.TestCase):
     def test_full_run___on_default_environment___returns_0(self):
         sut, _ = tester()
         self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
+
+    def test_full_run___enables_zaparoo_features_after_hard_waiting_background_jobs(self):
+        events = []
+        sut, _ = tester()
+        sut._hard_wait_background_jobs = MagicMock(side_effect=lambda: events.append('hard_wait_background_jobs'))
+        sut._enable_zaparoo_features_if_active = MagicMock(side_effect=lambda: events.append('enable_zaparoo_features_if_active'))
+        sut._show_outro = MagicMock(side_effect=lambda: events.append('show_outro'))
+
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
+
+        self.assertEqual([
+            'hard_wait_background_jobs',
+            'enable_zaparoo_features_if_active',
+            'show_outro',
+        ], events)
+
+    def test_enable_zaparoo_features_if_active___when_both_zaparoo_flags_are_disabled___does_not_call_zaparoo_service(self):
+        zaparoo_service = ZaparooServiceTester()
+        sut, _ = tester(zaparoo_service=zaparoo_service)
+
+        sut._enable_zaparoo_features_if_active()
+
+        self.assertEqual([], zaparoo_service.calls)
+
+    def test_enable_zaparoo_features_if_active___when_frontend_default_is_enabled___keeps_frontend_active(self):
+        store = local_store()
+        store.set_zaparoo_frontend_default(True)
+        zaparoo_service = ZaparooServiceTester(files={
+            FILE_zaparoo_frontend: {'content': 'frontend'},
+        })
+        sut, _ = tester(store=store, zaparoo_service=zaparoo_service)
+
+        sut._enable_zaparoo_features_if_active()
+
+        self.assertEqual(['keep_frontend_active'], zaparoo_service.calls)
+
+    def test_enable_zaparoo_features_if_active___when_zaparoo_flags_are_missing___does_not_call_zaparoo_service(self):
+        store = local_store()
+        del store.unwrap_props()['zaparoo_frontend_default']
+        zaparoo_service = ZaparooServiceTester()
+        sut, _ = tester(store=store, zaparoo_service=zaparoo_service)
+
+        sut._enable_zaparoo_features_if_active()
+
+        self.assertEqual([], zaparoo_service.calls)
 
     def test_full_run___with_no_databases_and_no_arcade_organizer___returns_0(self):
         sut, _ = tester(config=Config(arcade_organizer=False))

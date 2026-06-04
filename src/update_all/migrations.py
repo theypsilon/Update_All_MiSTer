@@ -20,7 +20,7 @@ from update_all.store_migrator import Migration
 
 
 def migrations() -> list[Migration]:
-    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6, migration_v7]
+    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6, migration_v7, migration_v8]
 
 def migration_v1(local_store) -> None:
     """create arcade_names_txt field"""
@@ -60,3 +60,8 @@ def migration_v6(local_store) -> None:
 def migration_v7(local_store) -> None:
     """create manuals selector state"""
     local_store['ajgowans_manuals_dbs_general_selector'] = False
+
+def migration_v8(local_store) -> None:
+    """create Zaparoo transition state"""
+    local_store['introduced_related_database_ids'] = []
+    local_store['zaparoo_frontend_default'] = False

@@ -60,6 +60,7 @@ from update_all.fetcher import Fetcher
 from update_all.mister_video_mode_ui import MisterVideoModeService
 from update_all.retroaccount import RetroAccountService
 from update_all.retroaccount_gateway import RetroAccountGateway
+from update_all.zaparoo_service import ZaparooService
 
 
 @enum.unique
@@ -91,6 +92,7 @@ class UpdateAllServiceFactory:
         encryption = Encryption(self._logger, config_provider, file_system)
         retroaccount_gateway = RetroAccountGateway(config_provider, self._logger, file_system, fetcher)
         retroaccount = RetroAccountService(self._logger, file_system, config_provider, retroaccount_gateway, encryption)
+        zaparoo_service = ZaparooService(file_system, self._logger)
         mister_video_mode_service = MisterVideoModeService(self._logger, file_system, config_provider, os_utils)
         settings_screen = SettingsScreen(
             logger=self._logger,
@@ -132,6 +134,7 @@ class UpdateAllServiceFactory:
             log_viewer=LogViewer(file_system, config_provider, store_provider, retroaccount),
             timeline=timeline,
             retroaccount=retroaccount,
+            zaparoo_service=zaparoo_service,
             fetcher=fetcher
         )
 
@@ -215,6 +218,7 @@ class UpdateAllService:
                  local_repository: LocalRepository,
                  timeline: Timeline,
                  retroaccount: RetroAccountService,
+                 zaparoo_service: ZaparooService,
                  fetcher: Fetcher):
         self._config_provider = config_provider
         self._logger = logger
@@ -230,6 +234,7 @@ class UpdateAllService:
         self._log_viewer = log_viewer
         self._timeline = timeline
         self._retroaccount = retroaccount
+        self._zaparoo_service = zaparoo_service
         self._fetcher = fetcher
         self._exit_code = 0
         self._end_time = 0.0
@@ -287,6 +292,7 @@ class UpdateAllService:
         self._run_arcade_organizer()
         self._cleanup()
         self._hard_wait_background_jobs()
+        self._enable_zaparoo_features_if_active()
         self._show_outro()
         self._show_interactive_log_viewer_and_timeline()
         self._reboot_if_needed()
@@ -625,6 +631,12 @@ class UpdateAllService:
             self._executor.shutdown(wait=False)
             self._executor = None
 
+    def _enable_zaparoo_features_if_active(self) -> None:
+        store = self._store_provider.get()
+
+        if store.has_field('zaparoo_frontend_default') and store.get_zaparoo_frontend_default():
+            self._zaparoo_service.keep_frontend_active()
+
     def _cleanup(self) -> None:
         for file in self._temp_launchers:
             if self._file_system.is_file(file):
@@ -641,6 +653,8 @@ class UpdateAllService:
         self._logger.print(calculate_outro_summary(config, run_time, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         self._logger.debug(f"Commit: {config.commit}")
         self._logger.debug(f"Boot time: {config.boot_time}")
+        if self._zaparoo_service.zaparoo_frontend_enabled():
+            self._logger.print('Zaparoo Frontend enabled!')
         for kind, debug_msg in self._retroaccount.consume_important_messages():
             if kind == 'debug': self._logger.debug(debug_msg)
             elif kind == 'print': self._logger.print(debug_msg)

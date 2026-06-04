@@ -24,6 +24,8 @@ from test.update_all_service_tester import default_databases
 from update_all.config_reader import Config
 from update_all.databases import model_variables_by_db_id, db_ids_by_model_variables, AllDBs, all_dbs
 from update_all.settings_screen_model import settings_screen_model
+from update_all.ui_engine import EffectChain, Interpolator, UiApplication, UiContext, UiRuntime, UiSection, \
+    UiSectionFactory, execute_ui_engine
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string
 
 
@@ -192,6 +194,177 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('Manage Your Account', message['header'])
         self.assertEqual('{device_label:device_label_message}', message['text'][0])
 
+    def test_mrext_entry___when_enabling_with_zaparoo_disabled___asks_to_enable_zaparoo(self):
+        app = self._execute_tools_mrext_action('false', 'false')
+
+        self.assertEqual('true', app.ui.get_value('mrext/all'))
+        self.assertEqual('false', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('confirm', app.last_confirm['ui'])
+        self.assertEqual('Activate Zaparoo?', app.last_confirm['header'])
+        self.assertEqual('Yes', app.last_confirm['preselected_action'])
+
+    def test_mrext_zaparoo_confirmation_yes___enables_zaparoo_and_asks_about_default_frontend(self):
+        app = self._execute_tools_mrext_action('false', 'false', confirm_action_title='Yes')
+
+        self.assertEqual('true', app.ui.get_value('mrext/all'))
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_default'))
+        self.assertEqual('confirm', app.last_confirm['ui'])
+        self.assertEqual('Zaparoo Frontend', app.last_confirm['header'])
+        self.assertEqual([
+            'Do you want the Zaparoo frontend to be',
+            'the default frontend after being installed?',
+        ], app.last_confirm['text'])
+        self.assertEqual('Yes', app.last_confirm['preselected_action'])
+
+    def test_mrext_zaparoo_confirmation_yes_and_default_frontend_yes___sets_zaparoo_options(self):
+        app = self._execute_tools_mrext_action('false', 'false', confirm_action_title=['Yes', 'Yes'])
+
+        self.assertEqual('true', app.ui.get_value('mrext/all'))
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_default'))
+
+    def test_mrext_zaparoo_confirmation_yes_and_default_frontend_no___keeps_zaparoo_frontend_disabled(self):
+        app = self._execute_tools_mrext_action('false', 'false', confirm_action_title=['Yes', 'No'])
+
+        self.assertEqual('true', app.ui.get_value('mrext/all'))
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_default'))
+
+    def test_mrext_zaparoo_confirmation_yes___when_zaparoo_frontend_is_active___does_not_ask_about_it(self):
+        app = self._execute_tools_mrext_action(
+            'false',
+            'false',
+            confirm_action_title='Yes',
+            zaparoo_frontend_default='true',
+        )
+
+        self.assertEqual('true', app.ui.get_value('mrext/all'))
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_default'))
+        self.assertEqual(1, len(app.confirms))
+        self.assertEqual('Activate Zaparoo?', app.last_confirm['header'])
+
+    def test_mrext_entry___when_disabling_mrext___does_not_ask_to_enable_zaparoo(self):
+        app = self._execute_tools_mrext_action('true', 'false')
+
+        self.assertIsNone(app.last_confirm)
+        self.assertEqual('false', app.ui.get_value('mrext/all'))
+        self.assertEqual('false', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+
+    def test_mrext_entry___when_zaparoo_is_already_enabled___does_not_ask_to_enable_zaparoo(self):
+        app = self._execute_tools_mrext_action('false', 'true')
+
+        self.assertIsNone(app.last_confirm)
+        self.assertEqual('true', app.ui.get_value('mrext/all'))
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+
+    def test_zaparoo_tools_entry___opens_zaparoo_submenu(self):
+        entry = next(entry for entry in self.model['items']['tools_and_scripts_menu']['entries'] if entry['title'] == '1 Zaparoo')
+
+        self.assertEqual('{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher & Zaparoo Frontend', entry['description'])
+        self.assertEqual([{'type': 'navigate', 'target': 'zaparoo_menu'}], entry['actions']['ok'])
+
+    def test_zaparoo_submenu___has_enabled_and_frontend_options(self):
+        entries = self.model['items']['zaparoo_menu']['entries']
+
+        self.assertEqual('1 Zaparoo Database', entries[0]['title'])
+        self.assertEqual('{ZaparooProject/Zaparoo_MiSTer:enabled}', entries[0]['description'])
+        self.assertEqual('2 Keep Zaparoo Frontend active', entries[1]['title'])
+        self.assertEqual('{zaparoo_frontend_default:yesno}', entries[1]['description'])
+        self.assertEqual(2, len(entries))
+
+    def test_zaparoo_database_entry___when_enabling___asks_about_default_frontend(self):
+        app = self._execute_tools_zaparoo_action('false', 'false')
+
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_default'))
+        self.assertEqual('confirm', app.last_confirm['ui'])
+        self.assertEqual('Zaparoo Frontend', app.last_confirm['header'])
+        self.assertEqual([
+            'Do you want the Zaparoo frontend to be',
+            'the default frontend after being installed?',
+        ], app.last_confirm['text'])
+        self.assertEqual('Yes', app.last_confirm['preselected_action'])
+
+    def test_zaparoo_frontend_confirmation_yes___sets_zaparoo_frontend_default(self):
+        app = self._execute_tools_zaparoo_action('false', 'false', confirm_action_title='Yes')
+
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_default'))
+
+    def test_zaparoo_frontend_confirmation_no___keeps_zaparoo_frontend_disabled(self):
+        app = self._execute_tools_zaparoo_action('false', 'false', confirm_action_title='No')
+
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_default'))
+
+    def test_zaparoo_database_entry___when_enabling_with_frontend_active___does_not_prompt(self):
+        app = self._execute_tools_zaparoo_action('false', 'true')
+
+        self.assertIsNone(app.last_confirm)
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_default'))
+
+    def test_zaparoo_database_entry___when_disabling___keeps_default_frontend_without_prompting(self):
+        app = self._execute_tools_zaparoo_action('true', 'true')
+
+        self.assertIsNone(app.last_confirm)
+        self.assertEqual('false', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_default'))
+
+    def test_zaparoo_frontend_entry___rotates_frontend_default_preference(self):
+        app = self._execute_tools_action(
+            self._zaparoo_frontend_action_chain(),
+            {
+                'ZaparooProject/Zaparoo_MiSTer': 'true',
+                'zaparoo_frontend_default': 'false',
+            },
+            entrypoint='zaparoo_menu',
+            initial_history=['tools_and_scripts_menu'],
+        )
+
+        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_default'))
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+
+    def _mrext_action_chain(self):
+        entry = next(entry for entry in self.model['items']['tools_and_scripts_menu']['entries'] if 'MiSTer Extensions' in entry['title'])
+        return entry['actions']['ok']
+
+    def _zaparoo_action_chain(self):
+        return self.model['items']['zaparoo_menu']['entries'][0]['actions']['ok']
+
+    def _zaparoo_frontend_action_chain(self):
+        return self.model['items']['zaparoo_menu']['entries'][1]['actions']['ok']
+
+    def _execute_tools_mrext_action(
+            self,
+            mrext_value,
+            zaparoo_value,
+            confirm_action_title=None,
+            zaparoo_frontend_default='false',
+    ):
+        return self._execute_tools_action(self._mrext_action_chain(), {
+            'mrext/all': mrext_value,
+            'ZaparooProject/Zaparoo_MiSTer': zaparoo_value,
+            'zaparoo_frontend_default': zaparoo_frontend_default,
+        }, confirm_action_title)
+
+    def _execute_tools_zaparoo_action(self, zaparoo_value, zaparoo_frontend_default, confirm_action_title=None):
+        return self._execute_tools_action(self._zaparoo_action_chain(), {
+            'ZaparooProject/Zaparoo_MiSTer': zaparoo_value,
+            'zaparoo_frontend_default': zaparoo_frontend_default,
+        }, confirm_action_title, entrypoint='zaparoo_menu', initial_history=['tools_and_scripts_menu'])
+
+    def _execute_tools_action(self, action_chain, initial_values, confirm_action_title=None, entrypoint='tools_and_scripts_menu', initial_history=None):
+        app = ToolsMenuActionApplication(
+            action_chain,
+            initial_values,
+            confirm_action_title,
+        )
+        execute_ui_engine(entrypoint, self.model, app, RuntimeStub(), initial_history=initial_history)
+        return app
+
     def test_retroaccount_device_verification_result___attaches_chip_id_before_displaying_message(self):
         screen = self.model['items']['retroaccount_device_verification_result']
 
@@ -230,3 +403,103 @@ class TestSettingsScreenModel(unittest.TestCase):
                 values.add(v)
 
         self.assertEqual({'true', 'false'}, values)
+
+
+class ToolsMenuActionApplication(UiApplication):
+    def __init__(self, action_chain, initial_values, confirm_action_title=None):
+        self.action_chain = action_chain
+        self.initial_values = initial_values
+        self.confirm_action_titles = self._confirm_action_titles(confirm_action_title)
+        self.ui = None
+        self.confirms = []
+        self.last_confirm = None
+
+    def initialize_ui(self, ui: UiContext) -> UiSectionFactory:
+        self.ui = ui
+        for key, value in self.initial_values.items():
+            ui.set_value(key, value)
+        return ToolsMenuSectionFactory(self)
+
+    def next_confirm_action_title(self):
+        if len(self.confirm_action_titles) == 0:
+            return None
+
+        return self.confirm_action_titles.pop(0)
+
+    @staticmethod
+    def _confirm_action_titles(confirm_action_title):
+        if confirm_action_title is None:
+            return []
+
+        if isinstance(confirm_action_title, list):
+            return list(confirm_action_title)
+
+        return [confirm_action_title]
+
+
+class RuntimeStub(UiRuntime):
+    def initialize_runtime(self, cb):
+        cb()
+
+    def update(self) -> None:
+        pass
+
+    def interrupt(self) -> None:
+        pass
+
+    def resume(self) -> None:
+        pass
+
+
+class ToolsMenuSectionFactory(UiSectionFactory):
+    def __init__(self, app):
+        self.app = app
+
+    def create_ui_section(self, ui_type: str, data: dict, _interpolator: Interpolator) -> UiSection:
+        if ui_type == 'menu':
+            return MenuActionSection(self.app.action_chain)
+
+        if ui_type == 'confirm':
+            self.app.confirms.append(data)
+            self.app.last_confirm = data
+            return ConfirmActionSection(data, self.app.next_confirm_action_title())
+
+        raise ValueError(f'Unexpected ui_type: {ui_type}')
+
+
+class MenuActionSection(UiSection):
+    def __init__(self, action_chain):
+        self.action_chain = action_chain
+        self.processed = False
+
+    def process_key(self):
+        if self.processed:
+            return EffectChain([{'type': 'navigate', 'target': 'exit_and_run'}])
+
+        self.processed = True
+        return EffectChain(self.action_chain)
+
+    def reset(self) -> None:
+        pass
+
+    def clear(self) -> None:
+        pass
+
+
+class ConfirmActionSection(UiSection):
+    def __init__(self, data, action_title):
+        self.data = data
+        self.action_title = action_title
+
+    def process_key(self):
+        if self.action_title is None:
+            return EffectChain([{'type': 'navigate', 'target': 'exit_and_run'}])
+
+        action = next(action for action in self.data['actions'] if action['title'] == self.action_title)
+        return EffectChain(action['fixed'])
+
+    def reset(self) -> None:
+        pass
+
+    def clear(self) -> None:
+        pass

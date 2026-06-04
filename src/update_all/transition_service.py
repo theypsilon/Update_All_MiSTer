@@ -16,12 +16,13 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 from collections import Counter
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
 from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, \
-    DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ALL_DB_IDS
+    DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ALL_DB_IDS, DB_ID_MREXT_ALL, DB_ID_MREXT_TAPTO, \
+    DB_ID_ZAPAROO_MISTER
 from update_all.ini_parser import IniParser
 from update_all.ini_repository import IniRepository, SEPARATE_DB_INI_FILES_BY_FILENAME
 from update_all.file_system import FileSystem
@@ -33,6 +34,16 @@ from update_all.ui_model_utilities import gather_variable_declarations, dynamic_
 
 
 default_arcade_organizer_enabled = Config().arcade_organizer
+
+RELATED_DATABASE_ACTIVATION_RELATIONSHIPS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
+    (
+        DB_ID_ZAPAROO_MISTER,
+        (
+            DB_ID_MREXT_ALL,
+            DB_ID_MREXT_TAPTO,
+        ),
+    ),
+)
 
 
 class TransitionService:
@@ -142,6 +153,45 @@ class TransitionService:
         self._logger.print()
         self._logger.print('Waiting 10 seconds...')
         self._os_utils.sleep(10.0)
+
+    def from_active_databases_to_related_databases(self, config: Config, store: LocalStore):
+        if config.skip_downloader:
+            return
+
+        active_db_ids = {db_id.lower() for db_id in config.databases}
+        introduced_db_ids = store.get_introduced_related_database_ids()
+        introduced_db_ids_lower = {db_id.lower() for db_id in introduced_db_ids}
+        activated = []
+        introduced = []
+        for target_db_id, source_db_ids in RELATED_DATABASE_ACTIVATION_RELATIONSHIPS:
+            target_db_id_lower = target_db_id.lower()
+            if target_db_id_lower in introduced_db_ids_lower:
+                continue
+
+            if not any(source_db_id.lower() in active_db_ids for source_db_id in source_db_ids):
+                continue
+
+            introduced.append(target_db_id)
+            if target_db_id_lower in active_db_ids:
+                continue
+
+            config.databases.add(target_db_id)
+            active_db_ids.add(target_db_id_lower)
+            activated.append(target_db_id)
+
+        if len(introduced) == 0:
+            return
+
+        store.set_introduced_related_database_ids(introduced_db_ids + introduced)
+
+        if len(activated) >= 1:
+            self._ini_repository.write_downloader_ini(config)
+            self._logger.print('Activating related databases:')
+            for db_id in activated:
+                self._logger.print(f'  - Added DB with id [{db_id}]')
+            self._logger.print()
+            self._logger.print('Waiting 5 seconds...')
+            self._os_utils.sleep(5.0)
 
     def _fill_arcade_organizer_enabled_model_variable_from_update_all_ini(self, config):
         ini_content = self._ini_repository.read_old_ini_file(FILE_update_all_ini)

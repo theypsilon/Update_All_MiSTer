@@ -25,7 +25,7 @@ from update_all.config import Config, EnvDict
 from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, KENV_DEBUG, \
     KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, \
     FILE_retroaccount_cfg, K_RETROACCOUNT_DOMAIN, KENV_UPDATE_ALL_CHIP_ID_RESULT
-from update_all.databases import DB_ID_NAMES_TXT, model_variables_by_db_id, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS
+from update_all.databases import DB_ID_NAMES_TXT, model_variables_by_db_id, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, DB_ID_MREXT_TAPTO
 from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
 from update_all.local_store import LocalStore
@@ -95,6 +95,9 @@ class ConfigReader:
             config.__setattr__(variable, is_present)
             if is_present:
                 config.databases.add(db_id)
+
+        if DB_ID_MREXT_TAPTO.lower() in all_ini:
+            config.databases.add(DB_ID_MREXT_TAPTO)
 
         db_defs = all_dbs(config.mirror)
         config.databases.add(ALL_DB_IDS['UPDATE_ALL_MISTER'])

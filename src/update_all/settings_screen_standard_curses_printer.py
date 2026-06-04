@@ -186,10 +186,10 @@ class _DrawerFactory(UiDialogDrawerFactory):
         self._sd = screen_dims
 
     def create_ui_dialog_drawer(self, interpolator: Interpolator) -> UiDialogDrawer:
-        return _Drawer(self._runtime, self._layout, interpolator, self._sd)
+        return Drawer(self._runtime, self._layout, interpolator, self._sd)
 
 
-class _Drawer(UiDialogDrawer):
+class Drawer(UiDialogDrawer):
     def __init__(self, runtime: CursesRuntime, layout: _Layout, interpolator: Interpolator, screen_dims: ScreenDims):
         self._runtime = runtime
         self._layout = layout
