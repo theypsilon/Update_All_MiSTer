@@ -140,7 +140,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         action = entry['actions']['ok'][0]
         confirmation = action['false'][0]
 
-        self.assertEqual('3 Link FPGA ID', entry['title'])
+        self.assertEqual('# Link FPGA ID', entry['title'])
         self.assertEqual('{retroaccount_device_verification_description}', entry['description'])
         self.assertEqual('condition', action['type'])
         self.assertEqual('retroaccount_device_verified', action['variable'])
@@ -154,11 +154,11 @@ class TestSettingsScreenModel(unittest.TestCase):
         ], confirmation['actions'][0]['fixed'])
 
     def test_retroaccount_login_entry___opens_account_submenu_after_success(self):
-        entry = next(entry for entry in self.model['items']['main_menu_login']['entries'] if entry.get('title') == '7 Login')
+        entry = next(entry for entry in self.model['items']['main_menu_login']['entries'] if entry.get('title') == '# Login')
         device_login = entry['actions']['ok'][0]
         main_menu_idle = self.model['items']['main_menu_account']['on_idle'][1]
 
-        self.assertEqual('7 Login', entry['title'])
+        self.assertEqual('# Login', entry['title'])
         self.assertEqual('device_login', device_login['ui'])
         self.assertEqual([
             {'type': 'set_variable', 'target': 'retroaccount_open_account_after_login', 'value': 'true'},
@@ -172,7 +172,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         ], main_menu_idle['true'])
 
     def test_retroaccount_account_entry___keeps_static_description(self):
-        entry = next(entry for entry in self.model['items']['main_menu_account']['entries'] if entry.get('title') == '7 Account')
+        entry = next(entry for entry in self.model['items']['main_menu_account']['entries'] if entry.get('title') == '# Account')
 
         self.assertEqual('From RetroAccount. {retroaccount_checking}', entry['description'])
 
@@ -190,7 +190,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         entry = self.model['items']['retroaccount_account_menu']['entries'][3]
         message = entry['actions']['ok'][0]
 
-        self.assertEqual('4 Manage Your Account', entry['title'])
+        self.assertEqual('# Manage Your Account', entry['title'])
         self.assertEqual('Manage Your Account', message['header'])
         self.assertEqual('{device_label:device_label_message}', message['text'][0])
 
@@ -260,7 +260,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
 
     def test_zaparoo_tools_entry___opens_zaparoo_submenu(self):
-        entry = next(entry for entry in self.model['items']['tools_and_scripts_menu']['entries'] if entry['title'] == '1 Zaparoo')
+        entry = next(entry for entry in self.model['items']['tools_and_scripts_menu']['entries'] if entry['title'] == '# Zaparoo')
 
         self.assertEqual('{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher & Zaparoo Frontend', entry['description'])
         self.assertEqual([{'type': 'navigate', 'target': 'zaparoo_menu'}], entry['actions']['ok'])
@@ -268,9 +268,9 @@ class TestSettingsScreenModel(unittest.TestCase):
     def test_zaparoo_submenu___has_enabled_and_frontend_options(self):
         entries = self.model['items']['zaparoo_menu']['entries']
 
-        self.assertEqual('1 Zaparoo Database', entries[0]['title'])
+        self.assertEqual('# Zaparoo Database', entries[0]['title'])
         self.assertEqual('{ZaparooProject/Zaparoo_MiSTer:enabled}', entries[0]['description'])
-        self.assertEqual('2 Keep Zaparoo Frontend active', entries[1]['title'])
+        self.assertEqual('# Keep Zaparoo Frontend active', entries[1]['title'])
         self.assertEqual('{zaparoo_frontend_default:yesno}', entries[1]['description'])
         self.assertEqual(2, len(entries))
 

@@ -241,6 +241,7 @@ class _Menu(UiSection):
         self._separators = {}
         self._first_render = True
         entries = []
+        auto_number = 1
         for entry in self._data['entries']:
             target_index = len(entries)
             if len(entry) == 0:
@@ -248,6 +249,7 @@ class _Menu(UiSection):
                 self._separators[target_index] += 1
                 continue
 
+            entry, auto_number = _with_auto_numbered_title(entry, auto_number)
             first_letter = ord(entry['title'][0:1].lower())
             self._hotkeys[first_letter] = target_index
             entries.append(entry)
@@ -367,6 +369,14 @@ def _clamp_scroll(scroll: int, total: int, max_lines: int) -> int:
     if max_lines <= 0 or total <= max_lines:
         return 0
     return min(scroll, total - max_lines)
+
+
+def _with_auto_numbered_title(entry: Dict[str, Any], number: int) -> tuple[Dict[str, Any], int]:
+    title = entry.get('title', '')
+    if not title.startswith('# '):
+        return entry, number
+
+    return {**entry, 'title': f'{number}{title[1:]}'}, number + 1
 
 
 def _make_action_effect_chain(data: Dict[str, Any], state: _NavigationState) -> Optional[EffectChain]:

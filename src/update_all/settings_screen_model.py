@@ -350,7 +350,7 @@ def settings_screen_model(): return {
             ],
             "entries": [
                 {
-                    "title": "1 BLACK",
+                    "title": "# BLACK",
                     "description": "yesno ~formatter~: {main_updater:yesno}",
                     "actions": {"ok": [
                         {
@@ -364,8 +364,8 @@ def settings_screen_model(): return {
                             "alert_level": "black",
                             "preselected_action": "Yes",
                             "entries": [
-                                {"title": "1 FIRST", "description": "First", "actions": {"ok": []}},
-                                {"title": "2 SECOND", "description": "Second", "actions": {"ok": []}},
+                                {"title": "# FIRST", "description": "First", "actions": {"ok": []}},
+                                {"title": "# SECOND", "description": "Second", "actions": {"ok": []}},
                             ],
                             "actions": [
                                 {"title": "Yes", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
@@ -375,7 +375,7 @@ def settings_screen_model(): return {
                     ]}
                 },
                 {
-                    "title": "2 RED",
+                    "title": "# RED",
                     "description": "enabled @formatter@: {main_updater:enabled}",
                     "actions": {"ok": [
                         {
@@ -389,8 +389,8 @@ def settings_screen_model(): return {
                             "alert_level": "red",
                             "preselected_action": "Yes",
                             "entries": [
-                                {"title": "1 FIRST", "description": "First", "actions": {"ok": []}},
-                                {"title": "2 SECOND", "description": "Second", "actions": {"ok": []}},
+                                {"title": "# FIRST", "description": "First", "actions": {"ok": []}},
+                                {"title": "# SECOND", "description": "Second", "actions": {"ok": []}},
                             ],
                             "actions": [
                                 {"title": "Yes", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
@@ -424,7 +424,7 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Update All Extras",
+                    "title": "# Update All Extras",
                     "description": "{retroaccount_update_all_extras}",
                     "actions": {"ok": [{
                         "ui": "message", "header": "Update All Extras", "text": [
@@ -435,7 +435,7 @@ def settings_screen_model(): return {
                     }]}
                 },
                 {
-                    "title": "2 JOTEGO Patreon Access",
+                    "title": "# JOTEGO Patreon Access",
                     "description": "{retroaccount_jtbeta_access}",
                     "actions": {"ok": [{
                         "ui": "message", "header": "JOTEGO Patreon Access", "text": [
@@ -448,7 +448,7 @@ def settings_screen_model(): return {
                     }]}
                 },
                 {
-                    "title": "3 Link FPGA ID",
+                    "title": "# Link FPGA ID",
                     "description": "{retroaccount_device_verification_description}",
                     "actions": {"ok": [{
                         "type": "condition",
@@ -484,7 +484,7 @@ def settings_screen_model(): return {
                     }]}
                 },
                 {
-                    "title": "4 Manage Your Account",
+                    "title": "# Manage Your Account",
                     "description": "More options at {retroaccount_domain}",
                     "actions": {"ok": [{
                         "ui": "message",
@@ -497,7 +497,7 @@ def settings_screen_model(): return {
                     }]}
                 },
                 {
-                    "title": "5 Logout Device",
+                    "title": "# Logout Device",
                     "description": "Log out from this device",
                     "actions": {"ok": [{
                         "ui": "confirm",
@@ -556,12 +556,12 @@ def settings_screen_model(): return {
             "header": "Main Distribution Settings",
             "entries": [
                 {
-                    "title": "1 Distribution Enabled",
+                    "title": "# Distribution Enabled",
                     "description": "{main_updater:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "main_updater"}]}
                 },
                 {
-                    "title": "2 Cores versions",
+                    "title": "# Cores versions",
                     "description": "{encc_forks:encc_forks_description}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "encc_forks"}]}
                 },
@@ -572,12 +572,12 @@ def settings_screen_model(): return {
             "header": "JTCORES Settings",
             "entries": [
                 {
-                    "title": "1 JTCORES Enabled",
+                    "title": "# JTCORES Enabled",
                     "description": "{jotego_updater:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "jotego_updater"}]}
                 },
                 {
-                    "title": "2 Install Private Releases",
+                    "title": "# Install Private Releases",
                     "description": "{download_beta_cores:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "download_beta_cores"}]}
                 },
@@ -591,12 +591,12 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Arcade ROMs Database Enabled",
+                    "title": "# Arcade ROMs Database Enabled",
                     "description": "{arcade_roms_db_downloader:yesno}",
                     "actions": {"ok": [_roms_copyright_notice('arcade_roms_db_downloader')]}
                 },
                 {
-                    "title": "2 Include HBMAME ROMs",
+                    "title": "# Include HBMAME ROMs",
                     "description": "{hbmame_filter:yesno_reverse}",
                     "actions": {"ok": [
                         {
@@ -644,22 +644,22 @@ def settings_screen_model(): return {
             ],
             "entries": [
                 {
-                    "title": "1 Names TXT",
+                    "title": "# Names TXT",
                     "description": "{names_txt_updater:yesno}",
                     "actions": {"ok": _try_toggle_update_names_txt()}
                 },
                 {
-                    "title": "2 Arcade Names TXT",
+                    "title": "# Arcade Names TXT",
                     "description": "{arcade_names_txt:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_names_txt"}]}
                 },
                 {
-                    "title": "3 Region",
+                    "title": "# Region",
                     "description": "{names_region}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "names_region"}]}
                 },
                 {
-                    "title": "4 Char Code",
+                    "title": "# Char Code",
                     "description": "{names_char_code}",
                     "actions": {"ok": [
                         {"type": "rotate_variable", "target": "names_char_code"},
@@ -676,12 +676,12 @@ def settings_screen_model(): return {
                     ]}
                 },
                 {
-                    "title": "5 Sort Code",
+                    "title": "# Sort Code",
                     "description": "{names_sort_code}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "names_sort_code"}]}
                 },
                 {
-                    "title": "6 Remove \"names.txt\"",
+                    "title": "# Remove \"names.txt\"",
                     "description": "Back to standard core names based on RBF files",
                     "actions": {"ok": [
                         {"type": "calculate_file_exists", "target": "names.txt"},
@@ -725,7 +725,7 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Coin-Op Collection",
+                    "title": "# Coin-Op Collection",
                     "description": "{coin_op_collection_downloader:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
@@ -733,7 +733,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "2 Arcade Offset",
+                    "title": "# Arcade Offset",
                     "description": "{arcade_offset_downloader:enabled} Maintainer: Toya",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "arcade_offset_downloader"}],
@@ -745,7 +745,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "3 LLAPI Forks Folder",
+                    "title": "# LLAPI Forks Folder",
                     "description": "{llapi_updater:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "llapi_updater"}],
@@ -757,7 +757,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "4 Unofficial Distribution",
+                    "title": "# Unofficial Distribution",
                     "description": "{unofficial_updater:enabled} Maintainer: theypsilon",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "unofficial_updater"}],
@@ -773,7 +773,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "5 Y/C Builds",
+                    "title": "# Y/C Builds",
                     "description": "{MikeS11/YC_Builds-MiSTer:enabled} Maintainer: MikeS11",
                     "actions": {
                         "ok": [{
@@ -806,7 +806,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "6 agg23's MiSTer Cores",
+                    "title": "# agg23's MiSTer Cores",
                     "description": "{agg23_db:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "agg23_db"}],
@@ -818,7 +818,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "7 Alt Cores",
+                    "title": "# Alt Cores",
                     "description": "{ajgowans/alt-cores:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "ajgowans/alt-cores"}],
@@ -832,7 +832,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "8 Dual RAM Console Cores",
+                    "title": "# Dual RAM Console Cores",
                     "description": "{TheJesusFish/Dual-Ram-Console-Cores:enabled} Maintainer: TheJesusFish",
                     "actions": {
                         "ok": [{
@@ -863,7 +863,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "9 MiSTer Frontier",
+                    "title": "# MiSTer Frontier",
                     "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} Hybrid FPGA+ARM cores",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "MiSTerOrganize/MiSTer_Frontier"}],
@@ -898,12 +898,12 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Zaparoo",
+                    "title": "# Zaparoo",
                     "description": "{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher & Zaparoo Frontend",
                     "actions": {"ok": [{"type": "navigate", "target": "zaparoo_menu"}]}
                 },
                 {
-                    "title": "2 Arcade Organizer",
+                    "title": "# Arcade Organizer",
                     "description": "{arcade_organizer:enabled} Creates folder for easy navigation",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "arcade_organizer_menu"}],
@@ -911,7 +911,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "3 Names TXT",
+                    "title": "# Names TXT",
                     "description": "{names_txt_updater:enabled} Better core names in the menus",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "names_txt_menu"}],
@@ -919,32 +919,32 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "4 MiSTer Extensions (wizzo)",
+                    "title": "# MiSTer Extensions (wizzo)",
                     "description": "{mrext/all:enabled}",
                     "actions": {"ok": _try_toggle_mrext_with_zaparoo_prompt()}
                 },
                 {
-                    "title": "5 MiSTer Super Attract Mode",
+                    "title": "# MiSTer Super Attract Mode",
                     "description": "{mistersam_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "mistersam_files_downloader"}]}
                 },
                 {
-                    "title": "6 Anime0t4ku MiSTer Scripts",
+                    "title": "# Anime0t4ku MiSTer Scripts",
                     "description": "{anime0t4ku_mister_scripts:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "anime0t4ku_mister_scripts"}]}
                 },
                 {
-                    "title": "7 tty2oled Add-on script",
+                    "title": "# tty2oled Add-on script",
                     "description": "{tty2oled_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "tty2oled_files_downloader"}]}
                 },
                 {
-                    "title": "8 i2c2oled Add-on script",
+                    "title": "# i2c2oled Add-on script",
                     "description": "{i2c2oled_files_downloader:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "i2c2oled_files_downloader"}]}
                 },
                 {
-                    "title": "9 RetroSpy utility",
+                    "title": "# RetroSpy utility",
                     "description": "{retrospy/retrospy-MiSTer:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "retrospy/retrospy-MiSTer"}]}
                 }
@@ -955,12 +955,12 @@ def settings_screen_model(): return {
             "header": "Zaparoo Settings",
             "entries": [
                 {
-                    "title": "1 Zaparoo Database",
+                    "title": "# Zaparoo Database",
                     "description": "{ZaparooProject/Zaparoo_MiSTer:enabled}",
                     "actions": {"ok": _try_toggle_zaparoo_database_with_install_prompts()}
                 },
                 {
-                    "title": "2 Keep Zaparoo Frontend active",
+                    "title": "# Keep Zaparoo Frontend active",
                     "description": "{zaparoo_frontend_default:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "zaparoo_frontend_default"}]}
                 },
@@ -981,7 +981,7 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 BIOS Database",
+                    "title": "# BIOS Database",
                     "description": "{bios_getter:enabled} BIOS files for your systems",
                     "actions": {
                         "ok": [_roms_copyright_notice('bios_getter')],
@@ -989,7 +989,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "2 Arcade ROMs Database",
+                    "title": "# Arcade ROMs Database",
                     "description": "{arcade_roms_db_downloader:enabled} ROMs for Arcade Cores",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "arcade_roms_database_menu"}],
@@ -997,14 +997,14 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "3 Game Manuals (EN) DBs",
+                    "title": "# Game Manuals (EN) DBs",
                     "description": "{ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_description}By Moondandy",
                     "actions": {
                         "ok": [_manuals_early_access_notice("game_manuals_en_db_menu")],
                     }
                 },
                 {
-                    "title": "4 Dinierto GBA Borders",
+                    "title": "# Dinierto GBA Borders",
                     "description": "{Dinierto/MiSTer-GBA-Borders:enabled} Borders for the GBA Core",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
@@ -1012,7 +1012,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "5 Ranny Snice Wallpapers",
+                    "title": "# Ranny Snice Wallpapers",
                     "description": "{Ranny-Snice/Ranny-Snice-Wallpapers:enabled} Wallpapers for {rannysnice_wallpapers_filter} screens",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "rannysnice_wallpapers_menu"}],
@@ -1020,14 +1020,14 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "6 Anime0t4ku Wallpapers",
+                    "title": "# Anime0t4ku Wallpapers",
                     "description": "",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "anime0t4ku_wallpapers_menu"}],
                     }
                 },
                 {
-                    "title": "7 Uberyoji Boot ROMs",
+                    "title": "# Uberyoji Boot ROMs",
                     "description": "{uberyoji_mister_boot_roms_mgl:enabled} Boot ROMs for popular consoles",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
@@ -1110,237 +1110,237 @@ def settings_screen_model(): return {
                 },
                 {},
                 {
-                    "title": "1 3DO",
+                    "title": "# 3DO",
                     "description": "{ajgowans/manualsdb-3do:enabled} 133 | 310MB",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-3do"}]}
                 },
                 {
-                    "title": "2 Arcadia 2001",
+                    "title": "# Arcadia 2001",
                     "description": "{ajgowans/manualsdb-arcadia2001:enabled} 47",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-arcadia2001"}]}
                 },
                 {
-                    "title": "3 Atari 2600",
+                    "title": "# Atari 2600",
                     "description": "{ajgowans/manualsdb-atari2600:enabled} 490 | 445MB",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atari2600"}]}
                 },
                 {
-                    "title": "4 Atari 5200",
+                    "title": "# Atari 5200",
                     "description": "{ajgowans/manualsdb-atari5200:enabled} 77",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atari5200"}]}
                 },
                 {
-                    "title": "5 Atari 7800",
+                    "title": "# Atari 7800",
                     "description": "{ajgowans/manualsdb-atari7800:enabled} 61",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atari7800"}]}
                 },
                 {
-                    "title": "6 Atari Lynx",
+                    "title": "# Atari Lynx",
                     "description": "{ajgowans/manualsdb-atarilynx:enabled} 74",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atarilynx"}]}
                 },
                 {
-                    "title": "7 Atari XEGS",
+                    "title": "# Atari XEGS",
                     "description": "{ajgowans/manualsdb-atarixegs:enabled} 31",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atarixegs"}]}
                 },
                 {
-                    "title": "8 AVision",
+                    "title": "# AVision",
                     "description": "{ajgowans/manualsdb-avision:enabled} 5",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-avision"}]}
                 },
                 {
-                    "title": "9 Bally Astrocade",
+                    "title": "# Bally Astrocade",
                     "description": "{ajgowans/manualsdb-ballyastrocade:enabled} 41",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-ballyastrocade"}]}
                 },
                 {
-                    "title": "10 BBC Bridge",
+                    "title": "# BBC Bridge",
                     "description": "{ajgowans/manualsdb-bbcbridge:enabled} 3",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-bbcbridge"}]}
                 },
                 {
-                    "title": "11 CD-i",
+                    "title": "# CD-i",
                     "description": "{ajgowans/manualsdb-cdi:enabled} 65",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-cdi"}]}
                 },
                 {
-                    "title": "12 Channel F",
+                    "title": "# Channel F",
                     "description": "{ajgowans/manualsdb-channelf:enabled} 30",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-channelf"}]}
                 },
                 {
-                    "title": "13 ColecoVision",
+                    "title": "# ColecoVision",
                     "description": "{ajgowans/manualsdb-colecovision:enabled} 138",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-colecovision"}]}
                 },
                 {
-                    "title": "14 CreatiVision",
+                    "title": "# CreatiVision",
                     "description": "{ajgowans/manualsdb-creativision:enabled} 19",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-creativision"}]}
                 },
                 {
-                    "title": "15 FDS",
+                    "title": "# FDS",
                     "description": "{ajgowans/manualsdb-fds:enabled} 3",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-fds"}]}
                 },
                 {
-                    "title": "16 Game & Watch",
+                    "title": "# Game & Watch",
                     "description": "{ajgowans/manualsdb-gameandwatch:enabled} 19",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-gameandwatch"}]}
                 },
                 {
-                    "title": "17 Game Boy",
+                    "title": "# Game Boy",
                     "description": "{ajgowans/manualsdb-gameboy:enabled} 441 | 1.2GB",
                     "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-gameboy", "Game Boy Manuals", "441", "1.2 GB")}
                 },
                 {
-                    "title": "18 Game Gear",
+                    "title": "# Game Gear",
                     "description": "{ajgowans/manualsdb-gamegear:enabled} 202 | 600MB",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-gamegear"}]}
                 },
                 {
-                    "title": "19 GBA",
+                    "title": "# GBA",
                     "description": "{ajgowans/manualsdb-gba:enabled} 742 | 3.0GB",
                     "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-gba", "GBA Manuals", "742", "3.0 GB")}
                 },
                 {
-                    "title": "20 Game Boy Color",
+                    "title": "# Game Boy Color",
                     "description": "{ajgowans/manualsdb-gbc:enabled} 308 | 1.1GB",
                     "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-gbc", "Game Boy Color Manuals", "308", "1.1 GB")}
                 },
                 {
-                    "title": "21 Intellivision",
+                    "title": "# Intellivision",
                     "description": "{ajgowans/manualsdb-intellivision:enabled} 148",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-intellivision"}]}
                 },
                 {
-                    "title": "22 Jaguar",
+                    "title": "# Jaguar",
                     "description": "{ajgowans/manualsdb-jaguar:enabled} 60",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-jaguar"}]}
                 },
                 {
-                    "title": "23 Jaguar CD",
+                    "title": "# Jaguar CD",
                     "description": "{ajgowans/manualsdb-jaguarcd:enabled} 16",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-jaguarcd"}]}
                 },
                 {
-                    "title": "24 LCD Handhelds",
+                    "title": "# LCD Handhelds",
                     "description": "{ajgowans/manualsdb-lcdhandhelds:enabled} 2",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-lcdhandhelds"}]}
                 },
                 {
-                    "title": "25 Mega Drive",
+                    "title": "# Mega Drive",
                     "description": "{ajgowans/manualsdb-megadrive:enabled} 635 | 1.7GB",
                     "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-megadrive", "Mega Drive Manuals", "635", "1.7 GB")}
                 },
                 {
-                    "title": "26 N64",
+                    "title": "# N64",
                     "description": "{ajgowans/manualsdb-n64:enabled} 293 | 856MB",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-n64"}]}
                 },
                 {
-                    "title": "27 Neo Geo AES",
+                    "title": "# Neo Geo AES",
                     "description": "{ajgowans/manualsdb-neogeoaes:enabled} 42",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-neogeoaes"}]}
                 },
                 {
-                    "title": "28 Neo Geo CD",
+                    "title": "# Neo Geo CD",
                     "description": "{ajgowans/manualsdb-neogeocd:enabled} 35",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-neogeocd"}]}
                 },
                 {
-                    "title": "29 NES",
+                    "title": "# NES",
                     "description": "{ajgowans/manualsdb-nes:enabled} 759 | 960MB",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-nes"}]}
                 },
                 {
-                    "title": "30 Neo Geo Pocket",
+                    "title": "# Neo Geo Pocket",
                     "description": "{ajgowans/manualsdb-ngp:enabled} 3",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-ngp"}]}
                 },
                 {
-                    "title": "31 Neo Geo Pocket Color",
+                    "title": "# Neo Geo Pocket Color",
                     "description": "{ajgowans/manualsdb-ngpc:enabled} 28",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-ngpc"}]}
                 },
                 {
-                    "title": "32 Odyssey 2",
+                    "title": "# Odyssey 2",
                     "description": "{ajgowans/manualsdb-odyssey2:enabled} 79",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-odyssey2"}]}
                 },
                 {
-                    "title": "33 Pokemon Mini",
+                    "title": "# Pokemon Mini",
                     "description": "{ajgowans/manualsdb-pokemonmini:enabled} 7",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-pokemonmini"}]}
                 },
                 {
-                    "title": "34 PSX",
+                    "title": "# PSX",
                     "description": "{ajgowans/manualsdb-psx:enabled} 1295 | 6.1GB",
                     "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-psx", "PSX Manuals", "1295", "6.1 GB")}
                 },
                 {
-                    "title": "35 Pyuuta Jr",
+                    "title": "# Pyuuta Jr",
                     "description": "{ajgowans/manualsdb-pyuutajr:enabled} 9",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-pyuutajr"}]}
                 },
                 {
-                    "title": "36 Sega 32X",
+                    "title": "# Sega 32X",
                     "description": "{ajgowans/manualsdb-sega32x:enabled} 32",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-sega32x"}]}
                 },
                 {
-                    "title": "37 Sega CD",
+                    "title": "# Sega CD",
                     "description": "{ajgowans/manualsdb-segacd:enabled} 149",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-segacd"}]}
                 },
                 {
-                    "title": "38 Sega Saturn",
+                    "title": "# Sega Saturn",
                     "description": "{ajgowans/manualsdb-segasaturn:enabled} 256 | 1.4GB",
                     "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-segasaturn", "Sega Saturn Manuals", "256", "1.4 GB")}
                 },
                 {
-                    "title": "39 Sega SG-1000",
+                    "title": "# Sega SG-1000",
                     "description": "{ajgowans/manualsdb-segasg1000:enabled} 12",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-segasg1000"}]}
                 },
                 {
-                    "title": "40 SMS",
+                    "title": "# SMS",
                     "description": "{ajgowans/manualsdb-sms:enabled} 202 | 540MB",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-sms"}]}
                 },
                 {
-                    "title": "41 SNES",
+                    "title": "# SNES",
                     "description": "{ajgowans/manualsdb-snes:enabled} 766 | 1.9GB",
                     "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-snes", "SNES Manuals", "766", "1.9 GB")}
                 },
                 {
-                    "title": "42 Supervision",
+                    "title": "# Supervision",
                     "description": "{ajgowans/manualsdb-supervision:enabled} 53",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-supervision"}]}
                 },
                 {
-                    "title": "43 TurboGrafx-16",
+                    "title": "# TurboGrafx-16",
                     "description": "{ajgowans/manualsdb-turbografx16:enabled} 77",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-turbografx16"}]}
                 },
                 {
-                    "title": "44 TurboGrafx CD",
+                    "title": "# TurboGrafx CD",
                     "description": "{ajgowans/manualsdb-turbografxcd:enabled} 44",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-turbografxcd"}]}
                 },
                 {
-                    "title": "45 VC 4000",
+                    "title": "# VC 4000",
                     "description": "{ajgowans/manualsdb-vc4000:enabled} 47",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-vc4000"}]}
                 },
                 {
-                    "title": "46 Vectrex",
+                    "title": "# Vectrex",
                     "description": "{ajgowans/manualsdb-vectrex:enabled} 31",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-vectrex"}]}
                 },
                 {
-                    "title": "47 WonderSwan Color",
+                    "title": "# WonderSwan Color",
                     "description": "{ajgowans/manualsdb-wonderswanc:enabled} 1",
                     "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-wonderswanc"}]}
                 },
@@ -1360,7 +1360,7 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Firmware Update",
+                    "title": "# Firmware Update",
                     "description": "{pocket_firmware_update:enabled} Installs firmware {pocket_firmware_version} on your Pocket",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "pocket_firmware_update_menu"}],
@@ -1368,7 +1368,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "2 Pocket Backup",
+                    "title": "# Pocket Backup",
                     "description": "{pocket_backup:enabled} Backup saves & other important files",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "pocket_backup_menu"}],
@@ -1382,7 +1382,7 @@ def settings_screen_model(): return {
             "header": "Pocket Firmware Update",
             "entries": [
                 {
-                    "title": "1 Run now",
+                    "title": "# Run now",
                     "description": "",
                     "actions": {
                         "ok": [
@@ -1396,7 +1396,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "2 Run always with Update All",
+                    "title": "# Run always with Update All",
                     "description": "{pocket_firmware_update:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "pocket_firmware_update"}]
@@ -1409,7 +1409,7 @@ def settings_screen_model(): return {
             "header": "Pocket Backup",
             "entries": [
                 {
-                    "title": "1 Run now",
+                    "title": "# Run now",
                     "description": "",
                     "actions": {
                         "ok": [
@@ -1423,7 +1423,7 @@ def settings_screen_model(): return {
                     }
                 },
                 {
-                    "title": "2 Run always with Update All",
+                    "title": "# Run always with Update All",
                     "description": "{pocket_backup:enabled}",
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "pocket_backup"}]
@@ -1444,42 +1444,42 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Autoreboot (if needed)",
+                    "title": "# Autoreboot (if needed)",
                     "description": "{autoreboot:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "autoreboot"}]}
                 },
                 {
-                    "title": "2 Countdown Timer",
+                    "title": "# Countdown Timer",
                     "description": "{countdown_time}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "countdown_time"}]}
                 },
                 {
-                    "title": "3 Log Viewer",
+                    "title": "# Log Viewer",
                     "description": "Scrollable Screen: {log_viewer:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "log_viewer"}]}
                 },
                 {
-                    "title": "4 Overscan",
+                    "title": "# Overscan",
                     "description": "{overscan:overscan}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "overscan"}, {"type": "apply_overscan"}]}
                 },
                 {
-                    "title": "5 CRT Video Mode",
+                    "title": "# CRT Video Mode",
                     "description": "Select different resolutions",
                     "actions": {"ok": [_crt_warning("system_video_mode_menu")]}
                 },
                 {
-                    "title": "6 CRT Screen Position",
+                    "title": "# CRT Screen Position",
                     "description": "Adjust ←↑↓→ the image.",
                     "actions": {"ok": [_crt_warning("system_video_adjust_menu")]}
                 },
                 {
-                    "title": "7 Accessibility: Monochrome UI",
+                    "title": "# Accessibility: Monochrome UI",
                     "description": "{monochrome_ui:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "monochrome_ui"}, {"type": "apply_theme"}]}
                 },
                 # {
-                #     "title": "8 Mirror",
+                #     "title": "# Mirror",
                 #     "description": "{mirror}",
                 #     "actions": {"ok": [{"type": "rotate_variable", "target": "mirror"}]}
                 # }
@@ -1493,12 +1493,12 @@ def settings_screen_model(): return {
             ],
             "entries": [
                 {
-                    "title": "1 NTSC 60Hz",
+                    "title": "# NTSC 60Hz",
                     "description": "America, JP, PH, MN, KR, TW, EH",
                     "actions": {"ok": [{"type": "navigate", "target": "system_video_mode_menu_ntsc"}]}
                 },
                 {
-                    "title": "2 PAL 50Hz",
+                    "title": "# PAL 50Hz",
                     "description": "Europe, Asia, Africa, BR, AR, AU, PY, NZ, UY",
                     "actions": {"ok": [{"type": "navigate", "target": "system_video_mode_menu_pal"}]}
                 },
@@ -1549,12 +1549,12 @@ def settings_screen_model(): return {
             "header": "Ranny Snice Wallpapers Settings",
             "entries": [
                 {
-                    "title": "1 Wallpapers Enabled",
+                    "title": "# Wallpapers Enabled",
                     "description": "{Ranny-Snice/Ranny-Snice-Wallpapers:yesno}",
                     "actions":  {"ok": [{"type": "rotate_variable", "target": "Ranny-Snice/Ranny-Snice-Wallpapers"}]}
                 },
                 {
-                    "title": "2 Aspect Ratio",
+                    "title": "# Aspect Ratio",
                     "description": "{rannysnice_wallpapers_filter}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "rannysnice_wallpapers_filter"}]}
                 },
@@ -1569,12 +1569,12 @@ def settings_screen_model(): return {
             "header": "Anime0t4ku Wallpapers Settings",
             "entries": [
                 {
-                    "title": "1 Unrestricted Anime0t4ku 16:9 Wallpapers",
+                    "title": "# Unrestricted Anime0t4ku 16:9 Wallpapers",
                     "description": "{anime0t4ku_wallpapers:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "anime0t4ku_wallpapers"}]}
                 },
                 {
-                    "title": "2 PCN Challenge 16:9 Wallpapers",
+                    "title": "# PCN Challenge 16:9 Wallpapers",
                     "description": "{pcn_challenge_wallpapers:enabled}",
                     "actions": {
                         "ok": [{
@@ -1640,7 +1640,7 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Change Theme",
+                    "title": "# Change Theme",
                     "description": "{ui_theme}",
                     "actions": {"ok": [
                         {"type": "rotate_variable", "target": "ui_theme"},
@@ -1649,22 +1649,22 @@ def settings_screen_model(): return {
                     ]}
                 },
                 {
-                    "title": "2 Apply Theme in Log Viewer",
+                    "title": "# Apply Theme in Log Viewer",
                     "description": "{use_settings_screen_theme_in_log_viewer:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "use_settings_screen_theme_in_log_viewer"}]}
                 },
                 {
-                    "title": "3 Timeline in Log Viewer",
+                    "title": "# Timeline in Log Viewer",
                     "description": "{timeline_after_logs:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "timeline_after_logs"}]}
                 },
                 {
-                    "title": "4 Advanced Options",
+                    "title": "# Advanced Options",
                     "description": "",
                     "actions": {"ok": [{"type": "navigate", "target": "patrons_advanced_menu"}]}
                 },
                 {
-                    "title": "5 BACK",
+                    "title": "# BACK",
                     "description": "",
                     "actions": {"ok": [
                         {
@@ -1730,7 +1730,7 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 {is_test_spinner_firmware_applied:spinner_option}",
+                    "title": "# {is_test_spinner_firmware_applied:spinner_option}",
                     "description": "{is_test_spinner_firmware_applied:spinner_desc}",
                     "actions": {"ok": [
                         {"type": "calculate_is_test_spinner_firmware_applied"},
@@ -1761,7 +1761,7 @@ def settings_screen_model(): return {
                     ]}
                 },
                 {
-                    "title": "2 BACK",
+                    "title": "# BACK",
                     "description": "",
                     "actions": {"ok": [
                         {
@@ -1796,52 +1796,52 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Arcade Organizer Enabled",
+                    "title": "# Arcade Organizer Enabled",
                     "description": "{arcade_organizer:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer"}]}
                 },
                 {
-                    "title": "2 Arcade Organizer Folders",
+                    "title": "# Arcade Organizer Folders",
                     "description": "{arcade_organizer_orgdir:orgdir_description}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_orgdir"}]}
                 },
                 {
-                    "title": "3 Top additional folders",
+                    "title": "# Top additional folders",
                     "description": "{arcade_organizer_topdir:capitalize}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_topdir"}]}
                 },
                 {
-                    "title": "4 Skip MRA-Alternatives",
+                    "title": "# Skip MRA-Alternatives",
                     "description": "{arcade_organizer_skipalts:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_skipalts"}]}
                 },
                 {
-                    "title": "5 Alphabetic",
+                    "title": "# Alphabetic",
                     "description": "Options for 0-9 and A-Z folders",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_alphabetic_menu"}]}
                 },
                 {
-                    "title": "6 Region",
+                    "title": "# Region",
                     "description": "Options for Regions (World, Japan, USA...)",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_region_menu"}]}
                 },
                 {
-                    "title": "7 Collections",
+                    "title": "# Collections",
                     "description": "Options for Platform, Core, Category, Year...",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_collections_menu"}]}
                 },
                 {
-                    "title": "8 Video & Input",
+                    "title": "# Video & Input",
                     "description": "Options for Rotation, Resolution, Inputs...",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_video_input_menu"}]}
                 },
                 {
-                    "title": "9 Extra Software",
+                    "title": "# Extra Software",
                     "description": "Options for Homebrew, Bootleg, Hacks...",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_extra_software_menu"}]}
                 },
                 {
-                    "title": "0 Advanced Submenu",
+                    "title": "# Advanced Submenu",
                     "description": "Advanced Options",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_advanced_menu"}]}
                 },
@@ -1855,7 +1855,7 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Alphabetic folders",
+                    "title": "# Alphabetic folders",
                     "description": "{arcade_organizer_az_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_az_dir"}]}
                 },
@@ -1874,17 +1874,17 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Region folders",
+                    "title": "# Region folders",
                     "description": "{arcade_organizer_region_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_region_dir"}]}
                 },
                 {
-                    "title": "2 Main region",
+                    "title": "# Main region",
                     "description": "{arcade_organizer_region_main:arcade_organizer_region_main_formatter}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_region_main"}]}
                 },
                 {
-                    "title": "3 MRAs with other regions",
+                    "title": "# MRAs with other regions",
                     "description": "{arcade_organizer_region_others:bool_flag_presence_text=Region}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_region_others"}]}
                 },
@@ -1903,37 +1903,37 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Platform folders",
+                    "title": "# Platform folders",
                     "description": "{arcade_organizer_platform_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_platform_dir"}]}
                 },
                 {
-                    "title": "2 MiSTer Core folders",
+                    "title": "# MiSTer Core folders",
                     "description": "{arcade_organizer_core_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_core_dir"}]}
                 },
                 {
-                    "title": "3 Year options",
+                    "title": "# Year options",
                     "description": "",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_year_options_menu"}]}
                 },
                 {
-                    "title": "4 Category folders",
+                    "title": "# Category folders",
                     "description": "{arcade_organizer_category_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_category_dir"}]}
                 },
                 {
-                    "title": "5 Manufacturer folders",
+                    "title": "# Manufacturer folders",
                     "description": "{arcade_organizer_manufacturer_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_manufacturer_dir"}]}
                 },
                 {
-                    "title": "6 Series folders",
+                    "title": "# Series folders",
                     "description": "{arcade_organizer_series_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_series_dir"}]}
                 },
                 {
-                    "title": "7 Best-of folders",
+                    "title": "# Best-of folders",
                     "description": "{arcade_organizer_best_of_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_best_of_dir"}]}
                 },
@@ -1948,12 +1948,12 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Year folders",
+                    "title": "# Year folders",
                     "description": "{arcade_organizer_year_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_year_dir"}]}
                 },
                 {
-                    "title": "2 Decade folders",
+                    "title": "# Decade folders",
                     "description": "{arcade_organizer_decades_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_decades_dir"}]}
                 },
@@ -1972,42 +1972,42 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Resolution options",
+                    "title": "# Resolution options",
                     "description": "",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_resolution_menu"}]}
                 },
                 {
-                    "title": "2 Rotation options",
+                    "title": "# Rotation options",
                     "description": "",
                     "actions": {"ok": [{"type": "navigate", "target": "arcade_organizer_rotation_menu"}]}
                 },
                 {
-                    "title": "3 Move Inputs folders",
+                    "title": "# Move Inputs folders",
                     "description": "{arcade_organizer_move_inputs:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_move_inputs"}]}
                 },
                 {
-                    "title": "4 Num Buttons folders",
+                    "title": "# Num Buttons folders",
                     "description": "{arcade_organizer_num_buttons:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_num_buttons"}]}
                 },
                 {
-                    "title": "5 Special Inputs folders",
+                    "title": "# Special Inputs folders",
                     "description": "{arcade_organizer_special_controls:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_special_controls"}]}
                 },
                 {
-                    "title": "6 Num Controllers folders",
+                    "title": "# Num Controllers folders",
                     "description": "{arcade_organizer_num_controllers:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_num_controllers"}]}
                 },
                 {
-                    "title": "7 Cocktail folders",
+                    "title": "# Cocktail folders",
                     "description": "{arcade_organizer_cocktail_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_cocktail_dir"}]}
                 },
                 {
-                    "title": "8 Num Monitors folders",
+                    "title": "# Num Monitors folders",
                     "description": "{arcade_organizer_num_monitors:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_num_monitors"}]}
                 },
@@ -2024,22 +2024,22 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Resolution folders",
+                    "title": "# Resolution folders",
                     "description": "{arcade_organizer_resolution_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_resolution_dir"}]}
                 },
                 {
-                    "title": "2 15 kHz Scan Rate",
+                    "title": "# 15 kHz Scan Rate",
                     "description": "{arcade_organizer_resolution_15khz:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_resolution_15khz"}]}
                 },
                 {
-                    "title": "3 24 kHz Scan Rate",
+                    "title": "# 24 kHz Scan Rate",
                     "description": "{arcade_organizer_resolution_24khz:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_resolution_24khz"}]}
                 },
                 {
-                    "title": "4 31 kHz Scan Rate",
+                    "title": "# 31 kHz Scan Rate",
                     "description": "{arcade_organizer_resolution_31khz:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_resolution_31khz"}]}
                 },
@@ -2058,32 +2058,32 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Rotation folders",
+                    "title": "# Rotation folders",
                     "description": "{arcade_organizer_rotation_dir:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_rotation_dir"}]}
                 },
                 {
-                    "title": "2 Horizontal",
+                    "title": "# Horizontal",
                     "description": "{arcade_organizer_rotation_0:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_rotation_0"}]}
                 },
                 {
-                    "title": "3 Vertical Clockwise",
+                    "title": "# Vertical Clockwise",
                     "description": "{arcade_organizer_rotation_90:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_rotation_90"}]}
                 },
                 {
-                    "title": "4 Vertical Counter-Clockwise",
+                    "title": "# Vertical Counter-Clockwise",
                     "description": "{arcade_organizer_rotation_270:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_rotation_270"}]}
                 },
                 {
-                    "title": "5 Horizontal (reversed)",
+                    "title": "# Horizontal (reversed)",
                     "description": "{arcade_organizer_rotation_180:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_rotation_180"}]}
                 },
                 {
-                    "title": "6 Cores with Flip in opposite Rotations",
+                    "title": "# Cores with Flip in opposite Rotations",
                     "description": "{arcade_organizer_flip:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_flip"}]}
                 },
@@ -2100,22 +2100,22 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Homebrew",
+                    "title": "# Homebrew",
                     "description": "{arcade_organizer_homebrew:bool_flag_presence_text=Homebrew}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_homebrew"}]}
                 },
                 {
-                    "title": "2 Bootleg",
+                    "title": "# Bootleg",
                     "description": "{arcade_organizer_bootleg:bool_flag_presence_text=Bootleg}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_bootleg"}]}
                 },
                 {
-                    "title": "3 Enhancements",
+                    "title": "# Enhancements",
                     "description": "{arcade_organizer_enhancements:bool_flag_presence_text=Enhancements}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_enhancements"}]}
                 },
                 {
-                    "title": "4 Translations",
+                    "title": "# Translations",
                     "description": "{arcade_organizer_translations:bool_flag_presence_text=Translations}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_translations"}]}
                 },
@@ -2131,17 +2131,17 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
-                    "title": "1 Chronological sort below",
+                    "title": "# Chronological sort below",
                     "description": "{arcade_organizer_prepend_year:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_prepend_year"}]}
                 },
                 {
-                    "title": "2 Verbose script output",
+                    "title": "# Verbose script output",
                     "description": "{arcade_organizer_verbose:yesno}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_organizer_verbose"}]}
                 },
                 {
-                    "title": "3 Clean Folders",
+                    "title": "# Clean Folders",
                     "description": "Deletes the Arcade Organizer folders",
                     "actions": {"ok": [
                         {"type": "calculate_arcade_organizer_folders"},
@@ -2178,7 +2178,7 @@ def settings_screen_model(): return {
 
 
 def _retroaccount_account_entry(): return {
-    "title": "7 Account",
+    "title": "# Account",
     "description": "From RetroAccount. {retroaccount_checking}",
     "actions": {
         "ok": [{"type": "navigate", "target": "retroaccount_account_menu"}],
@@ -2187,7 +2187,7 @@ def _retroaccount_account_entry(): return {
 
 
 def _retroaccount_login_entry(): return {
-    "title": "7 Login",
+    "title": "# Login",
     "description": "Login to RetroAccount",
     "actions": {"ok": [{
         "ui": "device_login",
@@ -2216,7 +2216,7 @@ def _main_menu(retroaccount_logged_in): return {
     ],
     "entries": [
         {
-            "title": "1 Main Distribution",
+            "title": "# Main Distribution",
             "description": "{main_updater:enabled} Main cores from {encc_forks}",
             "actions": {
                 "ok": [{"type": "navigate", "target": "main_distribution_menu"}],
@@ -2224,7 +2224,7 @@ def _main_menu(retroaccount_logged_in): return {
             }
         },
         {
-            "title": "2 JTCORES for MiSTer",
+            "title": "# JTCORES for MiSTer",
             "description": "{jotego_updater:enabled} Cores by Jotego Team ({download_beta_cores})",
             "actions": {
                 "ok": [{"type": "navigate", "target": "jtcores_menu"}],
@@ -2233,35 +2233,35 @@ def _main_menu(retroaccount_logged_in): return {
         },
         {},  # separator
         {
-            "title": "3 Other Cores",
+            "title": "# Other Cores",
             "description": "Coin-Op Collection, LLAPI, Y/C, more...",
             "actions": {
                 "ok": [{"type": "navigate", "target": "other_cores_menu"}],
             }
         },
         {
-            "title": "4 Tools & Scripts",
+            "title": "# Tools & Scripts",
             "description": "Zaparoo, Names TXT, Scripts...",
             "actions": {
                 "ok": [{"type": "navigate", "target": "tools_and_scripts_menu"}],
             }
         },
         {
-            "title": "5 Extra Content",
+            "title": "# Extra Content",
             "description": "ROMs, BIOS & Wallpapers",
             "actions": {
                 "ok": [{"type": "navigate", "target": "extra_content_menu"}],
             }
         },
         {
-            "title": "6 Analogue Pocket",
+            "title": "# Analogue Pocket",
             "description": "Firmware Update & Backups",
             "actions": {"ok": [{"type": "navigate", "target": "analogue_pocket_menu"}]}
         },
         {},  # separator
         _retroaccount_account_entry() if retroaccount_logged_in else _retroaccount_login_entry(),
         {
-            "title": "8 Patrons Menu",
+            "title": "# Patrons Menu",
             "description": "Timeline, Themes, etc... 2026.02.13",
             "actions": {"ok": [
                 {"type": "calculate_has_right_available_code"},
@@ -2306,7 +2306,7 @@ def _main_menu(retroaccount_logged_in): return {
             ]}
         },
         {
-            "title": "9 System Options",
+            "title": "# System Options",
             "description": "",
             "actions": {"ok": [{"type": "navigate", "target": "system_options_menu"}]}
         },
