@@ -238,6 +238,7 @@ class _Menu(UiSection):
         self._data = data
         self._state = state
         self._hotkeys = {}
+        self._last_hotkey = None
         self._separators = {}
         self._first_render = True
         entries = []
@@ -251,7 +252,8 @@ class _Menu(UiSection):
 
             entry, auto_number = _with_auto_numbered_title(entry, auto_number)
             first_letter = ord(entry['title'][0:1].lower())
-            self._hotkeys[first_letter] = target_index
+            self._hotkeys[first_letter] = self._hotkeys.get(first_letter, [])
+            self._hotkeys[first_letter].append(target_index)
             entries.append(entry)
 
         self._data['entries'] = entries
@@ -290,24 +292,40 @@ class _Menu(UiSection):
 
         key = self._drawer.paint()
         if key == Key.UP:
+            self._last_hotkey = None
             self._state.navigate_up()
             self._clamp_to_active_action()
         elif key == Key.DOWN:
+            self._last_hotkey = None
             self._state.navigate_down()
             self._clamp_to_active_action()
         elif key == Key.LEFT:
+            self._last_hotkey = None
             self._navigate_active_left()
         elif key == Key.RIGHT:
+            self._last_hotkey = None
             self._navigate_active_right()
         elif key == Key.ENTER:
             return _make_action_effect_chain(self._data, self._state)
         elif key in self._hotkeys:
-            self._state.reset_position(self._hotkeys[key])
+            self._navigate_hotkey(key)
             self._clamp_to_active_action()
         elif key == Key.NONE and 'on_idle' in self._data:
             return EffectChain(self._data['on_idle'])
+        elif key != Key.NONE:
+            self._last_hotkey = None
 
         return key
+
+    def _navigate_hotkey(self, key):
+        matches = self._hotkeys[key]
+        current_position = self._state.position()
+        if key == self._last_hotkey and current_position in matches:
+            current_match_index = matches.index(current_position)
+            self._state.reset_position(matches[(current_match_index + 1) % len(matches)])
+        else:
+            self._state.reset_position(matches[0])
+        self._last_hotkey = key
 
     def _is_action_active(self, action_index):
         action = self._data['actions'][action_index]
