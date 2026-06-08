@@ -317,6 +317,7 @@ def ajgowans_manualsdbs() -> List[Database]:
 def removed_db_ids() -> dict[str, str]:
     return {
         'n64_dev': 'https://raw.githubusercontent.com/RobertPeip/Mister64/db/db.json.zip',
+        'misteraddons/reflexadapt': 'https://github.com/misteraddons/Reflex-Adapt/raw/main/reflexadapt.json.zip',
         'RGarciaLago/Wallpaper_Collection': 'https://raw.githubusercontent.com/RGarciaLago/Wallpaper_Collection/db/db.json.zip'
     }
 
