@@ -56,7 +56,7 @@ def pocket_firmware_update(curl_ssl: str, local_repository: LocalRepository, log
         firmware_name = Path(firmware).name.lower()
         if firmware_name == firmware_info['file'].lower():
             already_on_latest_firmware = True
-            break
+            continue
 
         logger.print(f'Removing old firmware file: {firmware_name}')
         os.remove(firmware)
