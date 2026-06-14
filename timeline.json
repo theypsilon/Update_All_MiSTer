@@ -1,0 +1,99 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Blood Bros Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Cave Banpresto Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Deco 16 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Sky Smasher Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Star Wars Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Blood Bros MRA: Blood Bros",
+              "type": "standalone"
+            },
+            {
+              "name": "Cave Banpresto MRAs: Air Gallet, Hotdog Storm, Mazinger Z, Metamoqester, Pretty Soldier Sailor Moon, + 30 alts",
+              "type": "standalone"
+            },
+            {
+              "name": "Deco 16 MRA: Caveman Ninja",
+              "type": "standalone"
+            },
+            {
+              "name": "SMS MRAs: Astro Flash, Fantasy Zone II - The Tears of Opa-Opa, Hang On Jr, Megumi Rescue, Opa Opa, Riddle of Pythagoras, Slap Shooter, Tetris, Transformer",
+              "type": "standalone"
+            },
+            {
+              "name": "Sky Smasher MRA: Sky Smasher",
+              "type": "standalone"
+            },
+            {
+              "name": "Star Wars MRAs: Empire Strikes Back, Star Wars",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "Downloader",
+              "type": "standalone"
+            },
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1780857854,
+        1780912798,
+        1780955478,
+        1781016581,
+        1781071660,
+        1781135610,
+        1781167664,
+        1781182011,
+        1781273683,
+        1781326678,
+        1781362477,
+        1781384015,
+        1781388297
+      ],
+      "title": "Files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1568,
+    "total_file_updates": 2299,
+    "unique_files": 1513
+  }
+}
