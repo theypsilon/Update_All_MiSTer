@@ -21,11 +21,15 @@ from typing import Optional, Protocol, TextIO, Union
 
 
 class RetroAccountSyncOutput(Protocol):
+    def sync_started(self) -> None: pass
+    def sync_finished(self) -> None: pass
     def jtbeta_updated(self) -> None: pass
     def credentials_removed(self, reason: str) -> None: pass
 
 
 class NoopRetroAccountSyncOutput(RetroAccountSyncOutput):
+    def sync_started(self) -> None: pass
+    def sync_finished(self) -> None: pass
     def jtbeta_updated(self) -> None: pass
     def credentials_removed(self, reason: str) -> None: pass
 
@@ -33,6 +37,12 @@ class NoopRetroAccountSyncOutput(RetroAccountSyncOutput):
 class LtsvRetroAccountSyncOutput(RetroAccountSyncOutput):
     def __init__(self, stream: Optional[TextIO] = None) -> None:
         self._stream = sys.stdout if stream is None else stream
+
+    def sync_started(self) -> None:
+        self._emit('retroaccount_sync_start')
+
+    def sync_finished(self) -> None:
+        self._emit('retroaccount_sync_end')
 
     def jtbeta_updated(self) -> None:
         self._emit('retroaccount_jtbeta_updated')

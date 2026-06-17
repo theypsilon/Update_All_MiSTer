@@ -189,7 +189,12 @@ class TestRetroAccountService(unittest.TestCase):
 
         sut.mister_sync(LtsvRetroAccountSyncOutput(stream))
 
-        self.assertEqual('DLP1\tevent:retroaccount_jtbeta_updated\n', stream.getvalue())
+        self.assertEqual(
+            'DLP1\tevent:retroaccount_sync_start\n'
+            'DLP1\tevent:retroaccount_jtbeta_updated\n'
+            'DLP1\tevent:retroaccount_sync_end\n',
+            stream.getvalue()
+        )
 
     def test_mister_sync___when_session_is_revoked___emits_ltsv_credentials_removed_event(self):
         stream = io.StringIO()
@@ -201,13 +206,20 @@ class TestRetroAccountService(unittest.TestCase):
 
         sut.mister_sync(LtsvRetroAccountSyncOutput(stream))
 
-        self.assertEqual('DLP1\tevent:retroaccount_credentials_removed\treason:revoked\n', stream.getvalue())
+        self.assertEqual(
+            'DLP1\tevent:retroaccount_sync_start\n'
+            'DLP1\tevent:retroaccount_credentials_removed\treason:revoked\n'
+            'DLP1\tevent:retroaccount_sync_end\n',
+            stream.getvalue()
+        )
 
     def test_noop_retroaccount_sync_output___accepts_events(self):
         output = NoopRetroAccountSyncOutput()
 
+        output.sync_started()
         output.jtbeta_updated()
         output.credentials_removed('revoked')
+        output.sync_finished()
 
     def test_mister_sync___when_previous_sync_enabled_extras_and_next_sync_has_no_user_json___disables_extras(self):
         sut, file_system, gateway, _encryption = tester(

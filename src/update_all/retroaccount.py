@@ -260,6 +260,7 @@ class RetroAccountService(RetroAccountClient):
         return result
 
     def mister_sync(self, output: RetroAccountSyncOutput) -> None:
+        output.sync_started()
         self._logger.bench('RetroAccountService.mister_sync start')
         self._reset_sync_effects()
         try:
@@ -269,8 +270,9 @@ class RetroAccountService(RetroAccountClient):
         except Exception as e:
             self._logger.debug('RetroAccountService.mister_sync failed:')
             self._logger.debug(e)
-
-        self._logger.bench('RetroAccountService.mister_sync end')
+        finally:
+            self._logger.bench('RetroAccountService.mister_sync end')
+            output.sync_finished()
 
     def _build_mister_sync_transition(self) -> Optional[_SyncTransition]:
         if not self._file_system.is_file(FILE_retroaccount_user_json):
