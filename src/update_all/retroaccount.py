@@ -30,6 +30,7 @@ from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbet
     FILE_patreon_key_prev, FILE_JOTEGO_mra_pack_json, FILE_JOTEGO_mra_pack_ini
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.retroaccount_gateway import RetroAccountGateway, SessionResult
+from update_all.retroaccount_sync_output import NoopRetroAccountSyncOutput, RetroAccountSyncOutput
 from update_all.retroaccount_ui import DeviceLogin, DeviceLoginRenderer, RetroAccountClient
 from update_all.ui_engine import UiSection
 from update_all.ui_engine_dialog_application import UiDialogDrawer
@@ -113,6 +114,15 @@ def any_to_retroaccount_file_description(val: Any, discard_prev: bool = False) -
 
     result['prev'] = prev
     return result
+
+
+def _credentials_removed_reason(transition: _SyncTransition) -> str:
+    if transition.credentials_were_revoked:
+        return 'revoked'
+    if transition.credentials_were_corrupted:
+        return 'corrupted'
+    return 'unknown'
+
 
 class RetroAccountService(RetroAccountClient):
     def __init__(self, logger: Logger, file_system: FileSystem, config_provider: GenericProvider[Config], retroaccount_gateway: RetroAccountGateway, encryption: Encryption):
@@ -249,13 +259,13 @@ class RetroAccountService(RetroAccountClient):
                 self._logger.print('Device code ', device_code, ' authorized for device id ', device_id)
         return result
 
-    def mister_sync(self) -> None:
+    def mister_sync(self, output: RetroAccountSyncOutput) -> None:
         self._logger.bench('RetroAccountService.mister_sync start')
         self._reset_sync_effects()
         try:
             transition = self._build_mister_sync_transition()
             if transition is not None:
-                self._apply_sync_transition(transition)
+                self._apply_sync_transition(transition, output)
         except Exception as e:
             self._logger.debug('RetroAccountService.mister_sync failed:')
             self._logger.debug(e)
@@ -358,7 +368,7 @@ class RetroAccountService(RetroAccountClient):
         self._has_installed_jtbeta = False
         self.consume_important_messages()
 
-    def _apply_sync_transition(self, transition: _SyncTransition) -> None:
+    def _apply_sync_transition(self, transition: _SyncTransition, output: RetroAccountSyncOutput) -> None:
         self._logger.debug(transition)
 
         if transition.update_all_extras_active is not None:
@@ -397,6 +407,7 @@ class RetroAccountService(RetroAccountClient):
 
         if transition.remove_user_json:
             self._file_system.unlink(FILE_retroaccount_user_json, verbose=False)
+            output.credentials_removed(_credentials_removed_reason(transition))
 
         if transition.remove_update_all_patreon_key:
             self._unlink_update_all_patreon_key()
@@ -409,6 +420,8 @@ class RetroAccountService(RetroAccountClient):
         if transition.install_jtbeta_file:
             self._logger.bench('RetroAccountService: Installing JTBeta START')
             self._install_jtbeta(transition.install_jtbeta_file)
+            if self._has_installed_jtbeta:
+                output.jtbeta_updated()
             self._logger.bench('RetroAccountService: Installing JTBeta END')
 
         if transition.install_jt_mra_pack:
@@ -528,7 +541,7 @@ class RetroAccountService(RetroAccountClient):
             self._logger.debug(e)
             return False
 
-        self.mister_sync()
+        self.mister_sync(NoopRetroAccountSyncOutput())
         return True
 
     def _apply_local_device_logout_effects(self) -> None:

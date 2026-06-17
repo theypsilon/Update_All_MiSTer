@@ -273,7 +273,8 @@ class UpdateAllServiceTester(UpdateAllService):
                  store_provider: GenericProvider[LocalStore] = None,
                  ini_repository: IniRepository = None,
                  local_repository: LocalRepository = None,
-                 zaparoo_service: ZaparooService = None):
+                 zaparoo_service: ZaparooService = None,
+                 retroaccount: RetroAccountService = None):
 
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
@@ -281,7 +282,7 @@ class UpdateAllServiceTester(UpdateAllService):
         store_provider = store_provider or GenericProvider[LocalStore]()
 
         ao_service = ArcadeOrganizerServiceStub()
-        retroaccount = RetroAccountServiceTester(file_system=file_system, config_provider=config_provider)
+        retroaccount = retroaccount or RetroAccountServiceTester(file_system=file_system, config_provider=config_provider)
         environment_setup = environment_setup or EnvironmentSetupTester(file_system=file_system, os_utils=os_utils, config_provider=config_provider)
         settings_screen = settings_screen or SettingsScreenTester(config_provider=config_provider, file_system=file_system, os_utils=os_utils, ao_service=ao_service, retroaccount=retroaccount)
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
@@ -340,6 +341,7 @@ class RetroAccountServiceTester(RetroAccountService):
             retroaccount_gateway or RetroAccountGatewayTester(config_provider=config_provider, file_system=file_system),
             encryption or EncryptionTester(config_provider=config_provider, file_system=file_system),
         )
+        self.mister_sync_calls = []
 
-    def mister_sync(self) -> None:
-        pass
+    def mister_sync(self, output) -> None:
+        self.mister_sync_calls.append(output)

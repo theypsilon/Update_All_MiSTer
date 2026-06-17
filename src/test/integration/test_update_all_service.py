@@ -23,17 +23,18 @@ from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
+from update_all.retroaccount_sync_output import LtsvRetroAccountSyncOutput
 from update_all.update_all_service import UpdateAllService, UpdateAllServicePass
 from update_all.zaparoo_service import FILE_zaparoo_frontend
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.update_all_service_tester import UpdateAllServiceFactoryTester, UpdateAllServiceTester, \
-    default_env, EnvironmentSetupStub, default_databases, local_store
+    default_env, EnvironmentSetupStub, default_databases, local_store, RetroAccountServiceTester
 from test.zaparoo_service_tester import ZaparooServiceTester
 
 
 def tester(files=None, folders=None, config: Config = None, store: LocalStore = None, env_stub: EnvironmentSetupStub = None,
-           settings_screen=None, zaparoo_service=None):
+           settings_screen=None, zaparoo_service=None, retroaccount=None):
     state = FileSystemState(files=files, folders=folders)
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config or Config(databases=default_databases()))
@@ -47,6 +48,7 @@ def tester(files=None, folders=None, config: Config = None, store: LocalStore = 
         store_provider=store_provider,
         settings_screen=settings_screen,
         zaparoo_service=zaparoo_service,
+        retroaccount=retroaccount,
     ), state
 
 
@@ -179,3 +181,17 @@ class TestUpdateAllService(unittest.TestCase):
         sut._start_background_jobs.assert_not_called()
         settings_screen.load_chip_id_result_menu.assert_called_once_with()
         sut._hard_wait_background_jobs.assert_not_called()
+
+    def test_full_run___with_retroaccount_sync_pass___syncs_and_returns_without_update_flow(self):
+        events = []
+        retroaccount = RetroAccountServiceTester()
+        sut, _ = tester(config=Config(databases=default_databases()), retroaccount=retroaccount)
+        sut._start_background_jobs = lambda: events.append('start_background_jobs')
+        sut._hard_wait_background_jobs = lambda: events.append('hard_wait_background_jobs')
+
+        result = sut.full_run(UpdateAllServicePass.RetroAccountSync)
+
+        self.assertEqual(0, result)
+        self.assertEqual([], events)
+        self.assertEqual(1, len(retroaccount.mister_sync_calls))
+        self.assertIsInstance(retroaccount.mister_sync_calls[0], LtsvRetroAccountSyncOutput)

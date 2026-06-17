@@ -60,6 +60,7 @@ from update_all.fetcher import Fetcher
 from update_all.mister_video_mode_ui import MisterVideoModeService
 from update_all.retroaccount import RetroAccountService
 from update_all.retroaccount_gateway import RetroAccountGateway
+from update_all.retroaccount_sync_output import LtsvRetroAccountSyncOutput, NoopRetroAccountSyncOutput
 from update_all.zaparoo_service import ZaparooService
 
 
@@ -68,6 +69,7 @@ class UpdateAllServicePass(enum.Enum):
     NewRun = 0
     Continue = 1
     NewRunNonStop = 2
+    RetroAccountSync = 3
 
 
 class UpdateAllServiceFactory:
@@ -255,6 +257,12 @@ class UpdateAllService:
         if run_pass == UpdateAllServicePass.Continue:
             self._environment_setup.setup_environment(ts)
             self._pre_run_tweaks()
+        elif run_pass == UpdateAllServicePass.RetroAccountSync:
+            env_result = self._environment_setup.setup_environment(ts)
+            if env_result.requires_early_exit:
+                return EXIT_CODE_REQUIRES_EARLY_EXIT
+            self._retroaccount.mister_sync(LtsvRetroAccountSyncOutput())
+            return self._exit_code
         else:
             env_result = self._environment_setup.setup_environment(ts)
             if env_result.requires_early_exit:
@@ -360,7 +368,7 @@ class UpdateAllService:
     def _background_job(self) -> None:
         self._logger.bench('UpdateAllService: Background job START')
         self._update_all_md5 = self._calc_md5()
-        self._retroaccount.mister_sync()
+        self._retroaccount.mister_sync(NoopRetroAccountSyncOutput())
         self._logger.bench('UpdateAllService: Background job END')
 
     def _show_intro(self) -> None:

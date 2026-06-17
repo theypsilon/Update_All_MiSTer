@@ -695,7 +695,7 @@ class _RetroAccountStub:
             self._verified_chip_id = chip_id.lower()
         return ChipIdAttachResult(self._attach_result, self._attach_status_code)
 
-    def mister_sync(self):
+    def mister_sync(self, output):
         self.mister_sync_calls += 1
 
     def device_logout(self):

@@ -30,7 +30,7 @@ set -euo pipefail
 export DEBUG="\${DEBUG:-false}"
 tail -n +8 "\${0}" | xzcat -d -c > "/tmp/update_all.pyz"
 chmod a+x "/tmp/update_all.pyz"
-"/tmp/update_all.pyz" "\${1:-}"
+"/tmp/update_all.pyz" "\$@"
 exit 0
 EOF
 

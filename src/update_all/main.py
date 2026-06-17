@@ -71,6 +71,8 @@ def execute_update_all(logger: FileLoggerDecorator, local_repository_provider, e
         full_run_param = UpdateAllServicePass.Continue
     elif len(args) > 1 and args[1] == '--no-continue':
         full_run_param = UpdateAllServicePass.NewRunNonStop
+    elif len(args) > 1 and args[1] == '--retroaccount-sync':
+        full_run_param = UpdateAllServicePass.RetroAccountSync
     else:
         full_run_param = UpdateAllServicePass.NewRun
 

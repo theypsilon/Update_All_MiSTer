@@ -248,7 +248,7 @@ echo "Launching Update All" ; echo
 chmod +x "${RUN_TOOL_PATH}"
 
 set +e
-${RUN_TOOL_PATH}
+${RUN_TOOL_PATH} "$@"
 UA_RET=$?
 set -e
 

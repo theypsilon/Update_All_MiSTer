@@ -18,6 +18,7 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+import io
 import json
 import unittest
 
@@ -30,6 +31,7 @@ from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbet
 from update_all.other import GenericProvider
 from update_all.retroaccount import BenefitState, ChipIdAttachResult, RetroAccountService, any_to_retroaccount_file_description
 from update_all.retroaccount_gateway import SessionResult
+from update_all.retroaccount_sync_output import LtsvRetroAccountSyncOutput, NoopRetroAccountSyncOutput
 
 
 _CORRUPTED_CREDENTIALS_MESSAGE = 'Your credentials are corrupted!\nDo you have any problems with your storage (SD)?'
@@ -59,7 +61,7 @@ class TestRetroAccountService(unittest.TestCase):
         })
         activate_prev_patreon_key_url(sut)
 
-        sut.mister_sync()
+        mister_sync(sut)
 
         self.assertFalse(file_system.is_file(FILE_patreon_key))
         self.assertFalse(file_system.is_file(FILE_patreon_key_md5))
@@ -75,7 +77,7 @@ class TestRetroAccountService(unittest.TestCase):
         })
         activate_prev_patreon_key_url(sut)
 
-        sut.mister_sync()
+        mister_sync(sut)
 
         self.assertFalse(file_system.is_file(FILE_retroaccount_user_json))
         self.assertFalse(file_system.is_file(FILE_patreon_key))
@@ -92,7 +94,7 @@ class TestRetroAccountService(unittest.TestCase):
         )
         activate_prev_patreon_key_url(sut)
 
-        sut.mister_sync()
+        mister_sync(sut)
 
         self.assertEqual('device-1', file_system.read_file_contents(FILE_retroaccount_device_id))
         self.assertFalse(file_system.is_file(FILE_retroaccount_user_json))
@@ -109,7 +111,7 @@ class TestRetroAccountService(unittest.TestCase):
             gateway_response=403,
         )
 
-        sut.mister_sync()
+        mister_sync(sut)
 
         self.assertEqual([('device-1', 'refresh-1', 'old-md5', None)], gateway.mister_sync_calls)
         self.assertTrue(file_system.is_file(FILE_retroaccount_user_json))
@@ -134,7 +136,7 @@ class TestRetroAccountService(unittest.TestCase):
             gateway_response=gateway_response,
         )
 
-        sut.mister_sync()
+        mister_sync(sut)
 
         saved_user = file_system.load_dict_from_file(FILE_retroaccount_user_json)
         self.assertEqual('refresh-2', saved_user['refresh_token'])
@@ -162,7 +164,7 @@ class TestRetroAccountService(unittest.TestCase):
             gateway_response={'benefits': {'jtbeta_file': {'url': 'https://example.com/jtbeta.zip', 'md5': 'expected-md5', 'size': 1024}}},
         )
 
-        sut.mister_sync()
+        mister_sync(sut)
 
         self.assertEqual(('device-1', 'refresh-1', 'old-md5', None), gateway.mister_sync_calls[0])
         self.assertEqual([(FILE_jtbeta, 'https://example.com/jtbeta.zip')], gateway.install_calls)
@@ -177,6 +179,36 @@ class TestRetroAccountService(unittest.TestCase):
             ('debug', f'jtbeta.zip also copied to {usb_jtbeta_path}'),
         ], sut.consume_important_messages())
 
+    def test_mister_sync___when_session_returns_jtbeta_url___emits_ltsv_jtbeta_updated_event(self):
+        stream = io.StringIO()
+        sut, _file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'jtbeta_file': {'url': 'https://example.com/jtbeta.zip', 'md5': 'expected-md5', 'size': 1024}}},
+        )
+
+        sut.mister_sync(LtsvRetroAccountSyncOutput(stream))
+
+        self.assertEqual('DLP1\tevent:retroaccount_jtbeta_updated\n', stream.getvalue())
+
+    def test_mister_sync___when_session_is_revoked___emits_ltsv_credentials_removed_event(self):
+        stream = io.StringIO()
+        sut, _file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.REVOKED,
+            gateway_response=401,
+        )
+
+        sut.mister_sync(LtsvRetroAccountSyncOutput(stream))
+
+        self.assertEqual('DLP1\tevent:retroaccount_credentials_removed\treason:revoked\n', stream.getvalue())
+
+    def test_noop_retroaccount_sync_output___accepts_events(self):
+        output = NoopRetroAccountSyncOutput()
+
+        output.jtbeta_updated()
+        output.credentials_removed('revoked')
+
     def test_mister_sync___when_previous_sync_enabled_extras_and_next_sync_has_no_user_json___disables_extras(self):
         sut, file_system, gateway, _encryption = tester(
             files=default_sync_files(),
@@ -185,11 +217,11 @@ class TestRetroAccountService(unittest.TestCase):
         )
         activate_prev_patreon_key_url(sut)
 
-        sut.mister_sync()
+        mister_sync(sut)
         self.assertTrue(sut.is_update_all_extras_active())
 
         file_system.unlink(FILE_retroaccount_user_json, verbose=False)
-        sut.mister_sync()
+        mister_sync(sut)
 
         self.assertFalse(sut.is_update_all_extras_active())
         self.assertFalse(file_system.is_file(FILE_patreon_key))
@@ -206,7 +238,7 @@ class TestRetroAccountService(unittest.TestCase):
         )
         activate_prev_patreon_key_url(sut)
 
-        sut.mister_sync()
+        mister_sync(sut)
         self.assertTrue(sut.is_update_all_extras_active())
         self.assertEqual('MiSTer Living Room', sut.get_device_label())
 
@@ -260,7 +292,7 @@ class TestRetroAccountService(unittest.TestCase):
             FILE_retroaccount_verified_chip_id: {'content': '0123456789abcdef'},
         })
 
-        sut.mister_sync()
+        mister_sync(sut)
 
         self.assertFalse(file_system.is_file(FILE_retroaccount_verified_chip_id))
 
@@ -328,6 +360,10 @@ class TestAnyToRetroAccountFileDescription(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertIsNone(any_to_retroaccount_file_description(value))
 
+
+
+def mister_sync(sut: RetroAccountService) -> None:
+    sut.mister_sync(NoopRetroAccountSyncOutput())
 
 def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None, logger=None):
     config = Config()
