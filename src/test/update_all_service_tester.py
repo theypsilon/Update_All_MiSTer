@@ -16,8 +16,6 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 from typing import Any, Callable, Optional
-from unittest.mock import MagicMock
-
 from test.countdown_stub import CountdownStub
 from test.fake_filesystem import FileSystemFactory
 from test.fetcher_stub import FetcherStub
@@ -125,11 +123,21 @@ class IniRepositoryTester(IniRepository):
 
 class SettingsScreenPrinterStub(SettingsScreenPrinter):
     def __init__(self, factory: UiDialogDrawerFactory = None, theme_manager: ColorThemeManager = None):
-        self._factory = factory or MagicMock()
-        self._theme_manager = theme_manager or MagicMock()
+        self._factory = factory or _UiDialogDrawerFactoryStub()
+        self._theme_manager = theme_manager or _ColorThemeManagerStub()
 
     def initialize_screen(self, screen_dims=None):
         return self._factory, self._theme_manager, None
+
+
+class _UiDialogDrawerFactoryStub:
+    def create_ui_dialog_drawer(self, _interpolator):
+        return None
+
+
+class _ColorThemeManagerStub:
+    def set_theme(self, _theme):
+        pass
 
 
 class UiRuntimeStub(UiRuntime):
@@ -188,6 +196,18 @@ class SettingsScreenTester(SettingsScreen):
             ao_service=ao_service or ArcadeOrganizerServiceStub(),
             retroaccount=retroaccount or RetroAccountServiceTester(file_system=file_system, config_provider=config_provider),
         )
+
+
+class SettingsScreenStub:
+    def __init__(self, load_chip_id_result_menu_result=None):
+        self._load_chip_id_result_menu_result = load_chip_id_result_menu_result
+        self.load_chip_id_result_menu_calls = 0
+
+    def load_chip_id_result_menu(self):
+        self.load_chip_id_result_menu_calls += 1
+        if isinstance(self._load_chip_id_result_menu_result, Exception):
+            raise self._load_chip_id_result_menu_result
+        return self._load_chip_id_result_menu_result
 
 
 class UiContextStub(UiContext):
@@ -312,9 +332,28 @@ class UpdateAllServiceTester(UpdateAllService):
     def _hard_wait_background_jobs(self) -> None:
         pass
 
+
+class UpdateAllServiceFlowTester(UpdateAllServiceTester):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.events = []
+
+    def _start_background_jobs(self) -> None:
+        self.events.append('start_background_jobs')
+
+    def _hard_wait_background_jobs(self) -> None:
+        self.events.append('hard_wait_background_jobs')
+
+    def _enable_zaparoo_features_if_active(self) -> None:
+        self.events.append('enable_zaparoo_features_if_active')
+
+    def _show_outro(self) -> None:
+        self.events.append('show_outro')
+
+
 class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
     def __init__(self):
-        super().__init__(NoLogger(), MagicMock())
+        super().__init__(NoLogger(), FetcherStub())
 
     def make_arcade_organizer_config(self, ini_file_str: str, base_path: str, http_proxy: str = '') -> dict[str, Any]:
         return {}

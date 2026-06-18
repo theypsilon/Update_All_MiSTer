@@ -16,7 +16,6 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import unittest
-from unittest.mock import MagicMock
 
 from update_all.config import Config
 from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_REQUIRES_EARLY_EXIT, COMMAND_SHOW_CHIP_ID_RESULT
@@ -29,19 +28,20 @@ from update_all.zaparoo_service import FILE_zaparoo_frontend
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.update_all_service_tester import UpdateAllServiceFactoryTester, UpdateAllServiceTester, \
-    default_env, EnvironmentSetupStub, default_databases, local_store, RetroAccountServiceTester
+    default_env, EnvironmentSetupStub, default_databases, local_store, RetroAccountServiceTester, SettingsScreenStub, \
+    UpdateAllServiceFlowTester
 from test.zaparoo_service_tester import ZaparooServiceTester
 
 
 def tester(files=None, folders=None, config: Config = None, store: LocalStore = None, env_stub: EnvironmentSetupStub = None,
-           settings_screen=None, zaparoo_service=None, retroaccount=None):
+           settings_screen=None, zaparoo_service=None, retroaccount=None, service_type=UpdateAllServiceTester):
     state = FileSystemState(files=files, folders=folders)
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config or Config(databases=default_databases()))
     store_provider = GenericProvider[LocalStore]()
     store_provider.initialize(store or local_store())
 
-    return UpdateAllServiceTester(
+    return service_type(
         environment_setup=env_stub or EnvironmentSetupStub(),
         file_system=FileSystemFactory(state=state, config_provider=config_provider).create_for_system_scope(),
         config_provider=config_provider,
@@ -61,19 +61,16 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___enables_zaparoo_features_after_hard_waiting_background_jobs(self):
-        events = []
-        sut, _ = tester()
-        sut._hard_wait_background_jobs = MagicMock(side_effect=lambda: events.append('hard_wait_background_jobs'))
-        sut._enable_zaparoo_features_if_active = MagicMock(side_effect=lambda: events.append('enable_zaparoo_features_if_active'))
-        sut._show_outro = MagicMock(side_effect=lambda: events.append('show_outro'))
+        sut, _ = tester(service_type=UpdateAllServiceFlowTester)
 
         self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
         self.assertEqual([
+            'start_background_jobs',
             'hard_wait_background_jobs',
             'enable_zaparoo_features_if_active',
             'show_outro',
-        ], events)
+        ], sut.events)
 
     def test_enable_zaparoo_features_if_active___when_both_zaparoo_flags_are_disabled___does_not_call_zaparoo_service(self):
         zaparoo_service = ZaparooServiceTester()
@@ -145,53 +142,44 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(EXIT_CODE_REQUIRES_EARLY_EXIT, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___with_show_chip_id_result_command___opens_chip_id_result_menu_and_returns_without_update_flow(self):
-        events = []
-        settings_screen = MagicMock()
-        settings_screen.load_chip_id_result_menu.side_effect = lambda: events.append('menu')
+        settings_screen = SettingsScreenStub(load_chip_id_result_menu_result='menu')
         sut, _ = tester(
             config=Config(databases=default_databases(), command=COMMAND_SHOW_CHIP_ID_RESULT),
             settings_screen=settings_screen,
+            service_type=UpdateAllServiceFlowTester,
         )
-        sut._start_background_jobs = MagicMock(side_effect=lambda: events.append('start_background_jobs'))
-        sut._hard_wait_background_jobs = MagicMock(side_effect=lambda: events.append('hard_wait_background_jobs'))
 
         result = sut.full_run(UpdateAllServicePass.NewRun)
 
         self.assertEqual(0, result)
-        self.assertEqual(['menu'], events)
-        sut._start_background_jobs.assert_not_called()
-        settings_screen.load_chip_id_result_menu.assert_called_once_with()
-        sut._hard_wait_background_jobs.assert_not_called()
+        self.assertEqual([], sut.events)
+        self.assertEqual(1, settings_screen.load_chip_id_result_menu_calls)
 
     def test_full_run___with_show_chip_id_result_command_and_menu_failure___returns_without_update_flow(self):
-        events = []
-        settings_screen = MagicMock()
-        settings_screen.load_chip_id_result_menu.side_effect = RuntimeError('boom')
+        settings_screen = SettingsScreenStub(load_chip_id_result_menu_result=RuntimeError('boom'))
         sut, _ = tester(
             config=Config(databases=default_databases(), command=COMMAND_SHOW_CHIP_ID_RESULT),
             settings_screen=settings_screen,
+            service_type=UpdateAllServiceFlowTester,
         )
-        sut._start_background_jobs = MagicMock(side_effect=lambda: events.append('start_background_jobs'))
-        sut._hard_wait_background_jobs = MagicMock(side_effect=lambda: events.append('hard_wait_background_jobs'))
 
         result = sut.full_run(UpdateAllServicePass.NewRun)
 
         self.assertEqual(0, result)
-        self.assertEqual([], events)
-        sut._start_background_jobs.assert_not_called()
-        settings_screen.load_chip_id_result_menu.assert_called_once_with()
-        sut._hard_wait_background_jobs.assert_not_called()
+        self.assertEqual([], sut.events)
+        self.assertEqual(1, settings_screen.load_chip_id_result_menu_calls)
 
     def test_full_run___with_retroaccount_sync_pass___syncs_and_returns_without_update_flow(self):
-        events = []
         retroaccount = RetroAccountServiceTester()
-        sut, _ = tester(config=Config(databases=default_databases()), retroaccount=retroaccount)
-        sut._start_background_jobs = lambda: events.append('start_background_jobs')
-        sut._hard_wait_background_jobs = lambda: events.append('hard_wait_background_jobs')
+        sut, _ = tester(
+            config=Config(databases=default_databases()),
+            retroaccount=retroaccount,
+            service_type=UpdateAllServiceFlowTester,
+        )
 
         result = sut.full_run(UpdateAllServicePass.RetroAccountSync)
 
         self.assertEqual(0, result)
-        self.assertEqual([], events)
+        self.assertEqual([], sut.events)
         self.assertEqual(1, len(retroaccount.mister_sync_calls))
         self.assertIsInstance(retroaccount.mister_sync_calls[0], LtsvRetroAccountSyncOutput)
