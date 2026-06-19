@@ -24,9 +24,9 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
+from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService, Infrastructure
 from test.logger_tester import NoLogger
 
 
@@ -706,6 +706,34 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
             paths_after_second_run,
             "Incremental run should produce identical organization"
         )
+
+    def test_organize___incremental_run_with_az_dir_disabled___does_not_rebuild_from_scratch(self):
+        """Regression test: AZ_DIR=False must not trigger a full rebuild on every run (issue #146).
+
+        A full rebuild and an incremental build produce the same final file set, so comparing
+        paths alone would pass even with the bug. Instead we assert that remove_orgdir_directories
+        is never called on the second run, which is the observable difference between the two paths.
+        """
+        self._create_ini_file(
+            SKIPALTS=False,
+            AZ_DIR=False,
+            CATEGORY_DIR=True
+        )
+
+        config = self.ao_service.make_arcade_organizer_config(
+            self.ini_path,
+            self.base_path,
+            ''
+        )
+
+        success1 = self.ao_service.run_arcade_organizer_organize_all_mras(config)
+        self.assertTrue(success1)
+        self.assertGreater(len(self._get_organized_mra_paths()), 0, "First run should produce files")
+
+        with patch.object(Infrastructure, 'remove_orgdir_directories') as mock_remove:
+            success2 = self.ao_service.run_arcade_organizer_organize_all_mras(config)
+            self.assertTrue(success2)
+            mock_remove.assert_not_called()
 
     def _get_organized_mra_paths(self):
         """Get set of all MRA file paths relative to orgdir."""
