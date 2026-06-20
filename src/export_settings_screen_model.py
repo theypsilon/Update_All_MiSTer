@@ -49,8 +49,12 @@ def main() -> int:
     if args.output_file.endswith('.zip'):
         entry_name = output_zip_entry_name(args.output_file)
         print(f'Writing {"pretty" if args.pretty else "compact"} JSON to {args.output_file} as {entry_name}...')
-        with zipfile.ZipFile(args.output_file, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=1) as zip_file:
-            zip_file.writestr(entry_name, output)
+        zip_info = zipfile.ZipInfo(entry_name, date_time=(2021, 8, 23, 14, 5, 0))
+        zip_info.compress_type = zipfile.ZIP_DEFLATED
+        zip_info.create_system = 3
+        zip_info.external_attr = 0o644 << 16
+        with zipfile.ZipFile(args.output_file, 'w') as zip_file:
+            zip_file.writestr(zip_info, output.encode('utf-8'), compresslevel=1)
     else:
         print(f'Writing {"pretty" if args.pretty else "compact"} JSON to {args.output_file}...')
         with open(args.output_file, 'w') as f:
