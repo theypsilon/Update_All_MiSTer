@@ -615,6 +615,8 @@ class Infrastructure:
         file_path.unlink()
 
     def check_if_orgdir_directories_are_missing(self):
+        if not self._config['AZ_DIR']:
+            return False
         return not Path(self._config['ORGDIR_09']).is_dir() or \
             not Path(self._config['ORGDIR_AE']).is_dir() or \
             not Path(self._config['ORGDIR_FK']).is_dir() or \
