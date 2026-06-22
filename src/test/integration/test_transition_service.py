@@ -26,41 +26,46 @@ from test.ini_assertions import assertEqualIni, testableIni
 from test.testing_objects import downloader_ini, update_all_ini, update_arcade_organizer_ini, update_names_txt_ini, \
     update_jtcores_ini, downloader_store
 from test.update_all_service_tester import TransitionServiceTester, local_store, IniRepositoryTester, ConfigReaderTester
+from test.update_output_tester import UpdateOutputTester
+from test.spy_os_utils import SpyOsUtils
 from update_all.config import Config
-from update_all.databases import ALL_DB_IDS, all_dbs, DB_ID_MREXT_ALL, DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER
+from update_all.databases import ALL_DB_IDS, all_dbs, DB_ID_DISTRIBUTION_MISTER, DB_ID_MREXT_ALL, DB_ID_MREXT_TAPTO, \
+    DB_ID_ZAPAROO_MISTER
 from update_all.transition_service import RELATED_DATABASE_ACTIVATION_RELATIONSHIPS
+from update_all.update_output import NoopUpdateOutput
 
 
-def test_transitions(files: Dict[str, str] = None, store=None):
+def test_transitions(files: Dict[str, str] = None, store=None, update_output=None):
     config = Config()
     fs_state = FileSystemState(config=config, files=None if files is None else {filename: read_content(path) for filename, path in files.items()})
-    return test_transitions_with_state(config, fs_state, store)
+    return test_transitions_with_state(config, fs_state, store, update_output)
 
 
-def test_transitions_with_contents(files: Dict[str, str], store=None):
+def test_transitions_with_contents(files: Dict[str, str], store=None, update_output=None):
     config = Config()
     fs_state = FileSystemState(config=config, files={filename: {'content': content} for filename, content in files.items()})
-    return test_transitions_with_state(config, fs_state, store)
+    return test_transitions_with_state(config, fs_state, store, update_output)
 
 
-def test_transitions_with_state(config: Config, fs_state: FileSystemState, store=None):
+def test_transitions_with_state(config: Config, fs_state: FileSystemState, store=None, update_output=None):
     store = store or local_store()
+    update_output = update_output or NoopUpdateOutput()
     fs = FileSystemFactory(state=fs_state).create_for_system_scope()
     ini_repos = IniRepositoryTester(file_system=fs)
     config_reader = ConfigReaderTester(downloader_ini_repository=ini_repos, file_system=fs)
     sut = TransitionServiceTester(file_system=fs, ini_repository=ini_repos)
     downloader_ini = config_reader.read_downloader_ini()
-    sut.from_old_db_ids_to_new_db_ids(downloader_ini)
-    sut.removing_obsolete_db_ids(downloader_ini)
+    sut.from_old_db_ids_to_new_db_ids(downloader_ini, update_output)
+    sut.removing_obsolete_db_ids(downloader_ini, update_output)
     config_reader.fill_config_with_mister_section(config, downloader_ini)
     config_reader.fill_config_with_environment(config)
     config_reader.fill_config_with_database_sections(config, downloader_ini)
-    sut.from_not_existing_downloader_ini(config)
-    sut.from_update_all_1(config, store)
-    sut.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, store)
-    sut.from_active_databases_to_related_databases(config, store)
-    sut.from_old_db_urls_to_actual_db_urls(config, downloader_ini)
-    sut.from_no_update_all_mister_db_to_adding_it(config, downloader_ini)
+    sut.from_not_existing_downloader_ini(config, update_output)
+    sut.from_update_all_1(config, store, update_output)
+    sut.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, store, update_output)
+    sut.from_active_databases_to_related_databases(config, store, update_output)
+    sut.from_old_db_urls_to_actual_db_urls(config, downloader_ini, update_output)
+    sut.from_no_update_all_mister_db_to_adding_it(config, downloader_ini, update_output)
     return fs_state
 
 
@@ -80,6 +85,32 @@ class TestTransitionService(unittest.TestCase):
     def test_on_empty_state___writes_default_downloader_ini(self):
         fs = test_transitions()
         assertEqualIni(self, 'test/fixtures/downloader_ini/default_downloader.ini', fs.files[downloader_ini]['content'])
+
+    def test_transition_event___is_emitted_before_waiting(self):
+        config = Config()
+        fs_state = FileSystemState(config=config, files={})
+        fs = FileSystemFactory(state=fs_state).create_for_system_scope()
+        os_utils = SpyOsUtils()
+        ini_repos = IniRepositoryTester(file_system=fs, os_utils=os_utils)
+        output = UpdateOutputTester(os_utils)
+        sut = TransitionServiceTester(file_system=fs, os_utils=os_utils, ini_repository=ini_repos)
+
+        sut.from_not_existing_downloader_ini(config, output)
+
+        self.assertEqual([(
+            'from_not_existing_downloader_ini',
+            {
+                'downloader_ini': ini_repos.downloader_ini_standard_path(),
+                'db_ids': ','.join([
+                    ALL_DB_IDS["UPDATE_ALL_MISTER"],
+                    DB_ID_DISTRIBUTION_MISTER,
+                    ALL_DB_IDS["JTCORES"],
+                    ALL_DB_IDS["COIN_OP_COLLECTION"],
+                ]),
+            }
+        )], output.transition_calls)
+        self.assertEqual([[]], output.sleep_calls_at_transition)
+        self.assertEqual([10.0], os_utils.calls_to_sleep)
 
     def test_with_dirty_downloader_ini___writes_nothing(self):
         fs = test_transitions(files={downloader_ini: 'test/fixtures/downloader_ini/dirty_downloader.ini'})

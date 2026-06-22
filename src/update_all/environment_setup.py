@@ -27,6 +27,7 @@ from update_all.other import GenericProvider, TerminalSize
 from update_all.local_repository import LocalRepository
 from update_all.config_reader import ConfigReader
 from update_all.transition_service import TransitionService
+from update_all.update_output import UpdateOutput
 
 
 @dataclass
@@ -36,7 +37,7 @@ class EnvironmentSetupResult:
 
 class EnvironmentSetup(ABC):
     @abstractmethod
-    def setup_environment(self, term_size: TerminalSize) -> EnvironmentSetupResult:
+    def setup_environment(self, term_size: TerminalSize, update_output: UpdateOutput) -> EnvironmentSetupResult:
         """Setups the application environment."""
 
 
@@ -55,7 +56,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._store_provider = store_provider
         self._file_system = file_system
 
-    def setup_environment(self, term_size: TerminalSize) -> EnvironmentSetupResult:
+    def setup_environment(self, term_size: TerminalSize, update_output: UpdateOutput) -> EnvironmentSetupResult:
         config = Config()
         config.start_time = time.monotonic()
 
@@ -70,16 +71,16 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._config_reader.fill_config_with_terminal_size(config, term_size)
         self._logger.configure(config)
 
-        self._transition_service.from_old_db_ids_to_new_db_ids(downloader_ini)
-        self._transition_service.removing_obsolete_db_ids(downloader_ini)
-        self._transition_service.from_not_existing_downloader_ini(config)
-        self._transition_service.from_update_all_1(config, local_store)
+        self._transition_service.from_old_db_ids_to_new_db_ids(downloader_ini, update_output)
+        self._transition_service.removing_obsolete_db_ids(downloader_ini, update_output)
+        self._transition_service.from_not_existing_downloader_ini(config, update_output)
+        self._transition_service.from_update_all_1(config, local_store, update_output)
         self._config_reader.fill_config_with_database_sections(config, downloader_ini)
-        self._transition_service.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store)
-        self._transition_service.from_active_databases_to_related_databases(config, local_store)
-        self._transition_service.from_old_db_urls_to_actual_db_urls(config, downloader_ini)
-        self._transition_service.from_no_update_all_mister_db_to_adding_it(config, downloader_ini)
-        self._transition_service.from_downloader_ini_to_separate_db_ini_files(downloader_ini)
+        self._transition_service.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store, update_output)
+        self._transition_service.from_active_databases_to_related_databases(config, local_store, update_output)
+        self._transition_service.from_old_db_urls_to_actual_db_urls(config, downloader_ini, update_output)
+        self._transition_service.from_no_update_all_mister_db_to_adding_it(config, downloader_ini, update_output)
+        self._transition_service.from_downloader_ini_to_separate_db_ini_files(downloader_ini, update_output)
         if local_store.needs_save():
             self._local_repository.save_store(local_store)
 

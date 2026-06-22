@@ -26,6 +26,7 @@ from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, TerminalSize
+from update_all.update_output import NoopUpdateOutput
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.update_all_service_tester import EnvironmentSetupTester, default_databases, default_env
@@ -49,7 +50,7 @@ class TestEnvironmentSetup(unittest.TestCase):
         expected_files = expected_files or {k: v['content'].strip() for k, v in state.files.items()}
         expected_files = {k: processIni(v.strip()) for k, v in expected_files.items()}
 
-        result = environment_setup.setup_environment(TerminalSize(columns=80, lines=40))
+        result = environment_setup.setup_environment(TerminalSize(columns=80, lines=40), NoopUpdateOutput())
 
         config = config_provider.get()
         config.start_time = 0.0

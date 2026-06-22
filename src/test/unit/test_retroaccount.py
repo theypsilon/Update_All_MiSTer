@@ -31,7 +31,7 @@ from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbet
 from update_all.other import GenericProvider
 from update_all.retroaccount import BenefitState, ChipIdAttachResult, RetroAccountService, any_to_retroaccount_file_description
 from update_all.retroaccount_gateway import SessionResult
-from update_all.retroaccount_sync_output import LtsvRetroAccountSyncOutput, NoopRetroAccountSyncOutput
+from update_all.update_output import LtsvUpdateOutput, NoopUpdateOutput
 
 
 _CORRUPTED_CREDENTIALS_MESSAGE = 'Your credentials are corrupted!\nDo you have any problems with your storage (SD)?'
@@ -187,7 +187,7 @@ class TestRetroAccountService(unittest.TestCase):
             gateway_response={'benefits': {'jtbeta_file': {'url': 'https://example.com/jtbeta.zip', 'md5': 'expected-md5', 'size': 1024}}},
         )
 
-        sut.mister_sync(LtsvRetroAccountSyncOutput(stream))
+        sut.mister_sync(LtsvUpdateOutput(stream))
 
         self.assertEqual(
             'DLP1\tevent:retroaccount_sync_start\n'
@@ -204,7 +204,7 @@ class TestRetroAccountService(unittest.TestCase):
             gateway_response=401,
         )
 
-        sut.mister_sync(LtsvRetroAccountSyncOutput(stream))
+        sut.mister_sync(LtsvUpdateOutput(stream))
 
         self.assertEqual(
             'DLP1\tevent:retroaccount_sync_start\n'
@@ -213,8 +213,8 @@ class TestRetroAccountService(unittest.TestCase):
             stream.getvalue()
         )
 
-    def test_noop_retroaccount_sync_output___accepts_events(self):
-        output = NoopRetroAccountSyncOutput()
+    def test_noop_update_output___accepts_events(self):
+        output = NoopUpdateOutput()
 
         output.sync_started()
         output.jtbeta_updated()
@@ -375,7 +375,7 @@ class TestAnyToRetroAccountFileDescription(unittest.TestCase):
 
 
 def mister_sync(sut: RetroAccountService) -> None:
-    sut.mister_sync(NoopRetroAccountSyncOutput())
+    sut.mister_sync(NoopUpdateOutput())
 
 def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None, logger=None):
     config = Config()

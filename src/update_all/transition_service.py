@@ -30,6 +30,7 @@ from update_all.local_store import LocalStore
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils
 from update_all.settings_screen_model import settings_screen_model
+from update_all.update_output import UpdateOutput
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string
 
 
@@ -61,7 +62,7 @@ class TransitionService:
             self._file_checks[file] = self._file_system.is_file(file)
         return self._file_checks[file]
 
-    def from_not_existing_downloader_ini(self, config: Config):
+    def from_not_existing_downloader_ini(self, config: Config, update_output: UpdateOutput):
         if self._file_exists(self._ini_repository.downloader_ini_standard_path()) or config.skip_downloader:
             return
 
@@ -82,11 +83,21 @@ class TransitionService:
         self._logger.print(f'  - Added DB with id [{ALL_DB_IDS["JTCORES"]}]')
         self._logger.print(f'  - Added DB with id [{ALL_DB_IDS["COIN_OP_COLLECTION"]}]')
         self._logger.print()
+        update_output.transition(
+            'from_not_existing_downloader_ini',
+            downloader_ini=self._ini_repository.downloader_ini_standard_path(),
+            db_ids=','.join([
+                ALL_DB_IDS["UPDATE_ALL_MISTER"],
+                DB_ID_DISTRIBUTION_MISTER,
+                ALL_DB_IDS["JTCORES"],
+                ALL_DB_IDS["COIN_OP_COLLECTION"],
+            ])
+        )
         self._logger.print('Waiting 10 seconds...')
         self._os_utils.sleep(10.0)
         self._created_downloader_ini = True
 
-    def from_update_all_1(self, config: Config, store: LocalStore):
+    def from_update_all_1(self, config: Config, store: LocalStore, update_output: UpdateOutput):
         if config.skip_downloader:
             return
 
@@ -130,10 +141,14 @@ class TransitionService:
         for change in changes:
             self._logger.print(f'  - {change}')
         self._logger.print()
+        update_output.transition(
+            'from_update_all_1',
+            changes=' | '.join(changes)
+        )
         self._logger.print('Waiting 10 seconds...')
         self._os_utils.sleep(10.0)
 
-    def from_just_names_txt_enabled_to_arcade_names_txt_enabled(self, config: Config, store: LocalStore):
+    def from_just_names_txt_enabled_to_arcade_names_txt_enabled(self, config: Config, store: LocalStore, update_output: UpdateOutput):
         if store.get_introduced_arcade_names_txt() or config.skip_downloader:
             return
 
@@ -151,10 +166,15 @@ class TransitionService:
         self._logger.print('Transitioning arcade names from "names.txt" to separated "..CONFIG../arcade_names.txt":')
         self._logger.print('Adding Arcade Names TXT db to downloader.ini.')
         self._logger.print()
+        update_output.transition(
+            'from_just_names_txt_enabled_to_arcade_names_txt_enabled',
+            source_db_id=DB_ID_NAMES_TXT,
+            target_db_id=DB_ID_ARCADE_NAMES_TXT
+        )
         self._logger.print('Waiting 10 seconds...')
         self._os_utils.sleep(10.0)
 
-    def from_active_databases_to_related_databases(self, config: Config, store: LocalStore):
+    def from_active_databases_to_related_databases(self, config: Config, store: LocalStore, update_output: UpdateOutput):
         if config.skip_downloader:
             return
 
@@ -190,6 +210,10 @@ class TransitionService:
             for db_id in activated:
                 self._logger.print(f'  - Added DB with id [{db_id}]')
             self._logger.print()
+            update_output.transition(
+                'from_active_databases_to_related_databases',
+                db_ids=','.join(activated)
+            )
             self._logger.print('Waiting 5 seconds...')
             self._os_utils.sleep(5.0)
 
@@ -252,7 +276,7 @@ class TransitionService:
 
         raise ValueError(f'Value {string_value} is not among the possible values: {", ".join(possible_values)}')
 
-    def from_old_db_urls_to_actual_db_urls(self, config: Config, downloader_ini: Dict[str, IniParser]):
+    def from_old_db_urls_to_actual_db_urls(self, config: Config, downloader_ini: Dict[str, IniParser], update_output: UpdateOutput):
         if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
             return
 
@@ -273,11 +297,15 @@ class TransitionService:
         self._logger.print(f'Updating {", ".join(needs_save)} DB URLs:')
         self._logger.print('Writing downloader.ini.')
         self._logger.print()
+        update_output.transition(
+            'from_old_db_urls_to_actual_db_urls',
+            db_ids=','.join(needs_save)
+        )
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)
         self._ini_repository.write_downloader_ini(config)
 
-    def from_old_db_ids_to_new_db_ids(self, downloader_ini: Dict[str, IniParser]):
+    def from_old_db_ids_to_new_db_ids(self, downloader_ini: Dict[str, IniParser], update_output: UpdateOutput):
         if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
             return
 
@@ -292,11 +320,16 @@ class TransitionService:
         self._logger.print(f'Updating {", ".join(replacements.keys())} DB IDs to {", ".join(replacements.values())}:')
         self._logger.print('Writing downloader.ini.')
         self._logger.print()
+        update_output.transition(
+            'from_old_db_ids_to_new_db_ids',
+            old_db_ids=','.join(replacements.keys()),
+            new_db_ids=','.join(replacements.values())
+        )
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)
         self._ini_repository.replace_db_ids_in_ini_and_fs(replacements, downloader_ini)
 
-    def removing_obsolete_db_ids(self, downloader_ini: Dict[str, IniParser]):
+    def removing_obsolete_db_ids(self, downloader_ini: Dict[str, IniParser], update_output: UpdateOutput):
         if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
             return
 
@@ -314,22 +347,30 @@ class TransitionService:
         self._logger.print(f'Removing {", ".join(removed)} DBs.')
         self._logger.print('Writing downloader.ini.')
         self._logger.print()
+        update_output.transition(
+            'removing_obsolete_db_ids',
+            db_ids=','.join(sorted(removed))
+        )
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)
         self._ini_repository.remove_db_ids_in_ini_and_fs(removed, downloader_ini)
 
 
-    def from_no_update_all_mister_db_to_adding_it(self, config: Config, downloader_ini: Dict[str, IniParser]):
+    def from_no_update_all_mister_db_to_adding_it(self, config: Config, downloader_ini: Dict[str, IniParser], update_output: UpdateOutput):
         if ALL_DB_IDS['UPDATE_ALL_MISTER'] in downloader_ini or config.skip_downloader:
             return
 
         self._ini_repository.write_downloader_ini(config)
         self._logger.print(f'Adding DB with id [{ALL_DB_IDS["UPDATE_ALL_MISTER"]}] to downloader.ini.')
         self._logger.print()
+        update_output.transition(
+            'from_no_update_all_mister_db_to_adding_it',
+            db_id=ALL_DB_IDS["UPDATE_ALL_MISTER"]
+        )
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)
 
-    def from_downloader_ini_to_separate_db_ini_files(self, downloader_ini: Dict[str, IniParser]):
+    def from_downloader_ini_to_separate_db_ini_files(self, downloader_ini: Dict[str, IniParser], update_output: UpdateOutput):
         if not self._file_exists(self._ini_repository.downloader_ini_standard_path()):
             return
 
@@ -351,6 +392,11 @@ class TransitionService:
             else:
                 self._logger.print(f'  - Moved {len(moved)} databases from downloader.ini to {ini_filename}.')
         self._logger.print()
+        update_output.transition(
+            'from_downloader_ini_to_separate_db_ini_files',
+            ini_files=','.join(extracted_by_filename.keys()),
+            db_ids=','.join(db_id for moved in extracted_by_filename.values() for db_id in moved)
+        )
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)
 

@@ -27,6 +27,7 @@ from update_all.other import GenericProvider, TerminalSize
 from update_all.databases import db_ids_to_model_variable_pairs, all_dbs
 from update_all.settings_screen import SettingsScreen
 from update_all.store_migrator import make_new_local_store
+from update_all.update_output import NoopUpdateOutput
 
 from test.file_system_tester_state import FileSystemState
 from test.ini_assertions import assertEqualIni
@@ -272,7 +273,7 @@ def tester(files=None) -> Tuple[SettingsScreen, UiContextStub, FileSystemState]:
     config_provider = GenericProvider[Config]()
     store_provider = GenericProvider[LocalStore]()
     file_system = FileSystemFactory(state=state).create_for_system_scope()
-    EnvironmentSetupTester(file_system=file_system, config_provider=config_provider, store_provider=store_provider).setup_environment(TerminalSize(columns=80, lines=40))
+    EnvironmentSetupTester(file_system=file_system, config_provider=config_provider, store_provider=store_provider).setup_environment(TerminalSize(columns=80, lines=40), NoopUpdateOutput())
     settings_screen = SettingsScreenTester(config_provider=config_provider, store_provider=store_provider, file_system=file_system)
     settings_screen.initialize_ui(ui)
 

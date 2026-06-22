@@ -274,8 +274,10 @@ class EnvironmentSetupTester(EnvironmentSetupImpl):
 class EnvironmentSetupStub(EnvironmentSetup):
     def __init__(self, result: Optional[EnvironmentSetupResult] = None):
         self._result = result or EnvironmentSetupResult()
+        self.setup_environment_calls = []
 
-    def setup_environment(self, term_size: TerminalSize) -> EnvironmentSetupResult:
+    def setup_environment(self, term_size: TerminalSize, update_output) -> EnvironmentSetupResult:
+        self.setup_environment_calls.append((term_size, update_output))
         return self._result
 
 

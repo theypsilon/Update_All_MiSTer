@@ -41,7 +41,7 @@ from update_all.logger import Logger, CollectorLoggerDecorator
 from update_all.mister_video_mode_ui import MisterVideoModeService, MisterVideoModeMenu, MisterVideoAdjustMenu
 from update_all.os_utils import OsUtils
 from update_all.retroaccount import RetroAccountService, BenefitState
-from update_all.retroaccount_sync_output import NoopRetroAccountSyncOutput
+from update_all.update_output import NoopUpdateOutput
 from update_all.settings_screen_model import settings_screen_model
 from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
@@ -351,7 +351,7 @@ class SettingsScreen(UiApplication):
             attached = False
 
         try:
-            self._retroaccount.mister_sync(NoopRetroAccountSyncOutput())
+            self._retroaccount.mister_sync(NoopUpdateOutput())
         except Exception as e:
             self._logger.debug('RetroAccount sync after FPGA ID attach failed')
             self._logger.debug(e)

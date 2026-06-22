@@ -30,7 +30,7 @@ from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbet
     FILE_patreon_key_prev, FILE_JOTEGO_mra_pack_json, FILE_JOTEGO_mra_pack_ini
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.retroaccount_gateway import RetroAccountGateway, SessionResult
-from update_all.retroaccount_sync_output import NoopRetroAccountSyncOutput, RetroAccountSyncOutput
+from update_all.update_output import NoopUpdateOutput, UpdateOutput
 from update_all.retroaccount_ui import DeviceLogin, DeviceLoginRenderer, RetroAccountClient
 from update_all.ui_engine import UiSection
 from update_all.ui_engine_dialog_application import UiDialogDrawer
@@ -259,7 +259,7 @@ class RetroAccountService(RetroAccountClient):
                 self._logger.print('Device code ', device_code, ' authorized for device id ', device_id)
         return result
 
-    def mister_sync(self, output: RetroAccountSyncOutput) -> None:
+    def mister_sync(self, output: UpdateOutput) -> None:
         output.sync_started()
         self._logger.bench('RetroAccountService.mister_sync start')
         self._reset_sync_effects()
@@ -370,7 +370,7 @@ class RetroAccountService(RetroAccountClient):
         self._has_installed_jtbeta = False
         self.consume_important_messages()
 
-    def _apply_sync_transition(self, transition: _SyncTransition, output: RetroAccountSyncOutput) -> None:
+    def _apply_sync_transition(self, transition: _SyncTransition, output: UpdateOutput) -> None:
         self._logger.debug(transition)
 
         if transition.update_all_extras_active is not None:
@@ -543,7 +543,7 @@ class RetroAccountService(RetroAccountClient):
             self._logger.debug(e)
             return False
 
-        self.mister_sync(NoopRetroAccountSyncOutput())
+        self.mister_sync(NoopUpdateOutput())
         return True
 
     def _apply_local_device_logout_effects(self) -> None:

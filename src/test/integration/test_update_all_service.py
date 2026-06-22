@@ -22,7 +22,7 @@ from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
-from update_all.retroaccount_sync_output import LtsvRetroAccountSyncOutput
+from update_all.update_output import LtsvUpdateOutput
 from update_all.update_all_service import UpdateAllService, UpdateAllServicePass
 from update_all.zaparoo_service import FILE_zaparoo_frontend
 from test.fake_filesystem import FileSystemFactory
@@ -170,9 +170,11 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(1, settings_screen.load_chip_id_result_menu_calls)
 
     def test_full_run___with_retroaccount_sync_pass___syncs_and_returns_without_update_flow(self):
+        env_stub = EnvironmentSetupStub()
         retroaccount = RetroAccountServiceTester()
         sut, _ = tester(
             config=Config(databases=default_databases()),
+            env_stub=env_stub,
             retroaccount=retroaccount,
             service_type=UpdateAllServiceFlowTester,
         )
@@ -182,4 +184,6 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(0, result)
         self.assertEqual([], sut.events)
         self.assertEqual(1, len(retroaccount.mister_sync_calls))
-        self.assertIsInstance(retroaccount.mister_sync_calls[0], LtsvRetroAccountSyncOutput)
+        self.assertIsInstance(retroaccount.mister_sync_calls[0], LtsvUpdateOutput)
+        self.assertEqual(1, len(env_stub.setup_environment_calls))
+        self.assertIs(retroaccount.mister_sync_calls[0], env_stub.setup_environment_calls[0][1])
