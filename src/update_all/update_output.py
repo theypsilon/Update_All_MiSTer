@@ -53,7 +53,7 @@ class LtsvUpdateOutput(UpdateOutput):
         self._emit('retroaccount_sync_end')
 
     def jtbeta_updated(self) -> None:
-        self._emit('retroaccount_jtbeta_updated')
+        self._emit('retroaccount_membership_extra', topic='jtbeta', msg='New jtbeta.zip from JOTEGO installed!', info='You are receiving the new jtbeta.zip because you are a member of JOTEGO.\nThis will allow you to run private and beta games made by the JOTEGO Team on your MiSTer.')
 
     def credentials_removed(self, reason: str) -> None:
         self._emit('retroaccount_credentials_removed', reason=reason)

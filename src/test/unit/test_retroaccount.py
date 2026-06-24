@@ -179,7 +179,7 @@ class TestRetroAccountService(unittest.TestCase):
             ('debug', f'jtbeta.zip also copied to {usb_jtbeta_path}'),
         ], sut.consume_important_messages())
 
-    def test_mister_sync___when_session_returns_jtbeta_url___emits_ltsv_jtbeta_updated_event(self):
+    def test_mister_sync___when_session_returns_jtbeta_url___emits_ltsv_membership_extra_event(self):
         stream = io.StringIO()
         sut, _file_system, _gateway, _encryption = tester(
             files=default_sync_files(),
@@ -191,7 +191,10 @@ class TestRetroAccountService(unittest.TestCase):
 
         self.assertEqual(
             'DLP1\tevent:retroaccount_sync_start\n'
-            'DLP1\tevent:retroaccount_jtbeta_updated\n'
+            'DLP1\tevent:retroaccount_membership_extra'
+            '\ttopic:jtbeta'
+            '\tmsg:New jtbeta.zip from JOTEGO installed!'
+            '\tinfo:You are receiving the new jtbeta.zip because you are a member of JOTEGO. This will allow you to run private and beta games made by the JOTEGO Team on your MiSTer.\n'
             'DLP1\tevent:retroaccount_sync_end\n',
             stream.getvalue()
         )
