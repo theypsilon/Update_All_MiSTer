@@ -82,3 +82,9 @@ class TestZaparooServiceKeepZaparooFrontendActiveInMisterIni(unittest.TestCase):
 
     def test_when_input_is_realistic_mister_ini_with_other_sections___only_replaces_main_inside_mister_section(self):
         self._assert_transform('realistic_mister_ini_with_comments_and_other_sections')
+
+    def test_when_mister_header_has_inner_spaces___does_not_treat_it_as_mister_section(self):
+        self._assert_transform('mister_section_with_inner_spaces')
+
+    def test_when_amiga_vision_uses_multiline_section___adds_main_inside_mister_section(self):
+        self._assert_transform('amiga_vision_multiline_section')

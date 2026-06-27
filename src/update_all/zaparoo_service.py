@@ -175,8 +175,9 @@ def keep_zaparoo_frontend_active_in_mister_ini(contents: str) -> str:
         lines[main_line_indexes[0]] = ZAPAROO_FRONTEND_MAIN_LINE
         return ''.join(lines)
 
-    _ensure_previous_line_has_newline(lines, section_end - 1)
-    lines.insert(section_end, ZAPAROO_FRONTEND_MAIN_LINE)
+    insertion_index = _mister_section_main_insertion_index(lines, section_start, section_end)
+    _ensure_previous_line_has_newline(lines, insertion_index - 1)
+    lines.insert(insertion_index, ZAPAROO_FRONTEND_MAIN_LINE)
     return ''.join(lines)
 
 
@@ -222,12 +223,12 @@ def _prepend_mister_section(contents: str) -> str:
 def _find_mister_section_range(lines):
     section_start = None
     for index, line in enumerate(lines):
+        if section_start is not None and _starts_section(line):
+            return section_start, index
+
         section_name = _section_name(line)
         if section_name is None:
             continue
-
-        if section_start is not None:
-            return section_start, index
 
         if section_name.lower() == 'mister':
             section_start = index
@@ -238,9 +239,37 @@ def _find_mister_section_range(lines):
     return section_start, len(lines)
 
 
+def _mister_section_main_insertion_index(lines, section_start, section_end):
+    insertion_index = section_end
+    while insertion_index > section_start + 1 and _line_body(lines[insertion_index - 1]).strip() == '':
+        insertion_index -= 1
+    return insertion_index
+
+
 def _section_name(line):
-    match = re.match(r'^\s*\[\s*([^\]]+?)\s*]\s*(?:[;#].*)?$', _line_body(line))
-    return match.group(1).strip() if match is not None else None
+    parsed_line = _firmware_ini_line(line)
+    if not parsed_line.startswith('['):
+        return None
+
+    section_name = parsed_line[1:]
+    section_end = section_name.find(']')
+    if section_end >= 0:
+        section_name = section_name[:section_end]
+
+    return section_name
+
+
+def _starts_section(line):
+    return _firmware_ini_line(line).startswith('[')
+
+
+def _firmware_ini_line(line):
+    parsed_line = _line_body(line).lstrip(' \t')
+    comment_start = parsed_line.find(';')
+    if comment_start >= 0:
+        parsed_line = parsed_line[:comment_start]
+
+    return parsed_line.rstrip(' \t')
 
 
 def _main_value(line):
