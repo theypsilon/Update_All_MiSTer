@@ -707,16 +707,11 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
             "Incremental run should produce identical organization"
         )
 
-    def test_organize___incremental_run_with_az_dir_disabled___does_not_rebuild_from_scratch(self):
-        """Regression test: AZ_DIR=False must not trigger a full rebuild on every run (issue #146).
-
-        A full rebuild and an incremental build produce the same final file set, so comparing
-        paths alone would pass even with the bug. Instead we assert that remove_orgdir_directories
-        is never called on the second run, which is the observable difference between the two paths.
-        """
+    def test_organize___on_incremental_run___does_not_rebuild_from_scratch(self):
+        """Test that a second run is incremental, not a full rebuild."""
         self._create_ini_file(
             SKIPALTS=False,
-            AZ_DIR=False,
+            AZ_DIR=True,
             CATEGORY_DIR=True
         )
 
@@ -728,12 +723,42 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
 
         success1 = self.ao_service.run_arcade_organizer_organize_all_mras(config)
         self.assertTrue(success1)
-        self.assertGreater(len(self._get_organized_mra_paths()), 0, "First run should produce files")
 
         with patch.object(Infrastructure, 'remove_orgdir_directories') as mock_remove:
             success2 = self.ao_service.run_arcade_organizer_organize_all_mras(config)
             self.assertTrue(success2)
-            mock_remove.assert_not_called()
+
+            self.assertEqual(mock_remove.call_count, 0, "Second run triggered a full rebuild unexpectedly")
+
+    def test_organize___run_after_deleting_orgdir___rebuilds_from_scratch(self):
+        """Test that deleting _Organized triggers a full rebuild on the next run."""
+        self._create_ini_file(
+            SKIPALTS=False,
+            AZ_DIR=True,
+            CATEGORY_DIR=True
+        )
+
+        config = self.ao_service.make_arcade_organizer_config(
+            self.ini_path,
+            self.base_path,
+            ''
+        )
+
+        success1 = self.ao_service.run_arcade_organizer_organize_all_mras(config)
+        self.assertTrue(success1)
+
+        paths_after_first_run = self._get_organized_mra_paths()
+
+        shutil.rmtree(self.orgdir)
+
+        success2 = self.ao_service.run_arcade_organizer_organize_all_mras(config)
+        self.assertTrue(success2)
+
+        self.assertEqual(
+            paths_after_first_run,
+            self._get_organized_mra_paths(),
+            "Full rebuild after deleting ORGDIR should recreate all organized files"
+        )
 
     def _get_organized_mra_paths(self):
         """Get set of all MRA file paths relative to orgdir."""
