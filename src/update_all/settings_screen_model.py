@@ -198,18 +198,76 @@ def _try_toggle_zaparoo_database_with_install_prompts(): return [
 ]
 
 
-def _activate_zaparoo_and_ask_options(when_done): return [
-    {"type": "rotate_variable", "target": "ZaparooProject/Zaparoo_MiSTer"},
-    *_maybe_zaparoo_default_frontend_prompt(when_done),
+def _try_toggle_zaparoo_frontend_active(): return [
+    {
+        "type": "condition",
+        "variable": "zaparoo_frontend_active",
+        "true": _rotate_zaparoo_frontend_active(),
+        "false": [
+            {
+                "type": "condition",
+                "variable": "ZaparooProject/Zaparoo_MiSTer",
+                "true": _rotate_zaparoo_frontend_active(),
+                "false": [_zaparoo_frontend_requires_database_prompt()],
+            },
+        ],
+    },
 ]
 
 
-def _maybe_zaparoo_default_frontend_prompt(when_done): return [
+def _touch_zaparoo_frontend_active(): return {
+    "type": "set_variable",
+    "target": "zaparoo_frontend_active_touched",
+    "value": "true",
+}
+
+
+def _set_zaparoo_frontend_active(value): return [
+    _touch_zaparoo_frontend_active(),
+    {"type": "set_variable", "target": "zaparoo_frontend_active", "value": value},
+]
+
+
+def _rotate_zaparoo_frontend_active(): return [
+    _touch_zaparoo_frontend_active(),
+    {"type": "rotate_variable", "target": "zaparoo_frontend_active"},
+]
+
+
+def _zaparoo_frontend_requires_database_prompt(): return {
+    "ui": "confirm",
+    "header": "Enable Zaparoo DB?",
+    "preselected_action": "Yes",
+    "text": [
+        "To enable Zaparoo Frontend,",
+        "you also need to enable the Zaparoo DB.",
+        "Do you want to enable it?",
+    ],
+    "actions": [
+        {"title": "Yes", "type": "fixed", "fixed": [
+            {"type": "set_variable", "target": "ZaparooProject/Zaparoo_MiSTer", "value": "true"},
+            *_set_zaparoo_frontend_active("true"),
+            {"type": "navigate", "target": "back"},
+        ]},
+        {"title": "No", "type": "fixed", "fixed": [
+            {"type": "navigate", "target": "back"},
+        ]},
+    ],
+}
+
+
+def _activate_zaparoo_and_ask_options(when_done): return [
+    {"type": "rotate_variable", "target": "ZaparooProject/Zaparoo_MiSTer"},
+    *_maybe_zaparoo_active_frontend_prompt(when_done),
+]
+
+
+def _maybe_zaparoo_active_frontend_prompt(when_done): return [
     {
         "type": "condition",
-        "variable": "zaparoo_frontend_default",
+        "variable": "zaparoo_frontend_active",
         "true": when_done,
-        "false": [_zaparoo_default_frontend_prompt()],
+        "false": [_zaparoo_active_frontend_prompt()],
     },
 ]
 
@@ -218,25 +276,25 @@ def _navigate_back_effects(): return [{"type": "navigate", "target": "back"}]
 
 
 def _no_zaparoo_follow_up_prompt_effects(): return [
-    {"type": "set_variable", "target": "zaparoo_frontend_default", "value": "true"},
+    *_set_zaparoo_frontend_active("true"),
 ]
 
 
-def _zaparoo_default_frontend_prompt(): return {
+def _zaparoo_active_frontend_prompt(): return {
     "ui": "confirm",
     "header": "Zaparoo Frontend",
     "preselected_action": "Yes",
     "text": [
-        "Do you want the Zaparoo frontend to be",
-        "the default frontend after being installed?",
+        "Do you want the Zaparoo frontend",
+        "to be active after being installed?",
     ],
     "actions": [
         {"title": "Yes", "type": "fixed", "fixed": [
-            {"type": "set_variable", "target": "zaparoo_frontend_default", "value": "true"},
+            *_set_zaparoo_frontend_active("true"),
             {"type": "navigate", "target": "back"},
         ]},
         {"title": "No", "type": "fixed", "fixed": [
-            {"type": "set_variable", "target": "zaparoo_frontend_default", "value": "false"},
+            *_set_zaparoo_frontend_active("false"),
             {"type": "navigate", "target": "back"},
         ]},
     ],
@@ -278,7 +336,8 @@ def settings_screen_model(): return {
         # Global variables
         "update_all_version": {"default": "2.8"},
         "device_label": {"default": ""},
-        "zaparoo_frontend_default": {"group": "store", "default": "false", "values": ["false", "true"]},
+        "zaparoo_frontend_active": {"group": "store", "default": "false", "values": ["false", "true"]},
+        "zaparoo_frontend_active_touched": {"default": "false", "values": ["false", "true"]},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -960,9 +1019,9 @@ def settings_screen_model(): return {
                     "actions": {"ok": _try_toggle_zaparoo_database_with_install_prompts()}
                 },
                 {
-                    "title": "# Keep Zaparoo Frontend active",
-                    "description": "{zaparoo_frontend_default:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "zaparoo_frontend_default"}]}
+                    "title": "# Zaparoo Frontend active",
+                    "description": "{zaparoo_frontend_active:yesno}",
+                    "actions": {"ok": _try_toggle_zaparoo_frontend_active()}
                 },
             ]
         },

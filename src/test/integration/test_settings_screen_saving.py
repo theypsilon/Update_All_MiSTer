@@ -228,8 +228,51 @@ class TestSettingsScreenSaving(unittest.TestCase):
     def test_save__when_enabling_pocket_backup___writes_changes_on_local_store(self):
         self.assertStoreBooleanTransition('pocket_backup', False)
 
-    def test_save__when_enabling_zaparoo_frontend_default___writes_changes_on_local_store(self):
-        self.assertStoreBooleanTransition('zaparoo_frontend_default', False)
+    def test_save__when_zaparoo_frontend_active_is_unchanged_false_and_missing___keeps_it_missing_from_local_store(self):
+        sut, ui, fs = tester()
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual('false', ui.get_value('needs_save'))
+        self.assertNotIn('zaparoo_frontend_active', fs.files[store_json.lower()]['json'])
+
+    def test_save__when_enabling_zaparoo_frontend_active___writes_true_on_local_store(self):
+        sut, ui, fs = tester()
+
+        ui.set_value('zaparoo_frontend_active_touched', 'true')
+        ui.set_value('zaparoo_frontend_active', 'true')
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual('true', ui.get_value('needs_save'))
+        self.assertEqual(True, fs.files[store_json.lower()]['json']['zaparoo_frontend_active'])
+
+    def test_save__when_toggling_zaparoo_frontend_active_back_to_false___writes_false_on_local_store(self):
+        sut, ui, fs = tester()
+
+        ui.set_value('zaparoo_frontend_active_touched', 'true')
+        ui.set_value('zaparoo_frontend_active', 'false')
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual('true', ui.get_value('needs_save'))
+        self.assertEqual(False, fs.files[store_json.lower()]['json']['zaparoo_frontend_active'])
+
+    def test_save__when_disabling_existing_zaparoo_frontend_active___writes_false_on_local_store(self):
+        sut, ui, fs = tester()
+        store = sut._store_provider.get()
+        store.set_zaparoo_frontend_active(True)
+        store.mark_as_cleaned()
+
+        ui.set_value('zaparoo_frontend_active', 'false')
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual(False, fs.files[store_json.lower()]['json']['zaparoo_frontend_active'])
 
     def assertStoreBooleanTransition(self, field: str, initial_value: bool) -> None:
         sut, ui, fs = tester()

@@ -301,7 +301,7 @@ class UpdateAllService:
         self._run_arcade_organizer()
         self._cleanup()
         self._hard_wait_background_jobs()
-        self._enable_zaparoo_features_if_active()
+        self._apply_zaparoo_frontend_preference()
         self._show_outro()
         self._show_interactive_log_viewer_and_timeline()
         self._reboot_if_needed()
@@ -640,11 +640,11 @@ class UpdateAllService:
             self._executor.shutdown(wait=False)
             self._executor = None
 
-    def _enable_zaparoo_features_if_active(self) -> None:
+    def _apply_zaparoo_frontend_preference(self) -> None:
         store = self._store_provider.get()
 
-        if store.has_field('zaparoo_frontend_default') and store.get_zaparoo_frontend_default():
-            self._zaparoo_service.keep_frontend_active()
+        if store.has_field('zaparoo_frontend_active'):
+            self._zaparoo_service.set_frontend_active(store.get_zaparoo_frontend_active())
 
     def _cleanup(self) -> None:
         for file in self._temp_launchers:
@@ -662,7 +662,7 @@ class UpdateAllService:
         self._logger.print(calculate_outro_summary(config, run_time, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         self._logger.debug(f"Commit: {config.commit}")
         self._logger.debug(f"Boot time: {config.boot_time}")
-        if self._zaparoo_service.zaparoo_frontend_enabled():
+        if self._zaparoo_service.frontend_activation_applied():
             self._logger.print('Zaparoo Frontend enabled!')
         for kind, debug_msg in self._retroaccount.consume_important_messages():
             if kind == 'debug': self._logger.debug(debug_msg)

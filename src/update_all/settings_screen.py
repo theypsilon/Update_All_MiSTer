@@ -111,6 +111,7 @@ class SettingsScreen(UiApplication):
 
     def initialize_ui(self, ui: UiContext) -> UiSectionFactory:
         ui.set_value('needs_save', 'false')
+        ui.set_value('zaparoo_frontend_active_touched', 'false')
 
         arcade_organizer_ini = self._ini_repository.get_arcade_organizer_ini()
 
@@ -155,9 +156,9 @@ class SettingsScreen(UiApplication):
         ui.set_value('overscan', local_store.get_overscan())
         ui.set_value('monochrome_ui', str(local_store.get_monochrome_ui()).lower())
         ui.set_value(
-            'zaparoo_frontend_default',
-            str(local_store.get_zaparoo_frontend_default()).lower()
-            if local_store.has_field('zaparoo_frontend_default')
+            'zaparoo_frontend_active',
+            str(local_store.get_zaparoo_frontend_active()).lower()
+            if local_store.has_field('zaparoo_frontend_active')
             else 'false'
         )
         ui.set_value(
@@ -676,7 +677,8 @@ class SettingsScreen(UiApplication):
         store.set_pocket_backup(config.pocket_backup)
         store.set_overscan(config.overscan)
         store.set_monochrome_ui(config.monochrome_ui)
-        store.set_zaparoo_frontend_default(ui.get_value('zaparoo_frontend_default') != 'false')
+        if store.has_field('zaparoo_frontend_active') or ui.get_value('zaparoo_frontend_active_touched') != 'false':
+            store.set_zaparoo_frontend_active(ui.get_value('zaparoo_frontend_active') != 'false')
         store.set_ajgowans_manuals_dbs_general_selector(ui.get_value('ajgowans_manuals_dbs_general_selector') != 'false')
         # @TODO (mirror) store.set_mirror(ui.get_value('mirror'))
 

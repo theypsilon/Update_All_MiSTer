@@ -28,10 +28,10 @@ class ZaparooServiceTester(ZaparooService):
         self.file_system = file_system or FileSystemFactory.from_state(files=files or {}).create_for_system_scope()
         self.logger = logger or NoLogger()
         self.calls = []
-        self.keep_frontend_active_calls = 0
+        self.frontend_activation_calls = 0
         super().__init__(self.file_system, self.logger)
 
-    def _keep_frontend_active(self) -> None:
-        super()._keep_frontend_active()
-        self.calls.append('keep_frontend_active')
-        self.keep_frontend_active_calls += 1
+    def _apply_frontend_activation(self) -> None:
+        super()._apply_frontend_activation()
+        self.calls.append('apply_frontend_activation')
+        self.frontend_activation_calls += 1

@@ -346,8 +346,8 @@ class UpdateAllServiceFlowTester(UpdateAllServiceTester):
     def _hard_wait_background_jobs(self) -> None:
         self.events.append('hard_wait_background_jobs')
 
-    def _enable_zaparoo_features_if_active(self) -> None:
-        self.events.append('enable_zaparoo_features_if_active')
+    def _apply_zaparoo_frontend_preference(self) -> None:
+        self.events.append('apply_zaparoo_frontend_preference')
 
     def _show_outro(self) -> None:
         self.events.append('show_outro')

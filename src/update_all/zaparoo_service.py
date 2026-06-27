@@ -18,13 +18,14 @@
 
 import re
 
-from update_all.constants import FILE_MiSTer_ini
+from update_all.constants import FILE_MiSTer_ini, FILE_MiSTer_ini_update_all_backup, FILE_lastcore_dat
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
 
 
 FILE_zaparoo_frontend = 'zaparoo/MiSTer_Zaparoo'
 FILE_zaparoo_mister_ini_pending = f'.{FILE_MiSTer_ini}.new'
+FILE_zaparoo_mister_ini_backup_pending = f'{FILE_MiSTer_ini_update_all_backup}.new'
 ZAPAROO_FRONTEND_MAIN_LINE = f'main={FILE_zaparoo_frontend}\n'
 
 
@@ -32,34 +33,69 @@ class ZaparooService:
     def __init__(self, file_system: FileSystem, logger: Logger):
         self._file_system = file_system
         self._logger = logger
-        self._zaparoo_frontend_enabled = False
+        self._frontend_activation_applied = False
 
-    def zaparoo_frontend_enabled(self) -> bool:
-        return self._zaparoo_frontend_enabled
+    def frontend_activation_applied(self) -> bool:
+        return self._frontend_activation_applied
 
-    def keep_frontend_active(self) -> None:
+    def set_frontend_active(self, active: bool) -> None:
+        if active:
+            self._enable_frontend_active()
+        else:
+            self._disable_frontend_active()
+
+    def _enable_frontend_active(self) -> None:
         if not self._file_system.is_file(FILE_zaparoo_frontend):
             return
 
         try:
-            self._keep_frontend_active()
+            self._apply_frontend_activation()
         except Exception as e:
             self._logger.print(
-                f'ERROR! Could not keep Zaparoo frontend active in {FILE_MiSTer_ini}'
+                f'ERROR! Could not activate Zaparoo frontend in {FILE_MiSTer_ini}'
             )
             self._logger.debug(e)
             self._safe_unlink_pending()
 
-    def _keep_frontend_active(self) -> None:
+    def _disable_frontend_active(self) -> None:
+        try:
+            self._apply_frontend_deactivation()
+        except Exception as e:
+            self._logger.print(
+                f'ERROR! Could not remove Zaparoo frontend from {FILE_MiSTer_ini}'
+            )
+            self._logger.debug(e)
+            self._safe_unlink_pending()
+
+    def _apply_frontend_activation(self) -> None:
+        mister_ini_exists = self._file_system.is_file(FILE_MiSTer_ini)
         current_contents = (
             self._file_system.read_file_contents(FILE_MiSTer_ini)
-            if self._file_system.is_file(FILE_MiSTer_ini)
+            if mister_ini_exists
             else ''
         )
         updated_contents = keep_zaparoo_frontend_active_in_mister_ini(current_contents)
 
-        if mister_ini_contents_equivalent(updated_contents, current_contents):
+        if not self._write_mister_ini_if_changed(current_contents, updated_contents, backup_current=mister_ini_exists):
             return
+
+        self._frontend_activation_applied = True
+
+    def _apply_frontend_deactivation(self) -> None:
+        if not self._file_system.is_file(FILE_MiSTer_ini):
+            return
+
+        current_contents = self._file_system.read_file_contents(FILE_MiSTer_ini)
+        updated_contents = remove_zaparoo_frontend_active_from_mister_ini(current_contents)
+
+        if self._write_mister_ini_if_changed(current_contents, updated_contents, backup_current=True):
+            self._frontend_activation_applied = False
+            if has_bootcore_lastcore(current_contents):
+                self._file_system.unlink(FILE_lastcore_dat, verbose=False)
+
+    def _write_mister_ini_if_changed(self, current_contents: str, updated_contents: str, backup_current: bool) -> bool:
+        if mister_ini_contents_equivalent(updated_contents, current_contents):
+            return False
 
         # Stage to MiSTer.ini.new, fsync it, sanity-check the staged contents as seen
         # through the filesystem, then atomically replace MiSTer.ini and fsync the
@@ -78,11 +114,24 @@ class ZaparooService:
                 f'verification of {FILE_zaparoo_mister_ini_pending} did not match expected contents'
             )
             self._safe_unlink_pending()
-            return
+            return False
+
+        if backup_current:
+            self._write_mister_ini_backup()
 
         self._file_system.move(FILE_zaparoo_mister_ini_pending, FILE_MiSTer_ini)
         self._file_system.fsync_parent_dir(FILE_MiSTer_ini)
-        self._zaparoo_frontend_enabled = True
+        return True
+
+    def _write_mister_ini_backup(self) -> None:
+        try:
+            self._file_system.copy(FILE_MiSTer_ini, FILE_zaparoo_mister_ini_backup_pending)
+            self._file_system.fsync(FILE_zaparoo_mister_ini_backup_pending)
+            self._file_system.move(FILE_zaparoo_mister_ini_backup_pending, FILE_MiSTer_ini_update_all_backup)
+            self._file_system.fsync_parent_dir(FILE_MiSTer_ini_update_all_backup)
+        except Exception:
+            self._file_system.unlink(FILE_zaparoo_mister_ini_backup_pending, verbose=False)
+            raise
 
     def _safe_unlink_pending(self) -> None:
         try:
@@ -131,6 +180,41 @@ def keep_zaparoo_frontend_active_in_mister_ini(contents: str) -> str:
     return ''.join(lines)
 
 
+def remove_zaparoo_frontend_active_from_mister_ini(contents: str) -> str:
+    if contents == '':
+        return contents
+
+    lines = contents.splitlines(keepends=True)
+    section_range = _find_mister_section_range(lines)
+
+    if section_range is None:
+        return contents
+
+    section_start, section_end = section_range
+    zaparoo_main_line_indexes = []
+    for index in range(section_start + 1, section_end):
+        value = _main_value(lines[index])
+        if value is not None and value.lower() == FILE_zaparoo_frontend.lower():
+            zaparoo_main_line_indexes.append(index)
+
+    if len(zaparoo_main_line_indexes) == 0:
+        return contents
+
+    for index in reversed(zaparoo_main_line_indexes):
+        del lines[index]
+
+    return ''.join(lines)
+
+
+def has_bootcore_lastcore(contents: str) -> bool:
+    for line in contents.splitlines():
+        value = _bootcore_value(line)
+        if value is not None and re.sub(r'\s+', '', value).lower() == 'lastcore':
+            return True
+
+    return False
+
+
 def _append_mister_section(contents: str) -> str:
     separator = '' if contents.endswith(('\n', '\r')) else '\n'
     return f'{contents}{separator}[mister]\n{ZAPAROO_FRONTEND_MAIN_LINE}'
@@ -161,7 +245,15 @@ def _section_name(line):
 
 
 def _main_value(line):
-    match = re.match(r'^\s*main\s*=\s*(.*?)\s*(?:[;#].*)?$', _line_body(line), re.IGNORECASE)
+    return _ini_value(line, 'main')
+
+
+def _bootcore_value(line):
+    return _ini_value(line, 'bootcore')
+
+
+def _ini_value(line, name):
+    match = re.match(rf'^\s*{re.escape(name)}\s*=\s*(.*?)\s*(?:[;#].*)?$', _line_body(line), re.IGNORECASE)
     return match.group(1).strip() if match is not None else None
 
 

@@ -70,7 +70,6 @@ def make_new_local_store(store_migrator):
         'monochrome_ui': default_config.monochrome_ui,
         'ajgowans_manuals_dbs_general_selector': False,
         'introduced_related_database_ids': [],
-        'zaparoo_frontend_default': False,
     }
 
 
