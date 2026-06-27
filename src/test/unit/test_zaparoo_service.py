@@ -53,7 +53,7 @@ class TestZaparooService(unittest.TestCase):
         self.assertEqual('[mister]\nmain=zaparoo/MiSTer_Zaparoo\n', sut.file_system.read_file_contents(FILE_MiSTer_ini))
         self.assertFalse(sut.file_system.is_file(FILE_MiSTer_ini_update_all_backup))
 
-    def test_set_frontend_active_true___when_mister_section_is_missing___appends_mister_section_with_zaparoo_frontend(self):
+    def test_set_frontend_active_true___when_mister_section_is_missing___prepends_mister_section_with_zaparoo_frontend(self):
         sut = ZaparooServiceTester(files={
             FILE_zaparoo_frontend: {'content': 'frontend'},
             FILE_MiSTer_ini: {'content': '[menu]\nvideo_mode=8\n'},
@@ -62,7 +62,7 @@ class TestZaparooService(unittest.TestCase):
         sut.set_frontend_active(True)
 
         self.assertEqual(
-            '[menu]\nvideo_mode=8\n[mister]\nmain=zaparoo/MiSTer_Zaparoo\n',
+            '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n\n[menu]\nvideo_mode=8\n',
             sut.file_system.read_file_contents(FILE_MiSTer_ini),
         )
 

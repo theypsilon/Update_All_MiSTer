@@ -157,7 +157,7 @@ def keep_zaparoo_frontend_active_in_mister_ini(contents: str) -> str:
     section_range = _find_mister_section_range(lines)
 
     if section_range is None:
-        return _append_mister_section(contents)
+        return _prepend_mister_section(contents)
 
     section_start, section_end = section_range
     main_line_indexes = []
@@ -215,9 +215,8 @@ def has_bootcore_lastcore(contents: str) -> bool:
     return False
 
 
-def _append_mister_section(contents: str) -> str:
-    separator = '' if contents.endswith(('\n', '\r')) else '\n'
-    return f'{contents}{separator}[mister]\n{ZAPAROO_FRONTEND_MAIN_LINE}'
+def _prepend_mister_section(contents: str) -> str:
+    return f'[mister]\n{ZAPAROO_FRONTEND_MAIN_LINE}\n{contents}'
 
 
 def _find_mister_section_range(lines):

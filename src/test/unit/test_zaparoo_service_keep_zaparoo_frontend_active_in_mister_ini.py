@@ -52,7 +52,7 @@ class TestZaparooServiceKeepZaparooFrontendActiveInMisterIni(unittest.TestCase):
     def test_when_input_is_empty___creates_mister_section_with_main(self):
         self._assert_transform('empty_file')
 
-    def test_when_file_has_no_mister_section___appends_mister_section_with_main(self):
+    def test_when_file_has_no_mister_section___prepends_mister_section_with_main(self):
         self._assert_transform('file_without_mister_section')
 
     def test_when_mister_section_has_no_main___inserts_main_at_end_of_section(self):
