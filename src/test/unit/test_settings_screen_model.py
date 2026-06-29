@@ -267,6 +267,21 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher & Zaparoo Frontend', entry['description'])
         self.assertEqual([{'type': 'navigate', 'target': 'zaparoo_menu'}], entry['actions']['ok'])
 
+    def test_retroachievements_other_cores_entry___is_second_and_uses_setup_effect(self):
+        other_cores = self.model['items']['other_cores_menu']
+        entry = other_cores['entries'][1]
+        action = entry['actions']['ok']
+
+        self.assertEqual('# RetroAchievements Cores', entry['title'])
+        self.assertEqual('theypsilon/RetroAchievementsDB_MiSTer', list(other_cores['variables'])[1])
+        self.assertEqual({'type': 'retroachievements_db_toggle'}, action[0])
+        self.assertEqual('condition', action[1]['type'])
+        self.assertEqual('retroachievements_cfg_status', action[1]['variable'])
+        self.assertEqual([], action[1]['ok'])
+        self.assertEqual('RetroAchievements Setup', action[1]['installed'][0]['header'])
+        self.assertEqual('RetroAchievements Setup', action[1]['missing_credentials'][0]['header'])
+        self.assertEqual(action, entry['actions']['toggle'])
+
     def test_zaparoo_submenu___has_enabled_and_frontend_options(self):
         entries = self.model['items']['zaparoo_menu']['entries']
 

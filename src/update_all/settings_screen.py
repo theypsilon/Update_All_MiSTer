@@ -50,6 +50,8 @@ from update_all.ui_model_utilities import gather_variable_declarations, dynamic_
 
 
 CHIP_ID_DEBUG_LOG_PATH: Final[str] = f'{MEDIA_FAT}/{FILE_update_all_chip_id_linker_log}'
+RETROACHIEVEMENTS_CFG_PATH: Final[str] = f'{MEDIA_FAT}/retroachievements.cfg'
+RETROACHIEVEMENTS_CFG_URL: Final[str] = 'https://raw.githubusercontent.com/odelot/Main_MiSTer/refs/heads/master/retroachievements.cfg'
 
 
 class SettingsScreen(UiApplication):
@@ -222,6 +224,7 @@ class SettingsScreen(UiApplication):
             'retroaccount_device_logout': lambda effect: self.retroaccount_device_logout(ui),
             'extract_chip_id': lambda effect: self.extract_chip_id(ui),
             'retroaccount_attach_chip_id_to_device': lambda effect: self.retroaccount_attach_chip_id_to_device(ui),
+            'retroachievements_db_toggle': lambda effect: self.retroachievements_db_toggle(ui),
         })
 
         self._theme_manager = theme_manager
@@ -237,6 +240,64 @@ class SettingsScreen(UiApplication):
 
     def remove_file(self, ui, effect) -> None:
         ui.set_value('file_exists', self._file_system.unlink(effect['target']))
+
+    def retroachievements_db_toggle(self, ui: UiContext) -> None:
+        db_variable = ALL_DB_IDS['RETROACHIEVEMENTS_DB']
+        if ui.get_value(db_variable) == 'true':
+            ui.set_value(db_variable, 'false')
+            ui.set_value('retroachievements_cfg_status', 'ok')
+            return
+
+        ui.set_value(db_variable, 'true')
+        status = self._retroachievements_cfg_status()
+        if status in ('missing_file', 'missing_password_field'):
+            status = 'installed' if self._install_retroachievements_cfg() else 'install_failed'
+
+        ui.set_value('retroachievements_cfg_status', status)
+
+    def _retroachievements_cfg_status(self) -> str:
+        if not self._file_system.is_file(RETROACHIEVEMENTS_CFG_PATH):
+            return 'missing_file'
+
+        try:
+            contents = self._file_system.read_file_contents(RETROACHIEVEMENTS_CFG_PATH)
+        except Exception as e:
+            self._logger.debug('Could not read RetroAchievements configuration file')
+            self._logger.debug(e)
+            return 'missing_password_field'
+
+        password = self._retroachievements_cfg_password(contents)
+        if password is None:
+            return 'missing_password_field'
+        if password == '':
+            return 'missing_credentials'
+        return 'ok'
+
+    @staticmethod
+    def _retroachievements_cfg_password(contents: str) -> Optional[str]:
+        for line in contents.splitlines():
+            stripped = line.strip()
+            if stripped == '' or stripped.startswith('#') or '=' not in stripped:
+                continue
+
+            key, value = stripped.split('=', 1)
+            if key.strip().lower() == 'password':
+                return value.strip()
+
+        return None
+
+    def _install_retroachievements_cfg(self) -> bool:
+        content = self._os_utils.download(RETROACHIEVEMENTS_CFG_URL)
+        if content is None or len(content) == 0:
+            return False
+
+        try:
+            self._file_system.write_file_contents(RETROACHIEVEMENTS_CFG_PATH, content.decode('utf-8'))
+            return True
+        except Exception as e:
+            self._logger.debug('Could not install RetroAchievements configuration file')
+            self._logger.debug(e)
+            return False
 
     def _chip_id_result_from_config(self) -> str:
         try:

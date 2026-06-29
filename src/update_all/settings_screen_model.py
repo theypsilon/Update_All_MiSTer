@@ -301,6 +301,52 @@ def _zaparoo_active_frontend_prompt(): return {
 }
 
 
+def _try_toggle_retroachievements_db(): return [
+    {"type": "retroachievements_db_toggle"},
+    {
+        "type": "condition",
+        "variable": "retroachievements_cfg_status",
+        "ok": [],
+        "installed": [_retroachievements_cfg_installed_message()],
+        "missing_credentials": [_retroachievements_cfg_missing_credentials_message()],
+        "install_failed": [_retroachievements_cfg_install_failed_message()],
+    },
+]
+
+
+def _retroachievements_cfg_installed_message(): return {
+    "ui": "message",
+    "header": "RetroAchievements Setup",
+    "text": [
+        "retroachievements.cfg has also been created in the root of your SD card.",
+        " ",
+        "Before playing, open it and add your RetroAchievements.org username and password.",
+    ],
+}
+
+
+def _retroachievements_cfg_missing_credentials_message(): return {
+    "ui": "message",
+    "header": "RetroAchievements Setup",
+    "text": [
+        "retroachievements.cfg was found in the root of your SD card, but the password is still blank.",
+        " ",
+        "Add your RetroAchievements.org username and password before using these cores.",
+    ],
+}
+
+
+def _retroachievements_cfg_install_failed_message(): return {
+    "ui": "message",
+    "header": "RetroAchievements Setup",
+    "text": [
+        "retroachievements.cfg could not be created automatically.",
+        " ",
+        "Please create it in the root of your SD card and add your RetroAchievements.org username and password before using these cores.",
+    ],
+}
+
+
 def _manuals_early_access_notice(target): return {
     "ui": "message",
     "header": "Manuals on MiSTer",
@@ -356,6 +402,7 @@ def settings_screen_model(): return {
         "manuals_space_fits": {"default": ""},
         "has_arcade_organizer_folders": {"default": "false", "values": ["false", "true"]},
         "has_right_available_code": {"default": "false", "values": ["false", "true"]},
+        "retroachievements_cfg_status": {"default": "ok", "values": ["ok", "installed", "missing_credentials", "install_failed"]},
     },
     "base_types": {
         "dialog_sub_menu": {
@@ -773,6 +820,7 @@ def settings_screen_model(): return {
             "header": "Other Cores",
             "variables": {
                 "coin_op_collection_downloader": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
+                "theypsilon/RetroAchievementsDB_MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "arcade_offset_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "llapi_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "unofficial_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
@@ -789,6 +837,19 @@ def settings_screen_model(): return {
                     "actions": {
                         "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
                         "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
+                    }
+                },
+                {
+                    "title": "# RetroAchievements Cores",
+                    "description": "{theypsilon/RetroAchievementsDB_MiSTer:enabled} Maintainer: odelot",
+                    "actions": {
+                        "ok": _try_toggle_retroachievements_db(),
+                        "toggle": _try_toggle_retroachievements_db(),
+                        "info": [{
+                            "ui": "message",
+                            "header": "RetroAchievements Cores",
+                            "text": ["RetroAchievements-enabled MiSTer runtime and cores"],
+                        }]
                     }
                 },
                 {

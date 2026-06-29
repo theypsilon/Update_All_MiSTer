@@ -83,6 +83,7 @@ class AllDBs:
         self.LLAPI_FOLDER = Database(db_id='llapi_folder', db_url='https://raw.githubusercontent.com/MiSTer-LLAPI/LLAPI_folder_MiSTer/main/llapidb.json.zip', title='LLAPI Folder')
         self.ARCADE_OFFSET_FOLDER = Database(db_id='arcade_offset_folder', db_url='https://raw.githubusercontent.com/Toryalai1/Arcade_Offset/db/arcadeoffsetdb.json.zip', title='Arcade Offset folder')
         self.COIN_OP_COLLECTION = Database(db_id='Coin-OpCollection/Distribution-MiSTerFPGA', db_url='https://raw.githubusercontent.com/Coin-OpCollection/Distribution-MiSTerFPGA/db/db.json.zip', title='Coin-Op Collection')
+        self.RETROACHIEVEMENTS_DB = Database(db_id='theypsilon/RetroAchievementsDB_MiSTer', db_url='https://raw.githubusercontent.com/theypsilon/RetroAchievementsDB_MiSTer/db/db.json.zip', title='RetroAchievements Cores')
         self.AGG23_DB = Database(db_id='agg23_db', db_url='https://raw.githubusercontent.com/agg23/mister-repository/db/manifest.json', title="agg23's MiSTer Cores")
         self.YC_BUILDS = Database(db_id='MikeS11/YC_Builds-MiSTer', db_url='https://raw.githubusercontent.com/MikeS11/YC_Builds-MiSTer/db/db.json.zip', title='Y/C Builds')
         self.ALT_CORES = Database(db_id='ajgowans/alt-cores', db_url='https://raw.githubusercontent.com/ajgowans/alt-cores/db/db.json.zip', title='Alt Cores')
