@@ -1018,11 +1018,13 @@ def settings_screen_model(): return {
             },
             "entries": [
                 {
+                    "id": "zaparoo",
                     "title": "# Zaparoo",
                     "description": "{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher & Zaparoo Frontend",
                     "actions": {"ok": [{"type": "navigate", "target": "zaparoo_menu"}]}
                 },
                 {
+                    "id": "arcade_organizer",
                     "title": "# Arcade Organizer",
                     "description": "{arcade_organizer:enabled} Creates folder for easy navigation",
                     "actions": {
@@ -2298,6 +2300,7 @@ def settings_screen_model(): return {
 
 
 def _retroaccount_account_entry(): return {
+    "id": "account",
     "title": "# Account",
     "description": "From RetroAccount. {retroaccount_checking}",
     "actions": {
@@ -2307,6 +2310,7 @@ def _retroaccount_account_entry(): return {
 
 
 def _retroaccount_login_entry(): return {
+    "id": "login",
     "title": "# Login",
     "description": "Login to RetroAccount",
     "actions": {"ok": [{
@@ -2374,6 +2378,7 @@ def _main_menu(retroaccount_logged_in): return {
             }
         },
         {
+            "id": "analogue_pocket",
             "title": "# Analogue Pocket",
             "description": "Firmware Update & Backups",
             "actions": {"ok": [{"type": "navigate", "target": "analogue_pocket_menu"}]}
@@ -2381,6 +2386,7 @@ def _main_menu(retroaccount_logged_in): return {
         {},  # separator
         _retroaccount_account_entry() if retroaccount_logged_in else _retroaccount_login_entry(),
         {
+            "id": "patrons_menu",
             "title": "# Patrons Menu",
             "description": "Timeline, Themes, etc... 2026.02.13",
             "actions": {"ok": [
@@ -2426,6 +2432,7 @@ def _main_menu(retroaccount_logged_in): return {
             ]}
         },
         {
+            "id": "system_options",
             "title": "# System Options",
             "description": "",
             "actions": {"ok": [{"type": "navigate", "target": "system_options_menu"}]}
@@ -2465,6 +2472,7 @@ def _main_menu(retroaccount_logged_in): return {
             ]}
         },
         {
+            "id": "exit_and_run",
             "title": "EXIT and RUN UPDATE ALL",
             "description": "",
             "actions": {"ok": [
