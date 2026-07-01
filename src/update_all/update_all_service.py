@@ -43,6 +43,7 @@ from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer, create_log_document, to_overscanned_doc
+from update_all.mister_ini_repository import MisterIniRepository
 from update_all.other import GenericProvider, terminal_size
 from update_all.logger import Logger, close_print_tmp_log_file
 from update_all.os_utils import OsUtils, LinuxOsUtils
@@ -60,6 +61,7 @@ from update_all.fetcher import Fetcher
 from update_all.mister_video_mode_ui import MisterVideoModeService
 from update_all.retroaccount import RetroAccountService
 from update_all.retroaccount_gateway import RetroAccountGateway
+from update_all.retroachievements_service import RetroAchievementsService
 from update_all.update_output import LtsvUpdateOutput, NoopUpdateOutput
 from update_all.zaparoo_service import ZaparooService
 
@@ -84,6 +86,7 @@ class UpdateAllServiceFactory:
         fetcher = Fetcher(config_provider, logger=None)
         os_utils = LinuxOsUtils(config_provider=config_provider, logger=self._logger, fetcher=fetcher)
         ini_repository = IniRepository(self._logger, file_system=file_system, os_utils=os_utils)
+        mister_ini_repository = MisterIniRepository(file_system, self._logger)
         config_reader = ConfigReader(self._logger, env, ini_repository=ini_repository)
         store_migrator = StoreMigrator(migrations(), self._logger)
         local_repository = LocalRepository(self._logger, file_system, store_migrator)
@@ -94,7 +97,13 @@ class UpdateAllServiceFactory:
         encryption = Encryption(self._logger, config_provider, file_system)
         retroaccount_gateway = RetroAccountGateway(config_provider, self._logger, file_system, fetcher)
         retroaccount = RetroAccountService(self._logger, file_system, config_provider, retroaccount_gateway, encryption)
-        zaparoo_service = ZaparooService(file_system, self._logger)
+        retroachievements_service = RetroAchievementsService(
+            file_system,
+            os_utils,
+            self._logger,
+            mister_ini_repository,
+        )
+        zaparoo_service = ZaparooService(file_system, self._logger, mister_ini_repository=mister_ini_repository)
         mister_video_mode_service = MisterVideoModeService(self._logger, file_system, config_provider, os_utils)
         settings_screen = SettingsScreen(
             logger=self._logger,
@@ -109,7 +118,8 @@ class UpdateAllServiceFactory:
             ui_runtime=printer,
             ao_service=ao_service,
             encryption=encryption,
-            retroaccount=retroaccount
+            retroaccount=retroaccount,
+            retroachievements_service=retroachievements_service
         )
         environment_setup = EnvironmentSetupImpl(
             logger=self._logger,

@@ -415,6 +415,7 @@ def settings_screen_model(): return {
             ],
             "entries": [
                 {
+                    "id": "back",
                     "title": "BACK",
                     "description": "",
                     "actions": {"ok": [{"type": "navigate", "target": "back"}]}
@@ -1786,6 +1787,7 @@ def settings_screen_model(): return {
                     "actions": {"ok": [{"type": "navigate", "target": "patrons_advanced_menu"}]}
                 },
                 {
+                    "id": "back",
                     "title": "# BACK",
                     "description": "",
                     "actions": {"ok": [
@@ -1883,6 +1885,7 @@ def settings_screen_model(): return {
                     ]}
                 },
                 {
+                    "id": "back",
                     "title": "# BACK",
                     "description": "",
                     "actions": {"ok": [

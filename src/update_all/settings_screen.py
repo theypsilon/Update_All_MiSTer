@@ -41,6 +41,7 @@ from update_all.logger import Logger, CollectorLoggerDecorator
 from update_all.mister_video_mode_ui import MisterVideoModeService, MisterVideoModeMenu, MisterVideoAdjustMenu
 from update_all.os_utils import OsUtils
 from update_all.retroaccount import RetroAccountService, BenefitState
+from update_all.retroachievements_service import RetroAchievementsService
 from update_all.update_output import NoopUpdateOutput
 from update_all.settings_screen_model import settings_screen_model
 from update_all.settings_screen_printer import SettingsScreenPrinter
@@ -50,8 +51,6 @@ from update_all.ui_model_utilities import gather_variable_declarations, dynamic_
 
 
 CHIP_ID_DEBUG_LOG_PATH: Final[str] = f'{MEDIA_FAT}/{FILE_update_all_chip_id_linker_log}'
-RETROACHIEVEMENTS_CFG_PATH: Final[str] = f'{MEDIA_FAT}/retroachievements.cfg'
-RETROACHIEVEMENTS_CFG_URL: Final[str] = 'https://raw.githubusercontent.com/odelot/Main_MiSTer/refs/heads/master/retroachievements.cfg'
 
 
 class SettingsScreen(UiApplication):
@@ -60,8 +59,9 @@ class SettingsScreen(UiApplication):
                  settings_screen_printer: SettingsScreenPrinter,
                  local_repository: LocalRepository, store_provider: GenericProvider[LocalStore],
                  ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService, encryption: Encryption,
-                 retroaccount: RetroAccountService):
+                 retroaccount: RetroAccountService, retroachievements_service: RetroAchievementsService):
         self._logger = logger
+        self._retroachievements_service = retroachievements_service
         self._config_provider = config_provider
         self._file_system = file_system
         self._ini_repository = ini_repository
@@ -245,59 +245,12 @@ class SettingsScreen(UiApplication):
         db_variable = ALL_DB_IDS['RETROACHIEVEMENTS_DB']
         if ui.get_value(db_variable) == 'true':
             ui.set_value(db_variable, 'false')
+            self._retroachievements_service.disable()
             ui.set_value('retroachievements_cfg_status', 'ok')
             return
 
         ui.set_value(db_variable, 'true')
-        status = self._retroachievements_cfg_status()
-        if status in ('missing_file', 'missing_password_field'):
-            status = 'installed' if self._install_retroachievements_cfg() else 'install_failed'
-
-        ui.set_value('retroachievements_cfg_status', status)
-
-    def _retroachievements_cfg_status(self) -> str:
-        if not self._file_system.is_file(RETROACHIEVEMENTS_CFG_PATH):
-            return 'missing_file'
-
-        try:
-            contents = self._file_system.read_file_contents(RETROACHIEVEMENTS_CFG_PATH)
-        except Exception as e:
-            self._logger.debug('Could not read RetroAchievements configuration file')
-            self._logger.debug(e)
-            return 'missing_password_field'
-
-        password = self._retroachievements_cfg_password(contents)
-        if password is None:
-            return 'missing_password_field'
-        if password == '':
-            return 'missing_credentials'
-        return 'ok'
-
-    @staticmethod
-    def _retroachievements_cfg_password(contents: str) -> Optional[str]:
-        for line in contents.splitlines():
-            stripped = line.strip()
-            if stripped == '' or stripped.startswith('#') or '=' not in stripped:
-                continue
-
-            key, value = stripped.split('=', 1)
-            if key.strip().lower() == 'password':
-                return value.strip()
-
-        return None
-
-    def _install_retroachievements_cfg(self) -> bool:
-        content = self._os_utils.download(RETROACHIEVEMENTS_CFG_URL)
-        if content is None or len(content) == 0:
-            return False
-
-        try:
-            self._file_system.write_file_contents(RETROACHIEVEMENTS_CFG_PATH, content.decode('utf-8'))
-            return True
-        except Exception as e:
-            self._logger.debug('Could not install RetroAchievements configuration file')
-            self._logger.debug(e)
-            return False
+        ui.set_value('retroachievements_cfg_status', self._retroachievements_service.enable())
 
     def _chip_id_result_from_config(self) -> str:
         try:

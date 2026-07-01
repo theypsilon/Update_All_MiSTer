@@ -18,7 +18,9 @@
 import os
 import unittest
 
-from update_all.zaparoo_service import keep_zaparoo_frontend_active_in_mister_ini
+from test.mister_ini_repository_tester import MisterIniRepositoryTester
+from update_all.constants import FILE_MiSTer_ini
+from update_all.zaparoo_service import FILE_zaparoo_frontend
 
 
 MISTER_INI_FIXTURES_DIR = os.path.join(
@@ -32,8 +34,8 @@ def _read_mister_ini_fixture(scenario: str, kind: str) -> str:
         return f.read()
 
 
-class TestZaparooServiceKeepZaparooFrontendActiveInMisterIni(unittest.TestCase):
-    """Narrow unit tests for keep_zaparoo_frontend_active_in_mister_ini.
+class TestZaparooServiceEnsureZaparooFrontendActiveInMisterIni(unittest.TestCase):
+    """Narrow unit tests for ensuring the Zaparoo frontend in MiSTer.ini.
 
     Each scenario has matching fixtures under
     ``src/test/fixtures/zaparoo_mister_ini/`` named
@@ -44,9 +46,21 @@ class TestZaparooServiceKeepZaparooFrontendActiveInMisterIni(unittest.TestCase):
     def _assert_transform(self, scenario: str) -> None:
         input_contents = _read_mister_ini_fixture(scenario, 'input')
         expected_contents = _read_mister_ini_fixture(scenario, 'expected')
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': input_contents},
+        })
+
+        sut.ensure_mister_ini_key(
+            'mister',
+            'main',
+            FILE_zaparoo_frontend,
+            create_if_missing=True,
+            prepend_section=True,
+        )
+
         self.assertEqual(
             expected_contents,
-            keep_zaparoo_frontend_active_in_mister_ini(input_contents),
+            sut.file_system.read_file_contents(FILE_MiSTer_ini),
         )
 
     def test_when_input_is_empty___creates_mister_section_with_main(self):

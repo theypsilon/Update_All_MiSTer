@@ -20,6 +20,8 @@ from test.countdown_stub import CountdownStub
 from test.fake_filesystem import FileSystemFactory
 from test.fetcher_stub import FetcherStub
 from test.logger_tester import NoLogger
+from test.mister_ini_repository_tester import MisterIniRepositoryTester
+from test.retroachievements_service_tester import RetroAchievementsServiceTester
 from test.retroaccount_gateway_tester import RetroAccountGatewayTester
 from test.spy_os_utils import SpyOsUtils
 from test.zaparoo_service_tester import ZaparooServiceTester
@@ -41,9 +43,11 @@ from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer
+from update_all.mister_ini_repository import MisterIniRepository
 from update_all.mister_video_mode_ui import MisterVideoModeService
 from update_all.os_utils import OsUtils
 from update_all.other import GenericProvider, TerminalSize
+from update_all.retroachievements_service import RetroAchievementsService
 from update_all.settings_screen import SettingsScreen
 from update_all.settings_screen_printer import SettingsScreenPrinter, ColorThemeManager
 from update_all.store_migrator import StoreMigrator, make_new_local_store
@@ -176,11 +180,14 @@ class SettingsScreenTester(SettingsScreen):
                  store_provider: GenericProvider[LocalStore] = None,
                  ao_service: ArcadeOrganizerService = None,
                  retroaccount: RetroAccountService = None,
-                 mister_video_mode_service: MisterVideoModeService = None):
+                 mister_video_mode_service: MisterVideoModeService = None,
+                 mister_ini_repository: MisterIniRepository = None,
+                 retroachievements_service: RetroAchievementsService = None):
 
         config_provider = config_provider or GenericProvider[Config]()
         file_system = file_system or FileSystemFactory(config_provider=config_provider).create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
+        mister_ini_repository = mister_ini_repository or MisterIniRepositoryTester(file_system=file_system)
         super().__init__(
             logger=NoLogger(),
             config_provider=config_provider,
@@ -195,6 +202,14 @@ class SettingsScreenTester(SettingsScreen):
             store_provider=store_provider or GenericProvider[LocalStore](),
             ao_service=ao_service or ArcadeOrganizerServiceStub(),
             retroaccount=retroaccount or RetroAccountServiceTester(file_system=file_system, config_provider=config_provider),
+            retroachievements_service=(
+                retroachievements_service
+                or RetroAchievementsServiceTester(
+                    file_system=file_system,
+                    os_utils=os_utils,
+                    mister_ini_repository=mister_ini_repository,
+                )
+            ),
         )
 
 

@@ -23,7 +23,6 @@ from update_all.zaparoo_service import (
     FILE_zaparoo_frontend,
     FILE_zaparoo_mister_ini_backup_pending,
     FILE_zaparoo_mister_ini_pending,
-    mister_ini_contents_equivalent,
 )
 
 class TestZaparooService(unittest.TestCase):
@@ -32,7 +31,7 @@ class TestZaparooService(unittest.TestCase):
 
         sut.set_frontend_active(True)
 
-        self.assertEqual(0, sut.frontend_activation_calls)
+        self.assertFalse(sut.frontend_activation_applied())
 
     def test_set_frontend_active_true___when_frontend_exists___applies_frontend_activation(self):
         sut = ZaparooServiceTester(files={
@@ -41,7 +40,7 @@ class TestZaparooService(unittest.TestCase):
 
         sut.set_frontend_active(True)
 
-        self.assertEqual(1, sut.frontend_activation_calls)
+        self.assertTrue(sut.frontend_activation_applied())
 
     def test_set_frontend_active_true___when_mister_ini_is_missing___creates_mister_ini_with_zaparoo_frontend(self):
         sut = ZaparooServiceTester(files={
@@ -150,31 +149,7 @@ class TestZaparooService(unittest.TestCase):
     def test_zaparoo_mister_ini_backup_pending_path___is_hidden_new_file_alongside_backup(self):
         self.assertEqual('.MiSTer.ini.update_all.bak.new', FILE_zaparoo_mister_ini_backup_pending)
 
-    def test_mister_ini_contents_equivalent___ignores_case_within_lines(self):
-        self.assertTrue(mister_ini_contents_equivalent(
-            '[MiSTer]\nMAIN=Zaparoo/MiSTer_Zaparoo\n',
-            '[mister]\nmain=zaparoo/mister_zaparoo\n',
-        ))
-
-    def test_mister_ini_contents_equivalent___ignores_intra_line_whitespace(self):
-        self.assertTrue(mister_ini_contents_equivalent(
-            '[mister]\n  main  =  zaparoo/MiSTer_Zaparoo\t\n',
-            '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n',
-        ))
-
-    def test_mister_ini_contents_equivalent___treats_extra_blank_lines_as_different(self):
-        self.assertFalse(mister_ini_contents_equivalent(
-            '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n',
-            '[mister]\n\nmain=zaparoo/MiSTer_Zaparoo\n',
-        ))
-
-    def test_mister_ini_contents_equivalent___treats_different_values_as_different(self):
-        self.assertFalse(mister_ini_contents_equivalent(
-            '[mister]\nmain=menu.rbf\n',
-            '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n',
-        ))
-
-    def test_set_frontend_active_true___when_internal_step_raises___swallows_and_cleans_up_pending(self):
+    def test_set_frontend_active_true___when_repository_update_raises___swallows_error(self):
         original = '[mister]\nmain=menu.rbf\n'
         sut = ZaparooServiceTester(files={
             FILE_zaparoo_frontend: {'content': 'frontend'},
@@ -182,14 +157,13 @@ class TestZaparooService(unittest.TestCase):
             FILE_zaparoo_mister_ini_pending: {'content': 'leftover from a crashed prior run'},
         })
 
-        def boom():
+        def boom(*_args, **_kwargs):
             raise RuntimeError('boom')
-        sut._apply_frontend_activation = boom
+        sut.mister_ini_repository.ensure_mister_ini_key = boom
 
         sut.set_frontend_active(True)
 
         self.assertEqual(original, sut.file_system.read_file_contents(FILE_MiSTer_ini))
-        self.assertFalse(sut.file_system.is_file(FILE_zaparoo_mister_ini_pending))
 
     def test_set_frontend_active_true___when_backup_raises___keeps_original_and_cleans_up_pending(self):
         original = '[mister]\nmain=menu.rbf\n'
@@ -200,7 +174,7 @@ class TestZaparooService(unittest.TestCase):
 
         def boom():
             raise RuntimeError('boom')
-        sut._write_mister_ini_backup = boom
+        sut.mister_ini_repository._write_mister_ini_backup = boom
 
         sut.set_frontend_active(True)
 

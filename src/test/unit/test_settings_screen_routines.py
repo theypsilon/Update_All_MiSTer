@@ -32,7 +32,7 @@ from update_all.databases import DB_ID_NAMES_TXT, AllDBs, all_dbs
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
 from update_all.retroaccount import BenefitState, ChipIdAttachResult
-from update_all.settings_screen import CHIP_ID_DEBUG_LOG_PATH, RETROACHIEVEMENTS_CFG_PATH, RETROACHIEVEMENTS_CFG_URL, SettingsScreen
+from update_all.settings_screen import CHIP_ID_DEBUG_LOG_PATH, SettingsScreen
 from update_all.settings_screen_model import settings_screen_model
 from update_all.ui_model_utilities import gather_variable_declarations
 
@@ -79,71 +79,30 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         sut.calculate_names_char_code_warning(ui)
         self.assertEqual(ui.get_value('names_char_code_warning'), 'true')
 
-    def test_retroachievements_db_toggle___with_valid_password___enables_db_without_installing_cfg(self):
+    def test_retroachievements_db_toggle___when_disabled___enables_db_and_sets_service_status(self):
         config = Config(databases=default_databases())
-        file_system = _retroachievements_file_system(config, 'username=user\npassword=secret\n')
-        os_utils = _DownloadOsUtils(b'username=\npassword=\n')
-        sut, ui = tester(config=config, file_system=file_system, os_utils=os_utils)
-
-        sut.retroachievements_db_toggle(ui)
-
-        self.assertEqual('true', ui.get_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id))
-        self.assertEqual('ok', ui.get_value('retroachievements_cfg_status'))
-        self.assertEqual([], os_utils.calls_to_download)
-        self.assertEqual('username=user\npassword=secret\n', file_system.read_file_contents(RETROACHIEVEMENTS_CFG_PATH))
-
-    def test_retroachievements_db_toggle___with_missing_cfg___installs_cfg_and_enables_db(self):
-        config = Config(databases=default_databases())
-        file_system = FileSystemFactory.from_state(config=config, files={}).create_for_system_scope()
-        os_utils = _DownloadOsUtils(b'username=\npassword=\n')
-        sut, ui = tester(config=config, file_system=file_system, os_utils=os_utils)
-
-        sut.retroachievements_db_toggle(ui)
-
-        self.assertEqual('true', ui.get_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id))
-        self.assertEqual('installed', ui.get_value('retroachievements_cfg_status'))
-        self.assertEqual([RETROACHIEVEMENTS_CFG_URL], os_utils.calls_to_download)
-        self.assertEqual('username=\npassword=\n', file_system.read_file_contents(RETROACHIEVEMENTS_CFG_PATH))
-
-    def test_retroachievements_db_toggle___with_missing_password_field___installs_cfg_and_enables_db(self):
-        config = Config(databases=default_databases())
-        file_system = _retroachievements_file_system(config, 'username=user\nshow_progress_popups=1\n')
-        os_utils = _DownloadOsUtils(b'username=\npassword=\n')
-        sut, ui = tester(config=config, file_system=file_system, os_utils=os_utils)
-
-        sut.retroachievements_db_toggle(ui)
-
-        self.assertEqual('true', ui.get_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id))
-        self.assertEqual('installed', ui.get_value('retroachievements_cfg_status'))
-        self.assertEqual([RETROACHIEVEMENTS_CFG_URL], os_utils.calls_to_download)
-        self.assertEqual('username=\npassword=\n', file_system.read_file_contents(RETROACHIEVEMENTS_CFG_PATH))
-
-    def test_retroachievements_db_toggle___with_empty_password___reminds_user_and_enables_db_without_installing_cfg(self):
-        config = Config(databases=default_databases())
-        cfg_contents = 'username=user\npassword=\nshow_progress_popups=1\n'
-        file_system = _retroachievements_file_system(config, cfg_contents)
-        os_utils = _DownloadOsUtils(b'username=\npassword=\n')
-        sut, ui = tester(config=config, file_system=file_system, os_utils=os_utils)
+        service = _RetroAchievementsServiceStub(enable_status='missing_credentials')
+        sut, ui = tester(config=config, retroachievements_service=service)
 
         sut.retroachievements_db_toggle(ui)
 
         self.assertEqual('true', ui.get_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id))
         self.assertEqual('missing_credentials', ui.get_value('retroachievements_cfg_status'))
-        self.assertEqual([], os_utils.calls_to_download)
-        self.assertEqual(cfg_contents, file_system.read_file_contents(RETROACHIEVEMENTS_CFG_PATH))
+        self.assertEqual(1, service.enable_calls)
+        self.assertEqual(0, service.disable_calls)
 
-    def test_retroachievements_db_toggle___when_enabled___disables_db_without_checking_cfg(self):
+    def test_retroachievements_db_toggle___when_enabled___disables_db(self):
         retroachievements_db_id = all_dbs('').RETROACHIEVEMENTS_DB.db_id
         config = Config(databases=default_databases(add=[retroachievements_db_id]))
-        file_system = FileSystemFactory.from_state(config=config, files={}).create_for_system_scope()
-        os_utils = _DownloadOsUtils(b'username=\npassword=\n')
-        sut, ui = tester(config=config, file_system=file_system, os_utils=os_utils)
+        service = _RetroAchievementsServiceStub(enable_status='ok')
+        sut, ui = tester(config=config, retroachievements_service=service)
 
         sut.retroachievements_db_toggle(ui)
 
         self.assertEqual('false', ui.get_value(retroachievements_db_id))
         self.assertEqual('ok', ui.get_value('retroachievements_cfg_status'))
-        self.assertEqual([], os_utils.calls_to_download)
+        self.assertEqual(0, service.enable_calls)
+        self.assertEqual(1, service.disable_calls)
 
     def test_prepare_exit_dont_save_and_run___with_temp_values___writes_temp_values_into_config_and_marks_temporary_downloader_ini(self):
         config = Config()
@@ -648,7 +607,7 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertIsNone(sut._pending_chip_id_extraction)
 
 
-def tester(config: Config = None, store: LocalStore = None, mister_video_mode_service=None, initialize_ui=True, ui_runtime=None, file_system=None, retroaccount=None, os_utils=None) -> Tuple[SettingsScreen, UiContextStub]:
+def tester(config: Config = None, store: LocalStore = None, mister_video_mode_service=None, initialize_ui=True, ui_runtime=None, file_system=None, retroaccount=None, os_utils=None, retroachievements_service=None) -> Tuple[SettingsScreen, UiContextStub]:
     ui = UiContextStub()
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config or Config(databases=default_databases()))
@@ -662,27 +621,25 @@ def tester(config: Config = None, store: LocalStore = None, mister_video_mode_se
         file_system=file_system,
         retroaccount=retroaccount,
         os_utils=os_utils,
+        retroachievements_service=retroachievements_service,
     )
     if initialize_ui:
         settings_screen.initialize_ui(ui)
     return settings_screen, ui
 
 
-def _retroachievements_file_system(config: Config, cfg_contents: str):
-    return FileSystemFactory.from_state(
-        config=config,
-        files={RETROACHIEVEMENTS_CFG_PATH: {'content': cfg_contents}},
-    ).create_for_system_scope()
+class _RetroAchievementsServiceStub:
+    def __init__(self, enable_status):
+        self._enable_status = enable_status
+        self.enable_calls = 0
+        self.disable_calls = 0
 
+    def enable(self):
+        self.enable_calls += 1
+        return self._enable_status
 
-class _DownloadOsUtils(SpyOsUtils):
-    def __init__(self, content):
-        super().__init__()
-        self._content = content
-
-    def download(self, url):
-        self.calls_to_download.append(url)
-        return self._content
+    def disable(self):
+        self.disable_calls += 1
 
 
 def chip_id_linker_file_system(config: Config, pyz: bool = True, rbf: bool = True):

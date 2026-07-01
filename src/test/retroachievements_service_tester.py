@@ -19,36 +19,33 @@
 from test.fake_filesystem import FileSystemFactory
 from test.logger_tester import NoLogger
 from test.mister_ini_repository_tester import MisterIniRepositoryTester
+from test.spy_os_utils import SpyOsUtils
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
 from update_all.mister_ini_repository import MisterIniRepository
-from update_all.zaparoo_service import ZaparooService
+from update_all.os_utils import OsUtils
+from update_all.retroachievements_service import RetroAchievementsService
 
 
-class ZaparooServiceTester(ZaparooService):
+class RetroAchievementsServiceTester(RetroAchievementsService):
     def __init__(
             self,
             file_system: FileSystem = None,
             files=None,
+            os_utils: OsUtils = None,
             logger: Logger = None,
             mister_ini_repository: MisterIniRepository = None,
     ):
         self.file_system = file_system or FileSystemFactory.from_state(files=files or {}).create_for_system_scope()
+        self.os_utils = os_utils or SpyOsUtils()
         self.logger = logger or NoLogger()
         self.mister_ini_repository = (
             mister_ini_repository
             or MisterIniRepositoryTester(file_system=self.file_system, logger=self.logger)
         )
-        self.calls = []
-        self.frontend_activation_calls = 0
         super().__init__(
             self.file_system,
+            self.os_utils,
             self.logger,
-            mister_ini_repository=self.mister_ini_repository,
+            self.mister_ini_repository,
         )
-
-    def set_frontend_active(self, active: bool) -> None:
-        super().set_frontend_active(active)
-        if active and self.frontend_activation_applied():
-            self.calls.append('apply_frontend_activation')
-            self.frontend_activation_calls += 1
