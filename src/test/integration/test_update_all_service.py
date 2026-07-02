@@ -18,20 +18,17 @@
 import unittest
 
 from update_all.config import Config
-from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_REQUIRES_EARLY_EXIT, COMMAND_SHOW_CHIP_ID_RESULT, \
-    FILE_MiSTer_ini
+from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_REQUIRES_EARLY_EXIT, COMMAND_SHOW_CHIP_ID_RESULT
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
 from update_all.update_output import LtsvUpdateOutput
 from update_all.update_all_service import UpdateAllService, UpdateAllServicePass
-from update_all.zaparoo_service import FILE_zaparoo_frontend
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.update_all_service_tester import UpdateAllServiceFactoryTester, UpdateAllServiceTester, \
     default_env, EnvironmentSetupStub, default_databases, local_store, RetroAccountServiceTester, SettingsScreenStub, \
     UpdateAllServiceFlowTester
-from test.zaparoo_service_tester import ZaparooServiceTester
 
 
 def tester(files=None, folders=None, config: Config = None, store: LocalStore = None, env_stub: EnvironmentSetupStub = None,
@@ -61,7 +58,7 @@ class TestUpdateAllService(unittest.TestCase):
         sut, _ = tester()
         self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
-    def test_full_run___applies_zaparoo_frontend_preference_after_hard_waiting_background_jobs(self):
+    def test_full_run___does_not_apply_zaparoo_frontend_preference_after_hard_waiting_background_jobs(self):
         sut, _ = tester(service_type=UpdateAllServiceFlowTester)
 
         self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
@@ -69,44 +66,8 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual([
             'start_background_jobs',
             'hard_wait_background_jobs',
-            'apply_zaparoo_frontend_preference',
             'show_outro',
         ], sut.events)
-
-    def test_apply_zaparoo_frontend_preference___when_both_zaparoo_flags_are_disabled___does_not_call_zaparoo_service(self):
-        zaparoo_service = ZaparooServiceTester()
-        sut, _ = tester(zaparoo_service=zaparoo_service)
-
-        sut._apply_zaparoo_frontend_preference()
-
-        self.assertEqual([], zaparoo_service.calls)
-
-    def test_apply_zaparoo_frontend_preference___when_frontend_active_is_enabled___keeps_frontend_active(self):
-        store = local_store()
-        store.set_zaparoo_frontend_active(True)
-        zaparoo_service = ZaparooServiceTester(files={
-            FILE_zaparoo_frontend: {'content': 'frontend'},
-        })
-        sut, _ = tester(store=store, zaparoo_service=zaparoo_service)
-
-        sut._apply_zaparoo_frontend_preference()
-
-        self.assertEqual(['apply_frontend_activation'], zaparoo_service.calls)
-
-    def test_apply_zaparoo_frontend_preference___when_frontend_active_is_disabled___removes_zaparoo_frontend_main(self):
-        store = local_store()
-        store.generic_set('zaparoo_frontend_active', False)
-        zaparoo_service = ZaparooServiceTester(files={
-            FILE_MiSTer_ini: {'content': '[mister]\nmain=zaparoo/MiSTer_Zaparoo\nfoo=bar\n'},
-        })
-        sut, _ = tester(store=store, zaparoo_service=zaparoo_service)
-
-        sut._apply_zaparoo_frontend_preference()
-
-        self.assertEqual(
-            '[mister]\nfoo=bar\n',
-            zaparoo_service.file_system.read_file_contents(FILE_MiSTer_ini),
-        )
 
     def test_full_run___with_no_databases_and_no_arcade_organizer___returns_0(self):
         sut, _ = tester(config=Config(arcade_organizer=False))

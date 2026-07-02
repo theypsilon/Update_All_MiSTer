@@ -74,12 +74,6 @@ class LocalStore:
     def get_introduced_related_database_ids(self) -> List[str]:
         return self._props['introduced_related_database_ids']
 
-    def set_zaparoo_frontend_active(self, value: bool) -> None:
-        self.generic_set('zaparoo_frontend_active', value)
-
-    def get_zaparoo_frontend_active(self) -> bool:
-        return self._props.get('zaparoo_frontend_active', False)
-
     def unwrap_props(self):
         return self._props
 

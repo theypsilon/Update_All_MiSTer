@@ -26,12 +26,13 @@ from update_all.zaparoo_service import (
 )
 
 class TestZaparooService(unittest.TestCase):
-    def test_set_frontend_active_true___when_frontend_is_missing___returns_without_applying(self):
+    def test_set_frontend_active_true___when_frontend_is_missing___still_applies_frontend_activation(self):
         sut = ZaparooServiceTester()
 
         sut.set_frontend_active(True)
 
-        self.assertFalse(sut.frontend_activation_applied())
+        self.assertTrue(sut.frontend_activation_applied())
+        self.assertEqual('[mister]\nmain=zaparoo/MiSTer_Zaparoo\n', sut.file_system.read_file_contents(FILE_MiSTer_ini))
 
     def test_set_frontend_active_true___when_frontend_exists___applies_frontend_activation(self):
         sut = ZaparooServiceTester(files={
@@ -103,8 +104,102 @@ class TestZaparooService(unittest.TestCase):
         self.assertEqual(contents, sut.file_system.read_file_contents(FILE_MiSTer_ini))
         self.assertEqual([], [record for record in sut.file_system.write_records if record['scope'] == 'write_file_contents'])
 
+    def test_would_change_frontend_active_in_mister_ini_true___when_mister_ini_is_missing___returns_true_without_writing(self):
+        sut = ZaparooServiceTester()
+
+        self.assertTrue(sut.would_change_frontend_active_in_mister_ini(True))
+
+        self.assertFalse(sut.file_system.is_file(FILE_MiSTer_ini))
+
+    def test_would_change_frontend_active_in_mister_ini_true___when_zaparoo_frontend_is_already_main___returns_false(self):
+        sut = ZaparooServiceTester(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n'},
+        })
+
+        self.assertFalse(sut.would_change_frontend_active_in_mister_ini(True))
+
+    def test_would_change_frontend_active_in_mister_ini_true___when_zaparoo_frontend_is_menu_main___returns_false(self):
+        sut = ZaparooServiceTester(files={
+            FILE_MiSTer_ini: {'content': '[menu]\nmain=zaparoo/MiSTer_Zaparoo\n'},
+        })
+
+        self.assertFalse(sut.would_change_frontend_active_in_mister_ini(True))
+
+    def test_set_frontend_active_true___when_zaparoo_frontend_is_menu_main___does_not_rewrite_mister_ini(self):
+        contents = '[menu]\nmain=zaparoo/MiSTer_Zaparoo\n'
+        sut = ZaparooServiceTester(files={
+            FILE_MiSTer_ini: {'content': contents},
+        })
+
+        sut.set_frontend_active(True)
+
+        self.assertEqual(contents, sut.file_system.read_file_contents(FILE_MiSTer_ini))
+        self.assertEqual([], [record for record in sut.file_system.write_records if record['scope'] == 'write_file_contents'])
+
+    def test_would_change_frontend_active_in_mister_ini_false___when_zaparoo_frontend_is_main___returns_true_without_writing(self):
+        original = '[mister]\nmain=zaparoo/MiSTer_Zaparoo\nfoo=bar\n'
+        sut = ZaparooServiceTester(files={
+            FILE_MiSTer_ini: {'content': original},
+        })
+
+        self.assertTrue(sut.would_change_frontend_active_in_mister_ini(False))
+
+        self.assertEqual(original, sut.file_system.read_file_contents(FILE_MiSTer_ini))
+
+    def test_would_change_frontend_active_in_mister_ini_false___when_zaparoo_frontend_is_menu_main___returns_true_without_writing(self):
+        original = '[menu]\nmain=zaparoo/MiSTer_Zaparoo\nvideo_mode=8\n'
+        sut = ZaparooServiceTester(files={
+            FILE_MiSTer_ini: {'content': original},
+        })
+
+        self.assertTrue(sut.would_change_frontend_active_in_mister_ini(False))
+
+        self.assertEqual(original, sut.file_system.read_file_contents(FILE_MiSTer_ini))
+
+    def test_would_change_frontend_active_in_mister_ini_false___when_zaparoo_frontend_is_absent___returns_false(self):
+        sut = ZaparooServiceTester(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nfoo=bar\n'},
+        })
+
+        self.assertFalse(sut.would_change_frontend_active_in_mister_ini(False))
+
+    def test_is_frontend_active___when_zaparoo_frontend_is_main___returns_true(self):
+        sut = ZaparooServiceTester(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n'},
+        })
+
+        self.assertTrue(sut.is_frontend_active())
+
+    def test_is_frontend_active___when_zaparoo_frontend_is_menu_main___returns_true(self):
+        sut = ZaparooServiceTester(files={
+            FILE_MiSTer_ini: {'content': '[menu]\nmain=zaparoo/MiSTer_Zaparoo\n'},
+        })
+
+        self.assertTrue(sut.is_frontend_active())
+
+    def test_is_frontend_active___when_zaparoo_frontend_is_not_main___returns_false(self):
+        sut = ZaparooServiceTester(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nmain=menu.rbf\n'},
+        })
+
+        self.assertFalse(sut.is_frontend_active())
+
     def test_set_frontend_active___when_disabled_and_zaparoo_frontend_is_main___removes_zaparoo_frontend_main(self):
         original = '[mister]\nmain=zaparoo/MiSTer_Zaparoo\nfoo=bar\n[menu]\nvideo_mode=8\n'
+        sut = ZaparooServiceTester(files={
+            FILE_MiSTer_ini: {'content': original},
+        })
+
+        sut.set_frontend_active(False)
+
+        self.assertEqual(original, sut.file_system.read_file_contents(FILE_MiSTer_ini_update_all_backup))
+        self.assertEqual(
+            '[mister]\nfoo=bar\n[menu]\nvideo_mode=8\n',
+            sut.file_system.read_file_contents(FILE_MiSTer_ini),
+        )
+
+    def test_set_frontend_active___when_disabled_and_zaparoo_frontend_is_menu_main___removes_zaparoo_frontend_menu_main(self):
+        original = '[mister]\nfoo=bar\n[menu]\nmain=zaparoo/MiSTer_Zaparoo\nvideo_mode=8\n'
         sut = ZaparooServiceTester(files={
             FILE_MiSTer_ini: {'content': original},
         })
@@ -172,7 +267,7 @@ class TestZaparooService(unittest.TestCase):
             FILE_MiSTer_ini: {'content': original},
         })
 
-        def boom():
+        def boom(*_args, **_kwargs):
             raise RuntimeError('boom')
         sut.mister_ini_repository._write_mister_ini_backup = boom
 

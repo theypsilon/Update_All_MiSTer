@@ -45,16 +45,44 @@ class RetroAchievementsService:
         self._logger = logger
         self._mister_ini_repository = mister_ini_repository
 
-    def enable(self) -> str:
-        self._try_ensure_mister_ini_block()
+    def prepare_enable(self) -> str:
         status = self.cfg_status()
         if status in ('missing_file', 'missing_password_field'):
             return 'installed' if self.install_cfg() else 'install_failed'
 
         return status
 
+    def set_mister_ini_active(self, active: bool) -> None:
+        if active:
+            self._try_ensure_mister_ini_block()
+        else:
+            self._try_remove_mister_ini_block()
+
+    def would_change_mister_ini_active(self, active: bool) -> bool:
+        if active:
+            changed, _contents = self._mister_ini_repository.ensure_mister_ini_key(
+                RETROACHIEVEMENTS_MISTER_INI_SECTION,
+                RETROACHIEVEMENTS_MISTER_INI_KEY,
+                RETROACHIEVEMENTS_MISTER_INI_VALUE,
+                create_if_missing=True,
+                dry_run=True,
+            )
+            return changed
+
+        changed, _contents = self._mister_ini_repository.remove_mister_ini_key(
+            RETROACHIEVEMENTS_MISTER_INI_SECTION,
+            RETROACHIEVEMENTS_MISTER_INI_KEY,
+            RETROACHIEVEMENTS_MISTER_INI_VALUE,
+            remove_empty_section=True,
+            dry_run=True,
+        )
+        return changed
+
+    def enable(self) -> str:
+        return self.prepare_enable()
+
     def disable(self) -> None:
-        self._try_remove_mister_ini_block()
+        pass
 
     def cfg_status(self) -> str:
         if not self._file_system.is_file(RETROACHIEVEMENTS_CFG_PATH):

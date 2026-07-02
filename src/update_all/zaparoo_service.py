@@ -31,6 +31,7 @@ from update_all.mister_ini_repository import (
 FILE_zaparoo_frontend = 'zaparoo/MiSTer_Zaparoo'
 FILE_zaparoo_mister_ini_pending = FILE_mister_ini_pending
 FILE_zaparoo_mister_ini_backup_pending = FILE_mister_ini_backup_pending
+ZAPAROO_FRONTEND_MISTER_INI_SECTIONS = ('mister', 'menu')
 
 
 class ZaparooService:
@@ -54,11 +55,41 @@ class ZaparooService:
         else:
             self._disable_frontend_active()
 
-    def _enable_frontend_active(self) -> None:
-        if not self._file_system.is_file(FILE_zaparoo_frontend):
-            return
+    def is_frontend_active(self) -> bool:
+        return self._mister_ini_repository.has_mister_ini_key(
+            ZAPAROO_FRONTEND_MISTER_INI_SECTIONS,
+            'main',
+            FILE_zaparoo_frontend,
+        )
 
+    def would_change_frontend_active_in_mister_ini(self, active: bool) -> bool:
+        if active:
+            if self.is_frontend_active():
+                return False
+
+            changed, _contents = self._mister_ini_repository.ensure_mister_ini_key(
+                'mister',
+                'main',
+                FILE_zaparoo_frontend,
+                create_if_missing=True,
+                prepend_section=True,
+                dry_run=True,
+            )
+            return changed
+
+        changed, _contents = self._mister_ini_repository.remove_mister_ini_key_from_sections(
+            ZAPAROO_FRONTEND_MISTER_INI_SECTIONS,
+            'main',
+            FILE_zaparoo_frontend,
+            dry_run=True,
+        )
+        return changed
+
+    def _enable_frontend_active(self) -> None:
         try:
+            if self.is_frontend_active():
+                return
+
             changed, _mister_ini = self._mister_ini_repository.ensure_mister_ini_key(
                 'mister',
                 'main',
@@ -76,8 +107,8 @@ class ZaparooService:
 
     def _disable_frontend_active(self) -> None:
         try:
-            changed, mister_ini = self._mister_ini_repository.remove_mister_ini_key(
-                'mister',
+            changed, mister_ini = self._mister_ini_repository.remove_mister_ini_key_from_sections(
+                ZAPAROO_FRONTEND_MISTER_INI_SECTIONS,
                 'main',
                 FILE_zaparoo_frontend,
             )

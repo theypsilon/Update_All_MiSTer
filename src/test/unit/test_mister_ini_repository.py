@@ -95,6 +95,71 @@ class TestMisterIniRepository(unittest.TestCase):
         self.assertEqual('', contents)
         self.assertFalse(sut.file_system.is_file(FILE_MiSTer_ini))
 
+    def test_ensure_mister_ini_keys___ensures_multiple_keys_in_one_write(self):
+        original = '[menu]\nvideo_mode=old\n'
+        expected = '[menu]\nvideo_mode=new\nvga_scaler=1\n'
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': original},
+        })
+
+        changed, contents = sut.ensure_mister_ini_keys(
+            'menu',
+            {
+                'video_mode': 'new',
+                'vga_scaler': '1',
+            },
+            create_if_missing=True,
+        )
+
+        writes = [
+            record
+            for record in sut.file_system.write_records
+            if record['scope'] == 'write_file_contents'
+        ]
+        self.assertTrue(changed)
+        self.assertEqual(expected, contents)
+        self.assertEqual(expected, sut.file_system.read_file_contents(FILE_MiSTer_ini))
+        self.assertEqual(1, len(writes))
+
+    def test_ensure_mister_ini_keys_dry_run___when_missing_and_create_enabled___returns_true_without_writing(self):
+        sut = MisterIniRepositoryTester()
+
+        changed, contents = sut.ensure_mister_ini_keys(
+            'menu',
+            {
+                'video_mode': 'new',
+                'vga_scaler': '1',
+            },
+            create_if_missing=True,
+            dry_run=True,
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual('[menu]\nvideo_mode=new\nvga_scaler=1\n', contents)
+        self.assertFalse(sut.file_system.is_file(FILE_MiSTer_ini))
+        self.assertEqual([], sut.file_system.write_records)
+
+    def test_ensure_mister_ini_key_dry_run___when_missing_and_create_enabled___returns_true_without_writing(self):
+        sut = MisterIniRepositoryTester()
+
+        changed, _contents = sut.ensure_mister_ini_key('RA_*', 'main', 'MiSTer_RA', create_if_missing=True, dry_run=True)
+
+        self.assertTrue(changed)
+        self.assertFalse(sut.file_system.is_file(FILE_MiSTer_ini))
+        self.assertEqual([], sut.file_system.write_records)
+
+    def test_ensure_mister_ini_key_dry_run___when_existing_key_is_equivalent___returns_false_without_writing(self):
+        original = '[RA_*]\nmain=MiSTer_RA\n'
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': original},
+        })
+
+        changed, _contents = sut.ensure_mister_ini_key('RA_*', 'main', 'MiSTer_RA', create_if_missing=True, dry_run=True)
+
+        self.assertFalse(changed)
+        self.assertEqual(original, sut.file_system.read_file_contents(FILE_MiSTer_ini))
+        self.assertEqual([], sut.file_system.write_records)
+
     def test_remove_mister_ini_key___when_section_becomes_empty_and_flag_enabled___removes_section(self):
         sut = MisterIniRepositoryTester(files={
             FILE_MiSTer_ini: {'content': '[mister]\nfoo=bar\n\n[RA_*]\nmain=MiSTer_RA\n'},
@@ -105,3 +170,192 @@ class TestMisterIniRepository(unittest.TestCase):
         self.assertTrue(changed)
         self.assertEqual('[mister]\nfoo=bar\n', contents)
         self.assertEqual('[mister]\nfoo=bar\n', sut.file_system.read_file_contents(FILE_MiSTer_ini))
+
+    def test_remove_mister_ini_key___when_value_is_none___removes_key_with_any_value(self):
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': '[menu]\ndirect_video=1\nvga_scaler=0\n'},
+        })
+
+        changed, contents = sut.remove_mister_ini_key('menu', 'direct_video')
+
+        self.assertTrue(changed)
+        self.assertEqual('[menu]\nvga_scaler=0\n', contents)
+        self.assertEqual('[menu]\nvga_scaler=0\n', sut.file_system.read_file_contents(FILE_MiSTer_ini))
+
+    def test_remove_mister_ini_key_dry_run___when_key_exists___returns_true_without_writing(self):
+        original = '[mister]\nfoo=bar\n\n[RA_*]\nmain=MiSTer_RA\n'
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': original},
+        })
+
+        changed, _contents = sut.remove_mister_ini_key(
+            'RA_*',
+            'main',
+            'MiSTer_RA',
+            remove_empty_section=True,
+            dry_run=True,
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual(original, sut.file_system.read_file_contents(FILE_MiSTer_ini))
+        self.assertEqual([], sut.file_system.write_records)
+
+    def test_remove_mister_ini_key_dry_run___when_key_is_absent___returns_false_without_writing(self):
+        original = '[mister]\nfoo=bar\n'
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': original},
+        })
+
+        changed, _contents = sut.remove_mister_ini_key(
+            'RA_*',
+            'main',
+            'MiSTer_RA',
+            remove_empty_section=True,
+            dry_run=True,
+        )
+
+        self.assertFalse(changed)
+        self.assertEqual(original, sut.file_system.read_file_contents(FILE_MiSTer_ini))
+        self.assertEqual([], sut.file_system.write_records)
+
+    def test_has_mister_ini_key___when_key_with_equivalent_value_exists___returns_true(self):
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': '[MISTER]\nMAIN = Zaparoo/mister_zaparoo\n'},
+        })
+
+        self.assertTrue(sut.has_mister_ini_key(['mister'], 'main', 'zaparoo/MiSTer_Zaparoo'))
+
+    def test_has_mister_ini_key___when_key_is_absent___returns_false(self):
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nfoo=bar\n'},
+        })
+
+        self.assertFalse(sut.has_mister_ini_key(['mister'], 'main', 'zaparoo/MiSTer_Zaparoo'))
+
+    def test_has_mister_ini_key___when_key_exists_in_one_section_case_insensitive___returns_true(self):
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': '[MENU]\nMAIN = Zaparoo/mister_zaparoo\n'},
+        })
+
+        self.assertTrue(sut.has_mister_ini_key(['mister', 'menu'], 'main', 'zaparoo/MiSTer_Zaparoo'))
+
+    def test_has_mister_ini_key___when_key_exists_outside_sections___returns_false(self):
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': '[other]\nmain=zaparoo/MiSTer_Zaparoo\n'},
+        })
+
+        self.assertFalse(sut.has_mister_ini_key(['mister', 'menu'], 'main', 'zaparoo/MiSTer_Zaparoo'))
+
+    def test_mister_ini_contents_are_cached_across_previews_and_writes(self):
+        original = '[mister]\nfoo=bar\n'
+        expected = '[mister]\nfoo=bar\nmain=zaparoo/MiSTer_Zaparoo\n\n[RA_*]\nmain=MiSTer_RA\n'
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': original},
+        })
+        mister_ini_read_count, read_file_contents = self._count_mister_ini_reads(sut)
+
+        changed, _contents = sut.ensure_mister_ini_key('RA_*', 'main', 'MiSTer_RA', create_if_missing=True, dry_run=True)
+        self.assertTrue(changed)
+        self.assertFalse(sut.has_mister_ini_key(['mister', 'menu'], 'main', 'zaparoo/MiSTer_Zaparoo'))
+        changed, _contents = sut.ensure_mister_ini_key(
+            'mister',
+            'main',
+            'zaparoo/MiSTer_Zaparoo',
+            create_if_missing=True,
+            prepend_section=True,
+            dry_run=True,
+        )
+        self.assertTrue(changed)
+        changed, _contents = sut.ensure_mister_ini_key('RA_*', 'main', 'MiSTer_RA', create_if_missing=True)
+        self.assertTrue(changed)
+        self.assertFalse(sut.has_mister_ini_key(['mister', 'menu'], 'main', 'zaparoo/MiSTer_Zaparoo'))
+        changed, contents = sut.ensure_mister_ini_key(
+            'mister',
+            'main',
+            'zaparoo/MiSTer_Zaparoo',
+            create_if_missing=True,
+            prepend_section=True,
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual(expected, contents)
+        self.assertEqual(expected, read_file_contents(FILE_MiSTer_ini))
+        self.assertEqual(1, mister_ini_read_count())
+
+    def test_remove_mister_ini_key_from_sections___removes_from_multiple_sections_in_one_write(self):
+        original = (
+            '[mister]\n'
+            'main=zaparoo/MiSTer_Zaparoo\n'
+            'foo=bar\n'
+            '[menu]\n'
+            'main=zaparoo/MiSTer_Zaparoo\n'
+            'video_mode=8\n'
+        )
+        expected = '[mister]\nfoo=bar\n[menu]\nvideo_mode=8\n'
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': original},
+        })
+        mister_ini_read_count, read_file_contents = self._count_mister_ini_reads(sut)
+
+        changed, contents = sut.remove_mister_ini_key_from_sections(
+            ('mister', 'menu'),
+            'main',
+            'zaparoo/MiSTer_Zaparoo',
+        )
+
+        writes = [
+            record
+            for record in sut.file_system.write_records
+            if record['scope'] == 'write_file_contents'
+        ]
+        self.assertTrue(changed)
+        self.assertEqual(expected, contents)
+        self.assertEqual(expected, read_file_contents(FILE_MiSTer_ini))
+        self.assertEqual(original, sut.file_system.read_file_contents(FILE_MiSTer_ini_update_all_backup))
+        self.assertEqual(1, len(writes))
+        self.assertEqual(1, mister_ini_read_count())
+
+    def test_remove_mister_ini_key_from_sections_dry_run___returns_true_without_writing(self):
+        original = '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n[menu]\nmain=zaparoo/MiSTer_Zaparoo\n'
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': original},
+        })
+
+        changed, contents = sut.remove_mister_ini_key_from_sections(
+            ('mister', 'menu'),
+            'main',
+            'zaparoo/MiSTer_Zaparoo',
+            dry_run=True,
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual('[mister]\n[menu]\n', contents)
+        self.assertEqual(original, sut.file_system.read_file_contents(FILE_MiSTer_ini))
+        self.assertEqual([], sut.file_system.write_records)
+
+    def test_recreating_repository___forces_next_operation_to_read_mister_ini_again(self):
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nfoo=bar\n'},
+        })
+        mister_ini_read_count, _read_file_contents = self._count_mister_ini_reads(sut)
+
+        changed, _contents = sut.ensure_mister_ini_key('RA_*', 'main', 'MiSTer_RA', create_if_missing=True, dry_run=True)
+        self.assertTrue(changed)
+        sut = MisterIniRepositoryTester(file_system=sut.file_system)
+        changed, _contents = sut.ensure_mister_ini_key('RA_*', 'main', 'MiSTer_RA', create_if_missing=True, dry_run=True)
+        self.assertTrue(changed)
+
+        self.assertEqual(2, mister_ini_read_count())
+
+    @staticmethod
+    def _count_mister_ini_reads(sut):
+        read_count = [0]
+        read_file_contents = sut.file_system.read_file_contents
+
+        def counted_read_file_contents(path):
+            if path.lower() == FILE_MiSTer_ini.lower():
+                read_count[0] += 1
+            return read_file_contents(path)
+
+        sut.file_system.read_file_contents = counted_read_file_contents
+        return lambda: read_count[0], read_file_contents

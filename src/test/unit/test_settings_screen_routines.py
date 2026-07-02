@@ -28,6 +28,7 @@ from test.spy_os_utils import SpyOsUtils
 from test.ui_model_test_utils import gather_used_effects
 from test.update_all_service_tester import SettingsScreenTester, UiContextStub, default_databases, local_store
 from update_all.config import Config
+from update_all.constants import FILE_MiSTer_ini
 from update_all.databases import DB_ID_NAMES_TXT, AllDBs, all_dbs
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
@@ -67,6 +68,24 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual('false', ui.get_value('zaparoo_frontend_active'))
 
+    def test_initialize_ui___with_zaparoo_frontend_main_in_mister_ini___sets_frontend_active_true(self):
+        file_system = FileSystemFactory.from_state(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n'},
+        }).create_for_system_scope()
+
+        _, ui = tester(file_system=file_system)
+
+        self.assertEqual('true', ui.get_value('zaparoo_frontend_active'))
+
+    def test_initialize_ui___with_legacy_pending_zaparoo_store_true___ignores_store_field(self):
+        store = local_store()
+        store.unwrap_props()['zaparoo_frontend_active'] = True
+        store.mark_as_cleaned()
+
+        _, ui = tester(store=store)
+
+        self.assertEqual('false', ui.get_value('zaparoo_frontend_active'))
+
     def test_calculate_names_char_code_warning___with_names_char18___returns_names_char_code_warning_equals_true(self):
         sut, ui = tester()
         ui.set_value('names_char_code', 'char18')
@@ -88,8 +107,9 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual('true', ui.get_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id))
         self.assertEqual('missing_credentials', ui.get_value('retroachievements_cfg_status'))
-        self.assertEqual(1, service.enable_calls)
+        self.assertEqual(1, service.prepare_enable_calls)
         self.assertEqual(0, service.disable_calls)
+        self.assertEqual([], service.set_mister_ini_active_calls)
 
     def test_retroachievements_db_toggle___when_enabled___disables_db(self):
         retroachievements_db_id = all_dbs('').RETROACHIEVEMENTS_DB.db_id
@@ -101,8 +121,9 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual('false', ui.get_value(retroachievements_db_id))
         self.assertEqual('ok', ui.get_value('retroachievements_cfg_status'))
-        self.assertEqual(0, service.enable_calls)
-        self.assertEqual(1, service.disable_calls)
+        self.assertEqual(0, service.prepare_enable_calls)
+        self.assertEqual(0, service.disable_calls)
+        self.assertEqual([], service.set_mister_ini_active_calls)
 
     def test_prepare_exit_dont_save_and_run___with_temp_values___writes_temp_values_into_config_and_marks_temporary_downloader_ini(self):
         config = Config()
@@ -631,15 +652,22 @@ def tester(config: Config = None, store: LocalStore = None, mister_video_mode_se
 class _RetroAchievementsServiceStub:
     def __init__(self, enable_status):
         self._enable_status = enable_status
-        self.enable_calls = 0
+        self.prepare_enable_calls = 0
         self.disable_calls = 0
+        self.set_mister_ini_active_calls = []
 
-    def enable(self):
-        self.enable_calls += 1
+    def prepare_enable(self):
+        self.prepare_enable_calls += 1
         return self._enable_status
 
     def disable(self):
         self.disable_calls += 1
+
+    def set_mister_ini_active(self, active):
+        self.set_mister_ini_active_calls.append(active)
+
+    def would_change_mister_ini_active(self, active):
+        return False
 
 
 def chip_id_linker_file_system(config: Config, pyz: bool = True, rbf: bool = True):

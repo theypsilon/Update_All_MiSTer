@@ -38,11 +38,13 @@ from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, calculate_overscan, current_update_all_archive_path, is_mister_scripts_menu_fb_launch
 from update_all.logger import Logger, CollectorLoggerDecorator
-from update_all.mister_video_mode_ui import MisterVideoModeService, MisterVideoModeMenu, MisterVideoAdjustMenu
+from update_all.mister_video_mode_service import MisterVideoModeService
+from update_all.mister_video_mode_ui import MisterVideoModeMenu, MisterVideoAdjustMenu
 from update_all.os_utils import OsUtils
 from update_all.retroaccount import RetroAccountService, BenefitState
 from update_all.retroachievements_service import RetroAchievementsService
 from update_all.update_output import NoopUpdateOutput
+from update_all.zaparoo_service import ZaparooService
 from update_all.settings_screen_model import settings_screen_model
 from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
@@ -59,9 +61,11 @@ class SettingsScreen(UiApplication):
                  settings_screen_printer: SettingsScreenPrinter,
                  local_repository: LocalRepository, store_provider: GenericProvider[LocalStore],
                  ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService, encryption: Encryption,
-                 retroaccount: RetroAccountService, retroachievements_service: RetroAchievementsService):
+                 retroaccount: RetroAccountService, retroachievements_service: RetroAchievementsService,
+                 zaparoo_service: ZaparooService):
         self._logger = logger
         self._retroachievements_service = retroachievements_service
+        self._zaparoo_service = zaparoo_service
         self._config_provider = config_provider
         self._file_system = file_system
         self._ini_repository = ini_repository
@@ -113,7 +117,6 @@ class SettingsScreen(UiApplication):
 
     def initialize_ui(self, ui: UiContext) -> UiSectionFactory:
         ui.set_value('needs_save', 'false')
-        ui.set_value('zaparoo_frontend_active_touched', 'false')
 
         arcade_organizer_ini = self._ini_repository.get_arcade_organizer_ini()
 
@@ -159,9 +162,7 @@ class SettingsScreen(UiApplication):
         ui.set_value('monochrome_ui', str(local_store.get_monochrome_ui()).lower())
         ui.set_value(
             'zaparoo_frontend_active',
-            str(local_store.get_zaparoo_frontend_active()).lower()
-            if local_store.has_field('zaparoo_frontend_active')
-            else 'false'
+            str(self._zaparoo_service.is_frontend_active()).lower(),
         )
         ui.set_value(
             'ajgowans_manuals_dbs_general_selector',
@@ -245,12 +246,11 @@ class SettingsScreen(UiApplication):
         db_variable = ALL_DB_IDS['RETROACHIEVEMENTS_DB']
         if ui.get_value(db_variable) == 'true':
             ui.set_value(db_variable, 'false')
-            self._retroachievements_service.disable()
             ui.set_value('retroachievements_cfg_status', 'ok')
             return
 
         ui.set_value(db_variable, 'true')
-        ui.set_value('retroachievements_cfg_status', self._retroachievements_service.enable())
+        ui.set_value('retroachievements_cfg_status', self._retroachievements_service.prepare_enable())
 
     def _chip_id_result_from_config(self) -> str:
         try:
@@ -627,11 +627,25 @@ class SettingsScreen(UiApplication):
         if self._does_arcade_oganizer_need_save(ui):
             needs_save_file_set.add("update_arcade-organizer.ini")
 
+        retroachievements_mister_ini_needs_save = self._retroachievements_service.would_change_mister_ini_active(
+            self._is_retroachievements_db_active(temp_config)
+        )
+        zaparoo_frontend_active = ui.get_value('zaparoo_frontend_active') != 'false'
+        zaparoo_mister_ini_needs_save = self._zaparoo_service.would_change_frontend_active_in_mister_ini(zaparoo_frontend_active)
+
         temp_store = self._store_provider.get().clone()
         self._fill_store(temp_store, ui, temp_config)
 
         if temp_store.needs_save():
             needs_save_file_set.add(f"Internals ({', '.join(temp_store.changed_fields())})")
+
+        mister_ini_reasons = []
+        if retroachievements_mister_ini_needs_save:
+            mister_ini_reasons.append('RetroAchievements')
+        if zaparoo_mister_ini_needs_save:
+            mister_ini_reasons.append('Zaparoo Frontend')
+        if len(mister_ini_reasons) > 0:
+            needs_save_file_set.add(f'{FILE_MiSTer_ini} ({", ".join(mister_ini_reasons)})')
 
         if self._mister_video_mode_service.has_unsaved_kept_mode():
             ini_filename = self._mister_video_mode_service.unsaved_kept_mode_filename() or FILE_MiSTer_ini
@@ -664,10 +678,16 @@ class SettingsScreen(UiApplication):
 
         self._ini_repository.write_downloader_ini(config)
         self._ini_repository.write_separate_db_ini_files(config)
-        self._mister_video_mode_service.save_unsaved_kept_mode_to_active_ini()
 
         local_store = self._store_provider.get()
         self._fill_store(local_store, ui, config)
+        zaparoo_frontend_active = ui.get_value('zaparoo_frontend_active') != 'false'
+        zaparoo_mister_ini_needs_save = self._zaparoo_service.would_change_frontend_active_in_mister_ini(zaparoo_frontend_active)
+
+        self._retroachievements_service.set_mister_ini_active(self._is_retroachievements_db_active(config))
+        if zaparoo_mister_ini_needs_save:
+            self._zaparoo_service.set_frontend_active(zaparoo_frontend_active)
+        self._mister_video_mode_service.save_unsaved_kept_mode_to_active_ini()
         if ALL_DB_IDS['JTCORES'] in config.databases:
             local_store.set_download_beta_cores(config.download_beta_cores)
 
@@ -680,6 +700,10 @@ class SettingsScreen(UiApplication):
             self._local_repository.save_store(local_store)
             self._logger.configure(config)
 
+    @staticmethod
+    def _is_retroachievements_db_active(config: Config) -> bool:
+        return ALL_DB_IDS['RETROACHIEVEMENTS_DB'] in config.databases
+
     def _fill_store(self, store: LocalStore, ui: UiContext, config: Config):
         store.set_theme(ui.get_value('ui_theme'))
         store.set_countdown_time(config.countdown_time)
@@ -691,8 +715,6 @@ class SettingsScreen(UiApplication):
         store.set_pocket_backup(config.pocket_backup)
         store.set_overscan(config.overscan)
         store.set_monochrome_ui(config.monochrome_ui)
-        if store.has_field('zaparoo_frontend_active') or ui.get_value('zaparoo_frontend_active_touched') != 'false':
-            store.set_zaparoo_frontend_active(ui.get_value('zaparoo_frontend_active') != 'false')
         store.set_ajgowans_manuals_dbs_general_selector(ui.get_value('ajgowans_manuals_dbs_general_selector') != 'false')
         # @TODO (mirror) store.set_mirror(ui.get_value('mirror'))
 

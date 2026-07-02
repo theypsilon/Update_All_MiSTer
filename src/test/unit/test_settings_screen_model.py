@@ -223,7 +223,6 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('mrext/all'))
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active_touched'))
 
     def test_mrext_zaparoo_confirmation_yes_and_active_frontend_no___keeps_zaparoo_frontend_disabled(self):
         app = self._execute_tools_mrext_action('false', 'false', confirm_action_title=['Yes', 'No'])
@@ -231,7 +230,6 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('mrext/all'))
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active_touched'))
 
     def test_mrext_zaparoo_confirmation_yes___when_zaparoo_frontend_is_active___does_not_ask_about_it(self):
         app = self._execute_tools_mrext_action(
@@ -308,14 +306,12 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active_touched'))
 
     def test_zaparoo_frontend_confirmation_no___keeps_zaparoo_frontend_disabled(self):
         app = self._execute_tools_zaparoo_action('false', 'false', confirm_action_title='No')
 
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active_touched'))
 
     def test_zaparoo_database_entry___when_enabling_with_frontend_active___does_not_prompt(self):
         app = self._execute_tools_zaparoo_action('false', 'true')
@@ -343,14 +339,12 @@ class TestSettingsScreenModel(unittest.TestCase):
         )
 
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active_touched'))
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
 
-    def test_zaparoo_frontend_entry___when_active___rotates_frontend_inactive_and_marks_it_touched(self):
+    def test_zaparoo_frontend_entry___when_active___rotates_frontend_inactive(self):
         app = self._execute_tools_zaparoo_frontend_action('true', 'true')
 
         self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active_touched'))
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
 
     def test_zaparoo_frontend_entry___when_enabling_with_zaparoo_database_disabled___asks_to_enable_database(self):
@@ -372,14 +366,12 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active_touched'))
 
     def test_zaparoo_frontend_entry___database_confirmation_no___keeps_database_and_frontend_disabled(self):
         app = self._execute_tools_zaparoo_frontend_action('false', 'false', confirm_action_title='No')
 
         self.assertEqual('false', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active_touched'))
 
     def _mrext_action_chain(self):
         entry = next(entry for entry in self.model['items']['tools_and_scripts_menu']['entries'] if 'MiSTer Extensions' in entry['title'])

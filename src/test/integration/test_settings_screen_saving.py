@@ -15,12 +15,13 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import json
 import unittest
 from pathlib import Path
 from typing import Tuple
 
 from update_all.config import Config
-from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, FILE_downloader_temp_ini, MEDIA_FAT
+from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, FILE_downloader_temp_ini, MEDIA_FAT, FILE_MiSTer_ini
 from update_all.ini_repository import read_ini_contents, SEPARATE_DB_INI_FILES
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, TerminalSize
@@ -91,6 +92,39 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.calculate_needs_save(ui)
         self.assertEqual('', ui.get_value('needs_save_file_list'))
         self.assertEqual('false', ui.get_value('needs_save'))
+
+    def test_save__when_enabling_retroachievements_db___writes_mister_ini_on_save(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id, 'true')
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('MiSTer.ini (RetroAchievements)', ui.get_value('needs_save_file_list'))
+        self.assertEqual('[RA_*]\nmain=MiSTer_RA\n', sut._file_system.read_file_contents(FILE_MiSTer_ini))
+
+    def test_save__when_retroachievements_db_is_disabled_but_mister_ini_block_exists___removes_mister_ini_block(self):
+        sut, ui, _ = tester(files={
+            downloader_ini: {'content': default_downloader_ini_content()},
+            FILE_MiSTer_ini: {'content': '[mister]\nfoo=bar\n\n[RA_*]\nmain=MiSTer_RA\n'},
+        })
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual('  - MiSTer.ini (RetroAchievements)', ui.get_value('needs_save_file_list'))
+        self.assertEqual('[mister]\nfoo=bar\n', sut._file_system.read_file_contents(FILE_MiSTer_ini))
+
+    def test_calculate_needs_save__when_retroachievements_and_zaparoo_change_mister_ini___shows_both_reasons(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id, 'true')
+        ui.set_value('zaparoo_frontend_active', 'true')
+
+        sut.calculate_needs_save(ui)
+
+        self.assertIn('MiSTer.ini (RetroAchievements, Zaparoo Frontend)', ui.get_value('needs_save_file_list'))
 
     def test_calculate_needs_save___when_toggling_a_manualsdb___returns_manualsdbs_ini_in_needs_save_list(self) -> None:
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
@@ -236,43 +270,90 @@ class TestSettingsScreenSaving(unittest.TestCase):
 
         self.assertEqual('false', ui.get_value('needs_save'))
         self.assertNotIn('zaparoo_frontend_active', fs.files[store_json.lower()]['json'])
+        self.assertFalse(sut._file_system.is_file(FILE_MiSTer_ini))
 
-    def test_save__when_enabling_zaparoo_frontend_active___writes_true_on_local_store(self):
+    def test_save__when_enabling_zaparoo_frontend_active___writes_mister_ini_without_store_field(self):
         sut, ui, fs = tester()
 
-        ui.set_value('zaparoo_frontend_active_touched', 'true')
         ui.set_value('zaparoo_frontend_active', 'true')
 
         sut.calculate_needs_save(ui)
         sut.save(ui)
 
         self.assertEqual('true', ui.get_value('needs_save'))
+        self.assertIn('MiSTer.ini (Zaparoo Frontend)', ui.get_value('needs_save_file_list'))
+        self.assertNotIn('zaparoo_frontend_active', fs.files[store_json.lower()]['json'])
+        self.assertEqual(
+            '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n',
+            sut._file_system.read_file_contents(FILE_MiSTer_ini),
+        )
+
+    def test_save__when_zaparoo_frontend_active_was_stored_but_missing_from_mister_ini___ignores_store_field(self):
+        local_store = make_new_local_store(StoreMigratorTester())
+        local_store['zaparoo_frontend_active'] = True
+        sut, ui, fs = tester(files={
+            store_json: {'content': json.dumps(local_store)},
+        })
+
+        self.assertEqual('false', ui.get_value('zaparoo_frontend_active'))
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual('false', ui.get_value('needs_save'))
         self.assertEqual(True, fs.files[store_json.lower()]['json']['zaparoo_frontend_active'])
+        self.assertFalse(sut._file_system.is_file(FILE_MiSTer_ini))
 
-    def test_save__when_toggling_zaparoo_frontend_active_back_to_false___writes_false_on_local_store(self):
+    def test_save__when_toggling_zaparoo_frontend_active_to_false_without_mister_ini_main___does_not_save(self):
         sut, ui, fs = tester()
-
-        ui.set_value('zaparoo_frontend_active_touched', 'true')
-        ui.set_value('zaparoo_frontend_active', 'false')
-
-        sut.calculate_needs_save(ui)
-        sut.save(ui)
-
-        self.assertEqual('true', ui.get_value('needs_save'))
-        self.assertEqual(False, fs.files[store_json.lower()]['json']['zaparoo_frontend_active'])
-
-    def test_save__when_disabling_existing_zaparoo_frontend_active___writes_false_on_local_store(self):
-        sut, ui, fs = tester()
-        store = sut._store_provider.get()
-        store.set_zaparoo_frontend_active(True)
-        store.mark_as_cleaned()
 
         ui.set_value('zaparoo_frontend_active', 'false')
 
         sut.calculate_needs_save(ui)
         sut.save(ui)
 
-        self.assertEqual(False, fs.files[store_json.lower()]['json']['zaparoo_frontend_active'])
+        self.assertEqual('false', ui.get_value('needs_save'))
+        self.assertNotIn('zaparoo_frontend_active', fs.files[store_json.lower()]['json'])
+
+    def test_save__when_disabling_existing_zaparoo_frontend_active___removes_mister_ini_without_store_field(self):
+        sut, ui, fs = tester(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nmain=zaparoo/MiSTer_Zaparoo\nfoo=bar\n'},
+        })
+
+        ui.set_value('zaparoo_frontend_active', 'false')
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('MiSTer.ini (Zaparoo Frontend)', ui.get_value('needs_save_file_list'))
+        self.assertNotIn('zaparoo_frontend_active', fs.files[store_json.lower()]['json'])
+        self.assertEqual('[mister]\nfoo=bar\n', sut._file_system.read_file_contents(FILE_MiSTer_ini))
+
+    def test_save__when_disabling_existing_zaparoo_frontend_active_in_menu_section___removes_mister_ini(self):
+        sut, ui, _ = tester(files={
+            FILE_MiSTer_ini: {'content': '[menu]\nmain=zaparoo/MiSTer_Zaparoo\nvideo_mode=8\n'},
+        })
+
+        self.assertEqual('true', ui.get_value('zaparoo_frontend_active'))
+
+        ui.set_value('zaparoo_frontend_active', 'false')
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('MiSTer.ini (Zaparoo Frontend)', ui.get_value('needs_save_file_list'))
+        self.assertEqual('[menu]\nvideo_mode=8\n', sut._file_system.read_file_contents(FILE_MiSTer_ini))
+
+    def test_calculate_needs_save__when_zaparoo_frontend_active_in_menu_section_and_ui_stays_enabled___does_not_save(self):
+        sut, ui, _ = tester(files={
+            FILE_MiSTer_ini: {'content': '[menu]\nmain=zaparoo/MiSTer_Zaparoo\nvideo_mode=8\n'},
+        })
+
+        self.assertEqual('true', ui.get_value('zaparoo_frontend_active'))
+
+        sut.calculate_needs_save(ui)
+
+        self.assertNotIn('MiSTer.ini (Zaparoo Frontend)', ui.get_value('needs_save_file_list'))
 
     def assertStoreBooleanTransition(self, field: str, initial_value: bool) -> None:
         sut, ui, fs = tester()

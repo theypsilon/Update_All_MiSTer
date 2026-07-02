@@ -21,6 +21,7 @@ from test.fake_filesystem import FileSystemFactory
 from test.fetcher_stub import FetcherStub
 from test.logger_tester import NoLogger
 from test.mister_ini_repository_tester import MisterIniRepositoryTester
+from test.mister_video_mode_service_tester import MisterVideoModeServiceTester
 from test.retroachievements_service_tester import RetroAchievementsServiceTester
 from test.retroaccount_gateway_tester import RetroAccountGatewayTester
 from test.spy_os_utils import SpyOsUtils
@@ -44,7 +45,7 @@ from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer
 from update_all.mister_ini_repository import MisterIniRepository
-from update_all.mister_video_mode_ui import MisterVideoModeService
+from update_all.mister_video_mode_service import MisterVideoModeService
 from update_all.os_utils import OsUtils
 from update_all.other import GenericProvider, TerminalSize
 from update_all.retroachievements_service import RetroAchievementsService
@@ -182,7 +183,8 @@ class SettingsScreenTester(SettingsScreen):
                  retroaccount: RetroAccountService = None,
                  mister_video_mode_service: MisterVideoModeService = None,
                  mister_ini_repository: MisterIniRepository = None,
-                 retroachievements_service: RetroAchievementsService = None):
+                 retroachievements_service: RetroAchievementsService = None,
+                 zaparoo_service: ZaparooService = None):
 
         config_provider = config_provider or GenericProvider[Config]()
         file_system = file_system or FileSystemFactory(config_provider=config_provider).create_for_system_scope()
@@ -194,7 +196,16 @@ class SettingsScreenTester(SettingsScreen):
             file_system=file_system,
             ini_repository=ini_repository or IniRepositoryTester(file_system=file_system),
             os_utils=os_utils,
-            mister_video_mode_service=mister_video_mode_service or MisterVideoModeService(NoLogger(), file_system, config_provider, os_utils),
+            mister_video_mode_service=(
+                mister_video_mode_service
+                or MisterVideoModeServiceTester(
+                    logger=NoLogger(),
+                    file_system=file_system,
+                    config_provider=config_provider,
+                    os_utils=os_utils,
+                    mister_ini_repository=mister_ini_repository,
+                )
+            ),
             settings_screen_printer=settings_screen_printer or SettingsScreenPrinterStub(),
             ui_runtime=ui_runtime or UiRuntimeStub(),
             encryption=encryption or EncryptionTester(config_provider=config_provider, file_system=file_system),
@@ -207,6 +218,13 @@ class SettingsScreenTester(SettingsScreen):
                 or RetroAchievementsServiceTester(
                     file_system=file_system,
                     os_utils=os_utils,
+                    mister_ini_repository=mister_ini_repository,
+                )
+            ),
+            zaparoo_service=(
+                zaparoo_service
+                or ZaparooServiceTester(
+                    file_system=file_system,
                     mister_ini_repository=mister_ini_repository,
                 )
             ),
@@ -321,7 +339,15 @@ class UpdateAllServiceTester(UpdateAllService):
         ao_service = ArcadeOrganizerServiceStub()
         retroaccount = retroaccount or RetroAccountServiceTester(file_system=file_system, config_provider=config_provider)
         environment_setup = environment_setup or EnvironmentSetupTester(file_system=file_system, os_utils=os_utils, config_provider=config_provider)
-        settings_screen = settings_screen or SettingsScreenTester(config_provider=config_provider, file_system=file_system, os_utils=os_utils, ao_service=ao_service, retroaccount=retroaccount)
+        zaparoo_service = zaparoo_service or ZaparooServiceTester(file_system=file_system)
+        settings_screen = settings_screen or SettingsScreenTester(
+            config_provider=config_provider,
+            file_system=file_system,
+            os_utils=os_utils,
+            ao_service=ao_service,
+            retroaccount=retroaccount,
+            zaparoo_service=zaparoo_service,
+        )
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
 
         super().__init__(
@@ -339,7 +365,7 @@ class UpdateAllServiceTester(UpdateAllService):
             log_viewer=LogViewerTester(file_system, config_provider, store_provider, retroaccount),
             timeline=TimelineTester(file_system=file_system, config_provider=config_provider, retroaccount=retroaccount),
             retroaccount=retroaccount,
-            zaparoo_service=zaparoo_service or ZaparooServiceTester(),
+            zaparoo_service=zaparoo_service,
             fetcher=FetcherStub(config_provider=config_provider)
         )
 
@@ -360,9 +386,6 @@ class UpdateAllServiceFlowTester(UpdateAllServiceTester):
 
     def _hard_wait_background_jobs(self) -> None:
         self.events.append('hard_wait_background_jobs')
-
-    def _apply_zaparoo_frontend_preference(self) -> None:
-        self.events.append('apply_zaparoo_frontend_preference')
 
     def _show_outro(self) -> None:
         self.events.append('show_outro')

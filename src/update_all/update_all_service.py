@@ -58,7 +58,7 @@ from update_all.config_reader import ConfigReader
 from update_all.timeline import Timeline
 from update_all.transition_service import TransitionService
 from update_all.fetcher import Fetcher
-from update_all.mister_video_mode_ui import MisterVideoModeService
+from update_all.mister_video_mode_service import MisterVideoModeService
 from update_all.retroaccount import RetroAccountService
 from update_all.retroaccount_gateway import RetroAccountGateway
 from update_all.retroachievements_service import RetroAchievementsService
@@ -104,7 +104,13 @@ class UpdateAllServiceFactory:
             mister_ini_repository,
         )
         zaparoo_service = ZaparooService(file_system, self._logger, mister_ini_repository=mister_ini_repository)
-        mister_video_mode_service = MisterVideoModeService(self._logger, file_system, config_provider, os_utils)
+        mister_video_mode_service = MisterVideoModeService(
+            self._logger,
+            file_system,
+            config_provider,
+            os_utils,
+            mister_ini_repository=mister_ini_repository,
+        )
         settings_screen = SettingsScreen(
             logger=self._logger,
             config_provider=config_provider,
@@ -119,7 +125,8 @@ class UpdateAllServiceFactory:
             ao_service=ao_service,
             encryption=encryption,
             retroaccount=retroaccount,
-            retroachievements_service=retroachievements_service
+            retroachievements_service=retroachievements_service,
+            zaparoo_service=zaparoo_service,
         )
         environment_setup = EnvironmentSetupImpl(
             logger=self._logger,
@@ -311,7 +318,6 @@ class UpdateAllService:
         self._run_arcade_organizer()
         self._cleanup()
         self._hard_wait_background_jobs()
-        self._apply_zaparoo_frontend_preference()
         self._show_outro()
         self._show_interactive_log_viewer_and_timeline()
         self._reboot_if_needed()
@@ -649,12 +655,6 @@ class UpdateAllService:
 
             self._executor.shutdown(wait=False)
             self._executor = None
-
-    def _apply_zaparoo_frontend_preference(self) -> None:
-        store = self._store_provider.get()
-
-        if store.has_field('zaparoo_frontend_active'):
-            self._zaparoo_service.set_frontend_active(store.get_zaparoo_frontend_active())
 
     def _cleanup(self) -> None:
         for file in self._temp_launchers:

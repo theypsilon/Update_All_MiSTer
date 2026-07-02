@@ -202,35 +202,16 @@ def _try_toggle_zaparoo_frontend_active(): return [
     {
         "type": "condition",
         "variable": "zaparoo_frontend_active",
-        "true": _rotate_zaparoo_frontend_active(),
+        "true": [{"type": "rotate_variable", "target": "zaparoo_frontend_active"}],
         "false": [
             {
                 "type": "condition",
                 "variable": "ZaparooProject/Zaparoo_MiSTer",
-                "true": _rotate_zaparoo_frontend_active(),
+                "true": [{"type": "rotate_variable", "target": "zaparoo_frontend_active"}],
                 "false": [_zaparoo_frontend_requires_database_prompt()],
             },
         ],
     },
-]
-
-
-def _touch_zaparoo_frontend_active(): return {
-    "type": "set_variable",
-    "target": "zaparoo_frontend_active_touched",
-    "value": "true",
-}
-
-
-def _set_zaparoo_frontend_active(value): return [
-    _touch_zaparoo_frontend_active(),
-    {"type": "set_variable", "target": "zaparoo_frontend_active", "value": value},
-]
-
-
-def _rotate_zaparoo_frontend_active(): return [
-    _touch_zaparoo_frontend_active(),
-    {"type": "rotate_variable", "target": "zaparoo_frontend_active"},
 ]
 
 
@@ -246,7 +227,7 @@ def _zaparoo_frontend_requires_database_prompt(): return {
     "actions": [
         {"title": "Yes", "type": "fixed", "fixed": [
             {"type": "set_variable", "target": "ZaparooProject/Zaparoo_MiSTer", "value": "true"},
-            *_set_zaparoo_frontend_active("true"),
+            {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "true"},
             {"type": "navigate", "target": "back"},
         ]},
         {"title": "No", "type": "fixed", "fixed": [
@@ -276,7 +257,7 @@ def _navigate_back_effects(): return [{"type": "navigate", "target": "back"}]
 
 
 def _no_zaparoo_follow_up_prompt_effects(): return [
-    *_set_zaparoo_frontend_active("true"),
+    {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "true"},
 ]
 
 
@@ -290,11 +271,11 @@ def _zaparoo_active_frontend_prompt(): return {
     ],
     "actions": [
         {"title": "Yes", "type": "fixed", "fixed": [
-            *_set_zaparoo_frontend_active("true"),
+            {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "true"},
             {"type": "navigate", "target": "back"},
         ]},
         {"title": "No", "type": "fixed", "fixed": [
-            *_set_zaparoo_frontend_active("false"),
+            {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "false"},
             {"type": "navigate", "target": "back"},
         ]},
     ],
@@ -382,8 +363,7 @@ def settings_screen_model(): return {
         # Global variables
         "update_all_version": {"default": "2.8"},
         "device_label": {"default": ""},
-        "zaparoo_frontend_active": {"group": "store", "default": "false", "values": ["false", "true"]},
-        "zaparoo_frontend_active_touched": {"default": "false", "values": ["false", "true"]},
+        "zaparoo_frontend_active": {"default": "false", "values": ["false", "true"]},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
