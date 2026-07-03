@@ -47,6 +47,8 @@ class LocalStore:
     def get_pocket_backup(self): return self._props['pocket_backup']
     def set_download_beta_cores(self, download_beta_cores: bool) -> None: self.generic_set('download_beta_cores', download_beta_cores)
     def get_download_beta_cores(self) -> bool: return self._props['download_beta_cores']
+    def set_allow_retroaccount_jt_beta_auto_enable(self, value: bool) -> None: self.generic_set('allow_retroaccount_jt_beta_auto_enable', value)
+    def get_allow_retroaccount_jt_beta_auto_enable(self) -> bool: return self._props['allow_retroaccount_jt_beta_auto_enable']
     def set_names_region(self, names_region: str) -> None: self.generic_set('names_region', names_region)
     def get_names_region(self) -> str: return self._props['names_region']
     def set_names_char_code(self, names_char_code: str) -> None: self.generic_set('names_char_code', names_char_code)

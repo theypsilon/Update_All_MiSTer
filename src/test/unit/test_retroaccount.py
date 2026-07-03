@@ -199,6 +199,45 @@ class TestRetroAccountService(unittest.TestCase):
             stream.getvalue()
         )
 
+    def test_mister_sync___when_session_returns_active_jtbeta_access___tries_to_auto_enable_jt_private_releases(self):
+        jtcores_service = _JtcoresServiceStub()
+        sut, _file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'jtbeta_access': True}},
+            jtcores_service=jtcores_service,
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual(1, jtcores_service.enable_private_beta_cores_from_retroaccount_if_allowed_calls)
+
+    def test_mister_sync___when_session_returns_inactive_jtbeta_access___does_not_auto_enable_jt_private_releases(self):
+        jtcores_service = _JtcoresServiceStub()
+        sut, _file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'jtbeta_access': False}},
+            jtcores_service=jtcores_service,
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual(0, jtcores_service.enable_private_beta_cores_from_retroaccount_if_allowed_calls)
+
+    def test_mister_sync___when_session_does_not_return_jtbeta_access___does_not_auto_enable_jt_private_releases(self):
+        jtcores_service = _JtcoresServiceStub()
+        sut, _file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {}},
+            jtcores_service=jtcores_service,
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual(0, jtcores_service.enable_private_beta_cores_from_retroaccount_if_allowed_calls)
+
     def test_mister_sync___when_session_is_revoked___emits_ltsv_credentials_removed_event(self):
         stream = io.StringIO()
         sut, _file_system, _gateway, _encryption = tester(
@@ -380,7 +419,7 @@ class TestAnyToRetroAccountFileDescription(unittest.TestCase):
 def mister_sync(sut: RetroAccountService) -> None:
     sut.mister_sync(NoopUpdateOutput())
 
-def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None, logger=None):
+def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None, logger=None, jtcores_service=None):
     config = Config()
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config)
@@ -388,7 +427,14 @@ def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None
     file_system = FileSystemFactory(state=state).create_for_system_scope()
     gateway = _RetroAccountGatewayStub(file_system, gateway_result, gateway_response)
     encryption = _EncryptionSpy()
-    return RetroAccountService(logger or NoLogger(), file_system, config_provider, gateway, encryption), file_system, gateway, encryption
+    return RetroAccountService(
+        logger or NoLogger(),
+        file_system,
+        config_provider,
+        gateway,
+        encryption,
+        jtcores_service or _JtcoresServiceStub(),
+    ), file_system, gateway, encryption
 
 
 def default_sync_files():
@@ -417,6 +463,14 @@ class _EncryptionSpy:
 
     def clear_cache(self):
         self.clear_cache_calls += 1
+
+
+class _JtcoresServiceStub:
+    def __init__(self):
+        self.enable_private_beta_cores_from_retroaccount_if_allowed_calls = 0
+
+    def enable_private_beta_cores_from_retroaccount_if_allowed(self):
+        self.enable_private_beta_cores_from_retroaccount_if_allowed_calls += 1
 
 
 class _LoggerSpy(NoLogger):

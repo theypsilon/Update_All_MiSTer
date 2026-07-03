@@ -44,6 +44,7 @@ from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer, create_log_document, to_overscanned_doc
 from update_all.mister_ini_repository import MisterIniRepository
+from update_all.jtcores_service import JtcoresService
 from update_all.other import GenericProvider, terminal_size
 from update_all.logger import Logger, close_print_tmp_log_file
 from update_all.os_utils import OsUtils, LinuxOsUtils
@@ -96,7 +97,15 @@ class UpdateAllServiceFactory:
         ao_service = ArcadeOrganizerService(self._logger, fetcher)
         encryption = Encryption(self._logger, config_provider, file_system)
         retroaccount_gateway = RetroAccountGateway(config_provider, self._logger, file_system, fetcher)
-        retroaccount = RetroAccountService(self._logger, file_system, config_provider, retroaccount_gateway, encryption)
+        jtcores_service = JtcoresService(config_provider, store_provider, ini_repository)
+        retroaccount = RetroAccountService(
+            self._logger,
+            file_system,
+            config_provider,
+            retroaccount_gateway,
+            encryption,
+            jtcores_service,
+        )
         retroachievements_service = RetroAchievementsService(
             file_system,
             os_utils,

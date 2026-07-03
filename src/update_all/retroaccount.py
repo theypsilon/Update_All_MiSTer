@@ -29,6 +29,7 @@ from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbet
     FILE_retroaccount_device_id, FILE_retroaccount_verified_chip_id, FILE_patreon_key_md5, \
     FILE_patreon_key_prev, FILE_JOTEGO_mra_pack_json, FILE_JOTEGO_mra_pack_ini
 from update_all.encryption import Encryption, EncryptionResult
+from update_all.jtcores_service import JtcoresService
 from update_all.retroaccount_gateway import RetroAccountGateway, SessionResult
 from update_all.update_output import NoopUpdateOutput, UpdateOutput
 from update_all.retroaccount_ui import DeviceLogin, DeviceLoginRenderer, RetroAccountClient
@@ -125,12 +126,13 @@ def _credentials_removed_reason(transition: _SyncTransition) -> str:
 
 
 class RetroAccountService(RetroAccountClient):
-    def __init__(self, logger: Logger, file_system: FileSystem, config_provider: GenericProvider[Config], retroaccount_gateway: RetroAccountGateway, encryption: Encryption):
+    def __init__(self, logger: Logger, file_system: FileSystem, config_provider: GenericProvider[Config], retroaccount_gateway: RetroAccountGateway, encryption: Encryption, jtcores_service: JtcoresService):
         self._logger = logger
         self._file_system = file_system
         self._config_provider = config_provider
         self._retroaccount_gateway = retroaccount_gateway
         self._encryption = encryption
+        self._jtcores_service = jtcores_service
         self._has_installed_update_all_patreon_key = False
         self._has_installed_jtbeta = False
         self._update_all_extras: Optional[bool] = None
@@ -383,6 +385,7 @@ class RetroAccountService(RetroAccountClient):
         if transition.jtbeta_access_active is not None:
             if transition.jtbeta_access_active:
                 self._jtbeta_access_sync_state = BenefitState.ACTIVE
+                self._jtcores_service.enable_private_beta_cores_from_retroaccount_if_allowed()
             else:
                 self._jtbeta_access_sync_state = BenefitState.INACTIVE
 

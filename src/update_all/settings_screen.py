@@ -156,6 +156,7 @@ class SettingsScreen(UiApplication):
         ui.set_value('pocket_backup', str(local_store.get_pocket_backup()).lower())
         ui.set_value('retroaccount_domain', config.retroaccount_domain)
         ui.set_value('device_label', self._device_label_for_ui())
+        ui.set_value('retroaccount_jtbeta_access_active', str(self._has_active_jtbeta_access()).lower())
         chip_id_result = self._read_chip_id_result_for_ui()
         self._set_retroaccount_device_verification_ui(ui, chip_id_result)
         ui.set_value('overscan', local_store.get_overscan())
@@ -170,6 +171,7 @@ class SettingsScreen(UiApplication):
             if local_store.has_field('ajgowans_manuals_dbs_general_selector')
             else 'false'
         )
+        ui.set_value('allow_retroaccount_jt_beta_auto_enable', str(local_store.get_allow_retroaccount_jt_beta_auto_enable()).lower())
 
         if ALL_DB_IDS['JTCORES'] not in config.databases:
             ui.set_value('download_beta_cores', str(local_store.get_download_beta_cores()).lower())
@@ -704,6 +706,9 @@ class SettingsScreen(UiApplication):
     def _is_retroachievements_db_active(config: Config) -> bool:
         return ALL_DB_IDS['RETROACHIEVEMENTS_DB'] in config.databases
 
+    def _has_active_jtbeta_access(self) -> bool:
+        return self._retroaccount.jtbeta_access_sync_state() == BenefitState.ACTIVE
+
     def _fill_store(self, store: LocalStore, ui: UiContext, config: Config):
         store.set_theme(ui.get_value('ui_theme'))
         store.set_countdown_time(config.countdown_time)
@@ -715,6 +720,7 @@ class SettingsScreen(UiApplication):
         store.set_pocket_backup(config.pocket_backup)
         store.set_overscan(config.overscan)
         store.set_monochrome_ui(config.monochrome_ui)
+        store.set_allow_retroaccount_jt_beta_auto_enable(ui.get_value('allow_retroaccount_jt_beta_auto_enable') != 'false')
         store.set_ajgowans_manuals_dbs_general_selector(ui.get_value('ajgowans_manuals_dbs_general_selector') != 'false')
         # @TODO (mirror) store.set_mirror(ui.get_value('mirror'))
 
@@ -969,6 +975,10 @@ class SettingsScreen(UiApplication):
 
         jtbeta_access = benefit_state_to_message(self._retroaccount.jtbeta_access_sync_state())
         jtbeta_access_ui_key = 'retroaccount_jtbeta_access'
+        jtbeta_access_active_ui_value = str(self._has_active_jtbeta_access()).lower()
+        if ui.get_value('retroaccount_jtbeta_access_active') != jtbeta_access_active_ui_value:
+            ui.set_value('retroaccount_jtbeta_access_active', jtbeta_access_active_ui_value)
+            state_changed = True
         if ui.get_value(jtbeta_access_ui_key) != jtbeta_access:
             ui.set_value(jtbeta_access_ui_key, jtbeta_access)
             ui.set_value('retroaccount_jtbeta_access_support', 'This benefit is active!' if jtbeta_access == ACTIVE_BENEFIT_MSG else 'Support JOTEGO and theypsilon on Patreon to unlock this benefit.')

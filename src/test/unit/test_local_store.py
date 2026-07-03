@@ -29,3 +29,11 @@ class TestLocalStore(unittest.TestCase):
 
         self.assertEqual(False, store.unwrap_props()['some_field'])
         self.assertEqual(['some_field'], store.changed_fields())
+
+    def test_set_allow_retroaccount_jt_beta_auto_enable___updates_field_and_marks_store_dirty(self):
+        store = LocalStore({'allow_retroaccount_jt_beta_auto_enable': True})
+
+        store.set_allow_retroaccount_jt_beta_auto_enable(False)
+
+        self.assertEqual(False, store.get_allow_retroaccount_jt_beta_auto_enable())
+        self.assertEqual(['allow_retroaccount_jt_beta_auto_enable'], store.changed_fields())

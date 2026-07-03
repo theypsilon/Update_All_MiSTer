@@ -59,6 +59,7 @@ def make_new_local_store(store_migrator):
         'use_settings_screen_theme_in_log_viewer': default_config.use_settings_screen_theme_in_log_viewer,
         'autoreboot': default_config.autoreboot,
         'download_beta_cores': default_config.download_beta_cores,
+        'allow_retroaccount_jt_beta_auto_enable': True,
         'names_region': default_config.names_region,
         'names_char_code': default_config.names_char_code,
         'names_sort_code': default_config.names_sort_code,

@@ -17,7 +17,7 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 import unittest
 
-from update_all.migrations import migration_v7, migration_v8, migration_v9, migration_v10
+from update_all.migrations import migration_v7, migration_v8, migration_v9, migration_v10, migration_v11
 
 
 class TestMigrations(unittest.TestCase):
@@ -59,7 +59,7 @@ class TestMigrations(unittest.TestCase):
         migration_v10(local_store)
 
         self.assertNotIn('zaparoo_frontend_active', local_store)
-        self.assertEqual(True, local_store['_dirty'])
+        self.assertNotIn('_dirty', local_store)
 
     def test_migration_v10___without_zaparoo_frontend_active___does_nothing(self):
         local_store = {}
@@ -68,3 +68,18 @@ class TestMigrations(unittest.TestCase):
 
         self.assertNotIn('zaparoo_frontend_active', local_store)
         self.assertNotIn('_dirty', local_store)
+
+    def test_migration_v11___adds_retroaccount_jt_beta_auto_enable_allowed_without_dirtying_store(self):
+        local_store = {}
+
+        migration_v11(local_store)
+
+        self.assertEqual(True, local_store['allow_retroaccount_jt_beta_auto_enable'])
+        self.assertNotIn('_dirty', local_store)
+
+    def test_migration_v11___sets_retroaccount_jt_beta_auto_enable_allowed(self):
+        local_store = {'allow_retroaccount_jt_beta_auto_enable': False}
+
+        migration_v11(local_store)
+
+        self.assertEqual(True, local_store['allow_retroaccount_jt_beta_auto_enable'])

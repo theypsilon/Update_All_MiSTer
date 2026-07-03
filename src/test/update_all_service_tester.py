@@ -40,6 +40,7 @@ from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OP
 from update_all.countdown import Countdown
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs, all_dbs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
+from update_all.jtcores_service import JtcoresService
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
@@ -187,14 +188,16 @@ class SettingsScreenTester(SettingsScreen):
                  zaparoo_service: ZaparooService = None):
 
         config_provider = config_provider or GenericProvider[Config]()
+        store_provider = store_provider or GenericProvider[LocalStore]()
         file_system = file_system or FileSystemFactory(config_provider=config_provider).create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
         mister_ini_repository = mister_ini_repository or MisterIniRepositoryTester(file_system=file_system)
+        ini_repository = ini_repository or IniRepositoryTester(file_system=file_system)
         super().__init__(
             logger=NoLogger(),
             config_provider=config_provider,
             file_system=file_system,
-            ini_repository=ini_repository or IniRepositoryTester(file_system=file_system),
+            ini_repository=ini_repository,
             os_utils=os_utils,
             mister_video_mode_service=(
                 mister_video_mode_service
@@ -210,7 +213,7 @@ class SettingsScreenTester(SettingsScreen):
             ui_runtime=ui_runtime or UiRuntimeStub(),
             encryption=encryption or EncryptionTester(config_provider=config_provider, file_system=file_system),
             local_repository=local_repository or LocalRepositoryTester(file_system=file_system),
-            store_provider=store_provider or GenericProvider[LocalStore](),
+            store_provider=store_provider,
             ao_service=ao_service or ArcadeOrganizerServiceStub(),
             retroaccount=retroaccount or RetroAccountServiceTester(file_system=file_system, config_provider=config_provider),
             retroachievements_service=(
@@ -409,7 +412,7 @@ class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
 
 
 class RetroAccountServiceTester(RetroAccountService):
-    def __init__(self, file_system: FileSystem = None, config_provider: GenericProvider[Config] = None, retroaccount_gateway: RetroAccountGateway = None, encryption: Encryption = None, store_provider: GenericProvider[LocalStore] = None):
+    def __init__(self, file_system: FileSystem = None, config_provider: GenericProvider[Config] = None, retroaccount_gateway: RetroAccountGateway = None, encryption: Encryption = None, store_provider: GenericProvider[LocalStore] = None, jtcores_service: JtcoresService = None):
         config_provider = config_provider or GenericProvider[Config]()
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         del store_provider
@@ -419,8 +422,17 @@ class RetroAccountServiceTester(RetroAccountService):
             config_provider,
             retroaccount_gateway or RetroAccountGatewayTester(config_provider=config_provider, file_system=file_system),
             encryption or EncryptionTester(config_provider=config_provider, file_system=file_system),
+            jtcores_service or JtcoresServiceStub(),
         )
         self.mister_sync_calls = []
 
     def mister_sync(self, output) -> None:
         self.mister_sync_calls.append(output)
+
+
+class JtcoresServiceStub:
+    def __init__(self):
+        self.enable_private_beta_cores_from_retroaccount_if_allowed_calls = 0
+
+    def enable_private_beta_cores_from_retroaccount_if_allowed(self) -> None:
+        self.enable_private_beta_cores_from_retroaccount_if_allowed_calls += 1

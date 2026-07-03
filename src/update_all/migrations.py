@@ -20,7 +20,7 @@ from update_all.store_migrator import Migration
 
 
 def migrations() -> list[Migration]:
-    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6, migration_v7, migration_v8, migration_v9, migration_v10]
+    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6, migration_v7, migration_v8, migration_v9, migration_v10, migration_v11]
 
 def migration_v1(local_store) -> None:
     """create arcade_names_txt field"""
@@ -77,4 +77,7 @@ def migration_v10(local_store) -> None:
     """remove Zaparoo frontend state from local store"""
     if 'zaparoo_frontend_active' in local_store:
         del local_store['zaparoo_frontend_active']
-        local_store['_dirty'] = True
+
+def migration_v11(local_store) -> None:
+    """create RetroAccount JT beta auto-enable state"""
+    local_store['allow_retroaccount_jt_beta_auto_enable'] = True

@@ -468,15 +468,19 @@ class IniRepository:
             ini[db_id.lower()]['filter'] = filter_addition
 
         for db_id, beta_cores_active in [(ALL_DB_IDS['JTCORES'], config.download_beta_cores)]:
-            if db_id not in config.databases or not beta_cores_active:
+            if db_id not in config.databases:
                 continue
 
             lower_id = db_id.lower()
             filter_value = ini[lower_id].get('filter', '').strip().lower()
-            if filter_value == '':
+            if beta_cores_active and filter_value == '':
                 ini[lower_id]['filter'] = '[MiSTer]'
-            elif '!jtbeta' in filter_value:
+            elif beta_cores_active and '!jtbeta' in filter_value:
                 ini[lower_id]['filter'] = filter_value.replace('!jtbeta', '').strip()
+            elif not beta_cores_active and filter_value == '[mister]':
+                del ini[lower_id]['filter']
+            elif not beta_cores_active and filter_value != '' and '!jtbeta' not in filter_value:
+                ini[lower_id]['filter'] = f'{filter_value} !jtbeta'
 
     def _try_build_new_downloader_ini_contents(self, config: Config) -> Optional[str]:
         ini: Dict[str, Dict[str, str]] = self.get_downloader_ini(cached=False)

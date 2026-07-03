@@ -139,6 +139,20 @@ class TestIniRepository(unittest.TestCase):
         }, config=config)
         assertEqualIni(self, 'test/fixtures/downloader_ini/just_jtcores_with_filter_wtf.ini', fs.files[downloader_ini]['content'])
 
+    def test_write_downloader_ini___with_mister_inheritance_jt_filter_but_beta_cores_disabled___removes_jtcores_filter(self):
+        config = Config(databases={all_dbs('').JTCORES.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id}, download_beta_cores=False)
+        fs = test_write_downloader_ini(files={
+            downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores_with_mister_inheritance.ini').read_text()}
+        }, config=config)
+        assertEqualIni(self, 'test/fixtures/downloader_ini/just_jtcores.ini', fs.files[downloader_ini]['content'])
+
+    def test_write_downloader_ini___with_custom_jt_filter_but_beta_cores_disabled___keeps_filter_and_negates_jtbeta(self):
+        config = Config(databases={all_dbs('').JTCORES.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id}, download_beta_cores=False)
+        fs = test_write_downloader_ini(files={
+            downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores_with_filter_wtf.ini').read_text()}
+        }, config=config)
+        assertEqualIni(self, 'test/fixtures/downloader_ini/just_jtcores_with_negated_jtbeta.ini', fs.files[downloader_ini]['content'])
+
     def test_write_downloader_ini___with_update_all_ini_and_a_bunch_other_things___puts_update_all_ini_at_the_end(self):
         config = Config(databases=default_databases())
         fs = test_write_downloader_ini(files={
