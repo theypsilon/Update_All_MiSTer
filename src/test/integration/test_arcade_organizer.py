@@ -187,17 +187,55 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         self.assertEqual([], infra.errors())
 
     def test_make_arcade_organizer_config___with_invalid_bool_flag_presence_values___uses_defaults(self):
+        logger = _LoggerSpy()
+        service = ArcadeOrganizerService(logger, MagicMock())
         self._create_ini_file(
             REGION_OTHERS=3,
             BOOTLEG=-1,
             HOMEBREW='invalid',
         )
 
-        config = self.ao_service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+        config = service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
 
         self.assertEqual(BoolFlagPresence.ONLY_IN_OWN_FOLDER, config['REGION_OTHERS'])
         self.assertEqual(BoolFlagPresence.ONLY_IN_OWN_FOLDER, config['BOOTLEG'])
         self.assertEqual(BoolFlagPresence.ONLY_IN_OWN_FOLDER, config['HOMEBREW'])
+        self.assertTrue(any('Invalid Arcade Organizer INI value for REGION_OTHERS' in line for line in logger.debug_lines))
+        self.assertTrue(any('Invalid Arcade Organizer INI value for BOOTLEG' in line for line in logger.debug_lines))
+        self.assertTrue(any('Invalid Arcade Organizer INI value for HOMEBREW' in line for line in logger.debug_lines))
+
+    def test_make_arcade_organizer_config___with_invalid_bool_and_int_values___uses_defaults(self):
+        logger = _LoggerSpy()
+        service = ArcadeOrganizerService(logger, MagicMock())
+        self._create_ini_file(
+            SKIPALTS='maybe',
+            NO_SYMLINKS='maybe',
+            NUM_BUTTONS_MAXIMUM='many',
+        )
+
+        config = service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+
+        self.assertEqual(True, config['SKIPALTS'])
+        self.assertEqual(False, config['NO_SYMLINKS'])
+        self.assertEqual(9999, config['NUM_BUTTONS_MAXIMUM'])
+        self.assertTrue(any('Invalid Arcade Organizer INI value for SKIPALTS' in line for line in logger.debug_lines))
+        self.assertTrue(any('Invalid Arcade Organizer INI value for NO_SYMLINKS' in line for line in logger.debug_lines))
+        self.assertTrue(any('Invalid Arcade Organizer INI value for NUM_BUTTONS_MAXIMUM' in line for line in logger.debug_lines))
+
+    def test_make_arcade_organizer_config___with_malformed_ini_file___uses_defaults(self):
+        logger = _LoggerSpy()
+        service = ArcadeOrganizerService(logger, MagicMock())
+        with open(self.ini_path, 'w') as f:
+            f.write('[DEFAULT]\n')
+            f.write('SKIPALTS=false\n')
+            f.write('SKIPALTS=true\n')
+            f.write('CORE_DIR=false\n')
+
+        config = service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+
+        self.assertEqual(True, config['SKIPALTS'])
+        self.assertEqual(True, config['CORE_DIR'])
+        self.assertTrue(any('Could not read Arcade Organizer INI; using default values' in line for line in logger.debug_lines))
 
     def test_make_arcade_organizer_config___with_old_cache_and_missing_config_path___moves_cache(self):
         shutil.rmtree(self.work_path)

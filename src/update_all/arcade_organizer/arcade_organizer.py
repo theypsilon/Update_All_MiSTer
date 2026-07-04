@@ -43,17 +43,24 @@ class BoolFlagPresence(IntEnum):
 
 
 class IniParser:
-    def __init__(self, ini_file_path):
+    def __init__(self, ini_file_path, printer):
         self._ini_file_path = ini_file_path
+        self._printer = printer
 
     def initialize(self):
         ini_parser = configparser.ConfigParser()
         if self._ini_file_path.is_file():
             try:
                 ini_parser.read(self._ini_file_path)
-            except:
-                with self._ini_file_path.open() as fp:
-                    ini_parser.read_file(itertools.chain(['[DEFAULT]'], fp), source=self._ini_file_path)
+            except Exception:
+                ini_parser = configparser.ConfigParser()
+                try:
+                    with self._ini_file_path.open() as fp:
+                        ini_parser.read_file(itertools.chain(['[DEFAULT]'], fp), source=self._ini_file_path)
+                except Exception as e:
+                    self._printer.debug('Could not read Arcade Organizer INI; using default values')
+                    self._printer.debug(e)
+                    ini_parser = configparser.ConfigParser()
 
         self._ini_args = ini_parser['DEFAULT']
 
@@ -64,14 +71,25 @@ class IniParser:
         return result.strip('"\' ')
 
     def get_bool(self, key, default):
-        return str_to_bool(self.get_string(key, 'true' if default else 'false')) == 1
+        result = self.get_string(key, None)
+        if result is None:
+            return default
+        try:
+            return str_to_bool(result) == 1
+        except ValueError as e:
+            self._debug_default_value(key, result, 'boolean', default, e)
+            return default
 
     def get_int(self, key, default):
         result = self.get_string(key, None)
         if result is None:
             return default
 
-        return to_int(result, default)
+        try:
+            return int(result)
+        except ValueError as e:
+            self._debug_default_value(key, result, 'integer', default, e)
+            return default
 
     def get_bool_flag_presence(self, key, default):
         result = self.get_int(key, None)
@@ -79,7 +97,8 @@ class IniParser:
             return default
         try:
             return BoolFlagPresence(result)
-        except ValueError:
+        except ValueError as e:
+            self._debug_default_value(key, result, '0, 1, or 2', default, e)
             return default
 
     def get_str_list(self, key, default):
@@ -95,6 +114,10 @@ class IniParser:
             return result
         else:
             return default
+
+    def _debug_default_value(self, key, value, expected, default, exception):
+        self._printer.debug("Invalid Arcade Organizer INI value for %s: expected %s, got %s; using default %s" % (key, expected, value, default))
+        self._printer.debug(exception)
 
 
 def to_int(n, default):
@@ -128,7 +151,7 @@ class ArcadeOrganizerService:
 
     def make_arcade_organizer_config(self, ini_file_str: str, base_path: str, http_proxy: str = ''):
         ini_file_path = Path(ini_file_str)
-        ini_parser = IniParser(ini_file_path)
+        ini_parser = IniParser(ini_file_path, self._printer)
         ini_parser.initialize()
 
         config = dict()
