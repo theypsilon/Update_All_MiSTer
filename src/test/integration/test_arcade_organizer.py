@@ -26,7 +26,7 @@ from pathlib import Path
 
 from unittest.mock import MagicMock, patch
 
-from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService, Infrastructure
+from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService, BoolFlagPresence, Infrastructure
 from test.logger_tester import NoLogger
 
 
@@ -108,7 +108,9 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         with open(mad_db_fixture, 'r') as f:
             mad_db = json.load(f)
         mad_db.update(extra_entries)
+        self._write_mad_database_zip(mad_db)
 
+    def _write_mad_database_zip(self, mad_db):
         zip_path = os.path.join(self.work_path, 'data.zip')
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             zipf.writestr('mad_db.json', json.dumps(mad_db))
@@ -183,6 +185,77 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
 
         self.assertFalse(Path(config['ORGDIR']).exists())
         self.assertEqual([], infra.errors())
+
+    def test_make_arcade_organizer_config___with_invalid_bool_flag_presence_values___uses_defaults(self):
+        self._create_ini_file(
+            REGION_OTHERS=3,
+            BOOTLEG=-1,
+            HOMEBREW='invalid',
+        )
+
+        config = self.ao_service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+
+        self.assertEqual(BoolFlagPresence.ONLY_IN_OWN_FOLDER, config['REGION_OTHERS'])
+        self.assertEqual(BoolFlagPresence.ONLY_IN_OWN_FOLDER, config['BOOTLEG'])
+        self.assertEqual(BoolFlagPresence.ONLY_IN_OWN_FOLDER, config['HOMEBREW'])
+
+    def test_organize___with_malformed_mad_db_entry___uses_defaults_and_logs_schema_errors(self):
+        logger = _LoggerSpy()
+        self.ao_service = ArcadeOrganizerService(logger, MagicMock())
+        self._write_mra_fixture('bad.mra', 'bad', 'BadCore')
+        self._update_mad_database_zip({
+            'bad': {
+                'file': 123,
+                'rotation': '90',
+                'flip': 'yes',
+                'resolution': 123,
+                'region': 123,
+                'homebrew': 'maybe',
+                'bootleg': 'false',
+                'year': '1982',
+                'manufacturer': 123,
+                'category': [123],
+                'players': 2,
+                'move_inputs': None,
+                'special_controls': ['Trackball', 7],
+                'num_buttons': 'two',
+                'num_monitors': '1',
+            },
+        })
+
+        config = self.ao_service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+
+        success = self.ao_service.run_arcade_organizer_organize_all_mras(config)
+
+        self.assertTrue(success)
+        self.assertTrue(any('MAD DB schema error for bad.file' in line for line in logger.debug_lines))
+        self.assertTrue(any('MAD DB schema error for bad.num_buttons' in line for line in logger.debug_lines))
+        self.assertTrue(any('MAD DB schema error for bad.special_controls[1]' in line for line in logger.debug_lines))
+
+    def test_organize___with_non_object_mad_db___uses_defaults_and_logs_schema_error(self):
+        logger = _LoggerSpy()
+        self.ao_service = ArcadeOrganizerService(logger, MagicMock())
+        self._write_mad_database_zip([])
+
+        config = self.ao_service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+
+        success = self.ao_service.run_arcade_organizer_organize_all_mras(config)
+
+        self.assertTrue(success)
+        self.assertIn('MAD DB schema error: expected top-level object, got list', logger.debug_lines)
+
+    def test_organize___with_non_object_mad_db_entry___uses_defaults_and_logs_schema_error(self):
+        logger = _LoggerSpy()
+        self.ao_service = ArcadeOrganizerService(logger, MagicMock())
+        self._write_mra_fixture('bad.mra', 'bad', 'BadCore')
+        self._update_mad_database_zip({'bad': []})
+
+        config = self.ao_service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+
+        success = self.ao_service.run_arcade_organizer_organize_all_mras(config)
+
+        self.assertTrue(success)
+        self.assertTrue(any('MAD DB schema error for bad.entry' in line for line in logger.debug_lines))
 
     def test_organize___with_all_options_enabled___creates_complete_structure(self):
         """Test arcade organizer with all options enabled (happy path)."""
@@ -768,3 +841,11 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
                     rel_path = os.path.relpath(full_path, self.orgdir)
                     mra_paths.add(rel_path)
         return mra_paths
+
+
+class _LoggerSpy(NoLogger):
+    def __init__(self):
+        self.debug_lines = []
+
+    def debug(self, *args, sep='', end='\n', flush=False):
+        self.debug_lines.append(sep.join(str(arg) for arg in args))

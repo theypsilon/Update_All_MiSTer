@@ -75,7 +75,12 @@ class IniParser:
 
     def get_bool_flag_presence(self, key, default):
         result = self.get_int(key, None)
-        return default if result is None else BoolFlagPresence(result)
+        if result is None:
+            return default
+        try:
+            return BoolFlagPresence(result)
+        except ValueError:
+            return default
 
     def get_str_list(self, key, default):
         result = [s for s in [s.strip('"\' ') for s in self.get_string(key, '')] if s != '']
@@ -666,7 +671,10 @@ class Infrastructure:
             try:
                 with zipfile.ZipFile(str(cached), 'r') as zf:
                     name = zf.namelist()[0]
-                    return json.loads(zf.read(name))
+                    data = json.loads(zf.read(name))
+                    if isinstance(data, dict):
+                        return data
+                    self._printer.debug("MAD DB schema error: expected top-level object, got %s" % type(data).__name__)
             except Exception as e:
                 self._printer.print("Error while reading %s from %s: %s" % (self._config['MAD_DB'], cached, e))
 
@@ -753,7 +761,107 @@ class ArcadeOrganizer:
                     self._names_txt_dict[splits[0].upper()] = splits[1].strip()
 
     def read_description(self, setname):
-        return self.mad_dict.get(setname, {})
+        mad_db = self.mad_dict
+        if not isinstance(mad_db, dict):
+            self._debug_mad_db_schema_error(setname, 'entry', 'object', mad_db)
+            return {}
+        description = mad_db.get(setname, {})
+        if not isinstance(description, dict):
+            self._debug_mad_db_schema_error(setname, 'entry', 'object', description)
+            return {}
+        return self._normalize_description(setname, description)
+
+    def _normalize_description(self, setname, description):
+        normalized = dict(description)
+        validators = {
+            'file': lambda value: self._valid_str(setname, 'file', value, allow_empty=False),
+            'rotation': lambda value: self._valid_int(setname, 'rotation', value),
+            'flip': lambda value: self._valid_bool(setname, 'flip', value),
+            'resolution': lambda value: self._valid_str(setname, 'resolution', value, allow_empty=False),
+            'region': lambda value: self._valid_str(setname, 'region', value),
+            'homebrew': lambda value: self._valid_bool(setname, 'homebrew', value),
+            'bootleg': lambda value: self._valid_bool(setname, 'bootleg', value),
+            'year': lambda value: self._valid_int(setname, 'year', value),
+            'manufacturer': lambda value: self._valid_str_list(setname, 'manufacturer', value),
+            'platform': lambda value: self._valid_str_list(setname, 'platform', value),
+            'category': lambda value: self._valid_str_list(setname, 'category', value),
+            'series': lambda value: self._valid_str_list(setname, 'series', value),
+            'players': lambda value: self._valid_str(setname, 'players', value, allow_empty=False),
+            'move_inputs': lambda value: self._valid_str_list(setname, 'move_inputs', value),
+            'special_controls': lambda value: self._valid_str_list(setname, 'special_controls', value),
+            'num_buttons': lambda value: self._valid_int(setname, 'num_buttons', value),
+            'num_monitors': lambda value: self._valid_int(setname, 'num_monitors', value),
+            'cocktail': lambda value: self._valid_bool_or_str(setname, 'cocktail', value),
+            'alternative': lambda value: self._valid_bool(setname, 'alternative', value),
+        }
+        for key, validator in validators.items():
+            if key not in normalized:
+                continue
+            valid, value = validator(normalized[key])
+            if valid:
+                normalized[key] = value
+            else:
+                del normalized[key]
+        return normalized
+
+    def _valid_str(self, setname, key, value, allow_empty=True):
+        if isinstance(value, str) and (allow_empty or value != ''):
+            return True, value
+        self._debug_mad_db_schema_error(setname, key, 'string', value)
+        return False, None
+
+    def _valid_int(self, setname, key, value):
+        if isinstance(value, int) and not isinstance(value, bool):
+            return True, value
+        if isinstance(value, str):
+            try:
+                return True, int(value)
+            except ValueError:
+                pass
+        self._debug_mad_db_schema_error(setname, key, 'integer', value)
+        return False, None
+
+    def _valid_bool(self, setname, key, value):
+        if isinstance(value, bool):
+            return True, value
+        if isinstance(value, int) and value in (0, 1):
+            return True, value == 1
+        if isinstance(value, str):
+            lower_value = value.strip().lower()
+            if lower_value in ('true', 'yes', '1'):
+                return True, True
+            if lower_value in ('false', 'no', '0', ''):
+                return True, False
+        self._debug_mad_db_schema_error(setname, key, 'boolean', value)
+        return False, None
+
+    def _valid_bool_or_str(self, setname, key, value):
+        if isinstance(value, str):
+            return True, value
+        if isinstance(value, bool):
+            return True, value
+        if isinstance(value, int) and value in (0, 1):
+            return True, value == 1
+        self._debug_mad_db_schema_error(setname, key, 'boolean or string', value)
+        return False, None
+
+    def _valid_str_list(self, setname, key, value):
+        if isinstance(value, str):
+            self._debug_mad_db_schema_error(setname, key, 'list of strings', value)
+            return True, [value]
+        if not isinstance(value, list):
+            self._debug_mad_db_schema_error(setname, key, 'list of strings', value)
+            return False, None
+        result = []
+        for index, item in enumerate(value):
+            if isinstance(item, str):
+                result.append(item)
+            else:
+                self._debug_mad_db_schema_error(setname, "%s[%d]" % (key, index), 'string', item)
+        return True, result
+
+    def _debug_mad_db_schema_error(self, setname, key, expected, value):
+        self._printer.debug("MAD DB schema error for %s.%s: expected %s, got %s" % (setname, key, expected, type(value).__name__))
 
     def organize_topdir(self):
         if self._config['TOPDIR'] == 'platform' and Path(self._config['ORGDIR_Platform']).is_dir():

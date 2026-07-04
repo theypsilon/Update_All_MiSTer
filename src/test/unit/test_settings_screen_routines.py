@@ -189,6 +189,26 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual(str(20 * 1024 * 1024 * 1024), ui.get_value('media_fat_available_space'))
 
+    def test_calculate_arcade_organizer_folders___when_config_creation_fails___clears_folder_state(self):
+        sut, ui = tester(ao_service=_ArcadeOrganizerServiceStub(config_exception=Exception('bad ao config')))
+        ui.set_value('has_arcade_organizer_folders', 'true')
+        ui.set_value('arcade_organizer_folders_list', 'old folder')
+
+        sut.calculate_arcade_organizer_folders(ui)
+
+        self.assertEqual('false', ui.get_value('has_arcade_organizer_folders'))
+        self.assertEqual('', ui.get_value('arcade_organizer_folders_list'))
+
+    def test_calculate_arcade_organizer_folders___when_folder_calculation_fails___clears_folder_state(self):
+        sut, ui = tester(ao_service=_ArcadeOrganizerServiceStub(folders_exception=Exception('bad folder calculation')))
+        ui.set_value('has_arcade_organizer_folders', 'true')
+        ui.set_value('arcade_organizer_folders_list', 'old folder')
+
+        sut.calculate_arcade_organizer_folders(ui)
+
+        self.assertEqual('false', ui.get_value('has_arcade_organizer_folders'))
+        self.assertEqual('', ui.get_value('arcade_organizer_folders_list'))
+
     def test_select_all_ajgowans_manuals_dbs___toggle_all_enables_every_manual_db_and_selector(self):
         sut, ui = tester()
 
@@ -628,7 +648,7 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertIsNone(sut._pending_chip_id_extraction)
 
 
-def tester(config: Config = None, store: LocalStore = None, mister_video_mode_service=None, initialize_ui=True, ui_runtime=None, file_system=None, retroaccount=None, os_utils=None, retroachievements_service=None) -> Tuple[SettingsScreen, UiContextStub]:
+def tester(config: Config = None, store: LocalStore = None, mister_video_mode_service=None, initialize_ui=True, ui_runtime=None, file_system=None, retroaccount=None, os_utils=None, retroachievements_service=None, ao_service=None) -> Tuple[SettingsScreen, UiContextStub]:
     ui = UiContextStub()
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config or Config(databases=default_databases()))
@@ -643,6 +663,7 @@ def tester(config: Config = None, store: LocalStore = None, mister_video_mode_se
         retroaccount=retroaccount,
         os_utils=os_utils,
         retroachievements_service=retroachievements_service,
+        ao_service=ao_service,
     )
     if initialize_ui:
         settings_screen.initialize_ui(ui)
@@ -668,6 +689,22 @@ class _RetroAchievementsServiceStub:
 
     def would_change_mister_ini_active(self, active):
         return False
+
+
+class _ArcadeOrganizerServiceStub:
+    def __init__(self, config_exception=None, folders_exception=None):
+        self._config_exception = config_exception
+        self._folders_exception = folders_exception
+
+    def make_arcade_organizer_config(self, ini_file_str: str, base_path: str, http_proxy: str = ''):
+        if self._config_exception is not None:
+            raise self._config_exception
+        return {}
+
+    def run_arcade_organizer_print_orgdir_folders(self, config):
+        if self._folders_exception is not None:
+            raise self._folders_exception
+        return [], True
 
 
 def chip_id_linker_file_system(config: Config, pyz: bool = True, rbf: bool = True):
