@@ -198,11 +198,7 @@ class ArcadeOrganizerService:
 
         ###############################
 
-        CACHE_ARCADE_ORGANIZER_PATH = f"{base_path}/Scripts/.cache/arcade-organizer"
-        CONFIG_ARCADE_ORGANIZER_PATH = f"{base_path}/Scripts/.config/arcade-organizer"
-        if Path(CACHE_ARCADE_ORGANIZER_PATH).is_dir():
-            Path(f"{base_path}/Scripts/.config").mkdir(parents=True, exist_ok=True)
-            shutil.move(CACHE_ARCADE_ORGANIZER_PATH, CONFIG_ARCADE_ORGANIZER_PATH)
+        self._migrate_old_arcade_organizer_cache(base_path)
 
         config['ARCADE_ORGANIZER_VERSION'] = "2.0"
         config['ARCADE_ORGANIZER_WORK_PATH'] = os.getenv('ARCADE_ORGANIZER_WORK_PATH', f"{base_path}/Scripts/.config/arcade-organizer")
@@ -275,6 +271,20 @@ class ArcadeOrganizerService:
             config['http_proxy'] = http_proxy
 
         return config
+
+    def _migrate_old_arcade_organizer_cache(self, base_path: str) -> None:
+        cache_path = Path(base_path) / 'Scripts/.cache/arcade-organizer'
+        config_path = Path(base_path) / 'Scripts/.config/arcade-organizer'
+
+        if not cache_path.is_dir() or config_path.exists() or config_path.is_symlink():
+            return
+
+        try:
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(cache_path), str(config_path))
+        except Exception as e:
+            self._printer.debug('Could not migrate old Arcade Organizer cache')
+            self._printer.debug(e)
 
     def run_arcade_organizer_organize_all_mras(self, config: Dict[str, Any]) -> bool:
         try:

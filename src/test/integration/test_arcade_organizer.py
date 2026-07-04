@@ -199,6 +199,45 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         self.assertEqual(BoolFlagPresence.ONLY_IN_OWN_FOLDER, config['BOOTLEG'])
         self.assertEqual(BoolFlagPresence.ONLY_IN_OWN_FOLDER, config['HOMEBREW'])
 
+    def test_make_arcade_organizer_config___with_old_cache_and_missing_config_path___moves_cache(self):
+        shutil.rmtree(self.work_path)
+        cache_path = Path(self.base_path) / 'Scripts/.cache/arcade-organizer'
+        cache_path.mkdir(parents=True)
+        (cache_path / 'data.zip').write_text('old data')
+
+        config = self.ao_service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+
+        self.assertFalse(cache_path.exists())
+        self.assertTrue((Path(config['ARCADE_ORGANIZER_WORK_PATH']) / 'data.zip').is_file())
+
+    def test_make_arcade_organizer_config___with_old_cache_and_existing_config_path___keeps_existing_config(self):
+        cache_path = Path(self.base_path) / 'Scripts/.cache/arcade-organizer'
+        cache_path.mkdir(parents=True)
+        (cache_path / 'old-data.zip').write_text('old data')
+        (Path(self.work_path) / 'new-data.zip').write_text('new data')
+
+        self.ao_service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+
+        self.assertTrue(cache_path.is_dir())
+        self.assertTrue((Path(self.work_path) / 'new-data.zip').is_file())
+        self.assertFalse((Path(self.work_path) / 'arcade-organizer').exists())
+
+    def test_make_arcade_organizer_config___when_old_cache_migration_fails___logs_and_continues(self):
+        shutil.rmtree(Path(self.base_path) / 'Scripts/.config')
+        cache_path = Path(self.base_path) / 'Scripts/.cache/arcade-organizer'
+        cache_path.mkdir(parents=True)
+        (cache_path / 'data.zip').write_text('old data')
+        blocked_config_parent = Path(self.base_path) / 'Scripts/.config'
+        blocked_config_parent.write_text('not a directory')
+        logger = _LoggerSpy()
+        service = ArcadeOrganizerService(logger, MagicMock())
+
+        service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+
+        self.assertTrue(cache_path.is_dir())
+        self.assertTrue(blocked_config_parent.is_file())
+        self.assertTrue(any('Could not migrate old Arcade Organizer cache' in line for line in logger.debug_lines))
+
     def test_organize___with_malformed_mad_db_entry___uses_defaults_and_logs_schema_errors(self):
         logger = _LoggerSpy()
         self.ao_service = ArcadeOrganizerService(logger, MagicMock())
