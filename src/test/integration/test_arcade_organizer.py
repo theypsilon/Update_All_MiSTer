@@ -161,6 +161,29 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
                 else:
                     f.write(f'{key}={value}\n')
 
+    def test_handle_orgdir_outside_mra_folder___with_missing_orgdir_parent___creates_cores_link(self):
+        config = self.ao_service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+        config['ORGDIR'] = os.path.join(self.base_path, '_Arcade Organized')
+        infra = Infrastructure(config, NoLogger(), MagicMock())
+
+        infra.handle_orgdir_outside_mra_folder()
+
+        org_cores = Path(config['ORGDIR']) / 'cores'
+        self.assertTrue(org_cores.is_symlink())
+        self.assertEqual(str((Path(config['MRADIR']) / 'cores').absolute()), os.readlink(org_cores))
+        self.assertEqual([], infra.errors())
+
+    def test_handle_orgdir_outside_mra_folder___without_mra_cores___does_nothing(self):
+        shutil.rmtree(os.path.join(self.mradir, 'cores'))
+        config = self.ao_service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+        config['ORGDIR'] = os.path.join(self.base_path, '_Arcade Organized')
+        infra = Infrastructure(config, NoLogger(), MagicMock())
+
+        infra.handle_orgdir_outside_mra_folder()
+
+        self.assertFalse(Path(config['ORGDIR']).exists())
+        self.assertEqual([], infra.errors())
+
     def test_organize___with_all_options_enabled___creates_complete_structure(self):
         """Test arcade organizer with all options enabled (happy path)."""
         self._create_ini_file(

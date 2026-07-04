@@ -530,11 +530,20 @@ class Infrastructure:
         org_cores = Path("%s/cores" % self._config['ORGDIR'])
         mra_cores = Path("%s/cores" % self._config['MRADIR'])
         if mra_rp not in org_rp.parents and not org_cores.is_dir() and mra_cores.is_dir():
-            if self._config['NO_SYMLINKS']:
-                shutil.copytree(str(mra_cores.absolute()), str(org_cores.absolute()))
-            else:
-                os.symlink(str(mra_cores.absolute()), str(org_cores.absolute()))
+            try:
+                self.make_directory(org_cores.parent)
+                if self._config['NO_SYMLINKS']:
+                    shutil.copytree(str(mra_cores.absolute()), str(org_cores.absolute()))
+                else:
+                    os.symlink(str(mra_cores.absolute()), str(org_cores.absolute()))
+            except FileExistsError:
+                return
+            except OSError as e:
+                self._printer.print("Line %s || %s (%s)" % (lineno(), e, mra_cores))
+                self._os_errors.append((mra_cores, e))
+                return
             orgdir_folders_file = self._config['ORGDIR_FOLDERS_FILE']
+            self.make_directory(orgdir_folders_file.parent)
             with orgdir_folders_file.open("a") as f:
                 f.write(str(org_cores) + "\n")
 
