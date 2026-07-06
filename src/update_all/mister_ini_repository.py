@@ -144,6 +144,13 @@ class MisterIniRepository:
             value,
         )
 
+    def is_rbf_hide_datecode_enabled(self, path: str = FILE_MiSTer_ini) -> bool:
+        exists, contents = self._read_mister_ini(path)
+        if not exists:
+            return False
+
+        return _mister_ini_has_top_level_key(contents, 'rbf_hide_datecode', '1')
+
     def _change_mister_ini(
             self,
             transform: Callable[[str], str],
@@ -230,7 +237,7 @@ class MisterIniRepository:
             self._set_mister_ini_cache(path, False, '')
             return False, ''
 
-        contents = self._file_system.read_file_contents(path)
+        contents = read_mister_ini_file_contents(self._file_system, self._logger, path)
         self._set_mister_ini_cache(path, True, contents)
         return True, contents
 
@@ -260,6 +267,15 @@ class MisterIniRepository:
 
 def _pending_mister_ini_path(path: str) -> str:
     return _hidden_mister_ini_sibling_path(path, '.new')
+
+
+def read_mister_ini_file_contents(file_system: FileSystem, logger: Logger, path: str = FILE_MiSTer_ini) -> str:
+    try:
+        return file_system.read_file_contents(path)
+    except UnicodeDecodeError as e:
+        logger.debug(f'Could not read {path} as UTF-8; trying Latin-1')
+        logger.debug(e)
+        return file_system.read_file_binary(path).decode('latin-1')
 
 
 def _backup_mister_ini_path(path: str) -> str:
@@ -405,6 +421,22 @@ def _mister_ini_has_key_in_sections(contents: str, sections: Sequence[str], key:
             return True
 
     return False
+
+
+def _mister_ini_has_top_level_key(contents: str, key: str, value: str) -> bool:
+    if contents == '':
+        return False
+
+    lines = contents.splitlines(keepends=True)
+    first_section_index = next(
+        (index for index, line in enumerate(lines) if _mister_ini_section_name(line) is not None),
+        len(lines),
+    )
+    return any(
+        _mister_ini_names_equal(parsed_key, key)
+        and _mister_ini_values_equal(parsed_value, value)
+        for _index, parsed_key, parsed_value in _iter_mister_ini_key_values(lines, 0, first_section_index)
+    )
 
 
 def _add_mister_ini_section(contents: str, section: str, key_line: str, prepend: bool) -> str:

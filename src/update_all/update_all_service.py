@@ -135,6 +135,7 @@ class UpdateAllServiceFactory:
             encryption=encryption,
             retroaccount=retroaccount,
             retroachievements_service=retroachievements_service,
+            mister_ini_repository=mister_ini_repository,
             zaparoo_service=zaparoo_service,
         )
         environment_setup = EnvironmentSetupImpl(

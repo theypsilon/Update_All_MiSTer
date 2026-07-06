@@ -25,7 +25,7 @@ from update_all.config import Config
 from update_all.constants import FILE_MiSTer_ini
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
-from update_all.mister_ini_repository import MisterIniRepository
+from update_all.mister_ini_repository import MisterIniRepository, read_mister_ini_file_contents
 from update_all.os_utils import OsUtils
 from update_all.other import GenericProvider, terminal_size, calculate_overscan
 
@@ -211,13 +211,13 @@ class MisterVideoModeService:
         ini_path = self._active_ini_path()
         if not self._file_system.is_file(ini_path):
             return MisterVideoIniState(None, False, False)
-        return read_video_ini_state_from_contents(self._file_system.read_file_contents(ini_path))
+        return read_video_ini_state_from_contents(read_mister_ini_file_contents(self._file_system, self._logger, ini_path))
 
     def _read_current_mode_from_ini(self) -> Optional[str]:
         ini_path = self._active_ini_path()
         if not self._file_system.is_file(ini_path):
             return None
-        return read_video_mode_from_contents(self._file_system.read_file_contents(ini_path))
+        return read_video_mode_from_contents(read_mister_ini_file_contents(self._file_system, self._logger, ini_path))
 
     def _active_ini_path(self) -> str:
         config = self._config_provider.get()

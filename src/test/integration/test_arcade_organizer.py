@@ -27,7 +27,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService, BoolFlagPresence, Infrastructure
-from test.logger_tester import NoLogger
+from test.logger_tester import LoggerSpy, NoLogger
 
 
 class TestArcadeOrganizerIntegration(unittest.TestCase):
@@ -187,7 +187,7 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         self.assertEqual([], infra.errors())
 
     def test_make_arcade_organizer_config___with_invalid_bool_flag_presence_values___uses_defaults(self):
-        logger = _LoggerSpy()
+        logger = LoggerSpy()
         service = ArcadeOrganizerService(logger, MagicMock())
         self._create_ini_file(
             REGION_OTHERS=3,
@@ -205,7 +205,7 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         self.assertTrue(any('Invalid Arcade Organizer INI value for HOMEBREW' in line for line in logger.debug_lines))
 
     def test_make_arcade_organizer_config___with_invalid_bool_and_int_values___uses_defaults(self):
-        logger = _LoggerSpy()
+        logger = LoggerSpy()
         service = ArcadeOrganizerService(logger, MagicMock())
         self._create_ini_file(
             SKIPALTS='maybe',
@@ -223,7 +223,7 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         self.assertTrue(any('Invalid Arcade Organizer INI value for NUM_BUTTONS_MAXIMUM' in line for line in logger.debug_lines))
 
     def test_make_arcade_organizer_config___with_malformed_ini_file___uses_defaults(self):
-        logger = _LoggerSpy()
+        logger = LoggerSpy()
         service = ArcadeOrganizerService(logger, MagicMock())
         with open(self.ini_path, 'w') as f:
             f.write('[DEFAULT]\n')
@@ -267,7 +267,7 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         (cache_path / 'data.zip').write_text('old data')
         blocked_config_parent = Path(self.base_path) / 'Scripts/.config'
         blocked_config_parent.write_text('not a directory')
-        logger = _LoggerSpy()
+        logger = LoggerSpy()
         service = ArcadeOrganizerService(logger, MagicMock())
 
         service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
@@ -277,7 +277,7 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         self.assertTrue(any('Could not migrate old Arcade Organizer cache' in line for line in logger.debug_lines))
 
     def test_organize___with_malformed_mad_db_entry___uses_defaults_and_logs_schema_errors(self):
-        logger = _LoggerSpy()
+        logger = LoggerSpy()
         self.ao_service = ArcadeOrganizerService(logger, MagicMock())
         self._write_mra_fixture('bad.mra', 'bad', 'BadCore')
         self._update_mad_database_zip({
@@ -310,7 +310,7 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         self.assertTrue(any('MAD DB schema error for bad.special_controls[1]' in line for line in logger.debug_lines))
 
     def test_organize___with_non_object_mad_db___uses_defaults_and_logs_schema_error(self):
-        logger = _LoggerSpy()
+        logger = LoggerSpy()
         self.ao_service = ArcadeOrganizerService(logger, MagicMock())
         self._write_mad_database_zip([])
 
@@ -322,7 +322,7 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
         self.assertIn('MAD DB schema error: expected top-level object, got list', logger.debug_lines)
 
     def test_organize___with_non_object_mad_db_entry___uses_defaults_and_logs_schema_error(self):
-        logger = _LoggerSpy()
+        logger = LoggerSpy()
         self.ao_service = ArcadeOrganizerService(logger, MagicMock())
         self._write_mra_fixture('bad.mra', 'bad', 'BadCore')
         self._update_mad_database_zip({'bad': []})
@@ -918,11 +918,3 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
                     rel_path = os.path.relpath(full_path, self.orgdir)
                     mra_paths.add(rel_path)
         return mra_paths
-
-
-class _LoggerSpy(NoLogger):
-    def __init__(self):
-        self.debug_lines = []
-
-    def debug(self, *args, sep='', end='\n', flush=False):
-        self.debug_lines.append(sep.join(str(arg) for arg in args))

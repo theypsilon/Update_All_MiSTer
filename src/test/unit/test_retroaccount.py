@@ -24,7 +24,7 @@ import unittest
 
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
-from test.logger_tester import NoLogger
+from test.logger_tester import LoggerSpy, NoLogger
 from update_all.config import Config
 from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbeta_alt, FILE_patreon_key, FILE_patreon_key_md5, \
     FILE_retroaccount_device_id, FILE_retroaccount_user_json, FILE_retroaccount_verified_chip_id
@@ -306,7 +306,7 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertFalse(sut.has_prev_patreon_key_url())
 
     def test_attach_chip_id_to_current_device___with_valid_session___stores_verified_chip_id(self):
-        logger = _LoggerSpy()
+        logger = LoggerSpy()
         sut, file_system, gateway, _encryption = tester(files=default_sync_files(), logger=logger)
 
         result = sut.attach_chip_id_to_current_device('0123456789ABCDEF')
@@ -319,7 +319,7 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertIn('RetroAccountService: FPGA ID attach succeeded with status 200', logger.debug_messages)
 
     def test_attach_chip_id_to_current_device___when_endpoint_fails___does_not_store_verified_chip_id(self):
-        logger = _LoggerSpy()
+        logger = LoggerSpy()
         sut, file_system, gateway, _encryption = tester(files=default_sync_files(), logger=logger)
         gateway.attach_chip_id_status = 500
 
@@ -471,15 +471,6 @@ class _JtcoresServiceStub:
 
     def enable_private_beta_cores_from_retroaccount_if_allowed(self):
         self.enable_private_beta_cores_from_retroaccount_if_allowed_calls += 1
-
-
-class _LoggerSpy(NoLogger):
-    def __init__(self):
-        self.debug_messages = []
-
-    def debug(self, *args, sep='', end='\n', flush=False):
-        del end, flush
-        self.debug_messages.append(sep.join(str(arg) for arg in args))
 
 
 class _RetroAccountGatewayStub:

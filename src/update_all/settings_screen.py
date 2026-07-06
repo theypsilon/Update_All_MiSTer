@@ -38,6 +38,7 @@ from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, calculate_overscan, current_update_all_archive_path, is_mister_scripts_menu_fb_launch
 from update_all.logger import Logger, CollectorLoggerDecorator
+from update_all.mister_ini_repository import MisterIniRepository
 from update_all.mister_video_mode_service import MisterVideoModeService
 from update_all.mister_video_mode_ui import MisterVideoModeMenu, MisterVideoAdjustMenu
 from update_all.os_utils import OsUtils
@@ -62,10 +63,12 @@ class SettingsScreen(UiApplication):
                  local_repository: LocalRepository, store_provider: GenericProvider[LocalStore],
                  ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService, encryption: Encryption,
                  retroaccount: RetroAccountService, retroachievements_service: RetroAchievementsService,
+                 mister_ini_repository: MisterIniRepository,
                  zaparoo_service: ZaparooService):
         self._logger = logger
         self._retroachievements_service = retroachievements_service
         self._zaparoo_service = zaparoo_service
+        self._mister_ini_repository = mister_ini_repository
         self._config_provider = config_provider
         self._file_system = file_system
         self._ini_repository = ini_repository
@@ -784,12 +787,7 @@ class SettingsScreen(UiApplication):
     def calculate_names_char_code_warning(self, ui: UiContext) -> None:
 
         names_char_code = ui.get_value('names_char_code').lower()
-
-        mister_ini = self._read_mister_ini()
-
-        has_date_code_1 = False
-        if 'rbf_hide_datecode=1' in mister_ini:
-            has_date_code_1 = True
+        has_date_code_1 = self._mister_ini_repository.is_rbf_hide_datecode_enabled()
 
         ui.set_value('names_char_code_warning', 'true' if names_char_code == 'char28' and not has_date_code_1 else 'false')
 
@@ -800,12 +798,6 @@ class SettingsScreen(UiApplication):
 
         installed_present = self._file_system.is_file(ARCADE_ORGANIZER_INSTALLED_NAMES_TXT)
         ui.set_value('names_txt_file_warning', 'false' if installed_present else 'true')
-
-    def _read_mister_ini(self):
-        if self._file_system.is_file(FILE_MiSTer_ini):
-            return self._file_system.read_file_contents(FILE_MiSTer_ini).replace(" ", "")
-        else:
-            return ''
 
     def calculate_arcade_organizer_folders(self, ui: UiContext) -> None:
         try:

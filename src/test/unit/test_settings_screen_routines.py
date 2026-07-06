@@ -98,6 +98,28 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         sut.calculate_names_char_code_warning(ui)
         self.assertEqual(ui.get_value('names_char_code_warning'), 'true')
 
+    def test_calculate_names_char_code_warning___with_latin_1_mister_ini___does_not_crash(self):
+        contents = b'rbf_hide_datecode=1\n[mister]\n; osd_rotate +90\xb0\n'
+        file_system = FileSystemFactory.from_state(files={
+            FILE_MiSTer_ini: {'content': ''},
+        }).create_for_system_scope()
+        original_read_file_contents = file_system.read_file_contents
+
+        def read_file_contents(path):
+            normalized_path = path.lower()
+            if normalized_path == FILE_MiSTer_ini.lower() or normalized_path.endswith('/' + FILE_MiSTer_ini.lower()):
+                raise UnicodeDecodeError('utf-8', contents, 26, 27, 'invalid start byte')
+            return original_read_file_contents(path)
+
+        file_system.read_file_contents = read_file_contents
+        file_system.read_file_binary = lambda _path: contents
+        sut, ui = tester(file_system=file_system)
+        ui.set_value('names_char_code', 'char28')
+
+        sut.calculate_names_char_code_warning(ui)
+
+        self.assertEqual('false', ui.get_value('names_char_code_warning'))
+
     def test_retroachievements_db_toggle___when_disabled___enables_db_and_sets_service_status(self):
         config = Config(databases=default_databases())
         service = _RetroAchievementsServiceStub(enable_status='missing_credentials')

@@ -34,3 +34,17 @@ class NoLogger(Logger):
     def finalize(self):
         pass
 
+
+class LoggerSpy(NoLogger):
+    def __init__(self):
+        self.debug_lines = []
+        self.debug_messages = self.debug_lines
+        self.print_lines = []
+
+    def print(self, *args, sep='', end='\n', flush=False):
+        del end, flush
+        self.print_lines.append(sep.join(str(arg) for arg in args))
+
+    def debug(self, *args, sep='', end='\n', flush=False):
+        del end, flush
+        self.debug_lines.append(sep.join(str(arg) for arg in args))

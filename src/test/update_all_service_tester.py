@@ -224,6 +224,7 @@ class SettingsScreenTester(SettingsScreen):
                     mister_ini_repository=mister_ini_repository,
                 )
             ),
+            mister_ini_repository=mister_ini_repository,
             zaparoo_service=(
                 zaparoo_service
                 or ZaparooServiceTester(

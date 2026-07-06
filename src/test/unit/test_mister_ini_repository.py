@@ -18,6 +18,7 @@
 
 import unittest
 
+from test.logger_tester import LoggerSpy
 from test.mister_ini_repository_tester import MisterIniRepositoryTester
 from update_all.constants import FILE_MiSTer_ini, FILE_MiSTer_ini_update_all_backup
 from update_all.mister_ini_repository import FILE_mister_ini_backup_pending, FILE_mister_ini_pending
@@ -245,6 +246,46 @@ class TestMisterIniRepository(unittest.TestCase):
         })
 
         self.assertFalse(sut.has_mister_ini_key(['mister', 'menu'], 'main', 'zaparoo/MiSTer_Zaparoo'))
+
+    def test_is_rbf_hide_datecode_enabled___when_top_level_key_is_one___returns_true(self):
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': 'rbf_hide_datecode = 1 ; comment\n[mister]\nfoo=bar\n'},
+        })
+
+        self.assertTrue(sut.is_rbf_hide_datecode_enabled())
+
+    def test_is_rbf_hide_datecode_enabled___when_key_is_commented_out___returns_false(self):
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': '; rbf_hide_datecode=1\n[mister]\nfoo=bar\n'},
+        })
+
+        self.assertFalse(sut.is_rbf_hide_datecode_enabled())
+
+    def test_is_rbf_hide_datecode_enabled___when_key_is_zero___returns_false(self):
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': 'rbf_hide_datecode=0\n[mister]\nfoo=bar\n'},
+        })
+
+        self.assertFalse(sut.is_rbf_hide_datecode_enabled())
+
+    def test_has_mister_ini_key___with_latin_1_mister_ini___falls_back_to_latin_1(self):
+        logger = LoggerSpy()
+        contents = b'[mister]\n; osd_rotate +90\xb0\nmain=zaparoo/MiSTer_Zaparoo\n'
+        sut = MisterIniRepositoryTester(files={
+            FILE_MiSTer_ini: {'content': ''},
+        }, logger=logger)
+        original_read_file_contents = sut.file_system.read_file_contents
+
+        def read_file_contents(path):
+            if path.lower() == FILE_MiSTer_ini.lower():
+                raise UnicodeDecodeError('utf-8', contents, 21, 22, 'invalid start byte')
+            return original_read_file_contents(path)
+
+        sut.file_system.read_file_contents = read_file_contents
+        sut.file_system.read_file_binary = lambda _path: contents
+
+        self.assertTrue(sut.has_mister_ini_key(['mister', 'menu'], 'main', 'zaparoo/MiSTer_Zaparoo'))
+        self.assertTrue(any('Could not read MiSTer.ini as UTF-8' in line for line in logger.debug_lines))
 
     def test_mister_ini_contents_are_cached_across_previews_and_writes(self):
         original = '[mister]\nfoo=bar\n'
