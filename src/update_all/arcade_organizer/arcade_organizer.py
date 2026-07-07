@@ -755,11 +755,12 @@ class Infrastructure:
 
     def _remove_broken_symlinks(self, directory):
         try:
-            for entry in os.scandir(directory):
-                if entry.is_dir(follow_symlinks=False):
-                    self._remove_broken_symlinks(entry.path)
-                elif entry.is_symlink() and not os.path.exists(entry.path):
-                    os.remove(entry.path)
+            with os.scandir(directory) as entries:
+                for entry in entries:
+                    if entry.is_dir(follow_symlinks=False):
+                        self._remove_broken_symlinks(entry.path)
+                    elif entry.is_symlink() and not os.path.exists(entry.path):
+                        os.remove(entry.path)
         except Exception as e:
             self._printer.print("Couldn't clean broken symlinks at " + directory)
             self._printer.print(str(e))

@@ -331,10 +331,12 @@ class RetroAccountService(RetroAccountClient):
         self._logger.bench('RetroAccountService Gateway mister_sync end')
 
         if result == SessionResult.VALID and isinstance(response, dict):
-            new_user_json = response.get('tokens', None)
-            if isinstance(new_user_json, dict) and len(new_user_json) >= 1:
+            tokens = response.get('tokens', None)
+            new_user_json: Optional[dict[str, Any]] = None
+            if isinstance(tokens, dict) and len(tokens) >= 1:
                 self._logger.debug(f'RetroAccountService: New token!')
-                new_user_json['device_id'] = device_id
+                tokens['device_id'] = device_id
+                new_user_json = tokens
 
             device = response.get('device', None)
             device_label = any_to_nonfalsy_str(device.get('label', None)) if isinstance(device, dict) else None
