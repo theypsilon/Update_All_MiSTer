@@ -16,9 +16,13 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import hashlib
+import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
+import time
+from dataclasses import dataclass
 from functools import cached_property
 from typing import Optional, Final, List
 
@@ -54,6 +58,22 @@ from update_all.ui_model_utilities import gather_variable_declarations, dynamic_
 
 
 CHIP_ID_DEBUG_LOG_PATH: Final[str] = f'{MEDIA_FAT}/{FILE_update_all_chip_id_linker_log}'
+CHIP_ID_BOOTSTRAP_LOG_PATH: Final[str] = str(Path(CHIP_ID_DEBUG_LOG_PATH).with_name('chip-id-linker-bootstrap.log'))
+CHIP_ID_WORKER_ARCHIVE_PATH: Final[str] = '/tmp/update_all_chipid_worker.pyz'
+CHIP_ID_WORKER_STARTUP_TIMEOUT_SECONDS: Final[float] = 15.0
+CHIP_ID_WORKER_STARTUP_POLL_INTERVAL_SECONDS: Final[float] = 0.05
+CHIP_ID_WORKER_STOP_TIMEOUT_SECONDS: Final[float] = 1.0
+
+
+def _chip_id_worker_startup_marker_path() -> str:
+    return f'{CHIP_ID_WORKER_ARCHIVE_PATH}.started.{os.getpid()}.{time.monotonic_ns()}'
+
+
+@dataclass(frozen=True)
+class _PendingChipIdExtraction:
+    command: List[str]
+    startup_marker_path: str
+    bootstrap_log_path: str
 
 
 class SettingsScreen(UiApplication):
@@ -83,7 +103,7 @@ class SettingsScreen(UiApplication):
         self._mister_video_mode_service = mister_video_mode_service
         self._original_firmware = None
         self._theme_manager = None
-        self._pending_chip_id_extraction: Optional[List[str]] = None
+        self._pending_chip_id_extraction: Optional[_PendingChipIdExtraction] = None
 
     def load_main_menu(self) -> None:
         if self._retroaccount.get_login_state():
@@ -446,7 +466,10 @@ class SettingsScreen(UiApplication):
             result = f'FAILURE_{type(e).__name__.upper()}'
 
         ui.set_value('retroaccount_extract_chip_id_result', result)
-        ui.set_value('retroaccount_device_verification_description', self._device_verification_description(result))
+        if result.startswith('FAILURE_'):
+            self._set_retroaccount_device_verification_failure(ui)
+        else:
+            ui.set_value('retroaccount_device_verification_description', self._device_verification_description(result))
         self._logger.debug(f'[fpga-id] extract_chip_id: final UI result: {result}')
         if result == 'EXTRACTION_STARTED':
             self._logger.debug('[fpga-id] extract_chip_id: exiting settings screen so curses can shut down before helper start')
@@ -457,6 +480,7 @@ class SettingsScreen(UiApplication):
         return 'clear_window'
 
     def _queue_detached_chip_id_extraction(self) -> str:
+        self._pending_chip_id_extraction = None
         pyz_path = self._chip_id_linker_pyz_path()
         rbf_path = self._file_system.resolve(FILE_update_all_chip_id_rbf)
         update_all_dir = str(Path(self._file_system.resolve(FILE_update_all_launcher)).parent)
@@ -472,20 +496,59 @@ class SettingsScreen(UiApplication):
             self._logger.debug('[fpga-id] _queue_detached_chip_id_extraction: Linker RBF missing')
             return 'FAILURE_RBF_MISSING'
 
+        try:
+            staged_pyz_path = self._stage_chip_id_worker_archive(pyz_path)
+        except Exception as e:
+            self._logger.debug('Could not stage chip-ID worker archive; detached worker was not queued')
+            self._logger.debug(e)
+            return 'FAILURE_STAGING'
+
+        startup_marker_path = _chip_id_worker_startup_marker_path()
         python_executable = sys.executable or '/usr/bin/python3'
-        self._pending_chip_id_extraction = [
-            python_executable,
-            pyz_path,
-            '--chip-id-linker',
-            '--rbf',
-            rbf_path,
-            '--update-all-dir',
-            update_all_dir,
-            '--log',
-            CHIP_ID_DEBUG_LOG_PATH,
-        ]
+        self._pending_chip_id_extraction = _PendingChipIdExtraction(
+            command=[
+                python_executable,
+                staged_pyz_path,
+                '--chip-id-linker',
+                '--rbf',
+                rbf_path,
+                '--update-all-dir',
+                update_all_dir,
+                '--startup-marker',
+                startup_marker_path,
+                '--log',
+                CHIP_ID_DEBUG_LOG_PATH,
+            ],
+            startup_marker_path=startup_marker_path,
+            bootstrap_log_path=CHIP_ID_BOOTSTRAP_LOG_PATH,
+        )
+        self._logger.debug(f'[fpga-id] _queue_detached_chip_id_extraction: staged linker pyz path: {staged_pyz_path}')
+        self._logger.debug(f'[fpga-id] _queue_detached_chip_id_extraction: startup marker path: {startup_marker_path}')
+        self._logger.debug(f'[fpga-id] _queue_detached_chip_id_extraction: bootstrap log path: {CHIP_ID_BOOTSTRAP_LOG_PATH}')
         self._logger.debug('[fpga-id] _queue_detached_chip_id_extraction: queued helper start after UI shutdown')
         return 'EXTRACTION_STARTED'
+
+    def _stage_chip_id_worker_archive(self, source_path: str) -> str:
+        temporary_path = f'{CHIP_ID_WORKER_ARCHIVE_PATH}.{os.getpid()}.tmp'
+        staging_completed = False
+        try:
+            with open(source_path, 'rb') as source, open(temporary_path, 'wb') as destination:
+                shutil.copyfileobj(source, destination)
+                destination.flush()
+                os.fsync(destination.fileno())
+            os.chmod(temporary_path, 0o700)
+            os.replace(temporary_path, CHIP_ID_WORKER_ARCHIVE_PATH)
+            staging_completed = True
+            return CHIP_ID_WORKER_ARCHIVE_PATH
+        finally:
+            if not staging_completed:
+                try:
+                    os.remove(temporary_path)
+                except FileNotFoundError:
+                    pass
+                except Exception as e:
+                    self._logger.debug('Could not remove incomplete chip-ID worker archive')
+                    self._logger.debug(e)
 
     def _run_chip_id_extraction_without_update_all_relaunch(self) -> str:
         pyz_path = self._chip_id_linker_pyz_path()
@@ -543,25 +606,94 @@ class SettingsScreen(UiApplication):
         if self._pending_chip_id_extraction is None:
             return
 
-        command = self._pending_chip_id_extraction
+        pending = self._pending_chip_id_extraction
         self._pending_chip_id_extraction = None
         self._logger.debug('[fpga-id] _start_pending_chip_id_extraction_after_ui_shutdown: starting detached extraction worker')
         try:
-            process = subprocess.Popen(
-                command,
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-                close_fds=True,
-            )
-            self._logger.debug(f'[fpga-id] _start_pending_chip_id_extraction_after_ui_shutdown: started helper pid {process.pid}')
+            bootstrap_log_dir = os.path.dirname(pending.bootstrap_log_path)
+            if bootstrap_log_dir:
+                os.makedirs(bootstrap_log_dir, exist_ok=True)
+            with open(pending.bootstrap_log_path, 'w', buffering=1) as bootstrap_log:
+                bootstrap_log.write(f'[fpga-id] starting detached worker from {pending.command[1]}\n')
+                process = subprocess.Popen(
+                    pending.command,
+                    stdin=subprocess.DEVNULL,
+                    stdout=bootstrap_log,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True,
+                    close_fds=True,
+                )
+                self._logger.debug(
+                    f'[fpga-id] _start_pending_chip_id_extraction_after_ui_shutdown: started helper pid {process.pid}'
+                )
+                if self._wait_for_chip_id_worker_startup(process, pending.startup_marker_path):
+                    self._logger.debug(
+                        '[fpga-id] _start_pending_chip_id_extraction_after_ui_shutdown: worker startup confirmed'
+                    )
+                else:
+                    bootstrap_log.write('[fpga-id] detached worker did not confirm startup\n')
+                    self._logger.debug(
+                        '[fpga-id] _start_pending_chip_id_extraction_after_ui_shutdown: worker startup was not confirmed'
+                    )
         except Exception as e:
             self._logger.debug('Could not start detached ChipId extraction after UI shutdown')
             self._logger.debug(e)
             self._logger.debug(
                 f'[fpga-id] _start_pending_chip_id_extraction_after_ui_shutdown: failed: {type(e).__name__}: {str(e)}'
             )
+        finally:
+            self._remove_chip_id_worker_startup_marker(pending.startup_marker_path)
+
+    def _wait_for_chip_id_worker_startup(self, process, marker_path: str) -> bool:
+        deadline = time.monotonic() + CHIP_ID_WORKER_STARTUP_TIMEOUT_SECONDS
+        while True:
+            if os.path.isfile(marker_path):
+                return True
+
+            returncode = process.poll()
+            if returncode is not None:
+                self._logger.debug(
+                    f'[fpga-id] _wait_for_chip_id_worker_startup: helper exited before startup marker with {returncode}'
+                )
+                return False
+
+            if time.monotonic() >= deadline:
+                self._logger.debug('[fpga-id] _wait_for_chip_id_worker_startup: timed out waiting for startup marker')
+                self._stop_chip_id_worker(process)
+                return False
+
+            time.sleep(CHIP_ID_WORKER_STARTUP_POLL_INTERVAL_SECONDS)
+
+    def _stop_chip_id_worker(self, process) -> None:
+        try:
+            process.terminate()
+            process.wait(timeout=CHIP_ID_WORKER_STOP_TIMEOUT_SECONDS)
+            return
+        except subprocess.TimeoutExpired:
+            self._logger.debug('[fpga-id] _stop_chip_id_worker: terminate timed out; killing helper')
+        except ProcessLookupError:
+            return
+        except Exception as e:
+            self._logger.debug('Could not terminate chip-ID worker after startup timeout')
+            self._logger.debug(e)
+
+        try:
+            process.kill()
+            process.wait(timeout=CHIP_ID_WORKER_STOP_TIMEOUT_SECONDS)
+        except ProcessLookupError:
+            pass
+        except Exception as e:
+            self._logger.debug('Could not kill chip-ID worker after startup timeout')
+            self._logger.debug(e)
+
+    def _remove_chip_id_worker_startup_marker(self, marker_path: str) -> None:
+        try:
+            os.remove(marker_path)
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            self._logger.debug('Could not remove chip-ID worker startup marker')
+            self._logger.debug(e)
 
     def calculate_has_right_available_code(self, ui: UiContext) -> None:
         is_test_firmware, firmware_md5 = self._is_test_firmware()

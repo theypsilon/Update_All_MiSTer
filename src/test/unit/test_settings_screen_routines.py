@@ -33,6 +33,7 @@ from update_all.databases import DB_ID_NAMES_TXT, AllDBs, all_dbs
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
 from update_all.retroaccount import BenefitState, ChipIdAttachResult
+from update_all import settings_screen as settings_screen_module
 from update_all.settings_screen import CHIP_ID_DEBUG_LOG_PATH, SettingsScreen
 from update_all.settings_screen_model import settings_screen_model
 from update_all.ui_model_utilities import gather_variable_declarations
@@ -382,6 +383,20 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('EXTRACTION_STARTED', ui.get_value('retroaccount_extract_chip_id_result'))
         sut._queue_detached_chip_id_extraction.assert_called_once_with()
 
+    def test_extract_chip_id___when_worker_staging_fails___shows_failure_without_exiting(self):
+        config = Config(databases=default_databases())
+        sut, ui = tester(config=config, file_system=chip_id_linker_file_system(config))
+        sut._queue_detached_chip_id_extraction = MagicMock(return_value='FAILURE_STAGING')
+
+        with patch('update_all.settings_screen.is_mister_scripts_menu_fb_launch', return_value=True):
+            result = sut.extract_chip_id(ui)
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('FAILURE_STAGING', ui.get_value('retroaccount_extract_chip_id_result'))
+        self.assertEqual('FPGA ID linking failed', ui.get_value('retroaccount_device_verification_description'))
+        self.assertEqual('Could not link FPGA ID. Try again later.', ui.get_value('retroaccount_device_verification_message'))
+        sut._queue_detached_chip_id_extraction.assert_called_once_with()
+
     def test_initialize_ui___loads_chip_id_result_from_config_for_retroaccount_menu(self):
         _sut, ui = tester(config=Config(databases=default_databases(), chip_id_result='0123456789abcdef'))
 
@@ -448,30 +463,36 @@ class TestSettingsScreenRoutines(unittest.TestCase):
             pyz_path = f'{base_path}/scripts/.config/update_all/update_all.pyz'
             rbf_path = f'{base_path}/scripts/.config/update_all/linker.rbf'
             update_all_dir = f'{base_path}/scripts'
+            staged_pyz_path = f'{base_path}/staged-worker.pyz'
+            startup_marker_path = f'{base_path}/worker.started'
+            bootstrap_log_path = f'{base_path}/worker-bootstrap.log'
 
             with patch('update_all.settings_screen.sys.executable', '/usr/bin/python3'), \
-                    patch('update_all.settings_screen.subprocess.Popen', return_value=process) as popen:
+                    patch('update_all.settings_screen.subprocess.Popen', return_value=process) as popen, \
+                    patch('update_all.settings_screen._chip_id_worker_startup_marker_path', return_value=startup_marker_path), \
+                    patch('update_all.settings_screen.CHIP_ID_BOOTSTRAP_LOG_PATH', bootstrap_log_path), \
+                    patch.object(sut, '_stage_chip_id_worker_archive', return_value=staged_pyz_path) as stage_archive, \
+                    patch.object(sut, '_wait_for_chip_id_worker_startup', return_value=True):
                 result = _start_detached_chip_id_extraction(sut)
 
             self.assertEqual('EXTRACTION_STARTED', result)
-            popen.assert_called_once_with(
+            stage_archive.assert_called_once_with(pyz_path)
+            popen.assert_called_once()
+            self.assertEqual(
                 [
-                    '/usr/bin/python3',
-                    pyz_path,
-                    '--chip-id-linker',
-                    '--rbf',
-                    rbf_path,
-                    '--update-all-dir',
-                    update_all_dir,
-                    '--log',
-                    CHIP_ID_DEBUG_LOG_PATH,
+                    '/usr/bin/python3', staged_pyz_path,
+                    '--chip-id-linker', '--rbf', rbf_path,
+                    '--update-all-dir', update_all_dir,
+                    '--startup-marker', startup_marker_path,
+                    '--log', CHIP_ID_DEBUG_LOG_PATH,
                 ],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-                close_fds=True,
+                popen.call_args.args[0],
             )
+            self.assertEqual(subprocess.DEVNULL, popen.call_args.kwargs['stdin'])
+            self.assertEqual(bootstrap_log_path, popen.call_args.kwargs['stdout'].name)
+            self.assertEqual(subprocess.STDOUT, popen.call_args.kwargs['stderr'])
+            self.assertTrue(popen.call_args.kwargs['start_new_session'])
+            self.assertTrue(popen.call_args.kwargs['close_fds'])
 
     def test_start_detached_chip_id_extraction___uses_current_update_all_archive_even_without_pyz_extension(self):
         with tempfile.TemporaryDirectory() as base_path:
@@ -486,32 +507,141 @@ class TestSettingsScreenRoutines(unittest.TestCase):
             current_archive_path = _temp_zipapp_with_suffix('.sh')
             rbf_path = f'{base_path}/scripts/.config/update_all/linker.rbf'
             update_all_dir = f'{base_path}/scripts'
+            staged_pyz_path = f'{base_path}/staged-worker.pyz'
+            startup_marker_path = f'{base_path}/worker.started'
+            bootstrap_log_path = f'{base_path}/worker-bootstrap.log'
 
             with patch('update_all.settings_screen.sys.argv', [current_archive_path]), \
                     patch('update_all.settings_screen.sys.executable', '/usr/bin/python3'), \
-                    patch('update_all.settings_screen.subprocess.Popen', return_value=process) as popen:
+                    patch('update_all.settings_screen.subprocess.Popen', return_value=process) as popen, \
+                    patch('update_all.settings_screen._chip_id_worker_startup_marker_path', return_value=startup_marker_path), \
+                    patch('update_all.settings_screen.CHIP_ID_BOOTSTRAP_LOG_PATH', bootstrap_log_path), \
+                    patch.object(sut, '_stage_chip_id_worker_archive', return_value=staged_pyz_path) as stage_archive, \
+                    patch.object(sut, '_wait_for_chip_id_worker_startup', return_value=True):
                 result = _start_detached_chip_id_extraction(sut)
 
             self.assertEqual('EXTRACTION_STARTED', result)
-            popen.assert_called_once_with(
+            stage_archive.assert_called_once_with(current_archive_path)
+            popen.assert_called_once()
+            self.assertEqual(
                 [
-                    '/usr/bin/python3',
-                    current_archive_path,
-                    '--chip-id-linker',
-                    '--rbf',
-                    rbf_path,
-                    '--update-all-dir',
-                    update_all_dir,
-                    '--log',
-                    CHIP_ID_DEBUG_LOG_PATH,
+                    '/usr/bin/python3', staged_pyz_path,
+                    '--chip-id-linker', '--rbf', rbf_path,
+                    '--update-all-dir', update_all_dir,
+                    '--startup-marker', startup_marker_path,
+                    '--log', CHIP_ID_DEBUG_LOG_PATH,
                 ],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-                close_fds=True,
+                popen.call_args.args[0],
             )
+            self.assertEqual(bootstrap_log_path, popen.call_args.kwargs['stdout'].name)
+            self.assertEqual(subprocess.STDOUT, popen.call_args.kwargs['stderr'])
             _remove(current_archive_path)
+
+    def test_start_detached_chip_id_extraction___when_staging_fails___does_not_fall_back_to_cached_archive(self):
+        with tempfile.TemporaryDirectory() as base_path:
+            config = Config(base_path=base_path, base_system_path=base_path, databases=default_databases())
+            file_system = FileSystemFactory.from_state(config=config, files={
+                'Scripts/.config/update_all/update_all.pyz': {'content': 'stale cached pyz'},
+                'Scripts/.config/update_all/Linker.rbf': {'content': 'rbf'},
+            }).create_for_system_scope()
+            sut, _ui = tester(config=config, file_system=file_system)
+            current_archive_path = _temp_zipapp_with_suffix('.sh')
+            sut._pending_chip_id_extraction = MagicMock()
+
+            with patch('update_all.settings_screen.sys.argv', [current_archive_path]), \
+                    patch.object(sut, '_stage_chip_id_worker_archive', side_effect=OSError('tmpfs unavailable')) as stage_archive, \
+                    patch('update_all.settings_screen.subprocess.Popen') as popen:
+                result = _start_detached_chip_id_extraction(sut)
+
+            self.assertEqual('FAILURE_STAGING', result)
+            stage_archive.assert_called_once_with(current_archive_path)
+            popen.assert_not_called()
+            self.assertIsNone(sut._pending_chip_id_extraction)
+            _remove(current_archive_path)
+
+    def test_start_detached_chip_id_extraction___survives_original_archive_deletion_before_spawn(self):
+        worker_main = (
+            'import os\n'
+            'import sys\n'
+            'marker = sys.argv[sys.argv.index("--startup-marker") + 1]\n'
+            'print("worker reached bootstrap", file=sys.stderr, flush=True)\n'
+            'temporary_marker = marker + ".tmp"\n'
+            'with open(temporary_marker, "w") as marker_file:\n'
+            '    marker_file.write(str(os.getpid()))\n'
+            '    marker_file.flush()\n'
+            '    os.fsync(marker_file.fileno())\n'
+            'os.replace(temporary_marker, marker)\n'
+        )
+        with tempfile.TemporaryDirectory() as base_path:
+            config = Config(base_path=base_path, base_system_path=base_path, databases=default_databases())
+            file_system = FileSystemFactory.from_state(config=config, files={
+                'Scripts/.config/update_all/update_all.pyz': {'content': 'stale cached pyz'},
+                'Scripts/.config/update_all/Linker.rbf': {'content': 'rbf'},
+            }).create_for_system_scope()
+            sut, _ui = tester(config=config, file_system=file_system)
+            current_archive_path = _temp_zipapp_with_suffix('.sh', worker_main)
+            staged_pyz_path = f'{base_path}/staged-worker.pyz'
+            startup_marker_path = f'{base_path}/worker.started'
+            bootstrap_log_path = f'{base_path}/worker-bootstrap.log'
+            worker_processes = []
+            real_popen = subprocess.Popen
+
+            def start_worker(*args, **kwargs):
+                process = real_popen(*args, **kwargs)
+                worker_processes.append(process)
+                return process
+
+            with patch('update_all.settings_screen.sys.argv', [current_archive_path]), \
+                    patch('update_all.settings_screen.CHIP_ID_WORKER_ARCHIVE_PATH', staged_pyz_path), \
+                    patch('update_all.settings_screen.CHIP_ID_BOOTSTRAP_LOG_PATH', bootstrap_log_path), \
+                    patch('update_all.settings_screen._chip_id_worker_startup_marker_path', return_value=startup_marker_path), \
+                    patch('update_all.settings_screen.subprocess.Popen', side_effect=start_worker):
+                result = sut._queue_detached_chip_id_extraction()
+                os.remove(current_archive_path)
+                sut._start_pending_chip_id_extraction_after_ui_shutdown()
+
+            self.assertEqual('EXTRACTION_STARTED', result)
+            self.assertEqual(0, worker_processes[0].wait(timeout=5))
+            self.assertTrue(os.path.isfile(staged_pyz_path))
+            self.assertFalse(os.path.exists(startup_marker_path))
+            with open(bootstrap_log_path) as bootstrap_log:
+                self.assertIn('worker reached bootstrap', bootstrap_log.read())
+
+    def test_start_pending_chip_id_extraction___captures_stderr_when_worker_exits_before_handshake(self):
+        with tempfile.TemporaryDirectory() as base_path:
+            sut, _ui = tester()
+            startup_marker_path = f'{base_path}/worker.started'
+            bootstrap_log_path = f'{base_path}/worker-bootstrap.log'
+            sut._pending_chip_id_extraction = settings_screen_module._PendingChipIdExtraction(
+                command=[
+                    settings_screen_module.sys.executable,
+                    '-c',
+                    'import sys; print("bootstrap failure", file=sys.stderr, flush=True); raise SystemExit(23)',
+                ],
+                startup_marker_path=startup_marker_path,
+                bootstrap_log_path=bootstrap_log_path,
+            )
+
+            sut._start_pending_chip_id_extraction_after_ui_shutdown()
+
+            self.assertFalse(os.path.exists(startup_marker_path))
+            with open(bootstrap_log_path) as bootstrap_log:
+                log = bootstrap_log.read()
+            self.assertIn('bootstrap failure', log)
+            self.assertIn('detached worker did not confirm startup', log)
+
+    def test_wait_for_chip_id_worker_startup___stops_worker_after_timeout(self):
+        sut, _ui = tester()
+        process = MagicMock()
+        process.poll.return_value = None
+
+        with patch('update_all.settings_screen.os.path.isfile', return_value=False), \
+                patch('update_all.settings_screen.time.monotonic', side_effect=[10.0, 25.0]), \
+                patch.object(sut, '_stop_chip_id_worker') as stop_worker:
+            result = sut._wait_for_chip_id_worker_startup(process, '/tmp/missing-worker-marker')
+
+        self.assertFalse(result)
+        stop_worker.assert_called_once_with(process)
 
     def test_start_detached_chip_id_extraction___when_linker_pyz_is_missing___stores_failure(self):
         with tempfile.TemporaryDirectory() as base_path:
@@ -651,23 +781,31 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('', ui.get_value('device_label'))
 
     def test_load_menu_entry___starts_pending_chip_id_extraction_after_curses_exits(self):
-        sut, _ui = tester(initialize_ui=False, ui_runtime=_ImmediateUiRuntimeStub())
-        sut._pending_chip_id_extraction = ['/usr/bin/python3', '/tmp/update_all_chipid.pyz']
+        with tempfile.TemporaryDirectory() as base_path:
+            sut, _ui = tester(initialize_ui=False, ui_runtime=_ImmediateUiRuntimeStub())
+            command = ['/usr/bin/python3', '/tmp/update_all_chipid.pyz']
+            startup_marker_path = f'{base_path}/worker.started'
+            bootstrap_log_path = f'{base_path}/worker-bootstrap.log'
+            sut._pending_chip_id_extraction = settings_screen_module._PendingChipIdExtraction(
+                command=command,
+                startup_marker_path=startup_marker_path,
+                bootstrap_log_path=bootstrap_log_path,
+            )
 
-        with patch('update_all.settings_screen.execute_ui_engine', side_effect=SystemExit(0)), \
-                patch('update_all.settings_screen.subprocess.Popen') as popen:
-            with self.assertRaises(SystemExit):
-                sut._load_menu_entry('main_menu_login')
+            with patch('update_all.settings_screen.execute_ui_engine', side_effect=SystemExit(0)), \
+                    patch('update_all.settings_screen.subprocess.Popen') as popen, \
+                    patch.object(sut, '_wait_for_chip_id_worker_startup', return_value=True):
+                with self.assertRaises(SystemExit):
+                    sut._load_menu_entry('main_menu_login')
 
-        popen.assert_called_once_with(
-            ['/usr/bin/python3', '/tmp/update_all_chipid.pyz'],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True,
-            close_fds=True,
-        )
-        self.assertIsNone(sut._pending_chip_id_extraction)
+            popen.assert_called_once()
+            self.assertEqual(command, popen.call_args.args[0])
+            self.assertEqual(subprocess.DEVNULL, popen.call_args.kwargs['stdin'])
+            self.assertEqual(bootstrap_log_path, popen.call_args.kwargs['stdout'].name)
+            self.assertEqual(subprocess.STDOUT, popen.call_args.kwargs['stderr'])
+            self.assertTrue(popen.call_args.kwargs['start_new_session'])
+            self.assertTrue(popen.call_args.kwargs['close_fds'])
+            self.assertIsNone(sut._pending_chip_id_extraction)
 
 
 def tester(config: Config = None, store: LocalStore = None, mister_video_mode_service=None, initialize_ui=True, ui_runtime=None, file_system=None, retroaccount=None, os_utils=None, retroachievements_service=None, ao_service=None) -> Tuple[SettingsScreen, UiContextStub]:
@@ -738,11 +876,11 @@ def chip_id_linker_file_system(config: Config, pyz: bool = True, rbf: bool = Tru
     return FileSystemFactory.from_state(config=config, files=files).create_for_system_scope()
 
 
-def _temp_zipapp_with_suffix(suffix: str) -> str:
+def _temp_zipapp_with_suffix(suffix: str, main: str = '') -> str:
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as file:
         path = file.name
     with zipfile.ZipFile(path, 'w') as archive:
-        archive.writestr('__main__.py', '')
+        archive.writestr('__main__.py', main)
     return path
 
 

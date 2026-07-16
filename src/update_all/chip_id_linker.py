@@ -139,8 +139,13 @@ class HpsFpgaStatus(NamedTuple):
 
 def run_chip_id_linker_command(logger: FileLoggerDecorator, argv=None) -> int:
     args = _parse_args(argv)
-    logger.set_logfile(args.log, append=True)
-    return ChipIdLinker(logger, args.log).run(args)
+    _validate_args(args)
+    if not args.restore_after_relaunch and not args.blank_display:
+        _reset_chip_id_log(args.log)
+    logger.set_logfile(args.log, append=True, eager=True)
+    linker = ChipIdLinker(logger, args.log)
+    _write_worker_startup_marker(args.startup_marker, linker)
+    return linker.run(args)
 
 
 def _parse_args(argv):
@@ -151,8 +156,22 @@ def _parse_args(argv):
     parser.add_argument('--extract-only', action='store_true')
     parser.add_argument('--rbf')
     parser.add_argument('--update-all-dir')
+    parser.add_argument('--startup-marker')
     parser.add_argument('--log', required=True)
     return parser.parse_args(argv)
+
+
+def _validate_args(args) -> None:
+    if args.restore_after_relaunch or args.blank_display:
+        return
+
+    missing = []
+    if args.rbf is None:
+        missing.append('--rbf')
+    if not args.extract_only and args.update_all_dir is None:
+        missing.append('--update-all-dir')
+    if missing:
+        raise SystemExit(f'Missing required arguments: {", ".join(missing)}')
 
 
 class ChipIdLinker:
@@ -173,22 +192,9 @@ class ChipIdLinker:
             return 0
 
         if args.extract_only:
-            if args.rbf is None:
-                raise SystemExit('Missing required arguments: --rbf')
-
-            _reset_chip_id_log(self)
             print(_extract_chip_id_without_relaunch(args.rbf, self))
             return 0
 
-        missing = []
-        if args.rbf is None:
-            missing.append('--rbf')
-        if args.update_all_dir is None:
-            missing.append('--update-all-dir')
-        if missing:
-            raise SystemExit(f'Missing required arguments: {", ".join(missing)}')
-
-        _reset_chip_id_log(self)
         _run_detached_chip_id_extraction(self, args.rbf, args.update_all_dir)
         return 0
 
@@ -1400,13 +1406,36 @@ def _is_valid_shell_environment_name(name: str) -> bool:
     return True
 
 
-def _reset_chip_id_log(linker: ChipIdLinker) -> None:
+def _reset_chip_id_log(log_path: str) -> None:
+    log_dir = os.path.dirname(log_path)
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
     try:
-        log_dir = os.path.dirname(linker.log_path)
-        if log_dir:
-            os.makedirs(log_dir, exist_ok=True)
-        os.remove(linker.log_path)
+        os.remove(log_path)
     except FileNotFoundError:
         pass
-    except Exception:
-        pass
+
+
+def _write_worker_startup_marker(marker_path: Optional[str], linker: ChipIdLinker) -> None:
+    if marker_path is None:
+        return
+
+    temporary_marker_path = f'{marker_path}.{os.getpid()}.tmp'
+    try:
+        marker_dir = os.path.dirname(marker_path)
+        if marker_dir:
+            os.makedirs(marker_dir, exist_ok=True)
+        with open(temporary_marker_path, 'w') as marker_file:
+            marker_file.write(f'{os.getpid()}\n')
+            marker_file.flush()
+            os.fsync(marker_file.fileno())
+        os.replace(temporary_marker_path, marker_path)
+        linker.debug(f'_write_worker_startup_marker: wrote {marker_path}')
+    except Exception as e:
+        linker.debug('Could not write chip-ID worker startup marker')
+        linker.debug(e)
+        try:
+            os.remove(temporary_marker_path)
+        except FileNotFoundError:
+            pass
+        raise

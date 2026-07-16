@@ -233,12 +233,32 @@ class FileLoggerDecorator(TrivialLoggerDecorator):
     def __init__(self, decorated_logger, initial_logfile_path):
         super().__init__(decorated_logger)
         self._logfile = tempfile.NamedTemporaryFile('w', delete=False)
+        self._eager_logfile: Optional[TextIOWrapper] = None
         self._final_logfile_path = initial_logfile_path
         self._append_to_final_logfile = False
 
-    def set_logfile(self, logfile_path, append=False):
+    def set_logfile(self, logfile_path, append=False, eager=False):
         self._final_logfile_path = logfile_path
         self._append_to_final_logfile = append
+        if eager:
+            self._enable_eager_writes()
+
+    def _enable_eager_writes(self):
+        parent = os.path.dirname(self._final_logfile_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+
+        self._logfile.flush()
+        self._eager_logfile = open(
+            self._final_logfile_path,
+            'a' if self._append_to_final_logfile else 'w',
+            buffering=1,
+        )
+        with open(self._logfile.name, 'r') as buffered_log:
+            shutil.copyfileobj(buffered_log, self._eager_logfile)
+        self._eager_logfile.flush()
+        self._logfile.seek(0)
+        self._logfile.truncate(0)
 
     def configure(self, config):
         self.set_logfile(os.path.join(config.base_system_path, FILE_update_all_log))
@@ -247,6 +267,18 @@ class FileLoggerDecorator(TrivialLoggerDecorator):
     def finalize(self):
         self._decorated_logger.finalize()
         if self._logfile is None:
+            return
+
+        if self._eager_logfile is not None:
+            self._eager_logfile.close()
+            self._eager_logfile = None
+            tempfile_path = self._logfile.name
+            self._logfile.close()
+            try:
+                os.remove(tempfile_path)
+            except FileNotFoundError:
+                pass
+            self._logfile = None
             return
 
         self._logfile.close()
@@ -276,8 +308,9 @@ class FileLoggerDecorator(TrivialLoggerDecorator):
         self._do_print_in_file(*transformed, sep=sep, end=end, flush=flush)
 
     def _do_print_in_file(self, *args, sep, end, flush):
-        if self._logfile is not None:
-            print(*args, sep=sep, end=end, file=self._logfile, flush=flush)
+        logfile = self._eager_logfile if self._eager_logfile is not None else self._logfile
+        if logfile is not None:
+            print(*args, sep=sep, end=end, file=logfile, flush=flush)
 
 
 class DebugOnlyLoggerDecorator(TrivialLoggerDecorator):
