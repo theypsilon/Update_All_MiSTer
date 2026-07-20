@@ -68,7 +68,7 @@ class Config:
     base_system_path: str = MEDIA_FAT
     paths_from_downloader_ini: bool = False
 
-    update_linux: bool = True
+    skip_linux_update: bool = False
     not_mister: bool = False
     verbose: bool = False
     temporary_downloader_ini: bool = False

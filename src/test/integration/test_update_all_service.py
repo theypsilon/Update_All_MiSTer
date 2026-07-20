@@ -82,7 +82,7 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___only_downloader_without_linux___returns_0(self):
-        sut, _ = tester(config=Config(arcade_organizer=False, databases=default_databases(), update_linux=False))
+        sut, _ = tester(config=Config(arcade_organizer=False, databases=default_databases(), skip_linux_update=True))
         self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
 
     def test_full_run___when_reboot_is_needed___returns_0(self):

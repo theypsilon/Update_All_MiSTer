@@ -485,7 +485,7 @@ class UpdateAllService:
         if config.not_mister:
             self._logger.debug('Not MiSTer environment!')
             config.arcade_organizer = False
-            config.update_linux = False
+            config.skip_linux_update = True
             config.autoreboot = False
 
     def _calc_md5(self) -> Optional[float]:
@@ -500,12 +500,12 @@ class UpdateAllService:
             return
 
         self._draw_separator()
-        return_code = self._execute_downloader(config, self._ini_repository.downloader_ini_path_tweaked_by_config(config), config.update_linux, None, None)
+        return_code = self._execute_downloader(config, self._ini_repository.downloader_ini_path_tweaked_by_config(config), config.skip_linux_update, None, None)
         if return_code != 0:
             self._exit_code = 10
             self._error_reports.append('Scripts/.config/downloader/downloader.log')
 
-    def _execute_downloader(self, config: Config, downloader_ini_path: str, update_linux: bool, logfile: Optional[str], default_db: Optional[Database], quiet: bool = False) -> int:
+    def _execute_downloader(self, config: Config, downloader_ini_path: str, skip_linux_update: bool, logfile: Optional[str], default_db: Optional[Database], quiet: bool = False) -> int:
         ts = config.term_size
         oc = config.overscan_dim
         env = {
@@ -514,8 +514,9 @@ class UpdateAllService:
             'CURL_SSL': config.curl_ssl,
             'COLUMNS': str(ts.columns - oc.cols * 2),
             'LINES': str(ts.lines - oc.lines * 2),
-            'UPDATE_LINUX': 'true' if update_linux else 'false',
         }
+        if skip_linux_update:
+            env['UPDATE_LINUX'] = 'false'
         if self._file_system.is_file(FILE_JOTEGO_mra_pack_ini):
             env['EXTRA_DROP_IN_DATABASE_FILES'] = FILE_JOTEGO_mra_pack_ini
         if logfile is not None:
@@ -770,7 +771,7 @@ class UpdateAllService:
         timeline_ini = '/tmp/timeline_downloader.ini'
         self._file_system.unlink(timeline_ini)
         db_defs = all_dbs(config.mirror)
-        return_code = self._execute_downloader(config, timeline_ini, False, timeline_log, db_defs.UPDATE_ALL_MISTER, quiet=True)
+        return_code = self._execute_downloader(config, timeline_ini, True, timeline_log, db_defs.UPDATE_ALL_MISTER, quiet=True)
         self._logger.print()
         if return_code != 0:
             self._logger.print('The Timeline data could not be updated because of an internet connection problem. Try again later to see an updated Timeline.')
