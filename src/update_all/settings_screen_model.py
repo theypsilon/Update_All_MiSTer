@@ -899,7 +899,7 @@ def settings_screen_model():
                     }
                 },
                 {
-                    "title": "# Physical Disc",
+                    "title": "# Physical CD Support",
                     "description": "{MultiDatabases/physical-disc:enabled} Load discs from a USB optical drive",
                     "actions": {"ok": [
                         {
@@ -908,7 +908,7 @@ def settings_screen_model():
                             "true": [{"type": "rotate_variable", "target": "MultiDatabases/physical-disc"}],
                             "false": [{
                                 "ui": "message",
-                                "header": "Physical Disc",
+                                "header": "Physical CD Support",
                                 "text": [
                                     "Load games from your USB CD-drive",
                                     " ",

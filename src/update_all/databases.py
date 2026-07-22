@@ -108,7 +108,7 @@ class AllDBs:
         self.MISTER_QUAKE = Database(db_id='MultiDatabases/mister-quake', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-quake/db.json', title='MiSTer Quake')
         self.MMS2_GB = Database(db_id='MultiDatabases/mms2-gb', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mms2-gb/db.json', title='MMS2 GB Core')
         self.PAPRIUM = Database(db_id='MultiDatabases/paprium', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/paprium/db.json', title='Paprium MegaDrive')
-        self.PHYSICAL_DISC = Database(db_id='MultiDatabases/physical-disc', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/physical-disc/db.json', title='Physical Disc')
+        self.PHYSICAL_DISC = Database(db_id='MultiDatabases/physical-disc', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/physical-disc/db.json', title='Physical CD Support')
         self.SONIC_MANIA = Database(db_id='MultiDatabases/sonic-mania', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/sonic-mania/db.json', title='Sonic Mania MiSTer')
 
         # BORDERS
