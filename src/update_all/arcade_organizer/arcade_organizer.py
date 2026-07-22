@@ -661,15 +661,8 @@ class Infrastructure:
     def remove_file(self, file_path):
         file_path.unlink()
 
-    def check_if_orgdir_directories_are_missing(self):
-        if not self._config['AZ_DIR']:
-            return False
-        return not Path(self._config['ORGDIR_09']).is_dir() or \
-            not Path(self._config['ORGDIR_AE']).is_dir() or \
-            not Path(self._config['ORGDIR_FK']).is_dir() or \
-            not Path(self._config['ORGDIR_LQ']).is_dir() or \
-            not Path(self._config['ORGDIR_RT']).is_dir() or \
-            not Path(self._config['ORGDIR_UZ']).is_dir()
+    def check_if_orgdir_directory_is_missing(self):
+        return not Path(self._config['ORGDIR']).is_dir()
 
     def check_if_names_txt_is_new(self):
         return self._config['ARCADE_ORGANIZER_NAMES_TXT'].is_file() \
@@ -1296,9 +1289,9 @@ class ArcadeOrganizer:
             self._printer.print("Different AO version detected.")
             self._printer.print()
 
-        if self._infra.check_if_orgdir_directories_are_missing():
+        if self._infra.check_if_orgdir_directory_is_missing():
             from_scatch = True
-            self._printer.print("Some ORGDIR directories are missing.")
+            self._printer.print("The ORGDIR directory is missing.")
             self._printer.print()
 
         if not self._infra.text_is_date(last_mra_date):
@@ -1340,7 +1333,7 @@ class ArcadeOrganizer:
             self._infra.remove_orgdir_directories(orgdir_folders_file)
         else:
             self._printer.print("Performing an incremental build.")
-            self._printer.print("NOTE: Remove the Organized folders if you wish to start from scratch.")
+            self._printer.print("NOTE: Remove the Organized folder if you wish to start from scratch.")
             self._infra.remove_all_broken_symlinks()
 
         self._printer.print()
