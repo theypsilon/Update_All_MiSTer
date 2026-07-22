@@ -53,6 +53,9 @@ class Interpolator(abc.ABC):
     def interpolate(self, text: str) -> str:
         """Interpolates any value inside a string into another string according to the formatters"""
 
+    def get_value(self, key: str) -> str:
+        """Gets the current value of a UI variable"""
+
 
 Effect = Dict[str, Any]
 
@@ -275,6 +278,9 @@ class _Interpolator(Interpolator):
     def __init__(self, formatters: Dict[str, Union[Dict[str, str], Callable[[str], str]]], ui: UiContext):
         self._formatters = formatters
         self._ui = ui
+
+    def get_value(self, key: str) -> str:
+        return self._ui.get_value(key)
 
     def interpolate(self, text):
         reading_state = 0

@@ -88,6 +88,7 @@ FILE_downloader_temp_ini: Final[str] = '/tmp/temp_downloader.ini'
 FILE_downloader_run_signal: Final[str] = '/tmp/downloader_run_signal'
 FILE_downloader_launcher_update_script: Final[str] = 'Scripts/update.sh'
 FILE_downloader_launcher_downloader_script: Final[str] = 'Scripts/downloader.sh'
+FILE_downloader_fingerprints_json: Final[str] = 'Scripts/.config/downloader/downloader_fingerprints.json'
 
 # Reboot files
 FILE_downloader_needs_reboot_after_linux_update: Final[str] = '/tmp/downloader_needs_reboot_after_linux_update'

@@ -17,7 +17,73 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 from typing import Dict, Any, List, Tuple, Set
 
-from update_all.ui_model_utilities import search_in_model
+from update_all.ui_model_utilities import search_in_model, expand_type
+
+
+TERMINAL_EFFECT_TYPES = ('condition', 'navigate')
+
+
+def is_terminal_effect(effect) -> bool:
+    """True for effects that end chain resolution in the engine.
+
+    ui_engine._EffectResolver.resolve_effect_chain returns as soon as it hits an
+    effect with 'ui', a 'condition', or a 'navigate' — so anything placed after one
+    of these in the same chain is unreachable.
+    """
+    return 'ui' in effect or effect.get('type') in TERMINAL_EFFECT_TYPES
+
+
+def gather_effect_chains(model) -> List[Tuple[str, list]]:
+    """Every executable effect chain in the model, as (location, chain) pairs.
+
+    Mirrors the traversal of update_all.ui_model_utilities.search_in_model but keeps
+    chain boundaries so chain-level conventions can be checked. Entry 'actions' dicts
+    hold one chain per action name; menu/dialog 'actions' lists hold button
+    descriptors (not chains), so those are walked as nodes instead. Also covers
+    'success_effects', which search_in_model does not walk.
+    """
+    result = []
+    _walk_nodes_for_chains(result, model.get('base_types', {}), model, 'model')
+    return result
+
+
+def _walk_nodes_for_chains(result, base_types, node, path):
+    if not isinstance(node, dict) or len(node) == 0:
+        return
+
+    expand_type(node, base_types)
+
+    actions = node.get('actions')
+    if isinstance(actions, dict):
+        for name, chain in actions.items():
+            _add_chain(result, base_types, chain, f'{path}.actions.{name}')
+    elif isinstance(actions, list):
+        for index, action in enumerate(actions):
+            _walk_nodes_for_chains(result, base_types, action, f'{path}.actions[{index}]')
+
+    for key in ('effects', 'on_idle', 'fixed', 'success_effects'):
+        if key in node:
+            _add_chain(result, base_types, node[key], f'{path}.{key}')
+
+    for index, entry in enumerate(node.get('entries', [])):
+        _walk_nodes_for_chains(result, base_types, entry, f'{path}.entries[{index}]')
+
+    for name, item in node.get('items', {}).items():
+        _walk_nodes_for_chains(result, base_types, item, f'{path}.items.{name}')
+
+    if node.get('type') == 'condition':
+        for key, branch in node.items():
+            if key in ('type', 'variable') or not isinstance(branch, list):
+                continue
+            _add_chain(result, base_types, branch, f'{path}.{key}')
+
+
+def _add_chain(result, base_types, chain, path):
+    if not isinstance(chain, list):
+        chain = [chain]
+    result.append((path, chain))
+    for index, effect in enumerate(chain):
+        _walk_nodes_for_chains(result, base_types, effect, f'{path}[{index}]')
 
 
 def basic_types(): return 'menu', 'confirm', 'message'
@@ -160,6 +226,9 @@ def _add_target_variables(result: Set[str], item: Dict[str, Any]) -> None:
 
     if 'title' in item:
         result.update(extract_interpolations_from_text(item['title'])[0])
+
+    if 'if' in item:
+        result.add(item['if'])
 
     if 'type' not in item:
         return

@@ -40,7 +40,7 @@ class OsUtils(ABC):
     def reboot(self) -> None:
         """send reboot signal to the OS"""
 
-    def execute_process(self, launcher, env, quiet: bool = False) -> int:
+    def execute_process(self, launcher, env, quiet: bool = False, args: Optional[list] = None) -> int:
         """execute launcher process with subprocess and the given env. output gets redirected to stdout"""
 
     def read_command_output(self, cmd, env) -> [int, str]:
@@ -71,13 +71,13 @@ class LinuxOsUtils(OsUtils):
     def make_executable(self, file_path: str) -> None:
         subprocess.run(['chmod', '+x', file_path], check=True, stderr=subprocess.STDOUT)
 
-    def execute_process(self, launcher, env, quiet: bool = False) -> int:
+    def execute_process(self, launcher, env, quiet: bool = False, args: Optional[list] = None) -> int:
         try:
             env = {**os.environ.copy(), **env, 'PYTHONUNBUFFERED': '1'}
             self._logger.debug('Executing launcher', launcher, ' with env: ', env, ' quiet=', quiet)
 
             proc = subprocess.Popen(
-                [launcher],
+                [launcher, *(args or [])],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env=env,

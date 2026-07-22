@@ -101,6 +101,16 @@ class AllDBs:
         # HYBRID CORES
         self.MISTER_FRONTIER = Database(db_id='MiSTerOrganize/MiSTer_Frontier', db_url='https://raw.githubusercontent.com/MiSTerOrganize/MiSTer_Frontier/db/db.json.zip', title='MiSTer Frontier')
 
+        # MULTIDATABASES
+        self.DREAMSTER = Database(db_id='MultiDatabases/dreamster', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/dreamster/db.json', title='DreamSTer')
+        self.DUKE3D = Database(db_id='MultiDatabases/duke3d', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/duke3d/db.json', title='MiSTer Duke3D')
+        self.MEGAVGMDRIVE = Database(db_id='MultiDatabases/megavgmdrive', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/megavgmdrive/db.json', title='MegaVGMDrive')
+        self.MISTER_QUAKE = Database(db_id='MultiDatabases/mister-quake', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-quake/db.json', title='MiSTer Quake')
+        self.MMS2_GB = Database(db_id='MultiDatabases/mms2-gb', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mms2-gb/db.json', title='MMS2 GB Core')
+        self.PAPRIUM = Database(db_id='MultiDatabases/paprium', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/paprium/db.json', title='Paprium MegaDrive')
+        self.PHYSICAL_DISC = Database(db_id='MultiDatabases/physical-disc', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/physical-disc/db.json', title='Physical Disc')
+        self.SONIC_MANIA = Database(db_id='MultiDatabases/sonic-mania', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/sonic-mania/db.json', title='Sonic Mania MiSTer')
+
         # BORDERS
         self.DINIERTO_GBA_BORDERS = Database(db_id='Dinierto/MiSTer-GBA-Borders', db_url='https://raw.githubusercontent.com/Dinierto/MiSTer-GBA-Borders/db/db.json.zip', title='Dinierto GBA Borders')
 

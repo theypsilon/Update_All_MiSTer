@@ -29,6 +29,7 @@ class SpyOsUtils(OsUtils):
         self.calls_to_execute_process = []
         self.calls_to_download = []
         self.calls_to_make_executable = []
+        self.execute_process_return_code = 0
 
     def sync(self):
         self.calls_to_sync += 1
@@ -39,9 +40,9 @@ class SpyOsUtils(OsUtils):
     def sleep(self, seconds):
         self.calls_to_sleep.append(seconds)
 
-    def execute_process(self, launcher, env,quiet: bool = False):
-        self.calls_to_execute_process.append((launcher, env, quiet))
-        return 0
+    def execute_process(self, launcher, env, quiet: bool = False, args=None):
+        self.calls_to_execute_process.append((launcher, env, quiet, args))
+        return self.execute_process_return_code
 
     def read_command_output(self, cmd, env):
         self.calls_to_execute_process.append((cmd, env))

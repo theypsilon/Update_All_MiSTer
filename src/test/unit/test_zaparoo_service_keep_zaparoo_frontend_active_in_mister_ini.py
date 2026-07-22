@@ -20,7 +20,11 @@ import unittest
 
 from test.mister_ini_repository_tester import MisterIniRepositoryTester
 from update_all.constants import FILE_MiSTer_ini
-from update_all.zaparoo_service import FILE_zaparoo_frontend
+
+# The installed Zaparoo frontend value that goes under [mister] main= in MiSTer.ini.
+# Declared as the source of truth in the settings screen model's mister_ini_add edits;
+# duplicated here as a literal so this repository-level test stays self-contained.
+ZAPAROO_FRONTEND_VALUE = 'zaparoo/MiSTer_Zaparoo'
 
 
 MISTER_INI_FIXTURES_DIR = os.path.join(
@@ -53,7 +57,7 @@ class TestZaparooServiceEnsureZaparooFrontendActiveInMisterIni(unittest.TestCase
         sut.ensure_mister_ini_key(
             'mister',
             'main',
-            FILE_zaparoo_frontend,
+            ZAPAROO_FRONTEND_VALUE,
             create_if_missing=True,
             prepend_section=True,
         )

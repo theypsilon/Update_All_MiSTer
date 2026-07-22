@@ -132,7 +132,6 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('missing_credentials', ui.get_value('retroachievements_cfg_status'))
         self.assertEqual(1, service.prepare_enable_calls)
         self.assertEqual(0, service.disable_calls)
-        self.assertEqual([], service.set_mister_ini_active_calls)
 
     def test_retroachievements_db_toggle___when_enabled___disables_db(self):
         retroachievements_db_id = all_dbs('').RETROACHIEVEMENTS_DB.db_id
@@ -146,7 +145,6 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('ok', ui.get_value('retroachievements_cfg_status'))
         self.assertEqual(0, service.prepare_enable_calls)
         self.assertEqual(0, service.disable_calls)
-        self.assertEqual([], service.set_mister_ini_active_calls)
 
     def test_prepare_exit_dont_save_and_run___with_temp_values___writes_temp_values_into_config_and_marks_temporary_downloader_ini(self):
         config = Config()
@@ -808,6 +806,7 @@ class TestSettingsScreenRoutines(unittest.TestCase):
             self.assertIsNone(sut._pending_chip_id_extraction)
 
 
+
 def tester(config: Config = None, store: LocalStore = None, mister_video_mode_service=None, initialize_ui=True, ui_runtime=None, file_system=None, retroaccount=None, os_utils=None, retroachievements_service=None, ao_service=None) -> Tuple[SettingsScreen, UiContextStub]:
     ui = UiContextStub()
     config_provider = GenericProvider[Config]()
@@ -835,7 +834,6 @@ class _RetroAchievementsServiceStub:
         self._enable_status = enable_status
         self.prepare_enable_calls = 0
         self.disable_calls = 0
-        self.set_mister_ini_active_calls = []
 
     def prepare_enable(self):
         self.prepare_enable_calls += 1
@@ -843,12 +841,6 @@ class _RetroAchievementsServiceStub:
 
     def disable(self):
         self.disable_calls += 1
-
-    def set_mister_ini_active(self, active):
-        self.set_mister_ini_active_calls.append(active)
-
-    def would_change_mister_ini_active(self, active):
-        return False
 
 
 class _ArcadeOrganizerServiceStub:

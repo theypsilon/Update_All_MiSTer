@@ -19,6 +19,7 @@ import json
 import unittest
 from pathlib import Path
 from typing import Tuple
+from unittest.mock import patch
 
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, FILE_downloader_temp_ini, MEDIA_FAT, FILE_MiSTer_ini
@@ -40,6 +41,22 @@ from test.update_all_service_tester import StoreMigratorTester
 
 
 class TestSettingsScreenSaving(unittest.TestCase):
+
+    def test_save__when_zaparoo_frontend_is_toggled_on_and_back_off___del_evicts_the_pending_add(self):
+        sut, ui, _ = tester(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n'},
+        })
+
+        ui.set_value('zaparoo_frontend_active', 'true')
+        sut.mister_ini_add(ui, zaparoo_frontend_add_effect())
+        ui.set_value('zaparoo_frontend_active', 'false')
+        sut.mister_ini_del(ui, zaparoo_frontend_del_effect())
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('MiSTer.ini ([mister], [menu])', ui.get_value('needs_save_file_list'))
+        self.assertEqual('', sut._file_system.read_file_contents(FILE_MiSTer_ini))
 
     def test_calculate_needs_save___on_no_files_setup___returns_no_downloader_ini_changes(self) -> None:
         sut, ui, state = tester()
@@ -93,38 +110,147 @@ class TestSettingsScreenSaving(unittest.TestCase):
         self.assertEqual('', ui.get_value('needs_save_file_list'))
         self.assertEqual('false', ui.get_value('needs_save'))
 
-    def test_save__when_enabling_retroachievements_db___writes_mister_ini_on_save(self):
+    def test_save__when_enabling_duke3d___writes_both_ini_sections_on_save(self):
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
 
-        ui.set_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id, 'true')
+        ui.set_value('MultiDatabases/duke3d', 'true')
+        sut.mister_ini_add(ui, duke3d_add_effect())
 
         sut.calculate_needs_save(ui)
         sut.save(ui)
 
-        self.assertIn('MiSTer.ini (RetroAchievements)', ui.get_value('needs_save_file_list'))
+        self.assertIn('MiSTer.ini ([DUKE3D], [Mister_duke3d])', ui.get_value('needs_save_file_list'))
+        self.assertEqual(
+            '[DUKE3D]\nmain=Mister_duke3d\nvga_scaler=0\n\n[Mister_duke3d]\nmain=Mister_duke3d\nvga_scaler=0\n',
+            sut._file_system.read_file_contents(FILE_MiSTer_ini),
+        )
+
+    def test_save__when_duke3d_is_toggled_on_and_back_off___cancels_the_ini_addition(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('MultiDatabases/duke3d', 'true')
+        sut.mister_ini_add(ui, duke3d_add_effect())
+        ui.set_value('MultiDatabases/duke3d', 'false')
+        sut.mister_ini_add(ui, duke3d_add_effect())
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertNotIn('MiSTer.ini', ui.get_value('needs_save_file_list'))
+        self.assertFalse(sut._file_system.is_file(FILE_MiSTer_ini))
+
+    def test_save__when_variable_changes_after_arming_without_firing_again___prunes_the_pending_add(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('MultiDatabases/duke3d', 'true')
+        sut.mister_ini_add(ui, duke3d_add_effect())
+        ui.set_value('MultiDatabases/duke3d', 'false')  # changed directly, no effect fired
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertNotIn('MiSTer.ini', ui.get_value('needs_save_file_list'))
+        self.assertFalse(sut._file_system.is_file(FILE_MiSTer_ini))
+
+    def test_save__when_enabling_retroachievements_db___writes_mister_ini_on_save(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id, 'true')
+        sut.mister_ini_add(ui, retroachievements_add_effect())
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('MiSTer.ini ([RA_*])', ui.get_value('needs_save_file_list'))
         self.assertEqual('[RA_*]\nmain=MiSTer_RA\n', sut._file_system.read_file_contents(FILE_MiSTer_ini))
 
-    def test_save__when_retroachievements_db_is_disabled_but_mister_ini_block_exists___removes_mister_ini_block(self):
+    def test_save__when_retroachievements_db_stays_toggled_in_without_being_toggled___repairs_missing_ini_block(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id, 'true')  # no effect fired
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('MiSTer.ini ([RA_*])', ui.get_value('needs_save_file_list'))
+        self.assertEqual('[RA_*]\nmain=MiSTer_RA\n', sut._file_system.read_file_contents(FILE_MiSTer_ini))
+
+    def test_save__when_duke3d_stays_toggled_in_without_being_toggled___repairs_missing_ini_sections(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('MultiDatabases/duke3d', 'true')  # no effect fired
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('MiSTer.ini ([DUKE3D], [Mister_duke3d])', ui.get_value('needs_save_file_list'))
+        self.assertEqual(
+            '[DUKE3D]\nmain=Mister_duke3d\nvga_scaler=0\n\n[Mister_duke3d]\nmain=Mister_duke3d\nvga_scaler=0\n',
+            sut._file_system.read_file_contents(FILE_MiSTer_ini),
+        )
+
+    def test_save__when_a_mister_ini_write_fails___logs_the_error_and_applies_the_remaining_edits(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id, 'true')
+        ui.set_value('MultiDatabases/duke3d', 'true')
+
+        original = sut._mister_ini_repository.ensure_mister_ini_keys
+
+        def flaky_ensure(section, *args, **kwargs):
+            if section == 'RA_*':
+                raise OSError('SD card error')
+            return original(section, *args, **kwargs)
+
+        with patch.object(sut._mister_ini_repository, 'ensure_mister_ini_keys', side_effect=flaky_ensure):
+            sut.save(ui)
+
+        self.assertEqual(
+            '[DUKE3D]\nmain=Mister_duke3d\nvga_scaler=0\n\n[Mister_duke3d]\nmain=Mister_duke3d\nvga_scaler=0\n',
+            sut._file_system.read_file_contents(FILE_MiSTer_ini),
+        )
+
+    def test_save__when_retroachievements_db_is_disabled_but_mister_ini_block_exists___leaves_mister_ini_block(self):
+        # RetroAchievements is add-only: the [RA_*] block is non-invasive, so disabling
+        # the DB leaves it in place (no mister_ini_del is fired for RA).
+        original = '[mister]\nfoo=bar\n\n[RA_*]\nmain=MiSTer_RA\n'
         sut, ui, _ = tester(files={
             downloader_ini: {'content': default_downloader_ini_content()},
-            FILE_MiSTer_ini: {'content': '[mister]\nfoo=bar\n\n[RA_*]\nmain=MiSTer_RA\n'},
+            FILE_MiSTer_ini: {'content': original},
         })
 
         sut.calculate_needs_save(ui)
         sut.save(ui)
 
-        self.assertEqual('  - MiSTer.ini (RetroAchievements)', ui.get_value('needs_save_file_list'))
-        self.assertEqual('[mister]\nfoo=bar\n', sut._file_system.read_file_contents(FILE_MiSTer_ini))
+        self.assertEqual('false', ui.get_value('needs_save'))
+        self.assertNotIn('MiSTer.ini', ui.get_value('needs_save_file_list'))
+        self.assertEqual(original, sut._file_system.read_file_contents(FILE_MiSTer_ini))
+
+    def test_save__when_retroachievements_db_is_toggled_on_and_back_off___cancels_the_addition(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id, 'true')
+        sut.mister_ini_add(ui, retroachievements_add_effect())
+        ui.set_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id, 'false')
+        sut.mister_ini_add(ui, retroachievements_add_effect())
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertNotIn('MiSTer.ini', ui.get_value('needs_save_file_list'))
+        self.assertFalse(sut._file_system.is_file(FILE_MiSTer_ini))
 
     def test_calculate_needs_save__when_retroachievements_and_zaparoo_change_mister_ini___shows_both_reasons(self):
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
 
         ui.set_value(all_dbs('').RETROACHIEVEMENTS_DB.db_id, 'true')
+        sut.mister_ini_add(ui, retroachievements_add_effect())
         ui.set_value('zaparoo_frontend_active', 'true')
+        sut.mister_ini_add(ui, zaparoo_frontend_add_effect())
 
         sut.calculate_needs_save(ui)
 
-        self.assertIn('MiSTer.ini (RetroAchievements, Zaparoo Frontend)', ui.get_value('needs_save_file_list'))
+        self.assertIn('MiSTer.ini ([RA_*], [mister])', ui.get_value('needs_save_file_list'))
 
     def test_calculate_needs_save___when_toggling_a_manualsdb___returns_manualsdbs_ini_in_needs_save_list(self) -> None:
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
@@ -333,12 +459,13 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut, ui, fs = tester()
 
         ui.set_value('zaparoo_frontend_active', 'true')
+        sut.mister_ini_add(ui, zaparoo_frontend_add_effect())
 
         sut.calculate_needs_save(ui)
         sut.save(ui)
 
         self.assertEqual('true', ui.get_value('needs_save'))
-        self.assertIn('MiSTer.ini (Zaparoo Frontend)', ui.get_value('needs_save_file_list'))
+        self.assertIn('MiSTer.ini ([mister])', ui.get_value('needs_save_file_list'))
         self.assertNotIn('zaparoo_frontend_active', fs.files[store_json.lower()]['json'])
         self.assertEqual(
             '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n',
@@ -365,6 +492,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut, ui, fs = tester()
 
         ui.set_value('zaparoo_frontend_active', 'false')
+        sut.mister_ini_del(ui, zaparoo_frontend_del_effect())
 
         sut.calculate_needs_save(ui)
         sut.save(ui)
@@ -378,11 +506,12 @@ class TestSettingsScreenSaving(unittest.TestCase):
         })
 
         ui.set_value('zaparoo_frontend_active', 'false')
+        sut.mister_ini_del(ui, zaparoo_frontend_del_effect())
 
         sut.calculate_needs_save(ui)
         sut.save(ui)
 
-        self.assertIn('MiSTer.ini (Zaparoo Frontend)', ui.get_value('needs_save_file_list'))
+        self.assertIn('MiSTer.ini ([mister], [menu])', ui.get_value('needs_save_file_list'))
         self.assertNotIn('zaparoo_frontend_active', fs.files[store_json.lower()]['json'])
         self.assertEqual('[mister]\nfoo=bar\n', sut._file_system.read_file_contents(FILE_MiSTer_ini))
 
@@ -394,11 +523,12 @@ class TestSettingsScreenSaving(unittest.TestCase):
         self.assertEqual('true', ui.get_value('zaparoo_frontend_active'))
 
         ui.set_value('zaparoo_frontend_active', 'false')
+        sut.mister_ini_del(ui, zaparoo_frontend_del_effect())
 
         sut.calculate_needs_save(ui)
         sut.save(ui)
 
-        self.assertIn('MiSTer.ini (Zaparoo Frontend)', ui.get_value('needs_save_file_list'))
+        self.assertIn('MiSTer.ini ([mister], [menu])', ui.get_value('needs_save_file_list'))
         self.assertEqual('[menu]\nvideo_mode=8\n', sut._file_system.read_file_contents(FILE_MiSTer_ini))
 
     def test_calculate_needs_save__when_zaparoo_frontend_active_in_menu_section_and_ui_stays_enabled___does_not_save(self):
@@ -410,7 +540,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
 
         sut.calculate_needs_save(ui)
 
-        self.assertNotIn('MiSTer.ini (Zaparoo Frontend)', ui.get_value('needs_save_file_list'))
+        self.assertNotIn('MiSTer.ini', ui.get_value('needs_save_file_list'))
 
     def assertStoreBooleanTransition(self, field: str, initial_value: bool) -> None:
         sut, ui, fs = tester()
@@ -447,6 +577,32 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.save(ui)
 
         self.assertEqual('Cyan Night', fs.files[store_json.lower()]['json']['theme'])
+
+def duke3d_add_effect():
+    # Declared exactly as in the settings screen model.
+    return {"type": "mister_ini_add", "variable": "MultiDatabases/duke3d",
+            "target": {"DUKE3D": {"main": "Mister_duke3d", "vga_scaler": "0"},
+                       "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"}}}
+
+
+def retroachievements_add_effect():
+    # Declared exactly as in the settings screen model.
+    return {"type": "mister_ini_add", "variable": "theypsilon/RetroAchievementsDB_MiSTer",
+            "target": {"RA_*": {"main": "MiSTer_RA"}}}
+
+
+def zaparoo_frontend_add_effect():
+    # Declared exactly as in the settings screen model.
+    return {"type": "mister_ini_add", "variable": "zaparoo_frontend_active",
+            "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"}}}
+
+
+def zaparoo_frontend_del_effect():
+    # Declared exactly as in the settings screen model.
+    return {"type": "mister_ini_del", "variable": "zaparoo_frontend_active",
+            "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"},
+                       "menu": {"main": "zaparoo/MiSTer_Zaparoo"}}}
+
 
 def tester(files=None) -> Tuple[SettingsScreen, UiContextStub, FileSystemState]:
     ui = UiContextStub()

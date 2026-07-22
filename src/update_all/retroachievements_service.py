@@ -18,18 +18,14 @@
 
 from typing import Final, Optional
 
-from update_all.constants import FILE_MiSTer_ini, MEDIA_FAT
+from update_all.constants import MEDIA_FAT
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
-from update_all.mister_ini_repository import MisterIniRepository
 from update_all.os_utils import OsUtils
 
 
 RETROACHIEVEMENTS_CFG_PATH: Final[str] = f'{MEDIA_FAT}/retroachievements.cfg'
 RETROACHIEVEMENTS_CFG_URL: Final[str] = 'https://raw.githubusercontent.com/odelot/Main_MiSTer/refs/heads/master/retroachievements.cfg'
-RETROACHIEVEMENTS_MISTER_INI_SECTION: Final[str] = 'RA_*'
-RETROACHIEVEMENTS_MISTER_INI_KEY: Final[str] = 'main'
-RETROACHIEVEMENTS_MISTER_INI_VALUE: Final[str] = 'MiSTer_RA'
 
 
 class RetroAchievementsService:
@@ -38,12 +34,10 @@ class RetroAchievementsService:
             file_system: FileSystem,
             os_utils: OsUtils,
             logger: Logger,
-            mister_ini_repository: MisterIniRepository,
     ):
         self._file_system = file_system
         self._os_utils = os_utils
         self._logger = logger
-        self._mister_ini_repository = mister_ini_repository
 
     def prepare_enable(self) -> str:
         status = self.cfg_status()
@@ -51,32 +45,6 @@ class RetroAchievementsService:
             return 'installed' if self.install_cfg() else 'install_failed'
 
         return status
-
-    def set_mister_ini_active(self, active: bool) -> None:
-        if active:
-            self._try_ensure_mister_ini_block()
-        else:
-            self._try_remove_mister_ini_block()
-
-    def would_change_mister_ini_active(self, active: bool) -> bool:
-        if active:
-            changed, _contents = self._mister_ini_repository.ensure_mister_ini_key(
-                RETROACHIEVEMENTS_MISTER_INI_SECTION,
-                RETROACHIEVEMENTS_MISTER_INI_KEY,
-                RETROACHIEVEMENTS_MISTER_INI_VALUE,
-                create_if_missing=True,
-                dry_run=True,
-            )
-            return changed
-
-        changed, _contents = self._mister_ini_repository.remove_mister_ini_key(
-            RETROACHIEVEMENTS_MISTER_INI_SECTION,
-            RETROACHIEVEMENTS_MISTER_INI_KEY,
-            RETROACHIEVEMENTS_MISTER_INI_VALUE,
-            remove_empty_section=True,
-            dry_run=True,
-        )
-        return changed
 
     def enable(self) -> str:
         return self.prepare_enable()
@@ -114,30 +82,6 @@ class RetroAchievementsService:
             self._logger.debug('Could not install RetroAchievements configuration file')
             self._logger.debug(e)
             return False
-
-    def _try_ensure_mister_ini_block(self) -> None:
-        try:
-            self._mister_ini_repository.ensure_mister_ini_key(
-                RETROACHIEVEMENTS_MISTER_INI_SECTION,
-                RETROACHIEVEMENTS_MISTER_INI_KEY,
-                RETROACHIEVEMENTS_MISTER_INI_VALUE,
-                create_if_missing=True,
-            )
-        except Exception as e:
-            self._logger.print(f'ERROR! Could not update {FILE_MiSTer_ini} for RetroAchievements')
-            self._logger.debug(e)
-
-    def _try_remove_mister_ini_block(self) -> None:
-        try:
-            self._mister_ini_repository.remove_mister_ini_key(
-                RETROACHIEVEMENTS_MISTER_INI_SECTION,
-                RETROACHIEVEMENTS_MISTER_INI_KEY,
-                RETROACHIEVEMENTS_MISTER_INI_VALUE,
-                remove_empty_section=True,
-            )
-        except Exception as e:
-            self._logger.print(f'ERROR! Could not remove RetroAchievements from {FILE_MiSTer_ini}')
-            self._logger.debug(e)
 
     @staticmethod
     def _cfg_password(contents: str) -> Optional[str]:

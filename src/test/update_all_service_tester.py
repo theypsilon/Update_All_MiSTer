@@ -221,7 +221,6 @@ class SettingsScreenTester(SettingsScreen):
                 or RetroAchievementsServiceTester(
                     file_system=file_system,
                     os_utils=os_utils,
-                    mister_ini_repository=mister_ini_repository,
                 )
             ),
             mister_ini_repository=mister_ini_repository,
@@ -229,7 +228,6 @@ class SettingsScreenTester(SettingsScreen):
                 zaparoo_service
                 or ZaparooServiceTester(
                     file_system=file_system,
-                    mister_ini_repository=mister_ini_repository,
                 )
             ),
         )

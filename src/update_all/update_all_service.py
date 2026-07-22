@@ -110,9 +110,8 @@ class UpdateAllServiceFactory:
             file_system,
             os_utils,
             self._logger,
-            mister_ini_repository,
         )
-        zaparoo_service = ZaparooService(file_system, self._logger, mister_ini_repository=mister_ini_repository)
+        zaparoo_service = ZaparooService(file_system, self._logger)
         mister_video_mode_service = MisterVideoModeService(
             self._logger,
             file_system,

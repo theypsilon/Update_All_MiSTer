@@ -16,6 +16,9 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+# This module is intentionally import-free: the model is a self-contained,
+# serializable description of the Settings Screen.
+
 
 def _crt_warning(target): return {
     "ui": "confirm",
@@ -223,12 +226,25 @@ def _try_toggle_zaparoo_frontend_active(): return [
     {
         "type": "condition",
         "variable": "zaparoo_frontend_active",
-        "true": [{"type": "rotate_variable", "target": "zaparoo_frontend_active"}],
+        "true": [
+            {"type": "rotate_variable", "target": "zaparoo_frontend_active"},
+            # Frontend off: strip the stale entry from both sections (it affects
+            # firmware/menu loading, so it must not linger).
+            {"type": "mister_ini_del", "variable": "zaparoo_frontend_active",
+             "target": {
+                 "mister": {"main": "zaparoo/MiSTer_Zaparoo"},
+                 "menu": {"main": "zaparoo/MiSTer_Zaparoo"},
+             }},
+        ],
         "false": [
             {
                 "type": "condition",
                 "variable": "ZaparooProject/Zaparoo_MiSTer",
-                "true": [{"type": "rotate_variable", "target": "zaparoo_frontend_active"}],
+                "true": [
+                    {"type": "rotate_variable", "target": "zaparoo_frontend_active"},
+                    {"type": "mister_ini_add", "variable": "zaparoo_frontend_active",
+                     "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"}}},
+                ],
                 "false": [_zaparoo_frontend_requires_database_prompt()],
             },
         ],
@@ -249,6 +265,8 @@ def _zaparoo_frontend_requires_database_prompt(): return {
         {"title": "Yes", "type": "fixed", "fixed": [
             {"type": "set_variable", "target": "ZaparooProject/Zaparoo_MiSTer", "value": "true"},
             {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "true"},
+            {"type": "mister_ini_add", "variable": "zaparoo_frontend_active",
+             "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"}}},
             {"type": "navigate", "target": "back"},
         ]},
         {"title": "No", "type": "fixed", "fixed": [
@@ -279,6 +297,8 @@ def _navigate_back_effects(): return [{"type": "navigate", "target": "back"}]
 
 def _no_zaparoo_follow_up_prompt_effects(): return [
     {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "true"},
+    {"type": "mister_ini_add", "variable": "zaparoo_frontend_active",
+     "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"}}},
 ]
 
 
@@ -293,10 +313,17 @@ def _zaparoo_active_frontend_prompt(): return {
     "actions": [
         {"title": "Yes", "type": "fixed", "fixed": [
             {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "true"},
+            {"type": "mister_ini_add", "variable": "zaparoo_frontend_active",
+             "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"}}},
             {"type": "navigate", "target": "back"},
         ]},
         {"title": "No", "type": "fixed", "fixed": [
             {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "false"},
+            {"type": "mister_ini_del", "variable": "zaparoo_frontend_active",
+             "target": {
+                 "mister": {"main": "zaparoo/MiSTer_Zaparoo"},
+                 "menu": {"main": "zaparoo/MiSTer_Zaparoo"},
+             }},
             {"type": "navigate", "target": "back"},
         ]},
     ],
@@ -305,6 +332,12 @@ def _zaparoo_active_frontend_prompt(): return {
 
 def _try_toggle_retroachievements_db(): return [
     {"type": "retroachievements_db_toggle"},
+    # Fires right after the toggle: arms the MiSTer.ini addition when the DB is on;
+    # when toggled off it is a no-op, and a pending addition gets pruned at save time.
+    # There is intentionally no mister_ini_del for RA: the [RA_*] block is
+    # non-invasive, so disabling the DB leaves it in place.
+    {"type": "mister_ini_add", "variable": "theypsilon/RetroAchievementsDB_MiSTer",
+     "target": {"RA_*": {"main": "MiSTer_RA"}}},
     {
         "type": "condition",
         "variable": "retroachievements_cfg_status",
@@ -362,7 +395,8 @@ def _manuals_early_access_notice(target): return {
 }
 
 
-def settings_screen_model(): return {
+def settings_screen_model():
+    model = {
     "formatters": {
         "yesno": {"false": "No", "true": "Yes"},
         "yesno_reverse": {"false": "Yes", "true": "No"},
@@ -833,6 +867,14 @@ def settings_screen_model(): return {
                 "ajgowans/alt-cores": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "TheJesusFish/Dual-Ram-Console-Cores": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MiSTerOrganize/MiSTer_Frontier": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/dreamster": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/duke3d": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/megavgmdrive": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/mister-quake": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/mms2-gb": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/paprium": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/physical-disc": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/sonic-mania": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
@@ -857,6 +899,49 @@ def settings_screen_model(): return {
                     }
                 },
                 {
+                    "title": "# Physical Disc",
+                    "description": "{MultiDatabases/physical-disc:enabled} Load discs from a USB optical drive",
+                    "actions": {"ok": [
+                        {
+                            "type": "condition",
+                            "variable": "MultiDatabases/physical-disc",
+                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/physical-disc"}],
+                            "false": [{
+                                "ui": "message",
+                                "header": "Physical Disc",
+                                "text": [
+                                    "Load games from your USB CD-drive",
+                                    " ",
+                                    "Keep other disc readers (Zaparoo)",
+                                    "disabled during playback.",
+                                ],
+                                "effects": [
+                                    {"type": "rotate_variable", "target": "MultiDatabases/physical-disc"},
+                                    {"type": "mister_ini_add", "variable": "MultiDatabases/physical-disc",
+                                     "target": {"CD-*": {"main": "MiSTer_Physical-CD"}}},
+                                    {"type": "navigate", "target": "back"},
+                                ],
+                            }],
+                        },
+                    ]}
+                },
+                {
+                    "title": "# Unofficial Distribution",
+                    "description": "{unofficial_updater:enabled} Maintainer: theypsilon",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "unofficial_updater"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "theypsilon Unofficial Distribution",
+                            "text": [
+                                "Some unofficial and early-access cores:",
+                                "- zx48 (ZX Spectrum) from Kyp",
+                                "- Nemesis from GX400 Friends"
+                            ],
+                        }]
+                    }
+                },
+                {
                     "title": "# Arcade Offset",
                     "description": "{arcade_offset_downloader:enabled} Maintainer: Toya",
                     "actions": {
@@ -877,22 +962,6 @@ def settings_screen_model(): return {
                             "ui": "message",
                             "header": "LLAPI Forks Folder",
                             "text": ["Cores for BlisSTer and other addons using the Low-Latency API"],
-                        }]
-                    }
-                },
-                {
-                    "title": "# Unofficial Distribution",
-                    "description": "{unofficial_updater:enabled} Maintainer: theypsilon",
-                    "actions": {
-                        "ok": [{"type": "rotate_variable", "target": "unofficial_updater"}],
-                        "info": [{
-                            "ui": "message",
-                            "header": "theypsilon Unofficial Distribution",
-                            "text": [
-                                "Some unofficial and early-access cores:",
-                                "- zx48 (ZX Spectrum) from Kyp",
-                                "- Nemesis from GX400 Friends"
-                            ],
                         }]
                     }
                 },
@@ -940,6 +1009,59 @@ def settings_screen_model(): return {
                             "text": ["Cores made by agg23, including Tamagotchi and Game & Watch."],
                         }]
                     }
+                },
+                {
+                    "title": "# Paprium MegaDrive",
+                    "description": "{MultiDatabases/paprium:enabled} Paprium-compatible Mega Drive core",
+                    "actions": {"ok": [
+                        {
+                            "type": "condition",
+                            "variable": "MultiDatabases/paprium",
+                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/paprium"}],
+                            "false": [{
+                                "ui": "message",
+                                "header": "Paprium MegaDrive",
+                                "text": [
+                                    "Mega Drive core with Paprium support.",
+                                    " ",
+                                    "Place your own Paprium ROM and WAV",
+                                    "files in games/PapriumMD/",
+                                ],
+                                "effects": [
+                                    {"type": "rotate_variable", "target": "MultiDatabases/paprium"},
+                                    {"type": "navigate", "target": "back"},
+                                ],
+                            }],
+                        },
+                    ]}
+                },
+                {
+                    "title": "# MMS2 GB Core",
+                    "description": "{MultiDatabases/mms2-gb:enabled} Physical Game Boy cartridges",
+                    "actions": {"ok": [
+                        {
+                            "type": "condition",
+                            "variable": "MultiDatabases/mms2-gb",
+                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/mms2-gb"}],
+                            "false": [{
+                                "ui": "message",
+                                "header": "MMS2 GB Core",
+                                "text": [
+                                    "Plays physical Game Boy and Game Boy",
+                                    "Color cartridges.",
+                                    " ",
+                                    "Requires a Heber Multisystem 2 with",
+                                    "compatible cartridge hardware.",
+                                    "Hold the USER button while inserting",
+                                    "or removing a cartridge.",
+                                ],
+                                "effects": [
+                                    {"type": "rotate_variable", "target": "MultiDatabases/mms2-gb"},
+                                    {"type": "navigate", "target": "back"},
+                                ],
+                            }],
+                        },
+                    ]}
                 },
                 {
                     "title": "# Alt Cores",
@@ -1005,6 +1127,148 @@ def settings_screen_model(): return {
                             ],
                         }]
                     }
+                },
+                {
+                    "title": "# DreamSTer",
+                    "description": "{MultiDatabases/dreamster:enabled} Hybrid FPGA/ARM Dreamcast emulator",
+                    "actions": {"ok": [
+                        {
+                            "type": "condition",
+                            "variable": "MultiDatabases/dreamster",
+                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/dreamster"}],
+                            "false": [{
+                                "ui": "message",
+                                "header": "DreamSTer",
+                                "text": [
+                                    "Hybrid FPGA/ARM Dreamcast emulator.",
+                                    " ",
+                                    "Requires your own Dreamcast BIOS files:",
+                                    "dc_boot.bin and dc_flash.bin.",
+                                    "Copy them to games/Dreamcast/",
+                                ],
+                                "effects": [
+                                    {"type": "rotate_variable", "target": "MultiDatabases/dreamster"},
+                                    {"type": "navigate", "target": "back"},
+                                ],
+                            }],
+                        },
+                    ]}
+                },
+                {
+                    "title": "# Sonic Mania MiSTer",
+                    "description": "{MultiDatabases/sonic-mania:enabled} Hybrid FPGA/ARM Sonic Mania port",
+                    "actions": {"ok": [
+                        {
+                            "type": "condition",
+                            "variable": "MultiDatabases/sonic-mania",
+                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/sonic-mania"}],
+                            "false": [{
+                                "ui": "message",
+                                "header": "Sonic Mania MiSTer",
+                                "text": [
+                                    "Hybrid FPGA/ARM Sonic Mania port.",
+                                    " ",
+                                    "Requires Data.rsdk from your own",
+                                    "Sonic Mania installation.",
+                                    "Copy it to games/sonic-mania/Data.rsdk",
+                                ],
+                                "effects": [
+                                    {"type": "rotate_variable", "target": "MultiDatabases/sonic-mania"},
+                                    {"type": "mister_ini_add", "variable": "MultiDatabases/sonic-mania",
+                                     "target": {
+                                         "Sonic Mania": {"main": "MiSTer_SonicMania"},
+                                         "Sonic Mania (4:3)": {"main": "MiSTer_SonicMania"},
+                                     }},
+                                    {"type": "navigate", "target": "back"},
+                                ],
+                            }],
+                        },
+                    ]}
+                },
+                {
+                    "title": "# MiSTer Duke3D",
+                    "description": "{MultiDatabases/duke3d:enabled} Hybrid FPGA/ARM Duke Nukem 3D port",
+                    "actions": {"ok": [
+                        {
+                            "type": "condition",
+                            "variable": "MultiDatabases/duke3d",
+                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/duke3d"}],
+                            "false": [{
+                                "ui": "message",
+                                "header": "MiSTer Duke3D",
+                                "text": [
+                                    "Hybrid FPGA/ARM Duke Nukem 3D port.",
+                                    " ",
+                                    "Requires your own DUKE3D.GRP game data.",
+                                    "Copy it to games/DUKE3D/duke3d.grp",
+                                ],
+                                "effects": [
+                                    {"type": "rotate_variable", "target": "MultiDatabases/duke3d"},
+                                    {"type": "mister_ini_add", "variable": "MultiDatabases/duke3d",
+                                     "target": {
+                                         "DUKE3D": {"main": "Mister_duke3d", "vga_scaler": "0"},
+                                         "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"},
+                                     }},
+                                    {"type": "navigate", "target": "back"},
+                                ],
+                            }],
+                        },
+                    ]}
+                },
+                {
+                    "title": "# MiSTer Quake",
+                    "description": "{MultiDatabases/mister-quake:enabled} Hybrid FPGA/ARM Quake port",
+                    "actions": {"ok": [
+                        {
+                            "type": "condition",
+                            "variable": "MultiDatabases/mister-quake",
+                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/mister-quake"}],
+                            "false": [{
+                                "ui": "message",
+                                "header": "MiSTer Quake",
+                                "text": [
+                                    "Hybrid FPGA/ARM Quake port.",
+                                    " ",
+                                    "Requires your own PAK0.PAK data file.",
+                                    "Copy it to games/quake/id1/",
+                                ],
+                                "effects": [
+                                    {"type": "rotate_variable", "target": "MultiDatabases/mister-quake"},
+                                    {"type": "mister_ini_add", "variable": "MultiDatabases/mister-quake",
+                                     "target": {
+                                         "Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
+                                         "MiSTer_Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
+                                     }},
+                                    {"type": "navigate", "target": "back"},
+                                ],
+                            }],
+                        },
+                    ]}
+                },
+                {
+                    "title": "# MegaVGMDrive",
+                    "description": "{MultiDatabases/megavgmdrive:enabled} Mega Drive/Genesis VGM player",
+                    "actions": {"ok": [
+                        {
+                            "type": "condition",
+                            "variable": "MultiDatabases/megavgmdrive",
+                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/megavgmdrive"}],
+                            "false": [{
+                                "ui": "message",
+                                "header": "MegaVGMDrive",
+                                "text": [
+                                    "Mega Drive/Genesis VGM music player.",
+                                    " ",
+                                    "Place your own VGM files in",
+                                    "games/MegaVGMDrive/",
+                                ],
+                                "effects": [
+                                    {"type": "rotate_variable", "target": "MultiDatabases/megavgmdrive"},
+                                    {"type": "navigate", "target": "back"},
+                                ],
+                            }],
+                        },
+                    ]}
                 },
             ]
         },
@@ -2303,6 +2567,7 @@ def settings_screen_model(): return {
         },
     }
 }
+    return model
 
 
 def _retroaccount_account_entry(): return {
@@ -2510,8 +2775,7 @@ def _main_menu(retroaccount_logged_in): return {
                         ],
                     }],
                     "false": [{"type": "navigate", "target": "exit_and_run"}]
-                },
-                {"type": "navigate", "target": "exit_and_run"}
+                }
             ]}
         }
     ],
@@ -2639,7 +2903,7 @@ def _roms_copyright_notice(variable): return {
         "preselected_action": "No",
         "actions": [
             {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": variable}, {"type": "navigate", "target": "back"}]},
-            {"title": "No", "type": "fixed", "fixed": [{"ui": "message", "text": ["Operation Canceled"]}, {"type": "navigate", "target": "back"}]}
+            {"title": "No", "type": "fixed", "fixed": [{"ui": "message", "text": ["Operation Canceled"]}]}
         ],
     }],
     "true": [{"type": "rotate_variable", "target": variable}]

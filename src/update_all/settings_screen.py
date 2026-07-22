@@ -43,6 +43,14 @@ from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, calculate_overscan, current_update_all_archive_path, is_mister_scripts_menu_fb_launch
 from update_all.logger import Logger, CollectorLoggerDecorator
 from update_all.mister_ini_repository import MisterIniRepository
+from update_all.mister_ini_edits import (
+    MisterIniAdd,
+    apply,
+    needs_save_label,
+    parse_mister_ini_add,
+    parse_mister_ini_del,
+    would_change,
+)
 from update_all.mister_video_mode_service import MisterVideoModeService
 from update_all.mister_video_mode_ui import MisterVideoModeMenu, MisterVideoAdjustMenu
 from update_all.os_utils import OsUtils
@@ -54,7 +62,7 @@ from update_all.settings_screen_model import settings_screen_model
 from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
 from update_all.ui_engine_dialog_application import DialogSectionFactory
-from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string
+from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string, gather_effects_by_type
 
 
 CHIP_ID_DEBUG_LOG_PATH: Final[str] = f'{MEDIA_FAT}/{FILE_update_all_chip_id_linker_log}'
@@ -104,6 +112,10 @@ class SettingsScreen(UiApplication):
         self._original_firmware = None
         self._theme_manager = None
         self._pending_chip_id_extraction: Optional[_PendingChipIdExtraction] = None
+        self._pending_mister_ini_edits = {}
+        self._mister_ini_adds = {}
+        self._mister_ini_add_hooks = {}
+        self._mister_ini_del_hooks = {}
 
     def load_main_menu(self) -> None:
         if self._retroaccount.get_login_state():
@@ -140,6 +152,27 @@ class SettingsScreen(UiApplication):
 
     def initialize_ui(self, ui: UiContext) -> UiSectionFactory:
         ui.set_value('needs_save', 'false')
+
+        self._pending_mister_ini_edits = {}
+        # mister_ini_add declarations bound to database variables apply whenever the
+        # db stays toggled in at save time, whether or not they were fired this
+        # session. Everything else (zaparoo frontend add, all mister_ini_del) only
+        # applies when fired.
+        db_variables = set(db_ids_by_model_variables())
+        self._mister_ini_adds = {}
+        for effect in gather_effects_by_type(settings_screen_model(), 'mister_ini_add'):
+            spec = parse_mister_ini_add(effect)
+            if spec.variable in db_variables:
+                self._mister_ini_adds[spec.variable] = spec
+        self._mister_ini_add_hooks = {
+            'zaparoo_frontend_active': self._zaparoo_service.on_frontend_added,
+        }
+        self._mister_ini_del_hooks = {
+            'zaparoo_frontend_active': self._zaparoo_service.on_frontend_deleted,
+        }
+        zaparoo_frontend_active = self._mister_ini_repository.has_mister_ini_key(('mister', 'menu'), 'main', 'zaparoo/MiSTer_Zaparoo')
+        ui.set_value('zaparoo_frontend_active', 'true' if zaparoo_frontend_active else 'false')
+        self._logger.debug(f"zaparoo_frontend_active seeded '{ui.get_value('zaparoo_frontend_active')}' from MiSTer.ini")
 
         arcade_organizer_ini = self._ini_repository.get_arcade_organizer_ini()
 
@@ -184,10 +217,6 @@ class SettingsScreen(UiApplication):
         self._set_retroaccount_device_verification_ui(ui, chip_id_result)
         ui.set_value('overscan', local_store.get_overscan())
         ui.set_value('monochrome_ui', str(local_store.get_monochrome_ui()).lower())
-        ui.set_value(
-            'zaparoo_frontend_active',
-            str(self._zaparoo_service.is_frontend_active()).lower(),
-        )
         ui.set_value(
             'ajgowans_manuals_dbs_general_selector',
             str(local_store.get_ajgowans_manuals_dbs_general_selector()).lower()
@@ -251,6 +280,8 @@ class SettingsScreen(UiApplication):
             'extract_chip_id': lambda effect: self.extract_chip_id(ui),
             'retroaccount_attach_chip_id_to_device': lambda effect: self.retroaccount_attach_chip_id_to_device(ui),
             'retroachievements_db_toggle': lambda effect: self.retroachievements_db_toggle(ui),
+            'mister_ini_add': lambda effect: self.mister_ini_add(ui, effect),
+            'mister_ini_del': lambda effect: self.mister_ini_del(ui, effect),
         })
 
         self._theme_manager = theme_manager
@@ -276,6 +307,41 @@ class SettingsScreen(UiApplication):
 
         ui.set_value(db_variable, 'true')
         ui.set_value('retroachievements_cfg_status', self._retroachievements_service.prepare_enable())
+
+    def mister_ini_add(self, ui: UiContext, effect) -> None:
+        spec = parse_mister_ini_add(effect)
+        if ui.get_value(spec.variable) == 'true':
+            self._pending_mister_ini_edits[spec.variable] = spec
+            self._logger.debug(f"mister_ini_add: armed '{spec.variable}' -> {spec.target}")
+        else:
+            self._logger.debug(f"mister_ini_add: not armed '{spec.variable}' (value is '{ui.get_value(spec.variable)}')")
+
+    def mister_ini_del(self, ui: UiContext, effect) -> None:
+        spec = parse_mister_ini_del(effect)
+        if ui.get_value(spec.variable) == 'false':
+            self._pending_mister_ini_edits[spec.variable] = spec
+            self._logger.debug(f"mister_ini_del: armed '{spec.variable}' -> {spec.target}")
+        else:
+            self._logger.debug(f"mister_ini_del: not armed '{spec.variable}' (value is '{ui.get_value(spec.variable)}')")
+
+    def _active_mister_ini_edits(self, ui: UiContext):
+        # Adds apply as long as their variable is 'true', fired or not. Fired specs
+        # (adds and dels) apply only while their variable still matches their
+        # polarity; anything else (e.g. the feature was toggled back before saving)
+        # is pruned here.
+        active = {}
+        for variable, spec in self._mister_ini_adds.items():
+            if ui.get_value(variable) == 'true':
+                active[variable] = spec
+
+        for spec in self._pending_mister_ini_edits.values():
+            expected = 'true' if isinstance(spec, MisterIniAdd) else 'false'
+            if ui.get_value(spec.variable) == expected:
+                active[spec.variable] = spec
+            else:
+                self._logger.debug(f"mister_ini edits: pruned '{spec.variable}' (value is '{ui.get_value(spec.variable)}')")
+
+        return list(active.values())
 
     def _chip_id_result_from_config(self) -> str:
         try:
@@ -764,12 +830,6 @@ class SettingsScreen(UiApplication):
         if self._does_arcade_oganizer_need_save(ui):
             needs_save_file_set.add("update_arcade-organizer.ini")
 
-        retroachievements_mister_ini_needs_save = self._retroachievements_service.would_change_mister_ini_active(
-            self._is_retroachievements_db_active(temp_config)
-        )
-        zaparoo_frontend_active = ui.get_value('zaparoo_frontend_active') != 'false'
-        zaparoo_mister_ini_needs_save = self._zaparoo_service.would_change_frontend_active_in_mister_ini(zaparoo_frontend_active)
-
         temp_store = self._store_provider.get().clone()
         self._fill_store(temp_store, ui, temp_config)
 
@@ -777,10 +837,12 @@ class SettingsScreen(UiApplication):
             needs_save_file_set.add(f"Internals ({', '.join(temp_store.changed_fields())})")
 
         mister_ini_reasons = []
-        if retroachievements_mister_ini_needs_save:
-            mister_ini_reasons.append('RetroAchievements')
-        if zaparoo_mister_ini_needs_save:
-            mister_ini_reasons.append('Zaparoo Frontend')
+        for spec in self._active_mister_ini_edits(ui):
+            if would_change(self._mister_ini_repository, spec, self._logger):
+                mister_ini_reasons.append(needs_save_label(spec))
+
+        seen_reasons = set()
+        mister_ini_reasons = [r for r in mister_ini_reasons if not (r in seen_reasons or seen_reasons.add(r))]
         if len(mister_ini_reasons) > 0:
             needs_save_file_set.add(f'{FILE_MiSTer_ini} ({", ".join(mister_ini_reasons)})')
 
@@ -818,12 +880,14 @@ class SettingsScreen(UiApplication):
 
         local_store = self._store_provider.get()
         self._fill_store(local_store, ui, config)
-        zaparoo_frontend_active = ui.get_value('zaparoo_frontend_active') != 'false'
-        zaparoo_mister_ini_needs_save = self._zaparoo_service.would_change_frontend_active_in_mister_ini(zaparoo_frontend_active)
 
-        self._retroachievements_service.set_mister_ini_active(self._is_retroachievements_db_active(config))
-        if zaparoo_mister_ini_needs_save:
-            self._zaparoo_service.set_frontend_active(zaparoo_frontend_active)
+        for spec in self._active_mister_ini_edits(ui):
+            changed, contents = apply(self._mister_ini_repository, spec, self._logger)
+            hooks = self._mister_ini_add_hooks if isinstance(spec, MisterIniAdd) else self._mister_ini_del_hooks
+            hook = hooks.get(spec.variable)
+            if hook is not None:
+                hook(changed=changed, contents=contents)
+
         self._mister_video_mode_service.save_unsaved_kept_mode_to_active_ini()
         if ALL_DB_IDS['JTCORES'] in config.databases:
             local_store.set_download_beta_cores(config.download_beta_cores)
@@ -836,10 +900,6 @@ class SettingsScreen(UiApplication):
         if local_store.needs_save():
             self._local_repository.save_store(local_store)
             self._logger.configure(config)
-
-    @staticmethod
-    def _is_retroachievements_db_active(config: Config) -> bool:
-        return ALL_DB_IDS['RETROACHIEVEMENTS_DB'] in config.databases
 
     def _has_active_jtbeta_access(self) -> bool:
         return self._retroaccount.jtbeta_access_sync_state() == BenefitState.ACTIVE

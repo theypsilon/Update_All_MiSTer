@@ -20,7 +20,6 @@ import unittest
 
 from test.retroachievements_service_tester import RetroAchievementsServiceTester
 from test.spy_os_utils import SpyOsUtils
-from update_all.constants import FILE_MiSTer_ini
 from update_all.retroachievements_service import RETROACHIEVEMENTS_CFG_PATH, RETROACHIEVEMENTS_CFG_URL
 
 
@@ -71,89 +70,6 @@ class TestRetroAchievementsService(unittest.TestCase):
 
         self.assertEqual([], os_utils.calls_to_download)
         self.assertEqual(cfg_contents, sut.file_system.read_file_contents(RETROACHIEVEMENTS_CFG_PATH))
-
-    def test_set_mister_ini_active_true___adds_ra_mister_ini_block_at_end(self):
-        mister_ini = '[mister]\nfoo=bar\n\n[menu]\nvideo_mode=8\n'
-        sut = RetroAchievementsServiceTester(files={
-            FILE_MiSTer_ini: {'content': mister_ini},
-        })
-
-        sut.set_mister_ini_active(True)
-
-        self.assertEqual(
-            '[mister]\nfoo=bar\n\n[menu]\nvideo_mode=8\n\n[RA_*]\nmain=MiSTer_RA\n',
-            sut.file_system.read_file_contents(FILE_MiSTer_ini),
-        )
-
-    def test_set_mister_ini_active_true___without_mister_ini___creates_ra_mister_ini_block(self):
-        sut = RetroAchievementsServiceTester()
-
-        sut.set_mister_ini_active(True)
-
-        self.assertEqual('[RA_*]\nmain=MiSTer_RA\n', sut.file_system.read_file_contents(FILE_MiSTer_ini))
-
-    def test_set_mister_ini_active_true___with_existing_ra_block___does_not_rewrite_mister_ini(self):
-        mister_ini = '[mister]\nfoo=bar\n\n[RA_*]\nmain=MiSTer_RA\n'
-        sut = RetroAchievementsServiceTester(files={
-            FILE_MiSTer_ini: {'content': mister_ini},
-        })
-
-        sut.set_mister_ini_active(True)
-
-        mister_ini_writes = [
-            record for record in sut.file_system.write_records
-            if record['scope'] == 'write_file_contents'
-            and record['data'][0] == '/media/fat/.mister.ini.new'
-        ]
-        self.assertEqual([], mister_ini_writes)
-        self.assertEqual(mister_ini, sut.file_system.read_file_contents(FILE_MiSTer_ini))
-
-    def test_would_change_mister_ini_active_true___when_mister_ini_is_missing___returns_true_without_writing(self):
-        sut = RetroAchievementsServiceTester()
-
-        self.assertTrue(sut.would_change_mister_ini_active(True))
-
-        self.assertFalse(sut.file_system.is_file(FILE_MiSTer_ini))
-
-    def test_would_change_mister_ini_active_true___when_ra_block_exists___returns_false(self):
-        sut = RetroAchievementsServiceTester(files={
-            FILE_MiSTer_ini: {'content': '[RA_*]\nmain=MiSTer_RA\n'},
-        })
-
-        self.assertFalse(sut.would_change_mister_ini_active(True))
-
-    def test_would_change_mister_ini_active_false___when_ra_block_exists___returns_true_without_writing(self):
-        original = '[mister]\nfoo=bar\n\n[RA_*]\nmain=MiSTer_RA\n'
-        sut = RetroAchievementsServiceTester(files={
-            FILE_MiSTer_ini: {'content': original},
-        })
-
-        self.assertTrue(sut.would_change_mister_ini_active(False))
-
-        self.assertEqual(original, sut.file_system.read_file_contents(FILE_MiSTer_ini))
-
-    def test_would_change_mister_ini_active_false___when_ra_block_is_absent___returns_false(self):
-        sut = RetroAchievementsServiceTester(files={
-            FILE_MiSTer_ini: {'content': '[mister]\nfoo=bar\n'},
-        })
-
-        self.assertFalse(sut.would_change_mister_ini_active(False))
-
-    def test_set_mister_ini_active_false___removes_ra_mister_ini_block(self):
-        sut = RetroAchievementsServiceTester(files={
-            FILE_MiSTer_ini: {'content': '[mister]\nfoo=bar\n\n[RA_*]\nmain=MiSTer_RA\n'},
-        })
-
-        sut.set_mister_ini_active(False)
-
-        self.assertEqual('[mister]\nfoo=bar\n', sut.file_system.read_file_contents(FILE_MiSTer_ini))
-
-    def test_set_mister_ini_active_false___without_mister_ini___does_not_fail(self):
-        sut = RetroAchievementsServiceTester()
-
-        sut.set_mister_ini_active(False)
-
-        self.assertFalse(sut.file_system.is_file(FILE_MiSTer_ini))
 
 
 class _DownloadOsUtils(SpyOsUtils):

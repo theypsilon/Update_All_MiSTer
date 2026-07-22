@@ -71,6 +71,23 @@ def gather_variable_declarations(model, group=None):
     return result
 
 
+def gather_effects_by_type(model, effect_type):
+    """Collect every effect of the given `type` declared anywhere in the model.
+
+    The same declaration may appear more than once (e.g. an entry that shares an
+    effect between its "ok" and "toggle" action chains), so occurrences are returned
+    as found; callers dedupe as needed.
+    """
+    result = []
+
+    def collect(collected, item):
+        if isinstance(item, dict) and item.get('type') == effect_type:
+            collected.append(item)
+
+    search_in_model(result, model.get('base_types', {}), model, collect)
+    return result
+
+
 def _add_variables_descriptions(result, item, group):
     if 'variables' not in item:
         return
@@ -99,7 +116,9 @@ def search_in_model(result: TResult, base_types: Dict[str, Any], item, cb: Calla
     if 'actions' in item:
         if isinstance(item['actions'], dict):
             for action_chain in item['actions'].values():
-                for action in action_chain:
+                # An action may be a single effect object instead of a chain.
+                chain = action_chain if isinstance(action_chain, list) else [action_chain]
+                for action in chain:
                     search_in_model(result, base_types, action, cb)
 
         elif isinstance(item['actions'], list):

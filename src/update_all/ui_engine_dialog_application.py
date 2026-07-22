@@ -211,7 +211,7 @@ class DialogSectionFactory(UiSectionFactory):
             return self._custom_ui_factories[ui_type](drawer, interpolator, data)
         elif ui_type == 'menu':
             state = _NavigationState(self._count_entries(data), len(data.get('actions', {})))
-            return _Menu(drawer, data, state)
+            return _Menu(drawer, data, state, interpolator)
         elif ui_type == 'confirm':
             state = _NavigationState(self._count_entries(data), len(data.get('actions', {})))
             return _Confirm(drawer, data, state)
@@ -233,10 +233,11 @@ class DialogSectionFactory(UiSectionFactory):
 
 
 class _Menu(UiSection):
-    def __init__(self, drawer: UiDialogDrawer, data: Dict[str, Any], state: _NavigationState):
+    def __init__(self, drawer: UiDialogDrawer, data: Dict[str, Any], state: _NavigationState, interpolator: Interpolator):
         self._drawer = drawer
         self._data = data
         self._state = state
+        self._interpolator = interpolator
         self._hotkeys = {}
         self._last_hotkey = None
         self._separators = {}
@@ -282,10 +283,15 @@ class _Menu(UiSection):
             self._drawer.add_menu_entry(entry['title'], entry.get('description', ''), entry_index == self._state.position())
             entry_index += 1
 
-        for index, action in enumerate(self._data['actions']):
+        actions = self._visible_actions()
+        if self._state.lateral_position() >= len(actions):
+            self._state.reset_lateral_position(max(0, len(actions) - 1))
+
+        current_entry = self._data['entries'][self._state.position()]
+        for index, action in enumerate(actions):
             title = action['title']
             is_selected = index == self._state.lateral_position()
-            if action['type'] == 'symbol' and action['symbol'] not in self._data['entries'][self._state.position()]['actions']:
+            if action['type'] == 'symbol' and not self._is_action_active_for_entry(action['symbol'], current_entry):
                 self._drawer.add_inactive_action(len(title), is_selected)
             else:
                 self._drawer.add_action(title, is_selected)
@@ -301,12 +307,12 @@ class _Menu(UiSection):
             self._clamp_to_active_action()
         elif key == Key.LEFT:
             self._last_hotkey = None
-            self._navigate_active_left()
+            self._navigate_active_left(actions)
         elif key == Key.RIGHT:
             self._last_hotkey = None
-            self._navigate_active_right()
+            self._navigate_active_right(actions)
         elif key == Key.ENTER:
-            return _make_action_effect_chain(self._data, self._state)
+            return _make_action_effect_chain(self._data, self._state, actions)
         elif key in self._hotkeys:
             self._navigate_hotkey(key)
             self._clamp_to_active_action()
@@ -327,38 +333,67 @@ class _Menu(UiSection):
             self._state.reset_position(matches[0])
         self._last_hotkey = key
 
-    def _is_action_active(self, action_index):
-        action = self._data['actions'][action_index]
+    def _visible_actions(self):
+        # A symbol slot is part of the row only if at least one entry of the menu
+        # would render it active; the holes for the other entries are what keeps the
+        # row layout stable. Entries where the action is missing or its 'if'
+        # evaluates false do not count as active.
+        return [action for action in self._data['actions'] if self._is_slot_visible(action)]
+
+    def _is_slot_visible(self, action):
         if action['type'] != 'symbol':
             return True
-        return action['symbol'] in self._data['entries'][self._state.position()].get('actions', {})
 
-    def _navigate_active_left(self):
+        return any(self._is_action_active_for_entry(action['symbol'], entry) for entry in self._data['entries'])
+
+    def _is_action_active_for_entry(self, symbol, entry):
+        entry_action = entry.get('actions', {}).get(symbol)
+        if entry_action is None:
+            return False
+
+        if isinstance(entry_action, dict):
+            condition = entry_action.get('if')
+            if condition is not None and self._interpolator.get_value(condition) != 'true':
+                return False
+
+        return True
+
+    def _is_action_active(self, actions, action_index):
+        action = actions[action_index]
+        if action['type'] != 'symbol':
+            return True
+        return self._is_action_active_for_entry(action['symbol'], self._data['entries'][self._state.position()])
+
+    def _navigate_active_left(self, actions):
         pos = self._state.lateral_position() - 1
-        while pos >= 0 and not self._is_action_active(pos):
+        while pos >= 0 and not self._is_action_active(actions, pos):
             pos -= 1
         if pos >= 0:
             self._state.reset_lateral_position(pos)
 
-    def _navigate_active_right(self):
+    def _navigate_active_right(self, actions):
         pos = self._state.lateral_position() + 1
-        num_actions = len(self._data['actions'])
-        while pos < num_actions and not self._is_action_active(pos):
+        num_actions = len(actions)
+        while pos < num_actions and not self._is_action_active(actions, pos):
             pos += 1
         if pos < num_actions:
             self._state.reset_lateral_position(pos)
 
     def _clamp_to_active_action(self):
+        actions = self._visible_actions()
         pos = self._state.lateral_position()
-        if self._is_action_active(pos):
+        if pos >= len(actions):
+            self._state.reset_lateral_position(max(0, len(actions) - 1))
             return
-        num_actions = len(self._data['actions'])
+        if self._is_action_active(actions, pos):
+            return
+        num_actions = len(actions)
         left, right = pos - 1, pos + 1
         while left >= 0 or right < num_actions:
-            if left >= 0 and self._is_action_active(left):
+            if left >= 0 and self._is_action_active(actions, left):
                 self._state.reset_lateral_position(left)
                 return
-            if right < num_actions and self._is_action_active(right):
+            if right < num_actions and self._is_action_active(actions, right):
                 self._state.reset_lateral_position(right)
                 return
             left -= 1
@@ -397,8 +432,8 @@ def _with_auto_numbered_title(entry: Dict[str, Any], number: int) -> tuple[Dict[
     return {**entry, 'title': f'{number}{title[1:]}'}, number + 1
 
 
-def _make_action_effect_chain(data: Dict[str, Any], state: _NavigationState) -> Optional[EffectChain]:
-    props = data['actions'][state.lateral_position()]
+def _make_action_effect_chain(data: Dict[str, Any], state: _NavigationState, actions: Optional[List[Dict[str, Any]]] = None) -> Optional[EffectChain]:
+    props = (actions if actions is not None else data['actions'])[state.lateral_position()]
     if props['type'] == 'symbol':
         selection = data['entries'][state.position()]
         if 'actions' not in selection:
@@ -408,7 +443,8 @@ def _make_action_effect_chain(data: Dict[str, Any], state: _NavigationState) -> 
         if symbol not in selection['actions']:
             return None
 
-        return EffectChain(selection['actions'][symbol])
+        chain = selection['actions'][symbol]
+        return EffectChain(chain if isinstance(chain, list) else [chain])
     elif props['type'] == 'fixed':
         return EffectChain(props['fixed'])
     else:

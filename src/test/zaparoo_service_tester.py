@@ -18,10 +18,8 @@
 
 from test.fake_filesystem import FileSystemFactory
 from test.logger_tester import NoLogger
-from test.mister_ini_repository_tester import MisterIniRepositoryTester
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
-from update_all.mister_ini_repository import MisterIniRepository
 from update_all.zaparoo_service import ZaparooService
 
 
@@ -31,24 +29,10 @@ class ZaparooServiceTester(ZaparooService):
             file_system: FileSystem = None,
             files=None,
             logger: Logger = None,
-            mister_ini_repository: MisterIniRepository = None,
     ):
         self.file_system = file_system or FileSystemFactory.from_state(files=files or {}).create_for_system_scope()
         self.logger = logger or NoLogger()
-        self.mister_ini_repository = (
-            mister_ini_repository
-            or MisterIniRepositoryTester(file_system=self.file_system, logger=self.logger)
-        )
-        self.calls = []
-        self.frontend_activation_calls = 0
         super().__init__(
             self.file_system,
             self.logger,
-            mister_ini_repository=self.mister_ini_repository,
         )
-
-    def set_frontend_active(self, active: bool) -> None:
-        super().set_frontend_active(active)
-        if active and self.frontend_activation_applied():
-            self.calls.append('apply_frontend_activation')
-            self.frontend_activation_calls += 1
