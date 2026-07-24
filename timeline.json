@@ -1,0 +1,150 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-07-24",
+      "timestamps": [
+        1784867916
+      ],
+      "title": "Updated TODAY (2026-07-24)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Aleck 64 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Black Widow Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Deco 16 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Night Slashers Core",
+              "type": "standalone"
+            },
+            {
+              "name": "QBert Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Tempest Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Aleck 64 MRAs: Eleven Beat, Hanabi de Doon! - Don-chan Puzzle, Hi Pai Paradise 2, Hi Pai Paradise, Kurukuru Fever, Magical Tetris Challenge, Mayjinsen 3, Star Soldier - Vanishing Earth, Super Real Mahjong VS, Tower & Shaft, Vivid Dolls, + 1 alt",
+              "type": "standalone"
+            },
+            {
+              "name": "Black Widow MRAs: Black Widow, Gravitar, Lunar Battle",
+              "type": "standalone"
+            },
+            {
+              "name": "Deco 16 MRAs: Dark Seal, Vapor Trail - Hyper Offence Formation",
+              "type": "standalone"
+            },
+            {
+              "name": "Legionnaire MRAs: 2 alts",
+              "type": "standalone"
+            },
+            {
+              "name": "Night Slashers MRA: Night Slashers, + 3 alts",
+              "type": "standalone"
+            },
+            {
+              "name": "Pacman MRA: Eyes, + 3 alts",
+              "type": "standalone"
+            },
+            {
+              "name": "Taito SJ MRAs: 2 alts",
+              "type": "standalone"
+            },
+            {
+              "name": "Tempest MRA: Tempest",
+              "type": "standalone"
+            },
+            {
+              "name": "Trio The Punch MRA: 1 alt",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "Apple-Lisa",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "3DO",
+              "type": "standalone"
+            },
+            {
+              "name": "AtariLynx2P",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "Downloader",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1784250629,
+        1784297870,
+        1784312400,
+        1784323831,
+        1784482840,
+        1784549089,
+        1784564046,
+        1784583473,
+        1784654350,
+        1784677143,
+        1784682378,
+        1784728221,
+        1784758823,
+        1784837578,
+        1784842342
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1803,
+    "total_file_updates": 2552,
+    "unique_files": 1715
+  }
+}
