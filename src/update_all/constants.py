@@ -20,7 +20,7 @@ from enum import Enum
 from typing import Final
 
 # From patreon.com/theypsilon
-supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', 'Barry Tomkinson', 'Thomas Williams')
+supporter_plus_patrons: Final[tuple[str,...]] = ('Alex Frégeau', 'Barry Tomkinson', 'Filip Kindt', 'Thomas Williams')
 
 # Default options (not in other options)
 DEFAULT_CURL_SSL_OPTIONS: Final[str] = ''
@@ -84,7 +84,6 @@ FILE_JOTEGO_mra_pack_json: Final[str] = '/tmp/update_all_jt_mra_pack.json'
 FILE_JOTEGO_mra_pack_ini: Final[str] = '/tmp/update_all_jt_mra_pack.ini'
 FOLDER_scripts: Final[str] = 'Scripts'
 FOLDER_scripts_config_lc: Final[str] = 'scripts/.config'
-FILE_downloader_temp_ini: Final[str] = '/tmp/temp_downloader.ini'
 FILE_downloader_run_signal: Final[str] = '/tmp/downloader_run_signal'
 FILE_downloader_launcher_update_script: Final[str] = 'Scripts/update.sh'
 FILE_downloader_launcher_downloader_script: Final[str] = 'Scripts/downloader.sh'
@@ -189,7 +188,7 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION: Final[str] = "2.8"
+UPDATE_ALL_VERSION: Final[str] = "2.9"
 MISTER_DOWNLOADER_VERSION: Final[str] = "2.4"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"

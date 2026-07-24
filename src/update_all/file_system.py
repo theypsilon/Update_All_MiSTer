@@ -136,6 +136,10 @@ class FileSystem(ABC):
         """interface"""
 
     @abstractmethod
+    def list_file_names_in_folder(self, path):
+        """interface"""
+
+    @abstractmethod
     def folders(self):
         """interface"""
 
@@ -323,6 +327,16 @@ class _FileSystem(FileSystem):
             self._ignore_error(e)
 
         return False
+
+    def list_file_names_in_folder(self, path):
+        try:
+            return [entry.name for entry in os.scandir(self._path(path)) if entry.is_file()]
+        except FileNotFoundError as e:
+            self._ignore_error(e)
+        except NotADirectoryError as e:
+            self._ignore_error(e)
+
+        return []
 
     def folders(self):
         raise Exception('folders Not implemented')

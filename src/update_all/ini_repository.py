@@ -23,7 +23,7 @@ from collections import OrderedDict
 from typing import Optional, Dict, List, Tuple, Any
 
 from update_all.config import Config
-from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, FILE_downloader_temp_ini, DOWNLOADER_STORE_STANDARD_PATH, \
+from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, DOWNLOADER_STORE_STANDARD_PATH, \
     DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI
 from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, ajgowans_manualsdbs
 from update_all.file_system import FileSystem
@@ -47,6 +47,17 @@ def _build_separate_db_ini_files_by_filename() -> Dict[str, List[str]]:
 
 
 SEPARATE_DB_INI_FILES_BY_FILENAME: Dict[str, List[str]] = _build_separate_db_ini_files_by_filename()
+
+# INI files that Update All owns and writes to directly. Any other ini file matching the extra-db globs
+# is considered "read-only" for adds: databases living there are reflected in the settings screen, and
+# removed from there when toggled off, but never written to when toggled on.
+CANONICAL_DB_INI_RELATIVE_PATHS: frozenset = frozenset({
+    DOWNLOADER_INI_STANDARD_PATH.lower(),
+    *(filename.lower() for filename in SEPARATE_DB_INI_FILES.values()),
+})
+
+# Subfolder (relative to base_path) that is scanned for drop-in database ini files.
+EXTRA_DB_INI_FOLDER: str = 'downloader'
 
 
 class IniRepository:
@@ -133,25 +144,17 @@ class IniRepository:
 
         return f'{self._base_path}/{DOWNLOADER_STORE_STANDARD_PATH}'
 
-    def downloader_ini_path_tweaked_by_config(self, config: Config) -> str:
-        return FILE_downloader_temp_ini if config.temporary_downloader_ini else self.downloader_ini_standard_path()
-
-    def write_downloader_ini(self, config: Config, target_path: str = None) -> None:
-        downloader_ini_path = self.downloader_ini_standard_path()
-        if target_path is None:
-            target_path = downloader_ini_path
+    def write_downloader_ini(self, config: Config) -> None:
+        target_path = self.downloader_ini_standard_path()
+        self.refresh_database_sources(config)
 
         new_ini_contents = self._try_build_new_downloader_ini_contents(config)
         if new_ini_contents is None:
-            if target_path == downloader_ini_path:
-                return
-            new_ini_contents = self._file_system.read_file_contents(downloader_ini_path)
+            return
 
         self._file_system.make_dirs_parent(target_path)
         self._file_system.write_file_contents(target_path, new_ini_contents)
-
-        if target_path == downloader_ini_path:
-            self._downloader_ini = None
+        self._downloader_ini = None
 
     def replace_db_ids_in_ini_and_fs(self, changed_ids: Dict[str, str], downloader_ini: Dict[str, IniParser]) -> None:
         downloader_ini_txt = self._read_downloader_ini_rawtext()
@@ -343,30 +346,109 @@ class IniRepository:
                 sections[current] += line + '\n'
         return sections
 
-    def read_separate_db_ini_files(self) -> Dict[str, IniParser]:
-        result = {}
-        for ini_filename in set(SEPARATE_DB_INI_FILES.values()):
-            target_path = f'{self._base_path}/{ini_filename}'
+    def read_extra_db_ini_files(self) -> Tuple[Dict[str, IniParser], Dict[str, List[str]]]:
+        """Scans every ini file that the MiSTer Downloader picks up besides downloader.ini, namely
+        '{base_path}/downloader_*.ini' and '{base_path}/downloader/*.ini' (non-hidden), and returns:
+          - sections: db_id (lower case) -> parsed section (first file wins on duplicates)
+          - sources:  db_id (lower case) -> list of relative file paths where it was found, excluding the
+            files Update All owns (downloader.ini and the canonical separate db ini files)."""
+        sections: Dict[str, IniParser] = {}
+        sources: Dict[str, List[str]] = {}
+        base_path = self._extra_db_ini_base_path()
+        for relative_path in self._extra_db_ini_file_paths():
+            target_path = f'{base_path}/{relative_path}'
+            try:
+                contents = self._file_system.read_file_contents(target_path)
+                parser = read_ini_contents(contents)
+            except Exception as e:
+                self._logger.debug(f'Could not read DB INI file at: {target_path}')
+                self._logger.debug(e)
+                continue
+
+            is_canonical = relative_path.lower() in CANONICAL_DB_INI_RELATIVE_PATHS
+            for header, section in parser.items():
+                if header.lower() == 'default':
+                    continue
+                lower_id = header.lower()
+                if lower_id not in sections:
+                    sections[lower_id] = IniParser({k.lower(): v for k, v in section.items()})
+                if not is_canonical:
+                    sources.setdefault(lower_id, []).append(relative_path)
+
+        return sections, sources
+
+    def refresh_database_sources(self, config: Config) -> None:
+        _, sources = self.read_extra_db_ini_files()
+        config.database_sources = sources
+
+    def _extra_db_ini_file_paths(self) -> List[str]:
+        base_path = self._extra_db_ini_base_path()
+        result: List[str] = []
+        downloader_folder = f'{base_path}/{EXTRA_DB_INI_FOLDER}'
+        for name in sorted(self._file_system.list_file_names_in_folder(downloader_folder)):
+            if name.startswith('.'):
+                continue
+            if name.lower().endswith('.ini'):
+                result.append(f'{EXTRA_DB_INI_FOLDER}/{name}')
+
+        for name in sorted(self._file_system.list_file_names_in_folder(base_path)):
+            lower = name.lower()
+            if lower.startswith('downloader_') and lower.endswith('.ini'):
+                result.append(name)
+
+        return result
+
+    def _extra_db_ini_base_path(self) -> str:
+        downloader_ini_path = self.downloader_ini_standard_path()
+        suffix = '/' + DOWNLOADER_INI_STANDARD_PATH
+        if downloader_ini_path.endswith(suffix):
+            return downloader_ini_path[:-len(suffix)]
+        return downloader_ini_path.rsplit('/', 1)[0]
+
+    def strip_db_ids_from_extra_files(self, sources: Dict[str, List[str]]) -> None:
+        """Removes the given db_id sections from the extra (non-owned) ini files where they live. Files that
+        become empty after the removal are deleted. `sources` maps db_id (lower case) -> list of relative paths."""
+        base_path = self._extra_db_ini_base_path()
+        ids_by_file: Dict[str, set] = {}
+        for db_id, relative_paths in sources.items():
+            for relative_path in relative_paths:
+                ids_by_file.setdefault(relative_path, set()).add(db_id.lower())
+
+        for relative_path, ids in ids_by_file.items():
+            target_path = relative_path if relative_path.startswith('/') else f'{base_path}/{relative_path}'
             if not self._file_system.is_file(target_path):
                 continue
             try:
                 contents = self._file_system.read_file_contents(target_path)
-                parser = read_ini_contents(contents)
-                for header, section in parser.items():
-                    if header.lower() != 'default':
-                        result[header.lower()] = IniParser({k.lower(): v for k, v in section.items()})
             except Exception as e:
-                self._logger.debug(f'Could not read separate DB INI file at: {target_path}')
+                self._logger.debug(f'Could not read DB INI file at: {target_path}')
                 self._logger.debug(e)
-        return result
+                continue
 
-    def write_separate_db_ini_files(self, config: Config, base_path: str = None) -> None:
-        if base_path is None:
-            base_path = self._base_path
+            new_contents = self._strip_sections(contents, ids)
+            if new_contents.strip() == '':
+                self._file_system.unlink(target_path, verbose=False)
+            else:
+                self._file_system.write_file_contents(target_path, new_contents.rstrip() + '\n')
+
+    @staticmethod
+    def _strip_sections(contents: str, ids_lower: set) -> str:
+        new_lines: List[str] = []
+        ignoring = False
+        for line in contents.splitlines():
+            stripped = line.strip()
+            if stripped.startswith('[') and ']' in stripped:
+                header = stripped[1:stripped.find(']')].lower()
+                ignoring = header in ids_lower
+            if not ignoring:
+                new_lines.append(line)
+        return '\n'.join(new_lines)
+
+    def write_separate_db_ini_files(self, config: Config) -> None:
         active = {db.db_id.lower(): db for _, db in candidate_databases(config) if db.db_id in config.databases}
 
         for ini_filename, canonical_db_ids in SEPARATE_DB_INI_FILES_BY_FILENAME.items():
-            target_path = f'{base_path}/{ini_filename}'
+            target_path = f'{self._base_path}/{ini_filename}'
             active_dbs = [active[db_id.lower()] for db_id in canonical_db_ids if db_id.lower() in active]
             if active_dbs:
                 self._file_system.make_dirs_parent(target_path)
@@ -374,6 +456,28 @@ class IniRepository:
                 self._file_system.write_file_contents(target_path, '\n\n'.join(sections) + '\n')
             elif self._file_system.is_file(target_path):
                 self._file_system.unlink(target_path, verbose=False)
+
+    def write_database_configuration(self, config: Config) -> None:
+        """Persists the complete database selection from config.
+
+        Extra drop-in sources are refreshed from disk before making decisions. Sections for disabled
+        databases are removed from those files, then sources are refreshed again before canonical
+        INI files are written. Keeping this workflow in one entry point prevents stale source metadata
+        from suppressing a later re-enable.
+        """
+        self.refresh_database_sources(config)
+
+        managed_db_ids = {db.db_id.lower() for _, db in candidate_databases(config)}
+        inactive_sources = {
+            db_id: relative_paths
+            for db_id, relative_paths in config.database_sources.items()
+            if db_id in managed_db_ids and not config.is_database_enabled(db_id)
+        }
+        if inactive_sources:
+            self.strip_db_ids_from_extra_files(inactive_sources)
+
+        self.write_downloader_ini(config)
+        self.write_separate_db_ini_files(config)
 
     @staticmethod
     def _build_separate_db_section(db: Database, config: Config) -> str:
@@ -405,6 +509,8 @@ class IniRepository:
         self._arcade_organizer_ini = None
 
     def does_downloader_ini_need_save(self, config: Config) -> bool:
+        self.refresh_database_sources(config)
+
         if not self._file_system.is_file(self.downloader_ini_standard_path()):
             ini = {}
             self._add_new_downloader_ini_changes(ini, config)
@@ -427,6 +533,12 @@ class IniRepository:
                     del ini[db_id]
                 continue
             if db in active_databases(config):
+                if db_id in config.database_sources and db_id not in ini:
+                    # Active and defined only in an extra ini file we don't own. Leave it there instead
+                    # of materializing a higher-precedence duplicate section in downloader.ini. When
+                    # downloader.ini already contains the db, it is the winning definition and must be
+                    # updated normally even if ignored duplicates also exist in drop-ins.
+                    continue
                 if db_id not in ini:
                     ini[db_id] = {}
                 ini[db_id]['db_url'] = db.db_url
@@ -465,6 +577,9 @@ class IniRepository:
             if db_id not in config.databases:
                 continue
 
+            if db_id.lower() not in ini:
+                continue
+
             ini[db_id.lower()]['filter'] = filter_addition
 
         for db_id, beta_cores_active in [(ALL_DB_IDS['JTCORES'], config.download_beta_cores)]:
@@ -472,6 +587,9 @@ class IniRepository:
                 continue
 
             lower_id = db_id.lower()
+            if lower_id not in ini:
+                continue
+
             filter_value = ini[lower_id].get('filter', '').strip().lower()
             if beta_cores_active and filter_value == '':
                 ini[lower_id]['filter'] = '[MiSTer]'

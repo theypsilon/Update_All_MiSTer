@@ -72,9 +72,9 @@ class TransitionService:
         self._logger.print(f'File "{self._ini_repository.downloader_ini_standard_path()}" not found.')
         self._logger.print()
 
-        config.databases.add(DB_ID_DISTRIBUTION_MISTER)
-        config.databases.add(ALL_DB_IDS['COIN_OP_COLLECTION'])
-        config.databases.add(ALL_DB_IDS['JTCORES'])
+        config.set_database_enabled(DB_ID_DISTRIBUTION_MISTER, True)
+        config.set_database_enabled(ALL_DB_IDS['COIN_OP_COLLECTION'], True)
+        config.set_database_enabled(ALL_DB_IDS['JTCORES'], True)
         self._ini_repository.write_downloader_ini(config)
 
         self._logger.print('A new file "downloader.ini" has been created with default DBs:')
@@ -160,7 +160,7 @@ class TransitionService:
         if DB_ID_ARCADE_NAMES_TXT in config.databases:
             return
 
-        config.databases.add(DB_ID_ARCADE_NAMES_TXT)
+        config.set_database_enabled(DB_ID_ARCADE_NAMES_TXT, True)
 
         self._ini_repository.write_downloader_ini(config)
         self._logger.print('Transitioning arcade names from "names.txt" to separated "..CONFIG../arcade_names.txt":')
@@ -195,7 +195,7 @@ class TransitionService:
             if target_db_id_lower in active_db_ids:
                 continue
 
-            config.databases.add(target_db_id)
+            config.set_database_enabled(target_db_id, True)
             active_db_ids.add(target_db_id_lower)
             activated.append(target_db_id)
 
@@ -260,7 +260,7 @@ class TransitionService:
 
             setattr(config, variable, value)
             if variable in db_ids and value:
-                config.databases.add(db_ids[variable])
+                config.set_database_enabled(db_ids[variable], True)
                 self._logger.debug(f'Added database: {db_ids[variable]}')
 
         return ini_content

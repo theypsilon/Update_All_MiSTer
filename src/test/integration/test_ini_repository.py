@@ -96,6 +96,45 @@ class TestIniRepository(unittest.TestCase):
         }, config=config)
         assertEqualIni(self, 'test/fixtures/downloader_ini/default_downloader.ini', fs.files[downloader_ini]['content'])
 
+    def test_write_downloader_ini___with_stale_extra_source___refreshes_sources_and_adds_enabled_db(self):
+        config = Config(
+            databases=default_databases(add=[all_dbs('').LLAPI_FOLDER.db_id]),
+            database_sources={'llapi_folder': ['downloader/deleted.ini']},
+        )
+
+        fs = test_write_downloader_ini(files={
+            downloader_ini: {'content': Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()}
+        }, config=config)
+
+        self.assertIn('llapi_folder', read_ini_contents(fs.files[downloader_ini]['content']).sections())
+        self.assertEqual({}, config.database_sources)
+
+    def test_write_downloader_ini___with_duplicate_in_drop_in___updates_winning_main_section(self):
+        config = Config(
+            databases={all_dbs('').JTCORES.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id},
+            download_beta_cores=True,
+        )
+
+        fs = test_write_downloader_ini(files={
+            downloader_ini: {
+                'content': Path('test/fixtures/downloader_ini/just_jtcores.ini').read_text()
+            },
+            f'{MEDIA_FAT}/downloader/duplicate.ini': {
+                'content': (
+                    '[jtcores]\n'
+                    'db_url = https://ignored.example/jtcores.json.zip\n'
+                    'filter = !jtbeta\n'
+                )
+            },
+        }, config=config)
+
+        main = read_ini_contents(fs.files[downloader_ini]['content'])
+        self.assertEqual('[MiSTer]', main['jtcores']['filter'])
+        self.assertEqual(
+            'https://ignored.example/jtcores.json.zip',
+            read_ini_contents(fs.files[f'{MEDIA_FAT}/downloader/duplicate.ini'.lower()]['content'])['jtcores']['db_url'],
+        )
+
     def test_write_downloader_ini___with_existing_arcade_roms_in_downloader_ini___removes_it(self):
         config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=True)
         fs = test_write_downloader_ini(files={
@@ -324,3 +363,72 @@ class TestIniRepository(unittest.TestCase):
         manuals_path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
         merged = read_ini_contents(state.files[manuals_path]['content'])
         self.assertEqual('https://new-url.example/db.json.zip', merged['ajgowans/manualsdb-nes']['db_url'])
+
+    def test_read_extra_db_ini_files___scans_downloader_globs___records_only_non_owned_sources(self):
+        state = FileSystemState(files={
+            f'{MEDIA_FAT}/{DOWNLOADER_BIOS_DB_INI}': {'content': '[bios_db]\ndb_url = https://bios\n'},
+            f'{MEDIA_FAT}/downloader_custom.ini': {'content': '[custom_db]\ndb_url = https://custom\n'},
+            f'{MEDIA_FAT}/downloader/dropins.ini': {'content': '[dropin_db]\ndb_url = https://dropin\n'},
+            f'{MEDIA_FAT}/downloader/{DOWNLOADER_BIOS_DB_INI}': {
+                'content': '[nested_db]\ndb_url = https://nested\n'
+            },
+            f'{MEDIA_FAT}/downloader/.hidden.ini': {'content': '[hidden_db]\ndb_url = https://hidden\n'},
+            f'{MEDIA_FAT}/downloader/notes.txt': {'content': 'not an ini file'},
+        })
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+
+        sections, sources = ini_repository.read_extra_db_ini_files()
+
+        self.assertEqual({'bios_db', 'custom_db', 'dropin_db', 'nested_db'}, set(sections))
+        self.assertEqual({
+            'custom_db': ['downloader_custom.ini'],
+            'dropin_db': ['downloader/dropins.ini'],
+            'nested_db': [f'downloader/{DOWNLOADER_BIOS_DB_INI}'],
+        }, sources)
+
+    def test_read_extra_db_ini_files___with_duplicate_db_ids___uses_downloader_order_and_first_wins(self):
+        state = FileSystemState(files={
+            f'{MEDIA_FAT}/downloader/z-last.ini': {
+                'content': '[duplicate_db]\ndb_url = https://folder-z\n'
+            },
+            f'{MEDIA_FAT}/downloader/a-first.ini': {
+                'content': '[duplicate_db]\ndb_url = https://folder-a\n'
+            },
+            f'{MEDIA_FAT}/downloader_a-first.ini': {
+                'content': '[duplicate_db]\ndb_url = https://root-a\n'
+            },
+            f'{MEDIA_FAT}/downloader_z-last.ini': {
+                'content': '[duplicate_db]\ndb_url = https://root-z\n'
+            },
+        })
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+
+        sections, sources = ini_repository.read_extra_db_ini_files()
+
+        self.assertEqual('https://folder-a', sections['duplicate_db'].get_string('db_url', ''))
+        self.assertEqual([
+            'downloader/a-first.ini',
+            'downloader/z-last.ini',
+            'downloader_a-first.ini',
+            'downloader_z-last.ini',
+        ], sources['duplicate_db'])
+
+    def test_strip_db_ids_from_extra_files___removes_sections_keeps_others_and_deletes_emptied_files(self):
+        multi_path = f'{MEDIA_FAT}/downloader/multi.ini'.lower()
+        solo_path = f'{MEDIA_FAT}/downloader_solo.ini'.lower()
+        state = FileSystemState(files={
+            multi_path: {'content': '[keep_db]\ndb_url = https://keep\n\n[drop_db]\ndb_url = https://drop\n'},
+            solo_path: {'content': '[solo_db]\ndb_url = https://solo\n'},
+        })
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+
+        ini_repository.strip_db_ids_from_extra_files({
+            'drop_db': ['downloader/multi.ini'],
+            'solo_db': ['downloader_solo.ini'],
+        })
+
+        self.assertEqual(['keep_db'], read_ini_contents(state.files[multi_path]['content']).sections())
+        self.assertNotIn(solo_path, state.files)

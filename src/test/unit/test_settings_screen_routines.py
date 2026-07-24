@@ -15,6 +15,7 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import json
 import os
 import subprocess
 import tempfile
@@ -28,8 +29,9 @@ from test.spy_os_utils import SpyOsUtils
 from test.ui_model_test_utils import gather_used_effects
 from test.update_all_service_tester import SettingsScreenTester, UiContextStub, default_databases, local_store
 from update_all.config import Config
-from update_all.constants import FILE_MiSTer_ini
-from update_all.databases import DB_ID_NAMES_TXT, AllDBs, all_dbs
+from update_all.constants import FILE_MiSTer_ini, FILE_downloader_fingerprints_json, \
+    FILE_downloader_launcher_update_script, FILE_downloader_launcher_downloader_script
+from update_all.databases import AllDBs, all_dbs
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
 from update_all.retroaccount import BenefitState, ChipIdAttachResult
@@ -45,7 +47,9 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         _, ui = tester()
 
         declared_variables = set(gather_variable_declarations(settings_screen_model()))
-        initialized_variables = set(ui.variables.keys())
+        # <db_id>_installed variables are seeded at runtime from the downloader
+        # fingerprints file, so they are intentionally not declared in the model.
+        initialized_variables = {v for v in ui.variables.keys() if not v.endswith('_installed')}
 
         intersection = declared_variables & initialized_variables
 
@@ -60,6 +64,130 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertGreaterEqual(len(initialized_effects), 5)
         self.assertEqual(used_effects, initialized_effects)
+
+    def test_initialize_ui___seeds_installed_variables_from_downloader_fingerprints(self):
+        file_system = FileSystemFactory.from_state(files={
+            FILE_downloader_fingerprints_json: {'content': json.dumps({
+                'agg23_db': {'hash': 'abc'},
+                'distribution_mister': {'hash': 'def'},
+                'multidatabases/duke3d': {'hash': 'jkl'},
+                'ajgowans/manualsdb-3do': {'hash': 'mno'},
+                'not/a_model_db': {'hash': 'ghi'},
+            })},
+        }).create_for_system_scope()
+
+        _, ui = tester(file_system=file_system)
+
+        self.assertEqual('true', ui.get_value('agg23_db_installed'))
+        self.assertEqual('true', ui.get_value('distribution_mister_installed'))
+        # Fingerprint keys are lowercase; db ids are matched case-insensitively.
+        self.assertEqual('true', ui.get_value('MultiDatabases/duke3d_installed'))
+        self.assertEqual('true', ui.get_value('ajgowans/manualsdb-3do_installed'))
+        self.assertEqual('true', ui.get_value('ajgowans_manuals_dbs_installed'))
+        self.assertEqual('false', ui.get_value('MultiDatabases/dreamster_installed'))
+        self.assertEqual('false', ui.get_value('Coin-OpCollection/Distribution-MiSTerFPGA_installed'))
+        self.assertNotIn('not/a_model_db_installed', ui.variables)
+
+    def test_initialize_ui___without_fingerprints_file___seeds_all_installed_variables_to_false(self):
+        _, ui = tester()
+
+        self.assertEqual('false', ui.get_value('agg23_db_installed'))
+        self.assertEqual('false', ui.get_value('distribution_mister_installed'))
+        self.assertEqual('false', ui.get_value('MultiDatabases/duke3d_installed'))
+        self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_installed'))
+
+    def test_initialize_ui___without_manual_fingerprints___sets_manuals_installed_to_false(self):
+        file_system = FileSystemFactory.from_state(files={
+            FILE_downloader_fingerprints_json: {'content': json.dumps({
+                'agg23_db': {'hash': 'abc'},
+            })},
+        }).create_for_system_scope()
+
+        _, ui = tester(file_system=file_system)
+
+        self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_installed'))
+
+    def test_initialize_ui___with_unreadable_fingerprints_file___seeds_all_installed_variables_to_false(self):
+        file_system = FileSystemFactory.from_state(files={
+            FILE_downloader_fingerprints_json: {'content': 'not json at all'},
+        }).create_for_system_scope()
+
+        _, ui = tester(file_system=file_system)
+
+        self.assertEqual('false', ui.get_value('agg23_db_installed'))
+        self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_installed'))
+
+    def test_reconcile_failed_bulk_uninstall___updates_only_removed_database_state(self):
+        remaining = 'MultiDatabases/mister-quake'
+        file_system = FileSystemFactory.from_state(files={
+            FILE_downloader_fingerprints_json: {'content': json.dumps({
+                remaining: {'hash': 'abc'},
+            })},
+        }).create_for_system_scope()
+        config = Config(databases={'JTCORES', remaining})
+        sut, ui = tester(config=config, file_system=file_system)
+        ui.set_value('jotego_updater', 'true')
+        ui.set_value('jtcores_installed', 'true')
+        ui.set_value(remaining, 'true')
+        ui.set_value(f'{remaining}_installed', 'true')
+
+        sut.reconcile_failed_bulk_uninstall(ui, ('jtcores', remaining))
+
+        self.assertEqual('false', ui.get_value('jotego_updater'))
+        self.assertEqual('false', ui.get_value('jtcores_installed'))
+        self.assertFalse(config.is_database_enabled('JTCORES'))
+        self.assertEqual('true', ui.get_value(remaining))
+        self.assertEqual('true', ui.get_value(f'{remaining}_installed'))
+        self.assertTrue(config.is_database_enabled(remaining))
+
+    def test_reconcile_failed_bulk_uninstall___keeps_manuals_aggregate_until_last_manual_is_removed(self):
+        first = 'ajgowans/manualsdb-3do'
+        second = 'ajgowans/manualsdb-megadrive'
+        not_previously_installed = 'ajgowans/manualsdb-pokemonmini'
+        file_system = FileSystemFactory.from_state(files={
+            FILE_downloader_fingerprints_json: {'content': json.dumps({
+                second: {'hash': 'abc'},
+            })},
+        }).create_for_system_scope()
+        config = Config(databases={first, second, not_previously_installed})
+        sut, ui = tester(config=config, file_system=file_system)
+        for db_id in (first, second):
+            ui.set_value(db_id, 'true')
+            ui.set_value(f'{db_id}_installed', 'true')
+        ui.set_value(not_previously_installed, 'true')
+        ui.set_value(f'{not_previously_installed}_installed', 'false')
+        ui.set_value('ajgowans_manuals_dbs_general_selector', 'true')
+        ui.set_value('ajgowans_manuals_dbs_installed', 'true')
+
+        sut.reconcile_failed_bulk_uninstall(ui, (first, second, not_previously_installed))
+
+        self.assertEqual('false', ui.get_value(first))
+        self.assertEqual('false', ui.get_value(f'{first}_installed'))
+        self.assertEqual('true', ui.get_value(f'{second}_installed'))
+        self.assertEqual('true', ui.get_value('ajgowans_manuals_dbs_installed'))
+        self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_general_selector'))
+        self.assertTrue(config.is_database_enabled(not_previously_installed))
+
+        file_system.write_file_contents(FILE_downloader_fingerprints_json, '{}')
+        sut.reconcile_failed_bulk_uninstall(ui, (first, second))
+
+        self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_installed'))
+
+    def test_reconcile_failed_bulk_uninstall___with_unreadable_fingerprints___preserves_state(self):
+        db_id = 'MultiDatabases/duke3d'
+        file_system = FileSystemFactory.from_state(files={
+            FILE_downloader_fingerprints_json: {'content': 'not json'},
+        }).create_for_system_scope()
+        config = Config(databases={db_id})
+        sut, ui = tester(config=config, file_system=file_system)
+        ui.set_value(db_id, 'true')
+        ui.set_value(f'{db_id}_installed', 'true')
+
+        sut.reconcile_failed_bulk_uninstall(ui, (db_id, 'MultiDatabases/mister-quake'))
+
+        self.assertEqual('true', ui.get_value(db_id))
+        self.assertEqual('true', ui.get_value(f'{db_id}_installed'))
+        self.assertTrue(config.is_database_enabled(db_id))
 
     def test_initialize_ui___with_missing_zaparoo_frontend_store_field___defaults_it_to_false(self):
         store = local_store()
@@ -145,28 +273,6 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('ok', ui.get_value('retroachievements_cfg_status'))
         self.assertEqual(0, service.prepare_enable_calls)
         self.assertEqual(0, service.disable_calls)
-
-    def test_prepare_exit_dont_save_and_run___with_temp_values___writes_temp_values_into_config_and_marks_temporary_downloader_ini(self):
-        config = Config()
-        sut, ui = tester(config=config)
-        ui.set_value('arcade_organizer', 'false')
-        ui.set_value('names_txt_updater', 'true')
-        ui.set_value('log_viewer', 'false')
-
-        sut.prepare_exit_dont_save_and_run(ui)
-
-        self.assertEqual(config.arcade_organizer, False)
-        self.assertEqual(config.databases, {DB_ID_NAMES_TXT, all_dbs('').UPDATE_ALL_MISTER.db_id})
-        self.assertTrue(config.temporary_downloader_ini)
-        self.assertFalse(config.log_viewer)
-
-    def test_prepare_exit_dont_save_and_run___restores_pending_unsaved_video_mode(self):
-        service = _MisterVideoModeServiceStub()
-        sut, ui = tester(mister_video_mode_service=service)
-
-        sut.prepare_exit_dont_save_and_run(ui)
-
-        self.assertEqual(1, service.restore_calls)
 
     def test_prepare_exit_without_save___restores_pending_unsaved_video_mode(self):
         service = _MisterVideoModeServiceStub()

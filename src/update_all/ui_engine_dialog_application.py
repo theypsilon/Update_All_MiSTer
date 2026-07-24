@@ -258,6 +258,23 @@ class _Menu(UiSection):
             entries.append(entry)
 
         self._data['entries'] = entries
+        self._append_conditional_action_buttons()
+
+    def _append_conditional_action_buttons(self):
+        # The layout is derived from the entries: any entry action carrying an "if"
+        # condition gets a symbol button appended to the row (its visibility is then
+        # ruled by the max-active-actions logic like any other symbol).
+        actions = self._data.get('actions', [])
+        known_symbols = {action.get('symbol') for action in actions if action.get('type') == 'symbol'}
+        for entry in self._data['entries']:
+            for symbol, entry_action in entry.get('actions', {}).items():
+                if symbol in known_symbols or not isinstance(entry_action, dict) or 'if' not in entry_action:
+                    continue
+
+                known_symbols.add(symbol)
+                actions.append({'title': symbol.replace('_', ' ').title(), 'type': 'symbol', 'symbol': symbol})
+
+        self._data['actions'] = actions
 
     def process_key(self) -> Optional[ProcessKeyResult]:
         if self._first_render:
@@ -284,8 +301,7 @@ class _Menu(UiSection):
             entry_index += 1
 
         actions = self._visible_actions()
-        if self._state.lateral_position() >= len(actions):
-            self._state.reset_lateral_position(max(0, len(actions) - 1))
+        self._ensure_selected_action_selectable(actions)
 
         current_entry = self._data['entries'][self._state.position()]
         for index, action in enumerate(actions):
@@ -352,9 +368,7 @@ class _Menu(UiSection):
             return False
 
         if isinstance(entry_action, dict):
-            condition = entry_action.get('if')
-            if condition is not None and self._interpolator.get_value(condition) != 'true':
-                return False
+            return self._interpolator.get_value(_conditional_action_condition(entry_action, symbol)) == 'true'
 
         return True
 
@@ -378,6 +392,23 @@ class _Menu(UiSection):
             pos += 1
         if pos < num_actions:
             self._state.reset_lateral_position(pos)
+
+    def _ensure_selected_action_selectable(self, actions):
+        # Runs on every render. When we come back to the menu after an action
+        # changed a condition (e.g. uninstalling a db flips its '..._installed'
+        # variable to false), the previously selected action can turn into an
+        # inactive hole for the current entry, or drop out of the row entirely.
+        # Rather than leaving the cursor stranded on the empty slot, snap it to the
+        # first selectable action. Normal navigation always keeps the cursor on an
+        # active action, so this only fires after such an out-of-band state change.
+        pos = self._state.lateral_position()
+        if pos < len(actions) and self._is_action_active(actions, pos):
+            return
+        for index in range(len(actions)):
+            if self._is_action_active(actions, index):
+                self._state.reset_lateral_position(index)
+                return
+        self._state.reset_lateral_position(0)
 
     def _clamp_to_active_action(self):
         actions = self._visible_actions()
@@ -444,8 +475,23 @@ def _make_action_effect_chain(data: Dict[str, Any], state: _NavigationState, act
             return None
 
         chain = selection['actions'][symbol]
-        return EffectChain(chain if isinstance(chain, list) else [chain])
+        if isinstance(chain, dict):
+            chain = _conditional_action_chain(chain, symbol)
+        return EffectChain(chain)
     elif props['type'] == 'fixed':
         return EffectChain(props['fixed'])
     else:
         raise Exception(f"Action type '{props['type']}' not valid.")
+
+
+def _conditional_action_chain(action: Dict[str, Any], symbol: str) -> List[Dict[str, Any]]:
+    _conditional_action_condition(action, symbol)
+    return action['chain']
+
+
+def _conditional_action_condition(action: Dict[str, Any], symbol: str) -> str:
+    # Actions are either plain chains (lists) or conditional actions: a dict with
+    # exactly an "if" variable and a "chain" of effects. Anything else is a model bug.
+    if action.get('if') is None or not isinstance(action.get('chain'), list):
+        raise ValueError(f'Conditional action "{symbol}" must be a dict with "if" and a "chain" of effects.')
+    return action['if']

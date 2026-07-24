@@ -116,8 +116,9 @@ def search_in_model(result: TResult, base_types: Dict[str, Any], item, cb: Calla
     if 'actions' in item:
         if isinstance(item['actions'], dict):
             for action_chain in item['actions'].values():
-                # An action may be a single effect object instead of a chain.
-                chain = action_chain if isinstance(action_chain, list) else [action_chain]
+                # A chain is a list of effects, or a conditional action dict
+                # {"if": variable, "target": chain}.
+                chain = action_chain if isinstance(action_chain, list) else action_chain.get('chain', [])
                 for action in chain:
                     search_in_model(result, base_types, action, cb)
 

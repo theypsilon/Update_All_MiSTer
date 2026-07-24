@@ -93,6 +93,14 @@ class _HorizontalLayout:
     total_width: int
 
 
+@dataclass(frozen=True)
+class _ActionViewport:
+    actions: list[tuple[str, bool]]
+    has_hidden_left: bool
+    has_hidden_right: bool
+    is_scrolling: bool
+
+
 def _log_warning(msg):
     with open(_WARNING_LOG, 'a') as f:
         f.write(f'WARNING: {msg}\n')
@@ -205,6 +213,7 @@ class Drawer(UiDialogDrawer):
         self._menu_scroll_offset = 0
         self._show_overscan_preview = False
         self._printed_overscan_preview = False
+        self._printed_action_indicators = False
 
     def start(self, data):
         self._text_lines = []
@@ -271,6 +280,7 @@ class Drawer(UiDialogDrawer):
         self._show_overscan_preview = True
 
     def paint(self) -> int:
+        action_viewport = _calculate_action_viewport(self._sd, self._actions)
         paint_layout: DrawerPaintLayout = calc_drawer_paint(
             self._sd,
             self._text_lines,
@@ -278,7 +288,8 @@ class Drawer(UiDialogDrawer):
             self._header,
             self._menu_entries,
             self._menu_scroll_offset,
-            self._actions,
+            action_viewport.actions,
+            action_viewport.is_scrolling,
         )
 
         should_reset_layout = paint_layout.layout_reset
@@ -345,8 +356,14 @@ class Drawer(UiDialogDrawer):
         elif paint_layout.has_gap:
             line_index += 1
 
+        action_left, action_right = _action_horizontal_bounds(self._sd)
+        if action_viewport.is_scrolling or self._printed_action_indicators:
+            action_background = ord(' ') | curses.A_NORMAL | curses.color_pair(colors.BOX_BACKGROUND_COLOR)
+            self._clear_line(line_index, action_left, action_background, 1)
+            self._clear_line(line_index, action_right - 1, action_background, 1)
+
         offset_actions = paint_layout.offset_actions
-        for action, is_selected in self._actions:
+        for action, is_selected in action_viewport.actions:
             if is_selected:
                 self._write_line(line_index, offset_actions, action[0:1], curses.A_BOLD | curses.color_pair(colors.SELECTED_ACTION_BORDER_COLOR))
                 self._write_line(line_index, offset_actions + 1, action[1:-1], curses.A_BOLD | curses.color_pair(colors.SELECTED_ACTION_INTERIOR_COLOR))
@@ -354,6 +371,13 @@ class Drawer(UiDialogDrawer):
             else:
                 self._write_line(line_index, offset_actions, action, curses.A_NORMAL | curses.color_pair(colors.UNSELECTED_ACTION_COLOR))
             offset_actions += len(action) + paint_layout.action_gap
+
+        indicator_mode = curses.A_BOLD | curses.color_pair(colors.UNSELECTED_ACTION_COLOR)
+        if action_viewport.has_hidden_left:
+            self._write_line(line_index, action_left, '<', indicator_mode)
+        if action_viewport.has_hidden_right:
+            self._write_line(line_index, action_right - 1, '>', indicator_mode)
+        self._printed_action_indicators = action_viewport.is_scrolling
 
         ts = self._sd.term_size
         if ts.cnarrow:
@@ -743,7 +767,79 @@ def _centered_offset(columns: int, width: int, floor: int) -> int:
     return max(floor, int(columns / 2 - width / 2))
 
 
-def _calc_horizontal_layout(ts, oc, header: str, text_lines, all_menu_entries, actions) -> _HorizontalLayout:
+def _action_row_width(actions: list[tuple[str, bool]]) -> int:
+    return sum(len(action) for action, _ in actions) + _ACTION_GAP * max(0, len(actions) - 1)
+
+
+def _action_horizontal_bounds(sd: ScreenDims) -> tuple[int, int]:
+    left = max(1, sd.overscan_dim.cols)
+    right = max(left, sd.term_size.columns - sd.overscan_dim.cols)
+    return left, right
+
+
+def _actions_fitting_from(
+        actions: list[tuple[str, bool]],
+        start: int,
+        available_width: int,
+) -> tuple[list[tuple[str, bool]], int]:
+    visible: list[tuple[str, bool]] = []
+    used_width = 0
+    end = start
+    while end < len(actions):
+        required_width = len(actions[end][0]) + (_ACTION_GAP if visible else 0)
+        if visible and used_width + required_width > available_width:
+            break
+
+        visible.append(actions[end])
+        used_width += required_width
+        end += 1
+        if used_width >= available_width:
+            break
+
+    return visible, end
+
+
+def _calculate_action_viewport(sd: ScreenDims, actions: list[tuple[str, bool]]) -> _ActionViewport:
+    left, right = _action_horizontal_bounds(sd)
+    safe_width = max(0, right - left)
+    if _action_row_width(actions) <= safe_width:
+        return _ActionViewport(actions, False, False, False)
+
+    active_actions = [(action, selected) for action, selected in actions if action.strip()]
+    if _action_row_width(active_actions) <= safe_width:
+        return _ActionViewport(active_actions, False, False, False)
+
+    available_width = max(1, safe_width - 2)
+    selected_index = next(
+        (index for index, (_, selected) in enumerate(active_actions) if selected),
+        0,
+    )
+    start = 0
+    visible: list[tuple[str, bool]] = []
+    end = 0
+    while start < len(active_actions):
+        visible, end = _actions_fitting_from(active_actions, start, available_width)
+        if start <= selected_index < end:
+            break
+        start += 1
+
+    return _ActionViewport(
+        visible,
+        has_hidden_left=start > 0,
+        has_hidden_right=end < len(active_actions),
+        is_scrolling=True,
+    )
+
+
+def _calc_horizontal_layout(
+        ts,
+        oc,
+        header: str,
+        text_lines,
+        all_menu_entries,
+        actions,
+        actions_are_scrolling: bool,
+) -> _HorizontalLayout:
     max_length_header = len(header)
     floor = max(1, oc.cols)
     max_length_text_line = min(ts.columns - max(2, oc.cols * 2), calculate_max_length_text_line(text_lines))
@@ -756,7 +852,11 @@ def _calc_horizontal_layout(ts, oc, header: str, text_lines, all_menu_entries, a
         action_gap=_ACTION_GAP,
         max_length_header=max_length_header,
         max_length_option=max_length_option,
-        offset_actions=_centered_offset(ts.columns, max_length_actions, floor),
+        offset_actions=_centered_offset(
+            ts.columns,
+            max_length_actions,
+            floor + (1 if actions_are_scrolling else 0),
+        ),
         offset_header=_centered_offset(ts.columns, max_length_header, floor),
         offset_menu=_centered_offset(ts.columns, max_menu_entry, floor),
         offset_text_line=_centered_offset(ts.columns, max_length_text_line, floor),
@@ -764,11 +864,28 @@ def _calc_horizontal_layout(ts, oc, header: str, text_lines, all_menu_entries, a
     )
 
 
-def calc_drawer_paint(sd: ScreenDims, text_lines, text_scroll_offset, header, all_menu_entries, menu_scroll_offset, actions) -> DrawerPaintLayout:
+def calc_drawer_paint(
+        sd: ScreenDims,
+        text_lines,
+        text_scroll_offset,
+        header,
+        all_menu_entries,
+        menu_scroll_offset,
+        actions,
+        actions_are_scrolling: bool = False,
+) -> DrawerPaintLayout:
     ts = sd.term_size
     oc = sd.overscan_dim
     visible_text = _calc_visible_text_layout(max_text_lines(sd, header), text_lines, text_scroll_offset, header)
-    horizontal = _calc_horizontal_layout(ts, oc, header, text_lines, all_menu_entries, actions)
+    horizontal = _calc_horizontal_layout(
+        ts,
+        oc,
+        header,
+        text_lines,
+        all_menu_entries,
+        actions,
+        actions_are_scrolling,
+    )
 
     standard_total_lines = len(visible_text.lines) + len(all_menu_entries) + 1 + (2 if horizontal.max_length_header > 0 else 0)
     usable_lines = max(1, ts.lines - oc.lines * 2)

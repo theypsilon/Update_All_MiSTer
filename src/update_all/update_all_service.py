@@ -28,15 +28,15 @@ from update_all.analogue_pocket.utils import is_pocket_mounted
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.cli_output_formatting import CLEAR_SCREEN
 from update_all.config import Config
-from update_all.databases import Database, all_dbs
-from update_all.downloader_utils import prepare_latest_downloader
+from update_all.databases import all_dbs
+from update_all.downloader_service import DownloaderService
 from update_all.encryption import Encryption
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl
 from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_mister_downloader_needs_reboot, \
     MEDIA_FAT, \
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, FILE_update_all_pyz, \
     EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update, \
-    FILE_downloader_run_signal, FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script, \
+    FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script, \
     COMMAND_TIMELINE, COMMAND_LATEST_LOG, COMMAND_SHOW_CHIP_ID_RESULT, BACKGROUND_JOBS_HARD_TIMEOUT, \
     FILE_update_all_print_tmp_log, FILE_mister_version, FILE_JOTEGO_mra_pack_ini, BACKGROUND_JOBS_SOFT_TIMEOUT
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
@@ -64,6 +64,7 @@ from update_all.retroaccount import RetroAccountService
 from update_all.retroaccount_gateway import RetroAccountGateway
 from update_all.retroachievements_service import RetroAchievementsService
 from update_all.update_output import LtsvUpdateOutput, NoopUpdateOutput
+from update_all.uninstall_db_service import UninstallDbService
 from update_all.zaparoo_service import ZaparooService
 
 
@@ -86,6 +87,7 @@ class UpdateAllServiceFactory:
         file_system = FileSystemFactory(config_provider, {}, self._logger).create_for_system_scope()
         fetcher = Fetcher(config_provider, logger=None)
         os_utils = LinuxOsUtils(config_provider=config_provider, logger=self._logger, fetcher=fetcher)
+        downloader_service = DownloaderService(self._logger, file_system, os_utils)
         ini_repository = IniRepository(self._logger, file_system=file_system, os_utils=os_utils)
         mister_ini_repository = MisterIniRepository(file_system, self._logger)
         config_reader = ConfigReader(self._logger, env, ini_repository=ini_repository)
@@ -112,6 +114,13 @@ class UpdateAllServiceFactory:
             self._logger,
         )
         zaparoo_service = ZaparooService(file_system, self._logger)
+        uninstall_db_service = UninstallDbService(
+            ini_repository,
+            config_provider,
+            downloader_service,
+            file_system,
+            self._logger,
+        )
         mister_video_mode_service = MisterVideoModeService(
             self._logger,
             file_system,
@@ -136,6 +145,7 @@ class UpdateAllServiceFactory:
             retroachievements_service=retroachievements_service,
             mister_ini_repository=mister_ini_repository,
             zaparoo_service=zaparoo_service,
+            uninstall_db_service=uninstall_db_service,
         )
         environment_setup = EnvironmentSetupImpl(
             logger=self._logger,
@@ -163,6 +173,7 @@ class UpdateAllServiceFactory:
             timeline=timeline,
             retroaccount=retroaccount,
             zaparoo_service=zaparoo_service,
+            downloader_service=downloader_service,
             fetcher=fetcher
         )
 
@@ -247,6 +258,7 @@ class UpdateAllService:
                  timeline: Timeline,
                  retroaccount: RetroAccountService,
                  zaparoo_service: ZaparooService,
+                 downloader_service: DownloaderService,
                  fetcher: Fetcher):
         self._config_provider = config_provider
         self._logger = logger
@@ -263,11 +275,11 @@ class UpdateAllService:
         self._timeline = timeline
         self._retroaccount = retroaccount
         self._zaparoo_service = zaparoo_service
+        self._downloader_service = downloader_service
         self._fetcher = fetcher
         self._exit_code = 0
         self._end_time = 0.0
         self._error_reports: list[str] = []
-        self._temp_launchers: list[str] = []
         self._timeline_after_log_doc: list[str] = []
         self._executor: Optional[ThreadPoolExecutor] = None
         self._background_job_future: Optional[Future] = None
@@ -499,74 +511,10 @@ class UpdateAllService:
             return
 
         self._draw_separator()
-        return_code = self._execute_downloader(config, self._ini_repository.downloader_ini_path_tweaked_by_config(config), config.skip_linux_update, None, None)
+        return_code = self._downloader_service.execute_downloader(config, self._ini_repository.downloader_ini_standard_path(), config.skip_linux_update, None, None)
         if return_code != 0:
             self._exit_code = 10
             self._error_reports.append('Scripts/.config/downloader/downloader.log')
-
-    def _execute_downloader(self, config: Config, downloader_ini_path: str, skip_linux_update: bool, logfile: Optional[str], default_db: Optional[Database], quiet: bool = False) -> int:
-        ts = config.term_size
-        oc = config.overscan_dim
-        env = {
-            'DOWNLOADER_INI_PATH': downloader_ini_path,
-            'ALLOW_REBOOT': '0',
-            'CURL_SSL': config.curl_ssl,
-            'COLUMNS': str(ts.columns - oc.cols * 2),
-            'LINES': str(ts.lines - oc.lines * 2),
-        }
-        if skip_linux_update:
-            env['UPDATE_LINUX'] = 'false'
-        if self._file_system.is_file(FILE_JOTEGO_mra_pack_ini):
-            env['EXTRA_DROP_IN_DATABASE_FILES'] = FILE_JOTEGO_mra_pack_ini
-        if logfile is not None:
-            env['LOGFILE'] = logfile
-        if default_db is not None:
-            env['DEFAULT_DB_ID'] = default_db.db_id
-            env['DEFAULT_DB_URL'] = default_db.db_url
-
-        if not quiet:
-            if default_db is None:
-                self._logger.print('Running MiSTer Downloader')
-            else:
-                self._logger.print('Running ' + default_db.title)
-
-        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=True)
-        if downloader_file is None:
-            return 1
-
-        self._temp_launchers.append(downloader_file)
-        if not quiet:
-            self._logger.print()
-
-        if not config.paths_from_downloader_ini and config.base_path != MEDIA_FAT:
-            env['DEFAULT_BASE_PATH'] = config.base_path
-
-        if config.not_mister:
-            env['DEBUG'] = 'true'
-
-        return_code = self._os_utils.execute_process(downloader_file, env, quiet)
-        if not self._file_system.is_file(FILE_downloader_run_signal):
-            return return_code
-
-        self._logger.print(f"WARNING! {downloader_file} didn't work as expected with error code {return_code}!\n")
-
-        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=False)
-        if downloader_file is None:
-            return 1
-
-        self._temp_launchers.append(downloader_file)
-        return_code = self._os_utils.execute_process(downloader_file, env, quiet)
-        if not self._file_system.is_file(FILE_downloader_run_signal):
-            return return_code
-
-        self._logger.print(f"WARNING! {downloader_file} didn't work as expected with error code {return_code}!\n")
-
-        downloader_file = prepare_latest_downloader(self._os_utils, self._file_system, self._logger, consider_bin=False, consider_zip=False)
-        if downloader_file is None:
-            return 1
-
-        self._temp_launchers.append(downloader_file)
-        return self._os_utils.execute_process(downloader_file, env, quiet)
 
     def _sync_downloader_launcher(self) -> None:
         if not self._file_system.is_file(FILE_downloader_launcher_downloader_script) or not self._file_system.is_file(FILE_downloader_launcher_update_script):
@@ -667,10 +615,7 @@ class UpdateAllService:
             self._executor = None
 
     def _cleanup(self) -> None:
-        for file in self._temp_launchers:
-            if self._file_system.is_file(file):
-                self._file_system.unlink(file, verbose=False)
-
+        self._downloader_service.cleanup_temp_launchers()
         self._file_system.clean_temp_files_with_ids()
 
     def _show_outro(self) -> None:
@@ -770,7 +715,7 @@ class UpdateAllService:
         timeline_ini = '/tmp/timeline_downloader.ini'
         self._file_system.unlink(timeline_ini)
         db_defs = all_dbs(config.mirror)
-        return_code = self._execute_downloader(config, timeline_ini, True, timeline_log, db_defs.UPDATE_ALL_MISTER, quiet=True)
+        return_code = self._downloader_service.execute_downloader(config, timeline_ini, True, timeline_log, db_defs.UPDATE_ALL_MISTER, quiet=True)
         self._logger.print()
         if return_code != 0:
             self._logger.print('The Timeline data could not be updated because of an internet connection problem. Try again later to see an updated Timeline.')

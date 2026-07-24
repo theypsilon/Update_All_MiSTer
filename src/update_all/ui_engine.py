@@ -415,7 +415,12 @@ class _EffectResolver:
             elif effect['type'] == 'set_variable':
                 target_variable = effect['target']
                 target_value = effect['value']
-                possible_values = self._data['variables'][target_variable]['values']
+                possible_values = self._data['variables'].get(target_variable, {}).get('values')
+                if possible_values is None:
+                    # Variables without a declaration (e.g. runtime-seeded state) are set as-is.
+                    self._ui.set_value(target_variable, target_value)
+                    result = 'clear_window'
+                    continue
 
                 cur_index = 0
                 for index, var_value in enumerate(possible_values):

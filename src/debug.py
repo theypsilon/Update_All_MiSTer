@@ -8,6 +8,7 @@ import subprocess
 import time
 import argparse
 import traceback
+import shlex
 from pathlib import Path
 
 
@@ -25,6 +26,75 @@ def local_run(env=None): subprocess.run(['python3', './src/__main__.py'], env={*
 def local_run_tiny(): subprocess.run(['script', '-q', '/dev/null', '-c', 'stty rows 15 cols 40 && python3 ./src/__main__.py'], env={**os.environ.copy(), 'LOCATION_STR': '.local_drv'}, check=True)
 def local_run_small(): subprocess.run(['script', '-q', '/dev/null', '-c', 'stty rows 18 cols 80 && python3 ./src/__main__.py'], env={**os.environ.copy(), 'LOCATION_STR': '.local_drv'}, check=True)
 def run_launcher(**kwargs): send_build(**kwargs), exec_ssh(f'/media/fat/Scripts/update_all.sh', **kwargs)
+def benchmark_settings_screen_model(**kwargs):
+    send_build(env={'SKIP_REMOVALS': 'true'}, **kwargs)
+    benchmark_code = '''
+import gc
+import statistics
+import sys
+import time
+
+sys.path.insert(0, "/tmp/update_all_model_benchmark.pyz")
+from update_all.settings_screen_model import _manual_db_variables, settings_screen_model
+
+gc.collect()
+started = time.perf_counter_ns()
+model = settings_screen_model()
+first_call = time.perf_counter_ns() - started
+model = None
+
+for _ in range(5):
+    model = settings_screen_model()
+    model = None
+
+samples = []
+for _ in range(100):
+    started = time.perf_counter_ns()
+    model = settings_screen_model()
+    samples.append(time.perf_counter_ns() - started)
+    model = None
+
+ordered = sorted(samples)
+to_ms = lambda nanoseconds: nanoseconds / 1_000_000
+print("settings_screen_model() on this device")
+print(f"First call: {to_ms(first_call):.3f} ms")
+print(f"Median:     {to_ms(statistics.median(samples)):.3f} ms")
+print(f"Mean:       {to_ms(statistics.mean(samples)):.3f} ms")
+print(f"Minimum:    {to_ms(ordered[0]):.3f} ms")
+print(f"95th pct:   {to_ms(ordered[94]):.3f} ms")
+print(f"Maximum:    {to_ms(ordered[-1]):.3f} ms")
+print("Samples:    100")
+
+manual_db_variables = _manual_db_variables()
+recreate_samples = []
+reuse_samples = []
+for _ in range(2000):
+    started = time.perf_counter_ns()
+    db_ids = list(_manual_db_variables())
+    recreate_samples.append(time.perf_counter_ns() - started)
+    db_ids = None
+
+    started = time.perf_counter_ns()
+    db_ids = list(manual_db_variables)
+    reuse_samples.append(time.perf_counter_ns() - started)
+    db_ids = None
+
+recreate_median = statistics.median(recreate_samples)
+reuse_median = statistics.median(reuse_samples)
+saving = recreate_median - reuse_median
+print()
+print("Caching _manual_db_variables()")
+print(f"Recreate:   {to_ms(recreate_median):.3f} ms")
+print(f"Reuse:      {to_ms(reuse_median):.3f} ms")
+print(f"Saving:     {to_ms(saving):.3f} ms per model ({saving / statistics.median(samples) * 100:.2f}%)")
+print("Samples:    2000 paired")
+'''
+    exec_ssh(
+        'set -e\n'
+        'tail -n +8 /media/fat/update_all.sh | xzcat -d -c > /tmp/update_all_model_benchmark.pyz\n'
+        f'python3 -c {shlex.quote(benchmark_code)}',
+        **kwargs,
+    )
 def store_push(**kwargs): scp_file('update_all.json', '/media/fat/Scripts/.config/update_all/update_all.json', **kwargs)
 def store_pull(**kwargs): scp_file('/media/fat/Scripts/.config/update_all/update_all.json', 'update_all.json', **kwargs)
 def log_pull(**kwargs): scp_file('/media/fat/Scripts/.config/update_all/update_all.log', 'update_all.log', **kwargs)
@@ -57,6 +127,7 @@ def operations_dict(env=None, retries=False):
         'local_run': lambda: local_run(env=env),
         'local_run_tiny': lambda: local_run_tiny(),
         'local_run_small': lambda: local_run_small(),
+        'benchmark_settings_screen_model': lambda: benchmark_settings_screen_model(retries=retries),
         'install_rc': lambda: install_rc()
     }
 

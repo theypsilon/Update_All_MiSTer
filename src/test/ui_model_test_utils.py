@@ -80,7 +80,7 @@ def _walk_nodes_for_chains(result, base_types, node, path):
 
 def _add_chain(result, base_types, chain, path):
     if not isinstance(chain, list):
-        chain = [chain]
+        chain = chain.get('chain', [])
     result.append((path, chain))
     for index, effect in enumerate(chain):
         _walk_nodes_for_chains(result, base_types, effect, f'{path}[{index}]')

@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.9 - 2026-07-24
+
+### Added
+- Supported installed databases can now be uninstalled with their contents from the Settings Screen, including an Uninstall All action for Game Manuals. If an external drive is unavailable, the user can reconnect it and retry or continue uninstalling everything currently reachable.
+- New Other Cores databases from MultiDatabases: [DreamSTer](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/dreamster) (skmp), [Sonic Mania MiSTer](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/sonic-mania) (kimchiman52), [MiSTer Duke3D](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/duke3d) and [MiSTer Quake](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/mister-quake) (neofreno), [Paprium MegaDrive](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/paprium) (MisterPezz82), [MMS2 GB Core](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/mms2-gb) (Heber-co-uk), [MegaVGMDrive](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/megavgmdrive) (dai-VGM), and [Physical CD Support](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/physical-disc) (Anime0t4ku). Update All also adds the required MiSTer.ini entries where applicable.
+- New [MiSTer Frontier](https://github.com/MiSTerOrganize/MiSTer_Frontier) database by MiSTerOrganize and [RetroAchievements Cores](https://github.com/theypsilon/RetroAchievementsDB_MiSTer) database maintained by odelot, including guided `retroachievements.cfg` setup and the required MiSTer.ini entries.
+- New [Zaparoo](https://github.com/ZaparooProject/Zaparoo_MiSTer) section in Tools & Scripts, with its database and control over whether the Zaparoo frontend is active. Zaparoo is activated automatically for existing MiSTer Extensions or TapTo setups.
+- FPGA ID linking can now be performed directly from the RetroAccount screen for benefits that require device verification (none yet).
+- New integration point with Zaparoo Frontend.
+
+### Changed
+- Database detection now follows Downloader's precedence and reads all supported drop-in files: `downloader_*.ini` and `downloader/*.ini`. Settings reflect databases defined there, avoid creating higher-precedence duplicates, and remove disabled sections from their original files.
+- MiSTer.ini changes used by CRT tools, Zaparoo, RetroAchievements, and hybrid cores now share safer handling with automatic backups, staged atomic writes, support for complex and multiline sections, and a Latin-1 fallback for non-UTF-8 files.
+- Improved Settings Screen navigation and small-screen support: faster scrolling over SSH, cycling between entries that share a shortcut, horizontally scrollable action rows with `<` / `>` indicators, and dedicated Info actions instead of interrupting database toggles with informational messages.
+- The JTCORES private-release filter is now enabled automatically when RetroAccount reports an active JTBeta benefit, while preserving the user's ability to opt out.
+- Improved RetroAccount reliability. Credentials are revoked only after an actual unauthorized response, custom `RETROACCOUNT_DOMAIN` endpoints are supported, and the FPGA ID linking flow has additional recovery and launcher safeguards.
+- Hardened Arcade Organizer against malformed settings and metadata, cache migration conflicts, filesystem and symlink errors, and incompatible text encodings. Also fixed `AZ_DIR=False` causing a full rebuild on every run.
+- Improved launcher, NTP, and launcher-error logging resilience, and made the end-of-run duration formatting more consistent.
+- Fixed `skip_linux_update` being ignored and unintentionally forcing Linux updates.
+- Refreshed Game Manuals database file counts and storage estimates.
+- A few other tweaks, fixes and optimizations.
+
+### Removed
+- Obsolete Reflex-Adapt database configurations are now removed automatically.
+- Simplified the Settings Screen's Exit and Run flow. When changes are pending, users can now choose Save and Run or Ignore Changes and Run with the previously saved settings; the undocumented one-shot configuration mode has been removed.
+
 ## Version 2.8 - 2026-04-24
 
 ### Added

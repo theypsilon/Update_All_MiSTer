@@ -21,7 +21,7 @@ from test.ini_assertions import testableIni
 from test.testing_objects import downloader_ini, update_all_ini, update_jtcores_ini, update_names_txt_ini
 from update_all.config import Config
 from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, FILE_update_all_storage, KENV_TRANSITION_SERVICE_ONLY, \
-    KENV_UPDATE_ALL_CHIP_ID_RESULT
+    KENV_UPDATE_ALL_CHIP_ID_RESULT, MEDIA_FAT
 from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT, all_dbs
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
@@ -138,6 +138,20 @@ class TestEnvironmentSetup(unittest.TestCase):
         self.assertSetup(files={
             downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores.ini').read_text()
         }, expected_config=Config(databases={all_dbs('').JTCORES.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id}, download_beta_cores=False))
+
+    def test_setup___with_duplicate_jtcores_in_drop_in___main_downloader_ini_wins(self):
+        self.assertSetup(files={
+            downloader_ini: Path('test/fixtures/downloader_ini/just_jtcores.ini').read_text(),
+            f'{MEDIA_FAT}/downloader/override.ini': (
+                '[jtcores]\n'
+                'db_url = https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip\n'
+                'filter = [MiSTer]\n'
+            ),
+        }, expected_config=Config(
+            databases={all_dbs('').JTCORES.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id},
+            database_sources={'jtcores': ['downloader/override.ini']},
+            download_beta_cores=False,
+        ))
 
     def test_setup___with_downloader_with_just_jtcores_with_mister_inheritance_filter_db___returns_config_has_not_jtpremium_but_has_beta_cores(self):
         self.assertSetup(files={

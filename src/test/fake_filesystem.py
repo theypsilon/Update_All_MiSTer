@@ -253,6 +253,18 @@ class _FileSystem(ProductionFileSystem):
 
         return False
 
+    def list_file_names_in_folder(self, path):
+        prefix = self._path(path)
+        if not prefix.endswith('/'):
+            prefix = prefix + '/'
+        result = []
+        for p in self._state.files:
+            if p.startswith(prefix):
+                rest = p[len(prefix):]
+                if rest and '/' not in rest:
+                    result.append(rest)
+        return result
+
     def folders(self):
         return list(self._state.folders)
 

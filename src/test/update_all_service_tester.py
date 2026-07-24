@@ -29,6 +29,7 @@ from test.zaparoo_service_tester import ZaparooServiceTester
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.config_reader import ConfigReader
+from update_all.downloader_service import DownloaderService
 from update_all.encryption import Encryption
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl, EnvironmentSetupResult
 from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, \
@@ -60,6 +61,7 @@ from update_all.retroaccount_gateway import RetroAccountGateway
 from update_all.ui_engine import UiContext, UiRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllService
+from update_all.uninstall_db_service import UninstallDbService
 from update_all.zaparoo_service import ZaparooService
 
 
@@ -185,7 +187,8 @@ class SettingsScreenTester(SettingsScreen):
                  mister_video_mode_service: MisterVideoModeService = None,
                  mister_ini_repository: MisterIniRepository = None,
                  retroachievements_service: RetroAchievementsService = None,
-                 zaparoo_service: ZaparooService = None):
+                 zaparoo_service: ZaparooService = None,
+                 uninstall_db_service: UninstallDbService = None):
 
         config_provider = config_provider or GenericProvider[Config]()
         store_provider = store_provider or GenericProvider[LocalStore]()
@@ -228,6 +231,16 @@ class SettingsScreenTester(SettingsScreen):
                 zaparoo_service
                 or ZaparooServiceTester(
                     file_system=file_system,
+                )
+            ),
+            uninstall_db_service=(
+                uninstall_db_service
+                or UninstallDbService(
+                    ini_repository,
+                    config_provider,
+                    DownloaderService(NoLogger(), file_system, os_utils),
+                    file_system,
+                    NoLogger(),
                 )
             ),
         )
@@ -331,7 +344,8 @@ class UpdateAllServiceTester(UpdateAllService):
                  ini_repository: IniRepository = None,
                  local_repository: LocalRepository = None,
                  zaparoo_service: ZaparooService = None,
-                 retroaccount: RetroAccountService = None):
+                 retroaccount: RetroAccountService = None,
+                 downloader_service: DownloaderService = None):
 
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
@@ -368,6 +382,7 @@ class UpdateAllServiceTester(UpdateAllService):
             timeline=TimelineTester(file_system=file_system, config_provider=config_provider, retroaccount=retroaccount),
             retroaccount=retroaccount,
             zaparoo_service=zaparoo_service,
+            downloader_service=downloader_service or DownloaderService(NoLogger(), file_system, os_utils),
             fetcher=FetcherStub(config_provider=config_provider)
         )
 

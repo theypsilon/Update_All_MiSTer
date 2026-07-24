@@ -22,7 +22,7 @@ from typing import Tuple
 from unittest.mock import patch
 
 from update_all.config import Config
-from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, FILE_downloader_temp_ini, MEDIA_FAT, FILE_MiSTer_ini
+from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, MEDIA_FAT, FILE_MiSTer_ini
 from update_all.ini_repository import read_ini_contents, SEPARATE_DB_INI_FILES
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, TerminalSize
@@ -78,25 +78,6 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.save(ui)
         self.assertEqual(default_downloader_ini_content(), fs.files[downloader_ini]['content'])
 
-    def test_prepare_exit_dont_save_and_run___with_separate_db_only_changes___writes_temp_main_and_separate_db_inis(self) -> None:
-        sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
-
-        ui.set_value('bios_getter', 'true')
-        ui.set_value('arcade_roms_db_downloader', 'true')
-        ui.set_value('hbmame_filter', 'true')
-
-        sut.prepare_exit_dont_save_and_run(ui)
-
-        self.assertEqual(default_downloader_ini_content(), fs.files[FILE_downloader_temp_ini.lower()]['content'])
-        self.assertEqual(
-            f'[bios_db]\ndb_url = {all_dbs("").BIOS.db_url}\n',
-            fs.files[f'/tmp/{DOWNLOADER_BIOS_DB_INI}'.lower()]['content']
-        )
-        self.assertEqual(
-            f'[arcade_roms_db]\ndb_url = {all_dbs("").ARCADE_ROMS.db_url}\nfilter = !hbmame\n',
-            fs.files[f'/tmp/{DOWNLOADER_ARCADE_ROMS_DB_INI}'.lower()]['content']
-        )
-
     def test_calculate_needs_save___with_default_downloader_ini_and_disabled_names_txt_updater___returns_downloader_ini_changes(self) -> None:
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
         ui.set_value('names_txt_updater', 'true')
@@ -151,6 +132,22 @@ class TestSettingsScreenSaving(unittest.TestCase):
 
         self.assertNotIn('MiSTer.ini', ui.get_value('needs_save_file_list'))
         self.assertFalse(sut._file_system.is_file(FILE_MiSTer_ini))
+
+    def test_mister_ini_del__when_immediate___applies_to_mister_ini_right_away_without_saving(self):
+        sut, ui, _ = tester(files={
+            downloader_ini: {'content': default_downloader_ini_content()},
+            FILE_MiSTer_ini: {'content': '[DUKE3D]\nmain=Mister_duke3d\nvga_scaler=0\n\n[Mister_duke3d]\nmain=Mister_duke3d\nvga_scaler=0\n'},
+        })
+
+        ui.set_value('MultiDatabases/duke3d', 'false')  # uninstall on_success already flipped this
+        sut.mister_ini_del(ui, duke3d_immediate_del_effect())
+
+        # Applied on the spot, without any save() call.
+        self.assertEqual('', sut._file_system.read_file_contents(FILE_MiSTer_ini))
+
+        # And it is not left pending, so it does not show up as an unsaved change.
+        sut.calculate_needs_save(ui)
+        self.assertNotIn('MiSTer.ini', ui.get_value('needs_save_file_list'))
 
     def test_save__when_enabling_retroachievements_db___writes_mister_ini_on_save(self):
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
@@ -578,9 +575,94 @@ class TestSettingsScreenSaving(unittest.TestCase):
 
         self.assertEqual('Cyan Night', fs.files[store_json.lower()]['json']['theme'])
 
+    def test_initialize_ui___with_db_living_only_in_downloader_folder_ini___shows_it_as_enabled(self):
+        sut, ui, _ = tester(files={
+            downloader_ini: {'content': default_downloader_ini_content()},
+            f'{MEDIA_FAT}/downloader/dropins.ini': {'content': f'[llapi_folder]\ndb_url = {all_dbs("").LLAPI_FOLDER.db_url}\n'},
+        })
+
+        self.assertEqual('true', ui.get_value('llapi_updater'))
+
+    def test_save__when_disabling_db_living_only_in_downloader_folder_ini___strips_it_from_that_file_not_downloader_ini(self):
+        extra_path = f'{MEDIA_FAT}/downloader/dropins.ini'
+        sut, ui, fs = tester(files={
+            downloader_ini: {'content': default_downloader_ini_content()},
+            extra_path: {'content': f'[llapi_folder]\ndb_url = {all_dbs("").LLAPI_FOLDER.db_url}\n'},
+        })
+
+        ui.set_value('llapi_updater', 'false')
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('downloader/dropins.ini', ui.get_value('needs_save_file_list'))
+        self.assertNotIn(extra_path.lower(), fs.files)
+        self.assertNotIn('llapi_folder', read_ini_contents(fs.files[downloader_ini.lower()]['content']).sections())
+        self.assertNotIn('llapi_folder', sut._config_provider.get().database_sources)
+
+    def test_save__when_extra_db_is_disabled_then_reenabled_in_same_session___adds_it_to_downloader_ini(self):
+        extra_path = f'{MEDIA_FAT}/downloader/dropins.ini'
+        sut, ui, fs = tester(files={
+            downloader_ini: {'content': default_downloader_ini_content()},
+            extra_path: {'content': f'[llapi_folder]\ndb_url = {all_dbs("").LLAPI_FOLDER.db_url}\n'},
+        })
+
+        ui.set_value('llapi_updater', 'false')
+        sut.save(ui)
+        self.assertNotIn(extra_path.lower(), fs.files)
+
+        ui.set_value('llapi_updater', 'true')
+        sut.calculate_needs_save(ui)
+        self.assertIn('downloader.ini', ui.get_value('needs_save_file_list'))
+        sut.save(ui)
+
+        downloader_sections = read_ini_contents(fs.files[downloader_ini.lower()]['content']).sections()
+        self.assertIn('llapi_folder', downloader_sections)
+        self.assertNotIn('llapi_folder', sut._config_provider.get().database_sources)
+
+    def test_save__when_disabling_db_in_nested_file_with_canonical_basename___removes_nested_file(self):
+        extra_path = f'{MEDIA_FAT}/downloader/{DOWNLOADER_BIOS_DB_INI}'
+        sut, ui, fs = tester(files={
+            downloader_ini: {'content': default_downloader_ini_content()},
+            extra_path: {'content': f'[llapi_folder]\ndb_url = {all_dbs("").LLAPI_FOLDER.db_url}\n'},
+        })
+
+        self.assertEqual('true', ui.get_value('llapi_updater'))
+        ui.set_value('llapi_updater', 'false')
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn(f'downloader/{DOWNLOADER_BIOS_DB_INI}', ui.get_value('needs_save_file_list'))
+        self.assertNotIn(extra_path.lower(), fs.files)
+        self.assertNotIn('llapi_folder', sut._config_provider.get().database_sources)
+
+    def test_save__when_db_lives_in_extra_downloader_underscore_ini_and_stays_enabled___is_not_duplicated_into_downloader_ini(self):
+        extra_path = f'{MEDIA_FAT}/downloader_custom.ini'
+        original_extra_content = f'[llapi_folder]\ndb_url = {all_dbs("").LLAPI_FOLDER.db_url}\n'
+        sut, ui, fs = tester(files={
+            downloader_ini: {'content': default_downloader_ini_content()},
+            extra_path: {'content': original_extra_content},
+        })
+
+        self.assertEqual('true', ui.get_value('llapi_updater'))
+
+        ui.set_value('mrext/all', 'true')  # unrelated change to force a save while llapi stays enabled
+        sut.save(ui)
+
+        downloader_sections = read_ini_contents(fs.files[downloader_ini.lower()]['content']).sections()
+        self.assertNotIn('llapi_folder', downloader_sections)
+        self.assertIn('mrext/all', downloader_sections)
+        self.assertEqual(original_extra_content, fs.files[extra_path.lower()]['content'])
+
 def duke3d_add_effect():
     # Declared exactly as in the settings screen model.
     return {"type": "mister_ini_add", "variable": "MultiDatabases/duke3d",
+            "target": {"DUKE3D": {"main": "Mister_duke3d", "vga_scaler": "0"},
+                       "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"}}}
+
+
+def duke3d_immediate_del_effect():
+    # Declared exactly as in the settings screen model's uninstall on_success chain.
+    return {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/duke3d",
             "target": {"DUKE3D": {"main": "Mister_duke3d", "vga_scaler": "0"},
                        "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"}}}
 

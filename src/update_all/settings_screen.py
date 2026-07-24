@@ -24,16 +24,17 @@ import sys
 import time
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Optional, Final, List
+from typing import Optional, Final, List, Dict
 
 from update_all.analogue_pocket.firmware_update import pocket_firmware_update
 from update_all.analogue_pocket.pocket_backup import pocket_backup
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
-    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_downloader_temp_ini, FILE_MiSTer_delme, \
+    ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_MiSTer_delme, \
     MEDIA_FAT, FILE_update_all_chip_id_linker_log, FILE_update_all_chip_id_rbf, FILE_update_all_launcher, FILE_update_all_pyz
-from update_all.databases import db_ids_by_model_variables, DB_ID_NAMES_TXT, ALL_DB_IDS
+from update_all.databases import db_ids_by_model_variables, model_variables_by_db_id, DB_ID_NAMES_TXT, ALL_DB_IDS
+from update_all.downloader_fingerprints import read_installed_db_ids, try_read_installed_db_ids
 from update_all.ini_repository import SEPARATE_DB_INI_FILES
 from update_all.encryption import Encryption
 from update_all.ini_repository import IniRepository
@@ -63,6 +64,8 @@ from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
 from update_all.ui_engine_dialog_application import DialogSectionFactory
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string, gather_effects_by_type
+from update_all.uninstall_db_service import UninstallDbService
+from update_all.uninstall_db_ui import UninstallDbMenu
 
 
 CHIP_ID_DEBUG_LOG_PATH: Final[str] = f'{MEDIA_FAT}/{FILE_update_all_chip_id_linker_log}'
@@ -92,10 +95,11 @@ class SettingsScreen(UiApplication):
                  ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService, encryption: Encryption,
                  retroaccount: RetroAccountService, retroachievements_service: RetroAchievementsService,
                  mister_ini_repository: MisterIniRepository,
-                 zaparoo_service: ZaparooService):
+                 zaparoo_service: ZaparooService, uninstall_db_service: UninstallDbService):
         self._logger = logger
         self._retroachievements_service = retroachievements_service
         self._zaparoo_service = zaparoo_service
+        self._uninstall_db_service = uninstall_db_service
         self._mister_ini_repository = mister_ini_repository
         self._config_provider = config_provider
         self._file_system = file_system
@@ -199,6 +203,16 @@ class SettingsScreen(UiApplication):
         for variable in gather_variable_declarations(settings_screen_model(), "separate_db"):
             ui.set_value(variable, 'true' if db_ids[variable] in config.databases else 'false')
 
+        installed_db_ids = self._read_installed_db_ids()
+        for db_id, installed in installed_db_ids.items():
+            ui.set_value(f'{db_id}_installed', 'true' if installed else 'false')
+        manuals_installed = any(
+            installed
+            for db_id, installed in installed_db_ids.items()
+            if db_id.lower().startswith('ajgowans/manualsdb-')
+        )
+        ui.set_value('ajgowans_manuals_dbs_installed', 'true' if manuals_installed else 'false')
+
         local_store = self._store_provider.get()
         ui.set_value('ui_theme', local_store.get_theme())
         mirror = local_store.get_mirror()
@@ -261,7 +275,6 @@ class SettingsScreen(UiApplication):
             'calculate_is_test_spinner_firmware_applied': lambda effect: self.calculate_is_test_spinner_firmware_applied(ui),
             'test_unstable_spinner_firmware': lambda effect: self.test_unstable_spinner_firmware(ui),
             'save': lambda effect: self.save(ui),
-            'prepare_exit_dont_save_and_run': lambda effect: self.prepare_exit_dont_save_and_run(ui),
             'calculate_file_exists': lambda effect: self.calculate_file_exists(ui, effect),
             'remove_file': lambda effect: self.remove_file(ui, effect),
             'calculate_arcade_organizer_folders': lambda effect: self.calculate_arcade_organizer_folders(ui),
@@ -290,6 +303,14 @@ class SettingsScreen(UiApplication):
             'device_login': lambda drawer, _interpolator, data: self._retroaccount.create_device_login_ui(drawer, device_login_renderer, data),
             'mister_video_mode': lambda drawer, _interpolator, data: MisterVideoModeMenu(drawer, self._mister_video_mode_service, data),
             'mister_video_adjust': lambda drawer, _interpolator, data: MisterVideoAdjustMenu(drawer, self._mister_video_mode_service, data),
+            'uninstall_db': lambda drawer, _interpolator, data: UninstallDbMenu(
+                drawer,
+                self._uninstall_db_service,
+                self._ui_runtime,
+                self._logger,
+                lambda db_ids: self.reconcile_failed_bulk_uninstall(ui, db_ids),
+                data,
+            ),
         })
 
     def calculate_file_exists(self, ui, effect) -> None:
@@ -310,19 +331,37 @@ class SettingsScreen(UiApplication):
 
     def mister_ini_add(self, ui: UiContext, effect) -> None:
         spec = parse_mister_ini_add(effect)
-        if ui.get_value(spec.variable) == 'true':
-            self._pending_mister_ini_edits[spec.variable] = spec
-            self._logger.debug(f"mister_ini_add: armed '{spec.variable}' -> {spec.target}")
-        else:
+        if ui.get_value(spec.variable) != 'true':
             self._logger.debug(f"mister_ini_add: not armed '{spec.variable}' (value is '{ui.get_value(spec.variable)}')")
+            return
+        if effect.get('immediate'):
+            self._apply_mister_ini_edit_now(spec)
+            return
+        self._pending_mister_ini_edits[spec.variable] = spec
+        self._logger.debug(f"mister_ini_add: armed '{spec.variable}' -> {spec.target}")
 
     def mister_ini_del(self, ui: UiContext, effect) -> None:
         spec = parse_mister_ini_del(effect)
-        if ui.get_value(spec.variable) == 'false':
-            self._pending_mister_ini_edits[spec.variable] = spec
-            self._logger.debug(f"mister_ini_del: armed '{spec.variable}' -> {spec.target}")
-        else:
+        if ui.get_value(spec.variable) != 'false':
             self._logger.debug(f"mister_ini_del: not armed '{spec.variable}' (value is '{ui.get_value(spec.variable)}')")
+            return
+        if effect.get('immediate'):
+            self._apply_mister_ini_edit_now(spec)
+            return
+        self._pending_mister_ini_edits[spec.variable] = spec
+        self._logger.debug(f"mister_ini_del: armed '{spec.variable}' -> {spec.target}")
+
+    def _apply_mister_ini_edit_now(self, spec) -> None:
+        # Executed directly instead of being scheduled to save time. Used by the
+        # uninstall_db on_success chain, where the DB has already been removed from
+        # disk so its MiSTer.ini edit must be undone right now, not on a later save.
+        changed, contents = apply(self._mister_ini_repository, spec, self._logger)
+        self._pending_mister_ini_edits.pop(spec.variable, None)
+        hooks = self._mister_ini_add_hooks if isinstance(spec, MisterIniAdd) else self._mister_ini_del_hooks
+        hook = hooks.get(spec.variable)
+        if hook is not None:
+            hook(changed=changed, contents=contents)
+        self._logger.debug(f"mister_ini edits: applied immediately '{spec.variable}' -> {spec.target}")
 
     def _active_mister_ini_edits(self, ui: UiContext):
         # Adds apply as long as their variable is 'true', fired or not. Fired specs
@@ -806,13 +845,15 @@ class SettingsScreen(UiApplication):
     def calculate_needs_save(self, ui: UiContext) -> None:
         needs_save_file_set = set()
 
+        current_config = self._config_provider.get()
+        self._ini_repository.refresh_database_sources(current_config)
+
         temp_config = Config()
         self._copy_temp_save_to_config(ui, temp_config)
         if self._ini_repository.does_downloader_ini_need_save(temp_config):
             needs_save_file_set.add("downloader.ini")
 
         db_ids = db_ids_by_model_variables()
-        current_config = self._config_provider.get()
         for variable in gather_variable_declarations(settings_screen_model(), "separate_db"):
             db_id = db_ids[variable]
             was_active = db_id in current_config.databases
@@ -821,6 +862,11 @@ class SettingsScreen(UiApplication):
                 ini_filename = SEPARATE_DB_INI_FILES.get(db_id.lower())
                 if ini_filename is not None:
                     needs_save_file_set.add(ini_filename)
+
+        now_active = {db_id.lower() for db_id in temp_config.databases}
+        for db_id in {db_id.lower() for db_id in current_config.databases} - now_active:
+            for extra_file in current_config.database_sources.get(db_id, []):
+                needs_save_file_set.add(extra_file)
 
         arcade_roms_db_id = ALL_DB_IDS['ARCADE_ROMS']
         if arcade_roms_db_id in current_config.databases and ui.get_value('arcade_roms_db_downloader') == 'true':
@@ -859,9 +905,8 @@ class SettingsScreen(UiApplication):
         ui.set_value('needs_save_file_list', needs_save_file_list)
 
     def save(self, ui: UiContext) -> None:
-        self._copy_ui_options_to_current_config(ui)
-
         config = self._config_provider.get()
+        self._copy_ui_options_to_current_config(ui)
 
         if self._does_arcade_oganizer_need_save(ui):
             new_ao_ini = {}
@@ -875,8 +920,7 @@ class SettingsScreen(UiApplication):
         elif config.arcade_organizer != Config().arcade_organizer:
             self._ini_repository.write_arcade_organizer_active_at_arcade_organizer_ini(config)
 
-        self._ini_repository.write_downloader_ini(config)
-        self._ini_repository.write_separate_db_ini_files(config)
+        self._ini_repository.write_database_configuration(config)
 
         local_store = self._store_provider.get()
         self._fill_store(local_store, ui, config)
@@ -903,6 +947,47 @@ class SettingsScreen(UiApplication):
 
     def _has_active_jtbeta_access(self) -> bool:
         return self._retroaccount.jtbeta_access_sync_state() == BenefitState.ACTIVE
+
+    def _read_installed_db_ids(self) -> Dict[str, bool]:
+        installed_keys = read_installed_db_ids(self._file_system, self._logger)
+        db_ids_by_variable = db_ids_by_model_variables()
+        model_variables = set(gather_variable_declarations(settings_screen_model()))
+        return {
+            db_id: db_id.lower() in installed_keys
+            for variable, db_id in db_ids_by_variable.items()
+            if variable in model_variables
+        }
+
+    def reconcile_failed_bulk_uninstall(self, ui: UiContext, db_ids: tuple[str, ...]) -> None:
+        installed_db_ids = try_read_installed_db_ids(self._file_system, self._logger)
+        if installed_db_ids is None:
+            self._logger.debug('Could not reconcile database state after failed bulk uninstall.')
+            return
+
+        config = self._config_provider.get()
+        variables_by_db_id = model_variables_by_db_id()
+        manuals_changed = False
+        for db_id in db_ids:
+            if (
+                    ui.get_value(f'{db_id}_installed') != 'true'
+                    or db_id.lower() in installed_db_ids
+            ):
+                continue
+
+            config.set_database_enabled(db_id, False)
+            ui.set_value(variables_by_db_id[db_id], 'false')
+            ui.set_value(f'{db_id}_installed', 'false')
+            manuals_changed = manuals_changed or db_id.startswith('ajgowans/manualsdb-')
+
+        if not manuals_changed:
+            return
+
+        self._set_ajgowans_manuals_dbs_general_selector(ui, 'false')
+        manuals_installed = any(
+            ui.get_value(f'{db_id}_installed') == 'true'
+            for db_id in self._ajgowans_manuals_db_variables
+        )
+        ui.set_value('ajgowans_manuals_dbs_installed', 'true' if manuals_installed else 'false')
 
     def _fill_store(self, store: LocalStore, ui: UiContext, config: Config):
         store.set_theme(ui.get_value('ui_theme'))
@@ -935,7 +1020,6 @@ class SettingsScreen(UiApplication):
 
     def _copy_temp_save_to_config(self, ui: UiContext, config: Config) -> None:
         db_ids = db_ids_by_model_variables()
-        config.databases.clear()
         for variable in self._all_config_variables:
             value = dynamic_convert_string(ui.get_value(variable))
             if variable in db_ids:
@@ -945,19 +1029,28 @@ class SettingsScreen(UiApplication):
                     continue
                 setattr(config, variable, value)
 
+        enabled_db_ids = set()
         for variable in gather_variable_declarations(settings_screen_model(), "db"):
             if ui.get_value(variable) == 'false':
                 continue
 
-            config.databases.add(db_ids[variable])
+            enabled_db_ids.add(db_ids[variable])
 
         for variable in gather_variable_declarations(settings_screen_model(), "separate_db"):
             if ui.get_value(variable) == 'false':
                 continue
 
-            config.databases.add(db_ids[variable])
+            enabled_db_ids.add(db_ids[variable])
 
-        config.databases.add(ALL_DB_IDS['UPDATE_ALL_MISTER'])
+        enabled_db_ids.add(ALL_DB_IDS['UPDATE_ALL_MISTER'])
+
+        # Copy source metadata so save comparisons do not mutate it before the repository refreshes
+        # the metadata from disk.
+        config.database_sources = {
+            db_id: list(relative_paths)
+            for db_id, relative_paths in self._config_provider.get().database_sources.items()
+        }
+        config.replace_enabled_databases(enabled_db_ids)
 
     @cached_property
     def _all_config_variables(self):
@@ -1099,16 +1192,6 @@ class SettingsScreen(UiApplication):
 
     def prepare_exit_without_save(self) -> None:
         self._mister_video_mode_service.restore_mode_before_unsaved_keeps()
-
-    def prepare_exit_dont_save_and_run(self, ui):
-        self._mister_video_mode_service.restore_mode_before_unsaved_keeps()
-        self._copy_ui_options_to_current_config(ui)
-        config = self._config_provider.get()
-        config.temporary_downloader_ini = True
-        self._logger.configure(config)
-        self._ini_repository.write_downloader_ini(config, FILE_downloader_temp_ini)
-        self._ini_repository.write_separate_db_ini_files(config, str(Path(FILE_downloader_temp_ini).parent))
-        self._logger.debug(f'Written temporary {FILE_downloader_temp_ini} file.')
 
     def pocket_firmware_update(self, ui):
         self._ui_runtime.interrupt()

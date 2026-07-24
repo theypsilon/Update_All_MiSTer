@@ -87,20 +87,22 @@ class ConfigReader:
         config.boot_time = config.start_time - self._env.get('real_start_time')
 
     def fill_config_with_database_sections(self, config: Config, downloader_ini: Dict[str, IniParser]) -> None:
-        separate_ini = self._ini_repository.read_separate_db_ini_files()
-        all_ini = {**downloader_ini, **separate_ini}
+        extra_ini, extra_sources = self._ini_repository.read_extra_db_ini_files()
+        # Downloader reads downloader.ini first and ignores duplicate db_ids from later drop-ins.
+        all_ini = {**extra_ini, **downloader_ini}
+        config.database_sources = extra_sources
 
         for db_id, variable in model_variables_by_db_id().items():
             is_present = db_id.lower() in all_ini
             config.__setattr__(variable, is_present)
             if is_present:
-                config.databases.add(db_id)
+                config.set_database_enabled(db_id, True)
 
         if DB_ID_MREXT_TAPTO.lower() in all_ini:
-            config.databases.add(DB_ID_MREXT_TAPTO)
+            config.set_database_enabled(DB_ID_MREXT_TAPTO, True)
 
         db_defs = all_dbs(config.mirror)
-        config.databases.add(ALL_DB_IDS['UPDATE_ALL_MISTER'])
+        config.set_database_enabled(ALL_DB_IDS['UPDATE_ALL_MISTER'], True)
 
         if DB_ID_DISTRIBUTION_MISTER in all_ini:
             parser = all_ini[DB_ID_DISTRIBUTION_MISTER]

@@ -60,7 +60,7 @@ def _crt_direct_video_warning(target): return {
 }
 
 
-_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 23506059264  # ~21.9 GB at 128KB cluster, see estimate_manuals_db_space.json
+_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22265593856  # ~20.7 GB at 128KB cluster, see estimate_manuals_db_space.json
 
 
 def _enable_all_manuals_confirm(): return {
@@ -68,7 +68,7 @@ def _enable_all_manuals_confirm(): return {
     "header": "Enable All Manuals DBs?",
     "text": [
         "This will activate all manuals databases.",
-        "That is a large download, 8010 files and around 22 GB.",
+        "That is a large download, 8102 files and around 20.7 GB.",
         "It will take hours!",
         "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
         "Are you sure you want to continue?",
@@ -88,7 +88,7 @@ def _not_enough_space_for_manuals_warning(): return {
     "header": "Not Enough Free Space!",
     "alert_level": "black",
     "text": [
-        "Enabling all manuals DBs requires 8010 files and around 22 GB.",
+        "Enabling all manuals DBs requires 8102 files and around 20.7 GB.",
         "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
         "Installing all manuals will likely fill up your storage and cause problems.",
         "Free up space or enable only individual manuals instead.",
@@ -332,10 +332,6 @@ def _zaparoo_active_frontend_prompt(): return {
 
 def _try_toggle_retroachievements_db(): return [
     {"type": "retroachievements_db_toggle"},
-    # Fires right after the toggle: arms the MiSTer.ini addition when the DB is on;
-    # when toggled off it is a no-op, and a pending addition gets pruned at save time.
-    # There is intentionally no mister_ini_del for RA: the [RA_*] block is
-    # non-invasive, so disabling the DB leaves it in place.
     {"type": "mister_ini_add", "variable": "theypsilon/RetroAchievementsDB_MiSTer",
      "target": {"RA_*": {"main": "MiSTer_RA"}}},
     {
@@ -347,6 +343,144 @@ def _try_toggle_retroachievements_db(): return [
         "install_failed": [_retroachievements_cfg_install_failed_message()],
     },
 ]
+
+
+def _uninstall_db_action(condition, db_ids, title, text, success_effects): return {
+    "if": condition,
+    "chain": [{
+        "ui": "confirm",
+        "header": f"Uninstall {title}?",
+        "preselected_action": "No",
+        "text": text,
+        "actions": [
+            {"title": "Yes", "type": "fixed", "fixed": [
+                {
+                    "ui": "uninstall_db",
+                    "db_ids": db_ids,
+                    "title": title,
+                    "on_success": [
+                        *success_effects,
+                        {"type": "navigate", "target": "back"},
+                    ],
+                },
+            ]},
+            {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+        ],
+    }],
+}
+
+
+def uninstall_db_action(variable, db_id, title, on_success=None):
+    return _uninstall_db_action(
+        f'{db_id}_installed',
+        [db_id],
+        title,
+        [
+            "This will uninstall the database:",
+            f"[{db_id}]",
+            " ",
+            "All its contents will be deleted from your system.",
+            "Do you really want to uninstall it?",
+        ],
+        [
+            {"type": "set_variable", "target": variable, "value": "false"},
+            {"type": "set_variable", "target": f'{db_id}_installed', "value": "false"},
+            *(on_success or []),
+        ],
+    )
+
+
+def uninstall_db_action_for_id(db_id, title, on_success=None):
+    return uninstall_db_action(db_id, db_id, title, on_success)
+
+
+
+def uninstall_db_action_manuals(variable, db_ids, title, on_success=None):
+    return _uninstall_db_action(
+        variable,
+        db_ids,
+        title,
+        [
+            f"This will uninstall {len(db_ids)} manuals databases.",
+            " ",
+            "All their contents will be deleted from your system.",
+            "Do you really want to uninstall them?",
+        ],
+        [
+            *[{"type": "set_variable", "target": db_id, "value": "false"} for db_id in db_ids],
+            *[{"type": "set_variable", "target": f'{db_id}_installed', "value": "false"} for db_id in db_ids],
+            {"type": "set_variable", "target": variable, "value": "false"},
+            *(on_success or []),
+        ],
+    )
+
+
+def _manual_db_actions(db_id, title, ok=None):
+    if ok is None:
+        ok = [
+            {"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"},
+            {"type": "rotate_variable", "target": db_id},
+        ]
+
+    return {
+        "uninstall": uninstall_db_action_for_id(
+            db_id,
+            title,
+            on_success=[{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}],
+        ),
+        "ok": ok,
+    }
+
+
+def _manual_db_variables(): return {
+    "ajgowans/manualsdb-3do": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-arcadia2001": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-atari2600": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-atari5200": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-atari7800": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-atarilynx": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-atarixegs": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-avision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-ballyastrocade": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-bbcbridge": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-cdi": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-channelf": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-colecovision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-creativision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-fds": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-gameandwatch": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-gameboy": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-gamegear": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-gba": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-gbc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-intellivision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-jaguar": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-jaguarcd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-lcdhandhelds": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-megadrive": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-n64": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-neogeoaes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-neogeocd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-nes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-ngp": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-ngpc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-odyssey2": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-pokemonmini": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-psx": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-pyuutajr": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-sega32x": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-segacd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-segasaturn": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-segasg1000": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-sms": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-snes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-supervision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-turbografx16": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-turbografxcd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-vc4000": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-vectrex": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-wonderswanc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+}
 
 
 def _retroachievements_cfg_installed_message(): return {
@@ -416,10 +550,10 @@ def settings_screen_model():
     },
     "variables": {
         # Global variables
-        "update_all_version": {"default": "2.8"},
+        "update_all_version": {"default": "2.9"},
         "device_label": {"default": ""},
         "zaparoo_frontend_active": {"default": "false", "values": ["false", "true"]},
-        "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},        
+        "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
         "download_beta_cores": {"group": "jt_ini", "default": "false", "values": ["false", "true"]},
@@ -702,7 +836,9 @@ def settings_screen_model():
                 {
                     "title": "# Distribution Enabled",
                     "description": "{main_updater:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "main_updater"}]}
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "main_updater"}],
+                    }
                 },
                 {
                     "title": "# Cores versions",
@@ -718,7 +854,10 @@ def settings_screen_model():
                 {
                     "title": "# JTCORES Enabled",
                     "description": "{jotego_updater:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "jotego_updater"}]}
+                    "actions": {
+                        "uninstall": uninstall_db_action("jotego_updater", "jtcores", "JTCORES for MiSTer"),
+                        "ok": [{"type": "rotate_variable", "target": "jotego_updater"}],
+                    }
                 },
                 {
                     "title": "# Install Private Releases",
@@ -737,7 +876,11 @@ def settings_screen_model():
                 {
                     "title": "# Arcade ROMs Database Enabled",
                     "description": "{arcade_roms_db_downloader:yesno}",
-                    "actions": {"ok": [_roms_copyright_notice('arcade_roms_db_downloader')]}
+                    "actions": {
+                        "uninstall": uninstall_db_action(
+                            "arcade_roms_db_downloader", "arcade_roms_db", "Arcade ROMs Database"),
+                        "ok": [_roms_copyright_notice('arcade_roms_db_downloader')],
+                    }
                 },
                 {
                     "title": "# Include HBMAME ROMs",
@@ -790,12 +933,17 @@ def settings_screen_model():
                 {
                     "title": "# Names TXT",
                     "description": "{names_txt_updater:yesno}",
-                    "actions": {"ok": _try_toggle_update_names_txt()}
+                    "actions": {
+                        "ok": _try_toggle_update_names_txt(),
+                    }
                 },
                 {
                     "title": "# Arcade Names TXT",
                     "description": "{arcade_names_txt:yesno}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "arcade_names_txt"}]}
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id("arcade_names_txt", "Arcade Names TXT"),
+                        "ok": [{"type": "rotate_variable", "target": "arcade_names_txt"}],
+                    }
                 },
                 {
                     "title": "# Region",
@@ -880,7 +1028,7 @@ def settings_screen_model():
                 {
                     "title": "# Coin-Op Collection",
                     "description": "{coin_op_collection_downloader:enabled}",
-                    "actions": {
+                    "actions": {"uninstall": uninstall_db_action("coin_op_collection_downloader", "Coin-OpCollection/Distribution-MiSTerFPGA", "Coin-Op Collection"),
                         "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
                         "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
                     }
@@ -888,7 +1036,10 @@ def settings_screen_model():
                 {
                     "title": "# RetroAchievements Cores",
                     "description": "{theypsilon/RetroAchievementsDB_MiSTer:enabled} Maintainer: odelot",
-                    "actions": {
+                    "actions": {"uninstall": uninstall_db_action_for_id("theypsilon/RetroAchievementsDB_MiSTer", "RetroAchievements Cores", on_success=[
+                        {"type": "mister_ini_del", "immediate": True, "variable": "theypsilon/RetroAchievementsDB_MiSTer",
+                         "target": {"RA_*": {"main": "MiSTer_RA"}}},
+                    ]),
                         "ok": _try_toggle_retroachievements_db(),
                         "toggle": _try_toggle_retroachievements_db(),
                         "info": [{
@@ -900,35 +1051,37 @@ def settings_screen_model():
                 },
                 {
                     "title": "# Physical CD Support",
-                    "description": "{MultiDatabases/physical-disc:enabled} Load discs from a USB optical drive",
-                    "actions": {"ok": [
-                        {
+                    "description": "{MultiDatabases/physical-disc:enabled} Maintainer: Anime0t4ku",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/physical-disc", "Physical CD Support", on_success=[
+                        {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/physical-disc",
+                         "target": {"CD-*": {"main": "MiSTer_Physical-CD"}}},
+                    ]),
+                        "ok": [{
                             "type": "condition",
                             "variable": "MultiDatabases/physical-disc",
                             "true": [{"type": "rotate_variable", "target": "MultiDatabases/physical-disc"}],
-                            "false": [{
-                                "ui": "message",
-                                "header": "Physical CD Support",
-                                "text": [
-                                    "Load games from your USB CD-drive",
-                                    " ",
-                                    "Keep other disc readers (Zaparoo)",
-                                    "disabled during playback.",
-                                ],
-                                "effects": [
-                                    {"type": "rotate_variable", "target": "MultiDatabases/physical-disc"},
-                                    {"type": "mister_ini_add", "variable": "MultiDatabases/physical-disc",
-                                     "target": {"CD-*": {"main": "MiSTer_Physical-CD"}}},
-                                    {"type": "navigate", "target": "back"},
-                                ],
-                            }],
-                        },
-                    ]}
+                            "false": [
+                                {"type": "rotate_variable", "target": "MultiDatabases/physical-disc"},
+                                {"type": "mister_ini_add", "variable": "MultiDatabases/physical-disc",
+                                 "target": {"CD-*": {"main": "MiSTer_Physical-CD"}}},
+                            ],
+                        }],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Physical CD Support",
+                            "text": [
+                                "Load games from your USB CD-drive",
+                                " ",
+                                "Keep other disc readers (Zaparoo)",
+                                "disabled during playback.",
+                            ],
+                        }],
+                    }
                 },
                 {
                     "title": "# Unofficial Distribution",
                     "description": "{unofficial_updater:enabled} Maintainer: theypsilon",
-                    "actions": {
+                    "actions": {"uninstall": uninstall_db_action("unofficial_updater", "theypsilon_unofficial_distribution", "Unofficial Distribution"),
                         "ok": [{"type": "rotate_variable", "target": "unofficial_updater"}],
                         "info": [{
                             "ui": "message",
@@ -944,7 +1097,7 @@ def settings_screen_model():
                 {
                     "title": "# Arcade Offset",
                     "description": "{arcade_offset_downloader:enabled} Maintainer: Toya",
-                    "actions": {
+                    "actions": {"uninstall": uninstall_db_action("arcade_offset_downloader", "arcade_offset_folder", "Arcade Offset"),
                         "ok": [{"type": "rotate_variable", "target": "arcade_offset_downloader"}],
                         "info": [{
                             "ui": "message",
@@ -956,7 +1109,7 @@ def settings_screen_model():
                 {
                     "title": "# LLAPI Forks Folder",
                     "description": "{llapi_updater:enabled}",
-                    "actions": {
+                    "actions": {"uninstall": uninstall_db_action("llapi_updater", "llapi_folder", "LLAPI Forks Folder"),
                         "ok": [{"type": "rotate_variable", "target": "llapi_updater"}],
                         "info": [{
                             "ui": "message",
@@ -968,7 +1121,7 @@ def settings_screen_model():
                 {
                     "title": "# Y/C Builds",
                     "description": "{MikeS11/YC_Builds-MiSTer:enabled} Maintainer: MikeS11",
-                    "actions": {
+                    "actions": {"uninstall": uninstall_db_action_for_id("MikeS11/YC_Builds-MiSTer", "Y/C Builds"),
                         "ok": [{
                             "type": "condition",
                             "variable": "MikeS11/YC_Builds-MiSTer",
@@ -1001,7 +1154,7 @@ def settings_screen_model():
                 {
                     "title": "# agg23's MiSTer Cores",
                     "description": "{agg23_db:enabled}",
-                    "actions": {
+                    "actions": {"uninstall": uninstall_db_action_for_id("agg23_db", "agg23's MiSTer Cores"),
                         "ok": [{"type": "rotate_variable", "target": "agg23_db"}],
                         "info": [{
                             "ui": "message",
@@ -1012,61 +1165,45 @@ def settings_screen_model():
                 },
                 {
                     "title": "# Paprium MegaDrive",
-                    "description": "{MultiDatabases/paprium:enabled} Paprium-compatible Mega Drive core",
-                    "actions": {"ok": [
-                        {
-                            "type": "condition",
-                            "variable": "MultiDatabases/paprium",
-                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/paprium"}],
-                            "false": [{
-                                "ui": "message",
-                                "header": "Paprium MegaDrive",
-                                "text": [
-                                    "Mega Drive core with Paprium support.",
-                                    " ",
-                                    "Place your own Paprium ROM and WAV",
-                                    "files in games/PapriumMD/",
-                                ],
-                                "effects": [
-                                    {"type": "rotate_variable", "target": "MultiDatabases/paprium"},
-                                    {"type": "navigate", "target": "back"},
-                                ],
-                            }],
-                        },
-                    ]}
+                    "description": "{MultiDatabases/paprium:enabled} Maintainer: Pezz82",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/paprium", "Paprium MegaDrive"),
+                        "ok": [{"type": "rotate_variable", "target": "MultiDatabases/paprium"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Paprium MegaDrive",
+                            "text": [
+                                "Mega Drive core with Paprium support.",
+                                " ",
+                                "Place your own Paprium ROM and WAV",
+                                "files in games/PapriumMD/",
+                            ],
+                        }],
+                    }
                 },
                 {
                     "title": "# MMS2 GB Core",
                     "description": "{MultiDatabases/mms2-gb:enabled} Physical Game Boy cartridges",
-                    "actions": {"ok": [
-                        {
-                            "type": "condition",
-                            "variable": "MultiDatabases/mms2-gb",
-                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/mms2-gb"}],
-                            "false": [{
-                                "ui": "message",
-                                "header": "MMS2 GB Core",
-                                "text": [
-                                    "Plays physical Game Boy and Game Boy",
-                                    "Color cartridges.",
-                                    " ",
-                                    "Requires a Heber Multisystem 2 with",
-                                    "compatible cartridge hardware.",
-                                    "Hold the USER button while inserting",
-                                    "or removing a cartridge.",
-                                ],
-                                "effects": [
-                                    {"type": "rotate_variable", "target": "MultiDatabases/mms2-gb"},
-                                    {"type": "navigate", "target": "back"},
-                                ],
-                            }],
-                        },
-                    ]}
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/mms2-gb", "MMS2 GB Core"),
+                        "ok": [{"type": "rotate_variable", "target": "MultiDatabases/mms2-gb"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "MMS2 GB Core",
+                            "text": [
+                                "Plays physical Game Boy and Game Boy",
+                                "Color cartridges.",
+                                " ",
+                                "Requires a Heber Multisystem 2 with",
+                                "compatible cartridge hardware.",
+                                "Hold the USER button while inserting",
+                                "or removing a cartridge.",
+                            ],
+                        }],
+                    }
                 },
                 {
                     "title": "# Alt Cores",
                     "description": "{ajgowans/alt-cores:enabled}",
-                    "actions": {
+                    "actions": {"uninstall": uninstall_db_action_for_id("ajgowans/alt-cores", "Alt Cores"),
                         "ok": [{"type": "rotate_variable", "target": "ajgowans/alt-cores"}],
                         "info": [{
                             "ui": "message",
@@ -1080,7 +1217,7 @@ def settings_screen_model():
                 {
                     "title": "# Dual RAM Console Cores",
                     "description": "{TheJesusFish/Dual-Ram-Console-Cores:enabled} Maintainer: TheJesusFish",
-                    "actions": {
+                    "actions": {"uninstall": uninstall_db_action_for_id("TheJesusFish/Dual-Ram-Console-Cores", "Dual RAM Console Cores"),
                         "ok": [{
                             "type": "condition",
                             "variable": "TheJesusFish/Dual-Ram-Console-Cores",
@@ -1111,7 +1248,7 @@ def settings_screen_model():
                 {
                     "title": "# MiSTer Frontier",
                     "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} Hybrid FPGA+ARM cores",
-                    "actions": {
+                    "actions": {"uninstall": uninstall_db_action_for_id("MiSTerOrganize/MiSTer_Frontier", "MiSTer Frontier"),
                         "ok": [{"type": "rotate_variable", "target": "MiSTerOrganize/MiSTer_Frontier"}],
                         "info": [{
                             "ui": "message",
@@ -1131,144 +1268,143 @@ def settings_screen_model():
                 {
                     "title": "# DreamSTer",
                     "description": "{MultiDatabases/dreamster:enabled} Hybrid FPGA/ARM Dreamcast emulator",
-                    "actions": {"ok": [
-                        {
-                            "type": "condition",
-                            "variable": "MultiDatabases/dreamster",
-                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/dreamster"}],
-                            "false": [{
-                                "ui": "message",
-                                "header": "DreamSTer",
-                                "text": [
-                                    "Hybrid FPGA/ARM Dreamcast emulator.",
-                                    " ",
-                                    "Requires your own Dreamcast BIOS files:",
-                                    "dc_boot.bin and dc_flash.bin.",
-                                    "Copy them to games/Dreamcast/",
-                                ],
-                                "effects": [
-                                    {"type": "rotate_variable", "target": "MultiDatabases/dreamster"},
-                                    {"type": "navigate", "target": "back"},
-                                ],
-                            }],
-                        },
-                    ]}
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/dreamster", "DreamSTer"),
+                        "ok": [{"type": "rotate_variable", "target": "MultiDatabases/dreamster"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "DreamSTer",
+                            "text": [
+                                "Hybrid FPGA/ARM Dreamcast emulator.",
+                                " ",
+                                "Requires your own Dreamcast BIOS files:",
+                                "dc_boot.bin and dc_flash.bin.",
+                                "Copy them to games/Dreamcast/",
+                            ],
+                        }],
+                    }
                 },
                 {
                     "title": "# Sonic Mania MiSTer",
                     "description": "{MultiDatabases/sonic-mania:enabled} Hybrid FPGA/ARM Sonic Mania port",
-                    "actions": {"ok": [
-                        {
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/sonic-mania", "Sonic Mania MiSTer", on_success=[
+                        {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/sonic-mania",
+                         "target": {
+                             "Sonic Mania": {"main": "MiSTer_SonicMania"},
+                             "Sonic Mania (4:3)": {"main": "MiSTer_SonicMania"},
+                         }},
+                    ]),
+                        "ok": [{
                             "type": "condition",
                             "variable": "MultiDatabases/sonic-mania",
                             "true": [{"type": "rotate_variable", "target": "MultiDatabases/sonic-mania"}],
-                            "false": [{
-                                "ui": "message",
-                                "header": "Sonic Mania MiSTer",
-                                "text": [
-                                    "Hybrid FPGA/ARM Sonic Mania port.",
-                                    " ",
-                                    "Requires Data.rsdk from your own",
-                                    "Sonic Mania installation.",
-                                    "Copy it to games/sonic-mania/Data.rsdk",
-                                ],
-                                "effects": [
-                                    {"type": "rotate_variable", "target": "MultiDatabases/sonic-mania"},
-                                    {"type": "mister_ini_add", "variable": "MultiDatabases/sonic-mania",
-                                     "target": {
-                                         "Sonic Mania": {"main": "MiSTer_SonicMania"},
-                                         "Sonic Mania (4:3)": {"main": "MiSTer_SonicMania"},
-                                     }},
-                                    {"type": "navigate", "target": "back"},
-                                ],
-                            }],
-                        },
-                    ]}
+                            "false": [
+                                {"type": "rotate_variable", "target": "MultiDatabases/sonic-mania"},
+                                {"type": "mister_ini_add", "variable": "MultiDatabases/sonic-mania",
+                                 "target": {
+                                     "Sonic Mania": {"main": "MiSTer_SonicMania"},
+                                     "Sonic Mania (4:3)": {"main": "MiSTer_SonicMania"},
+                                 }},
+                            ],
+                        }],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Sonic Mania MiSTer",
+                            "text": [
+                                "Hybrid FPGA/ARM Sonic Mania port.",
+                                " ",
+                                "Requires Data.rsdk from your own",
+                                "Sonic Mania installation.",
+                                "Copy it to games/sonic-mania/Data.rsdk",
+                            ],
+                        }],
+                    }
                 },
                 {
                     "title": "# MiSTer Duke3D",
                     "description": "{MultiDatabases/duke3d:enabled} Hybrid FPGA/ARM Duke Nukem 3D port",
-                    "actions": {"ok": [
-                        {
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/duke3d", "MiSTer Duke3D", on_success=[
+                        {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/duke3d",
+                         "target": {
+                             "DUKE3D": {"main": "Mister_duke3d", "vga_scaler": "0"},
+                             "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"},
+                         }},
+                    ]),
+                        "ok": [{
                             "type": "condition",
                             "variable": "MultiDatabases/duke3d",
                             "true": [{"type": "rotate_variable", "target": "MultiDatabases/duke3d"}],
-                            "false": [{
-                                "ui": "message",
-                                "header": "MiSTer Duke3D",
-                                "text": [
-                                    "Hybrid FPGA/ARM Duke Nukem 3D port.",
-                                    " ",
-                                    "Requires your own DUKE3D.GRP game data.",
-                                    "Copy it to games/DUKE3D/duke3d.grp",
-                                ],
-                                "effects": [
-                                    {"type": "rotate_variable", "target": "MultiDatabases/duke3d"},
-                                    {"type": "mister_ini_add", "variable": "MultiDatabases/duke3d",
-                                     "target": {
-                                         "DUKE3D": {"main": "Mister_duke3d", "vga_scaler": "0"},
-                                         "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"},
-                                     }},
-                                    {"type": "navigate", "target": "back"},
-                                ],
-                            }],
-                        },
-                    ]}
+                            "false": [
+                                {"type": "rotate_variable", "target": "MultiDatabases/duke3d"},
+                                {"type": "mister_ini_add", "variable": "MultiDatabases/duke3d",
+                                 "target": {
+                                     "DUKE3D": {"main": "Mister_duke3d", "vga_scaler": "0"},
+                                     "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"},
+                                 }},
+                            ],
+                        }],
+                        "info": [{
+                            "ui": "message",
+                            "header": "MiSTer Duke3D",
+                            "text": [
+                                "Hybrid FPGA/ARM Duke Nukem 3D port.",
+                                " ",
+                                "Requires your own DUKE3D.GRP game data.",
+                                "Copy it to games/DUKE3D/duke3d.grp",
+                            ],
+                        }],
+                    }
                 },
                 {
                     "title": "# MiSTer Quake",
                     "description": "{MultiDatabases/mister-quake:enabled} Hybrid FPGA/ARM Quake port",
-                    "actions": {"ok": [
-                        {
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/mister-quake", "MiSTer Quake", on_success=[
+                        {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/mister-quake",
+                         "target": {
+                             "Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
+                             "MiSTer_Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
+                         }},
+                    ]),
+                        "ok": [{
                             "type": "condition",
                             "variable": "MultiDatabases/mister-quake",
                             "true": [{"type": "rotate_variable", "target": "MultiDatabases/mister-quake"}],
-                            "false": [{
-                                "ui": "message",
-                                "header": "MiSTer Quake",
-                                "text": [
-                                    "Hybrid FPGA/ARM Quake port.",
-                                    " ",
-                                    "Requires your own PAK0.PAK data file.",
-                                    "Copy it to games/quake/id1/",
-                                ],
-                                "effects": [
-                                    {"type": "rotate_variable", "target": "MultiDatabases/mister-quake"},
-                                    {"type": "mister_ini_add", "variable": "MultiDatabases/mister-quake",
-                                     "target": {
-                                         "Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
-                                         "MiSTer_Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
-                                     }},
-                                    {"type": "navigate", "target": "back"},
-                                ],
-                            }],
-                        },
-                    ]}
+                            "false": [
+                                {"type": "rotate_variable", "target": "MultiDatabases/mister-quake"},
+                                {"type": "mister_ini_add", "variable": "MultiDatabases/mister-quake",
+                                 "target": {
+                                     "Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
+                                     "MiSTer_Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
+                                 }},
+                            ],
+                        }],
+                        "info": [{
+                            "ui": "message",
+                            "header": "MiSTer Quake",
+                            "text": [
+                                "Hybrid FPGA/ARM Quake port.",
+                                " ",
+                                "Requires your own PAK0.PAK data file.",
+                                "Copy it to games/quake/id1/",
+                            ],
+                        }],
+                    }
                 },
                 {
                     "title": "# MegaVGMDrive",
                     "description": "{MultiDatabases/megavgmdrive:enabled} Mega Drive/Genesis VGM player",
-                    "actions": {"ok": [
-                        {
-                            "type": "condition",
-                            "variable": "MultiDatabases/megavgmdrive",
-                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/megavgmdrive"}],
-                            "false": [{
-                                "ui": "message",
-                                "header": "MegaVGMDrive",
-                                "text": [
-                                    "Mega Drive/Genesis VGM music player.",
-                                    " ",
-                                    "Place your own VGM files in",
-                                    "games/MegaVGMDrive/",
-                                ],
-                                "effects": [
-                                    {"type": "rotate_variable", "target": "MultiDatabases/megavgmdrive"},
-                                    {"type": "navigate", "target": "back"},
-                                ],
-                            }],
-                        },
-                    ]}
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/megavgmdrive", "MegaVGMDrive"),
+                        "ok": [{"type": "rotate_variable", "target": "MultiDatabases/megavgmdrive"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "MegaVGMDrive",
+                            "text": [
+                                "Mega Drive/Genesis VGM music player.",
+                                " ",
+                                "Place your own VGM files in",
+                                "games/MegaVGMDrive/",
+                            ],
+                        }],
+                    }
                 },
             ]
         },
@@ -1289,7 +1425,9 @@ def settings_screen_model():
                     "id": "zaparoo",
                     "title": "# Zaparoo",
                     "description": "{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher & Zaparoo Frontend",
-                    "actions": {"ok": [{"type": "navigate", "target": "zaparoo_menu"}]}
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "zaparoo_menu"}],
+                    }
                 },
                 {
                     "id": "arcade_organizer",
@@ -1311,32 +1449,55 @@ def settings_screen_model():
                 {
                     "title": "# MiSTer Extensions (wizzo)",
                     "description": "{mrext/all:enabled}",
-                    "actions": {"ok": _try_toggle_mrext_with_zaparoo_prompt()}
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id("mrext/all", "MiSTer Extensions"),
+                        "ok": _try_toggle_mrext_with_zaparoo_prompt(),
+                    }
                 },
                 {
                     "title": "# MiSTer Super Attract Mode",
                     "description": "{mistersam_files_downloader:enabled}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "mistersam_files_downloader"}]}
+                    "actions": {
+                        "uninstall": uninstall_db_action(
+                            "mistersam_files_downloader", "MiSTer_SAM_files", "MiSTer Super Attract Mode"),
+                        "ok": [{"type": "rotate_variable", "target": "mistersam_files_downloader"}],
+                    }
                 },
                 {
                     "title": "# Anime0t4ku MiSTer Scripts",
                     "description": "{anime0t4ku_mister_scripts:enabled}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "anime0t4ku_mister_scripts"}]}
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "anime0t4ku_mister_scripts", "Anime0t4ku MiSTer Scripts"),
+                        "ok": [{"type": "rotate_variable", "target": "anime0t4ku_mister_scripts"}],
+                    }
                 },
                 {
                     "title": "# tty2oled Add-on script",
                     "description": "{tty2oled_files_downloader:enabled}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "tty2oled_files_downloader"}]}
+                    "actions": {
+                        "uninstall": uninstall_db_action(
+                            "tty2oled_files_downloader", "tty2oled_files", "tty2oled Add-on script"),
+                        "ok": [{"type": "rotate_variable", "target": "tty2oled_files_downloader"}],
+                    }
                 },
                 {
                     "title": "# i2c2oled Add-on script",
                     "description": "{i2c2oled_files_downloader:enabled}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "i2c2oled_files_downloader"}]}
+                    "actions": {
+                        "uninstall": uninstall_db_action(
+                            "i2c2oled_files_downloader", "i2c2oled_files", "i2c2oled Add-on script"),
+                        "ok": [{"type": "rotate_variable", "target": "i2c2oled_files_downloader"}],
+                    }
                 },
                 {
                     "title": "# RetroSpy utility",
                     "description": "{retrospy/retrospy-MiSTer:enabled}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "retrospy/retrospy-MiSTer"}]}
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "retrospy/retrospy-MiSTer", "RetroSpy utility"),
+                        "ok": [{"type": "rotate_variable", "target": "retrospy/retrospy-MiSTer"}],
+                    }
                 }
             ]
         },
@@ -1347,7 +1508,25 @@ def settings_screen_model():
                 {
                     "title": "# Zaparoo Database",
                     "description": "{ZaparooProject/Zaparoo_MiSTer:enabled}",
-                    "actions": {"ok": _try_toggle_zaparoo_database_with_install_prompts()}
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "ZaparooProject/Zaparoo_MiSTer",
+                            "Zaparoo",
+                            on_success=[
+                                {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "false"},
+                                {
+                                    "type": "mister_ini_del",
+                                    "immediate": True,
+                                    "variable": "zaparoo_frontend_active",
+                                    "target": {
+                                        "mister": {"main": "zaparoo/MiSTer_Zaparoo"},
+                                        "menu": {"main": "zaparoo/MiSTer_Zaparoo"},
+                                    },
+                                },
+                            ],
+                        ),
+                        "ok": _try_toggle_zaparoo_database_with_install_prompts(),
+                    }
                 },
                 {
                     "title": "# Zaparoo Frontend active",
@@ -1374,6 +1553,7 @@ def settings_screen_model():
                     "title": "# BIOS Database",
                     "description": "{bios_getter:enabled} BIOS files for your systems",
                     "actions": {
+                        "uninstall": uninstall_db_action("bios_getter", "bios_db", "BIOS Database"),
                         "ok": [_roms_copyright_notice('bios_getter')],
                         "toggle": [_roms_copyright_notice('bios_getter')],
                     }
@@ -1397,6 +1577,8 @@ def settings_screen_model():
                     "title": "# Dinierto GBA Borders",
                     "description": "{Dinierto/MiSTer-GBA-Borders:enabled} Borders for the GBA Core",
                     "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "Dinierto/MiSTer-GBA-Borders", "Dinierto GBA Borders"),
                         "ok": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
                         "toggle": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
                     }
@@ -1420,6 +1602,8 @@ def settings_screen_model():
                     "title": "# Uberyoji Boot ROMs",
                     "description": "{uberyoji_mister_boot_roms_mgl:enabled} Boot ROMs for popular consoles",
                     "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "uberyoji_mister_boot_roms_mgl", "Uberyoji Boot ROMs"),
                         "ok": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
                         "toggle": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
                     }
@@ -1442,59 +1626,21 @@ def settings_screen_model():
             },
             "variables": {
                 "ajgowans_manuals_dbs_general_selector": {"group": "store", "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-3do": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-arcadia2001": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-atari2600": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-atari5200": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-atari7800": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-atarilynx": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-atarixegs": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-avision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-ballyastrocade": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-bbcbridge": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-cdi": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-channelf": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-colecovision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-creativision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-fds": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-gameandwatch": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-gameboy": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-gamegear": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-gba": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-gbc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-intellivision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-jaguar": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-jaguarcd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-lcdhandhelds": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-megadrive": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-n64": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-neogeoaes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-neogeocd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-nes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-ngp": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-ngpc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-odyssey2": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-pokemonmini": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-psx": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-pyuutajr": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-sega32x": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-segacd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-segasaturn": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-segasg1000": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-sms": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-snes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-supervision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-turbografx16": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-turbografxcd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-vc4000": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-vectrex": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
-                "ajgowans/manualsdb-wonderswanc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+                **_manual_db_variables(),
             },
             "entries": [
                 {
                     "title": " {ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_title}",
-                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8010 files | 21.9GB total",
+                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8102 files | 20.7GB total",
                     "actions": {
+                        "uninstall_all": uninstall_db_action_manuals(
+                            "ajgowans_manuals_dbs_installed",
+                            list(_manual_db_variables()),
+                            "All Manuals Databases",
+                            on_success=[
+                                {"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"},
+                            ],
+                        ),
                         "ok": _try_select_all_ajgowans_manuals_dbs(),
                     }
                 },
@@ -1502,237 +1648,272 @@ def settings_screen_model():
                 {
                     "title": "# 3DO",
                     "description": "{ajgowans/manualsdb-3do:enabled} 133 | 310MB",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-3do"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-3do", "3DO Manuals"),
                 },
                 {
                     "title": "# Arcadia 2001",
                     "description": "{ajgowans/manualsdb-arcadia2001:enabled} 47",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-arcadia2001"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-arcadia2001", "Arcadia 2001 Manuals"),
                 },
                 {
                     "title": "# Atari 2600",
                     "description": "{ajgowans/manualsdb-atari2600:enabled} 490 | 445MB",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atari2600"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-atari2600", "Atari 2600 Manuals"),
                 },
                 {
                     "title": "# Atari 5200",
                     "description": "{ajgowans/manualsdb-atari5200:enabled} 77",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atari5200"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-atari5200", "Atari 5200 Manuals"),
                 },
                 {
                     "title": "# Atari 7800",
                     "description": "{ajgowans/manualsdb-atari7800:enabled} 61",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atari7800"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-atari7800", "Atari 7800 Manuals"),
                 },
                 {
                     "title": "# Atari Lynx",
-                    "description": "{ajgowans/manualsdb-atarilynx:enabled} 74",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atarilynx"}]}
+                    "description": "{ajgowans/manualsdb-atarilynx:enabled} 75",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-atarilynx", "Atari Lynx Manuals"),
                 },
                 {
                     "title": "# Atari XEGS",
                     "description": "{ajgowans/manualsdb-atarixegs:enabled} 31",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-atarixegs"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-atarixegs", "Atari XEGS Manuals"),
                 },
                 {
                     "title": "# AVision",
                     "description": "{ajgowans/manualsdb-avision:enabled} 5",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-avision"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-avision", "AVision Manuals"),
                 },
                 {
                     "title": "# Bally Astrocade",
                     "description": "{ajgowans/manualsdb-ballyastrocade:enabled} 41",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-ballyastrocade"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-ballyastrocade", "Bally Astrocade Manuals"),
                 },
                 {
                     "title": "# BBC Bridge",
                     "description": "{ajgowans/manualsdb-bbcbridge:enabled} 3",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-bbcbridge"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-bbcbridge", "BBC Bridge Manuals"),
                 },
                 {
                     "title": "# CD-i",
                     "description": "{ajgowans/manualsdb-cdi:enabled} 65",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-cdi"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-cdi", "CD-i Manuals"),
                 },
                 {
                     "title": "# Channel F",
                     "description": "{ajgowans/manualsdb-channelf:enabled} 30",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-channelf"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-channelf", "Channel F Manuals"),
                 },
                 {
                     "title": "# ColecoVision",
                     "description": "{ajgowans/manualsdb-colecovision:enabled} 138",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-colecovision"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-colecovision", "ColecoVision Manuals"),
                 },
                 {
                     "title": "# CreatiVision",
                     "description": "{ajgowans/manualsdb-creativision:enabled} 19",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-creativision"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-creativision", "CreatiVision Manuals"),
                 },
                 {
                     "title": "# FDS",
                     "description": "{ajgowans/manualsdb-fds:enabled} 3",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-fds"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-fds", "FDS Manuals"),
                 },
                 {
                     "title": "# Game & Watch",
-                    "description": "{ajgowans/manualsdb-gameandwatch:enabled} 19",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-gameandwatch"}]}
+                    "description": "{ajgowans/manualsdb-gameandwatch:enabled} 48",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-gameandwatch", "Game & Watch Manuals"),
                 },
                 {
                     "title": "# Game Boy",
                     "description": "{ajgowans/manualsdb-gameboy:enabled} 441 | 1.2GB",
-                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-gameboy", "Game Boy Manuals", "441", "1.2 GB")}
+                    "actions": _manual_db_actions(
+                        "ajgowans/manualsdb-gameboy",
+                        "Game Boy Manuals",
+                        _try_toggle_big_manual_db(
+                            "ajgowans/manualsdb-gameboy", "Game Boy Manuals", "441", "1.2 GB"),
+                    ),
                 },
                 {
                     "title": "# Game Gear",
                     "description": "{ajgowans/manualsdb-gamegear:enabled} 202 | 600MB",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-gamegear"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-gamegear", "Game Gear Manuals"),
                 },
                 {
                     "title": "# GBA",
                     "description": "{ajgowans/manualsdb-gba:enabled} 742 | 3.0GB",
-                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-gba", "GBA Manuals", "742", "3.0 GB")}
+                    "actions": _manual_db_actions(
+                        "ajgowans/manualsdb-gba",
+                        "GBA Manuals",
+                        _try_toggle_big_manual_db(
+                            "ajgowans/manualsdb-gba", "GBA Manuals", "742", "3.0 GB"),
+                    ),
                 },
                 {
                     "title": "# Game Boy Color",
                     "description": "{ajgowans/manualsdb-gbc:enabled} 308 | 1.1GB",
-                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-gbc", "Game Boy Color Manuals", "308", "1.1 GB")}
+                    "actions": _manual_db_actions(
+                        "ajgowans/manualsdb-gbc",
+                        "Game Boy Color Manuals",
+                        _try_toggle_big_manual_db(
+                            "ajgowans/manualsdb-gbc", "Game Boy Color Manuals", "308", "1.1 GB"),
+                    ),
                 },
                 {
                     "title": "# Intellivision",
                     "description": "{ajgowans/manualsdb-intellivision:enabled} 148",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-intellivision"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-intellivision", "Intellivision Manuals"),
                 },
                 {
                     "title": "# Jaguar",
                     "description": "{ajgowans/manualsdb-jaguar:enabled} 60",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-jaguar"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-jaguar", "Jaguar Manuals"),
                 },
                 {
                     "title": "# Jaguar CD",
-                    "description": "{ajgowans/manualsdb-jaguarcd:enabled} 16",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-jaguarcd"}]}
+                    "description": "{ajgowans/manualsdb-jaguarcd:enabled} 18",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-jaguarcd", "Jaguar CD Manuals"),
                 },
                 {
                     "title": "# LCD Handhelds",
-                    "description": "{ajgowans/manualsdb-lcdhandhelds:enabled} 2",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-lcdhandhelds"}]}
+                    "description": "{ajgowans/manualsdb-lcdhandhelds:enabled} 3",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-lcdhandhelds", "LCD Handhelds Manuals"),
                 },
                 {
                     "title": "# Mega Drive",
                     "description": "{ajgowans/manualsdb-megadrive:enabled} 635 | 1.7GB",
-                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-megadrive", "Mega Drive Manuals", "635", "1.7 GB")}
+                    "actions": _manual_db_actions(
+                        "ajgowans/manualsdb-megadrive",
+                        "Mega Drive Manuals",
+                        _try_toggle_big_manual_db(
+                            "ajgowans/manualsdb-megadrive", "Mega Drive Manuals", "635", "1.7 GB"),
+                    ),
                 },
                 {
                     "title": "# N64",
-                    "description": "{ajgowans/manualsdb-n64:enabled} 293 | 856MB",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-n64"}]}
+                    "description": "{ajgowans/manualsdb-n64:enabled} 304 | 747MB",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-n64", "N64 Manuals"),
                 },
                 {
                     "title": "# Neo Geo AES",
-                    "description": "{ajgowans/manualsdb-neogeoaes:enabled} 42",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-neogeoaes"}]}
+                    "description": "{ajgowans/manualsdb-neogeoaes:enabled} 45",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-neogeoaes", "Neo Geo AES Manuals"),
                 },
                 {
                     "title": "# Neo Geo CD",
                     "description": "{ajgowans/manualsdb-neogeocd:enabled} 35",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-neogeocd"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-neogeocd", "Neo Geo CD Manuals"),
                 },
                 {
                     "title": "# NES",
                     "description": "{ajgowans/manualsdb-nes:enabled} 759 | 960MB",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-nes"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-nes", "NES Manuals"),
                 },
                 {
                     "title": "# Neo Geo Pocket",
                     "description": "{ajgowans/manualsdb-ngp:enabled} 3",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-ngp"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-ngp", "Neo Geo Pocket Manuals"),
                 },
                 {
                     "title": "# Neo Geo Pocket Color",
                     "description": "{ajgowans/manualsdb-ngpc:enabled} 28",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-ngpc"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-ngpc", "Neo Geo Pocket Color Manuals"),
                 },
                 {
                     "title": "# Odyssey 2",
                     "description": "{ajgowans/manualsdb-odyssey2:enabled} 79",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-odyssey2"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-odyssey2", "Odyssey 2 Manuals"),
                 },
                 {
                     "title": "# Pokemon Mini",
                     "description": "{ajgowans/manualsdb-pokemonmini:enabled} 7",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-pokemonmini"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-pokemonmini", "Pokemon Mini Manuals"),
                 },
                 {
                     "title": "# PSX",
                     "description": "{ajgowans/manualsdb-psx:enabled} 1295 | 6.1GB",
-                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-psx", "PSX Manuals", "1295", "6.1 GB")}
+                    "actions": _manual_db_actions(
+                        "ajgowans/manualsdb-psx",
+                        "PSX Manuals",
+                        _try_toggle_big_manual_db(
+                            "ajgowans/manualsdb-psx", "PSX Manuals", "1295", "6.1 GB"),
+                    ),
                 },
                 {
                     "title": "# Pyuuta Jr",
                     "description": "{ajgowans/manualsdb-pyuutajr:enabled} 9",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-pyuutajr"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-pyuutajr", "Pyuuta Jr Manuals"),
                 },
                 {
                     "title": "# Sega 32X",
                     "description": "{ajgowans/manualsdb-sega32x:enabled} 32",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-sega32x"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-sega32x", "Sega 32X Manuals"),
                 },
                 {
                     "title": "# Sega CD",
-                    "description": "{ajgowans/manualsdb-segacd:enabled} 149",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-segacd"}]}
+                    "description": "{ajgowans/manualsdb-segacd:enabled} 154",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-segacd", "Sega CD Manuals"),
                 },
                 {
                     "title": "# Sega Saturn",
-                    "description": "{ajgowans/manualsdb-segasaturn:enabled} 256 | 1.4GB",
-                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-segasaturn", "Sega Saturn Manuals", "256", "1.4 GB")}
+                    "description": "{ajgowans/manualsdb-segasaturn:enabled} 265 | 602MB",
+                    "actions": _manual_db_actions(
+                        "ajgowans/manualsdb-segasaturn",
+                        "Sega Saturn Manuals",
+                        _try_toggle_big_manual_db(
+                            "ajgowans/manualsdb-segasaturn", "Sega Saturn Manuals", "265", "602 MB"),
+                    ),
                 },
                 {
                     "title": "# Sega SG-1000",
                     "description": "{ajgowans/manualsdb-segasg1000:enabled} 12",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-segasg1000"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-segasg1000", "Sega SG-1000 Manuals"),
                 },
                 {
                     "title": "# SMS",
                     "description": "{ajgowans/manualsdb-sms:enabled} 202 | 540MB",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-sms"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-sms", "SMS Manuals"),
                 },
                 {
                     "title": "# SNES",
-                    "description": "{ajgowans/manualsdb-snes:enabled} 766 | 1.9GB",
-                    "actions": {"ok": _try_toggle_big_manual_db("ajgowans/manualsdb-snes", "SNES Manuals", "766", "1.9 GB")}
+                    "description": "{ajgowans/manualsdb-snes:enabled} 797 | 1.5GB",
+                    "actions": _manual_db_actions(
+                        "ajgowans/manualsdb-snes",
+                        "SNES Manuals",
+                        _try_toggle_big_manual_db(
+                            "ajgowans/manualsdb-snes", "SNES Manuals", "797", "1.5 GB"),
+                    ),
                 },
                 {
                     "title": "# Supervision",
                     "description": "{ajgowans/manualsdb-supervision:enabled} 53",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-supervision"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-supervision", "Supervision Manuals"),
                 },
                 {
                     "title": "# TurboGrafx-16",
                     "description": "{ajgowans/manualsdb-turbografx16:enabled} 77",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-turbografx16"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-turbografx16", "TurboGrafx-16 Manuals"),
                 },
                 {
                     "title": "# TurboGrafx CD",
                     "description": "{ajgowans/manualsdb-turbografxcd:enabled} 44",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-turbografxcd"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-turbografxcd", "TurboGrafx CD Manuals"),
                 },
                 {
                     "title": "# VC 4000",
                     "description": "{ajgowans/manualsdb-vc4000:enabled} 47",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-vc4000"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-vc4000", "VC 4000 Manuals"),
                 },
                 {
                     "title": "# Vectrex",
                     "description": "{ajgowans/manualsdb-vectrex:enabled} 31",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-vectrex"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-vectrex", "Vectrex Manuals"),
                 },
                 {
                     "title": "# WonderSwan Color",
                     "description": "{ajgowans/manualsdb-wonderswanc:enabled} 1",
-                    "actions": {"ok": [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, {"type": "rotate_variable", "target": "ajgowans/manualsdb-wonderswanc"}]}
+                    "actions": _manual_db_actions("ajgowans/manualsdb-wonderswanc", "WonderSwan Color Manuals"),
                 },
             ]
         },
@@ -1941,7 +2122,11 @@ def settings_screen_model():
                 {
                     "title": "# Wallpapers Enabled",
                     "description": "{Ranny-Snice/Ranny-Snice-Wallpapers:yesno}",
-                    "actions":  {"ok": [{"type": "rotate_variable", "target": "Ranny-Snice/Ranny-Snice-Wallpapers"}]}
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "Ranny-Snice/Ranny-Snice-Wallpapers", "Ranny Snice Wallpapers"),
+                        "ok": [{"type": "rotate_variable", "target": "Ranny-Snice/Ranny-Snice-Wallpapers"}],
+                    }
                 },
                 {
                     "title": "# Aspect Ratio",
@@ -1961,12 +2146,18 @@ def settings_screen_model():
                 {
                     "title": "# Unrestricted Anime0t4ku 16:9 Wallpapers",
                     "description": "{anime0t4ku_wallpapers:enabled}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "anime0t4ku_wallpapers"}]}
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "anime0t4ku_wallpapers", "Unrestricted Anime0t4ku Wallpapers"),
+                        "ok": [{"type": "rotate_variable", "target": "anime0t4ku_wallpapers"}],
+                    }
                 },
                 {
                     "title": "# PCN Challenge 16:9 Wallpapers",
                     "description": "{pcn_challenge_wallpapers:enabled}",
                     "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "pcn_challenge_wallpapers", "PCN Challenge Wallpapers"),
                         "ok": [{
                             "ui": "confirm",
                             "header": "PCN Challenge Wallpapers",
@@ -2752,26 +2943,38 @@ def _main_menu(retroaccount_logged_in): return {
                     "type": "condition",
                     "variable": "needs_save",
                     "true": [{
-                        "ui": "confirm",
-                        "header": "INI file/s were not saved",
+                        "ui": "menu",
+                        "header": "Unsaved Changes",
                         "text": [
-                            "Do you really want to run Update All without saving your changes?",
-                            "(current changes will apply only for this run)",
+                            "There are changes you can save before running.",
+                            "Choose how to continue:",
                         ],
-                        "actions": [
+                        "hotkeys": [
+                            {"keys": [27], "action": [{"type": "navigate", "target": "back"}]},
+                        ],
+                        "entries": [
                             {
-                                "title": "Yes",
-                                "type": "fixed",
-                                "fixed": [
-                                    {"type": "prepare_exit_dont_save_and_run"},
-                                    {"type": "navigate", "target": "exit_and_run"}
-                                ]
+                                "title": "SAVE AND RUN",
+                                "description": "Keep changes for future runs",
+                                "actions": {"ok": [
+                                    {"type": "save"},
+                                    {"type": "navigate", "target": "exit_and_run"},
+                                ]},
                             },
                             {
-                                "title": "No",
-                                "type": "fixed",
-                                "fixed": [{"type": "navigate", "target": "back"}]
-                            }
+                                "title": "IGNORE CHANGES AND RUN",
+                                "description": "Use the previously saved settings",
+                                "actions": {"ok": [
+                                    {"type": "prepare_exit_without_save"},
+                                    {"type": "navigate", "target": "exit_and_run"},
+                                ]},
+                            },
+                        ],
+                        "actions": [
+                            {"title": "Select", "type": "symbol", "symbol": "ok"},
+                            {"title": "Back", "type": "fixed", "fixed": [
+                                {"type": "navigate", "target": "back"},
+                            ]},
                         ],
                     }],
                     "false": [{"type": "navigate", "target": "exit_and_run"}]

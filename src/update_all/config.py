@@ -18,7 +18,7 @@
 
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Set, Optional, TypedDict
+from typing import Dict, List, Set, Optional, TypedDict
 
 from update_all.analogue_pocket.http_gateway import HttpConfig
 from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, MEDIA_FAT, FILE_patreon_key, \
@@ -71,12 +71,14 @@ class Config:
     skip_linux_update: bool = False
     not_mister: bool = False
     verbose: bool = False
-    temporary_downloader_ini: bool = False
     transition_service_only: bool = False
 
     # Global Updating Toggles
     mirror: str = ''
     databases: Set[str] = field(default_factory=lambda: set())
+    # db_id (lower case) -> extra ini file paths (relative to base_path) where the db was found on disk.
+    # Only records files Update All does NOT own (i.e. not downloader.ini nor the canonical separate db ini files).
+    database_sources: Dict[str, List[str]] = field(default_factory=dict)
     arcade_organizer: bool = False
 
     # Specific Updating Toggles
@@ -100,6 +102,28 @@ class Config:
     overscan_dim: OverscanDim = calculate_overscan('medium', TerminalSize(columns=80, lines=40))
     term_size: TerminalSize = TerminalSize(columns=80, lines=40)
     monochrome_ui: bool = False
+
+    def is_database_enabled(self, db_id: str) -> bool:
+        lower_id = db_id.lower()
+        return any(enabled_id.lower() == lower_id for enabled_id in self.databases)
+
+    def set_database_enabled(self, db_id: str, enabled: bool) -> None:
+        lower_id = db_id.lower()
+        self.databases = {enabled_id for enabled_id in self.databases if enabled_id.lower() != lower_id}
+        if enabled:
+            self.databases.add(db_id)
+            return
+
+        self.database_sources.pop(lower_id, None)
+
+    def replace_enabled_databases(self, db_ids: Set[str]) -> None:
+        desired_by_lower_id = {db_id.lower(): db_id for db_id in db_ids}
+        for enabled_id in list(self.databases):
+            if enabled_id.lower() not in desired_by_lower_id:
+                self.set_database_enabled(enabled_id, False)
+
+        for db_id in desired_by_lower_id.values():
+            self.set_database_enabled(db_id, True)
 
 class AllowDelete(IntEnum):
     NONE = 0

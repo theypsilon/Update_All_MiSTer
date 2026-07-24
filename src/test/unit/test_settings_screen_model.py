@@ -24,7 +24,8 @@ from test.ui_model_test_utils import special_navigate_targets, gather_target_var
 from test.update_all_service_tester import default_databases
 from update_all.config_reader import Config
 from update_all.databases import model_variables_by_db_id, db_ids_by_model_variables, AllDBs, all_dbs
-from update_all.settings_screen_model import settings_screen_model
+from update_all.settings_screen_model import settings_screen_model, uninstall_db_action, uninstall_db_action_for_id, \
+    uninstall_db_action_manuals
 from update_all.ui_engine import EffectChain, Interpolator, UiApplication, UiContext, UiRuntime, UiSection, \
     UiSectionFactory, execute_ui_engine
 from update_all.mister_ini_edits import parse_mister_ini_add, parse_mister_ini_del
@@ -99,7 +100,9 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual(db_variables - {all_dbs('').UPDATE_ALL_MISTER.db_id}, model_variables)
 
     def test_target_variables_are_declared_in_the_model(self):
-        target_variables = gather_target_variables(self.model)
+        # <db_id>_installed variables are seeded at runtime from the downloader
+        # fingerprints file, so they are intentionally not declared in the model.
+        target_variables = {v for v in gather_target_variables(self.model) if not v.endswith('_installed')}
         declared_variables = set(gather_variable_declarations(self.model))
 
         self.assertGreaterEqual(len(target_variables), 5)
@@ -197,11 +200,56 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('Manage Your Account', message['header'])
         self.assertEqual('{device_label:device_label_message}', message['text'][0])
 
+    def test_exit_and_run___with_unsaved_changes___offers_save_or_ignore_as_menu_entries(self):
+        for menu in ('main_menu_login', 'main_menu_account'):
+            entry = self._entry(menu, 'EXIT and RUN UPDATE ALL')
+            condition = entry['actions']['ok'][1]
+            dialog = condition['true'][0]
+
+            self.assertEqual('', entry['description'])
+            self.assertEqual('needs_save', condition['variable'])
+            self.assertEqual('menu', dialog['ui'])
+            self.assertEqual('Unsaved Changes', dialog['header'])
+            self.assertEqual([
+                'SAVE AND RUN',
+                'IGNORE CHANGES AND RUN',
+            ], [option['title'] for option in dialog['entries']])
+            self.assertEqual([
+                {'type': 'save'},
+                {'type': 'navigate', 'target': 'exit_and_run'},
+            ], dialog['entries'][0]['actions']['ok'])
+            self.assertEqual([
+                {'type': 'prepare_exit_without_save'},
+                {'type': 'navigate', 'target': 'exit_and_run'},
+            ], dialog['entries'][1]['actions']['ok'])
+            self.assertEqual([
+                {'type': 'navigate', 'target': 'exit_and_run'},
+            ], condition['false'])
+
     def _entry(self, menu, title):
         for entry in self.model['items'][menu]['entries']:
             if entry and entry.get('title') == title:
                 return entry
         raise AssertionError(f'Entry "{title}" not found in menu "{menu}".')
+
+    def _assert_uninstall_action(self, menu, title, variable, db_id, uninstall_title):
+        entry = self._entry(menu, title)
+        action = entry['actions'].get('uninstall')
+        self.assertIsNotNone(action, f'{menu}: {title}')
+        self.assertEqual(f'{db_id}_installed', action['if'], f'{menu}: {title}')
+
+        ui = action['chain'][0]['actions'][0]['fixed'][0]
+        self.assertEqual('uninstall_db', ui['ui'], f'{menu}: {title}')
+        self.assertEqual([db_id], ui['db_ids'], f'{menu}: {title}')
+        self.assertEqual(uninstall_title, ui['title'], f'{menu}: {title}')
+        self.assertEqual(
+            [
+                {'type': 'set_variable', 'target': variable, 'value': 'false'},
+                {'type': 'set_variable', 'target': f'{db_id}_installed', 'value': 'false'},
+            ],
+            ui['on_success'][:2],
+            f'{menu}: {title}',
+        )
 
     def test_mrext_entry___when_enabling_with_zaparoo_disabled___asks_to_enable_zaparoo(self):
         app = self._execute_tools_mrext_action('false', 'false')
@@ -303,13 +351,270 @@ class TestSettingsScreenModel(unittest.TestCase):
             {'title': 'Back', 'type': 'fixed', 'fixed': [{'type': 'navigate', 'target': 'back'}]},
         ], menu['actions'])
 
+    def test_other_cores_db_entries___have_conditional_uninstall_action(self):
+        expected = {
+            '# Coin-Op Collection': ('coin_op_collection_downloader', 'Coin-OpCollection/Distribution-MiSTerFPGA'),
+            '# RetroAchievements Cores': ('theypsilon/RetroAchievementsDB_MiSTer', 'theypsilon/RetroAchievementsDB_MiSTer'),
+            '# Physical CD Support': ('MultiDatabases/physical-disc', 'MultiDatabases/physical-disc'),
+            '# Unofficial Distribution': ('unofficial_updater', 'theypsilon_unofficial_distribution'),
+            '# Arcade Offset': ('arcade_offset_downloader', 'arcade_offset_folder'),
+            '# LLAPI Forks Folder': ('llapi_updater', 'llapi_folder'),
+            '# Y/C Builds': ('MikeS11/YC_Builds-MiSTer', 'MikeS11/YC_Builds-MiSTer'),
+            "# agg23's MiSTer Cores": ('agg23_db', 'agg23_db'),
+            '# Paprium MegaDrive': ('MultiDatabases/paprium', 'MultiDatabases/paprium'),
+            '# MMS2 GB Core': ('MultiDatabases/mms2-gb', 'MultiDatabases/mms2-gb'),
+            '# Alt Cores': ('ajgowans/alt-cores', 'ajgowans/alt-cores'),
+            '# Dual RAM Console Cores': ('TheJesusFish/Dual-Ram-Console-Cores', 'TheJesusFish/Dual-Ram-Console-Cores'),
+            '# MiSTer Frontier': ('MiSTerOrganize/MiSTer_Frontier', 'MiSTerOrganize/MiSTer_Frontier'),
+            '# DreamSTer': ('MultiDatabases/dreamster', 'MultiDatabases/dreamster'),
+            '# Sonic Mania MiSTer': ('MultiDatabases/sonic-mania', 'MultiDatabases/sonic-mania'),
+            '# MiSTer Duke3D': ('MultiDatabases/duke3d', 'MultiDatabases/duke3d'),
+            '# MiSTer Quake': ('MultiDatabases/mister-quake', 'MultiDatabases/mister-quake'),
+            '# MegaVGMDrive': ('MultiDatabases/megavgmdrive', 'MultiDatabases/megavgmdrive'),
+        }
+
+        # Entries that write to MiSTer.ini on install must undo those edits on uninstall.
+        ini_del_targets = {
+            '# RetroAchievements Cores': {'RA_*': {'main': 'MiSTer_RA'}},
+            '# Physical CD Support': {'CD-*': {'main': 'MiSTer_Physical-CD'}},
+            '# Sonic Mania MiSTer': {
+                'Sonic Mania': {'main': 'MiSTer_SonicMania'},
+                'Sonic Mania (4:3)': {'main': 'MiSTer_SonicMania'},
+            },
+            '# MiSTer Duke3D': {
+                'DUKE3D': {'main': 'Mister_duke3d', 'vga_scaler': '0'},
+                'Mister_duke3d': {'main': 'Mister_duke3d', 'vga_scaler': '0'},
+            },
+            '# MiSTer Quake': {
+                'Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'},
+                'MiSTer_Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'},
+            },
+        }
+
+        for title, (variable, db_id) in expected.items():
+            entry = self._entry('other_cores_menu', title)
+            action = entry['actions'].get('uninstall')
+            self.assertIsNotNone(action, title)
+            self.assertEqual(f'{db_id}_installed', action['if'], title)
+
+            confirm = action['chain'][0]
+            self.assertEqual('confirm', confirm['ui'], title)
+            self.assertEqual('No', confirm['preselected_action'], title)
+
+            yes, no = confirm['actions']
+            ui = yes['fixed'][0]
+            self.assertEqual('uninstall_db', ui['ui'], title)
+            self.assertEqual([db_id], ui['db_ids'], title)
+            self.assertEqual(title.lstrip('# '), ui['title'], title)
+
+            expected_on_success = [
+                {'type': 'set_variable', 'target': variable, 'value': 'false'},
+                {'type': 'set_variable', 'target': f'{db_id}_installed', 'value': 'false'},
+            ]
+            if title in ini_del_targets:
+                expected_on_success.append(
+                    {'type': 'mister_ini_del', 'immediate': True, 'variable': variable, 'target': ini_del_targets[title]},
+                )
+            expected_on_success.append({'type': 'navigate', 'target': 'back'})
+
+            self.assertEqual(expected_on_success, ui['on_success'], title)
+            self.assertEqual([{'type': 'navigate', 'target': 'back'}], no['fixed'], title)
+
+    def test_primary_tools_and_extra_content_db_entries___have_explicit_uninstall_actions(self):
+        expected = [
+            ('jtcores_menu', '# JTCORES Enabled', 'jotego_updater', 'jtcores', 'JTCORES for MiSTer'),
+            ('arcade_roms_database_menu', '# Arcade ROMs Database Enabled', 'arcade_roms_db_downloader',
+             'arcade_roms_db', 'Arcade ROMs Database'),
+            ('names_txt_menu', '# Arcade Names TXT', 'arcade_names_txt', 'arcade_names_txt', 'Arcade Names TXT'),
+            ('tools_and_scripts_menu', '# MiSTer Extensions (wizzo)', 'mrext/all', 'mrext/all',
+             'MiSTer Extensions'),
+            ('tools_and_scripts_menu', '# MiSTer Super Attract Mode', 'mistersam_files_downloader',
+             'MiSTer_SAM_files', 'MiSTer Super Attract Mode'),
+            ('tools_and_scripts_menu', '# Anime0t4ku MiSTer Scripts', 'anime0t4ku_mister_scripts',
+             'anime0t4ku_mister_scripts', 'Anime0t4ku MiSTer Scripts'),
+            ('tools_and_scripts_menu', '# tty2oled Add-on script', 'tty2oled_files_downloader',
+             'tty2oled_files', 'tty2oled Add-on script'),
+            ('tools_and_scripts_menu', '# i2c2oled Add-on script', 'i2c2oled_files_downloader',
+             'i2c2oled_files', 'i2c2oled Add-on script'),
+            ('tools_and_scripts_menu', '# RetroSpy utility', 'retrospy/retrospy-MiSTer',
+             'retrospy/retrospy-MiSTer', 'RetroSpy utility'),
+            ('zaparoo_menu', '# Zaparoo Database', 'ZaparooProject/Zaparoo_MiSTer',
+             'ZaparooProject/Zaparoo_MiSTer', 'Zaparoo'),
+            ('extra_content_menu', '# BIOS Database', 'bios_getter', 'bios_db', 'BIOS Database'),
+            ('extra_content_menu', '# Dinierto GBA Borders', 'Dinierto/MiSTer-GBA-Borders',
+             'Dinierto/MiSTer-GBA-Borders', 'Dinierto GBA Borders'),
+            ('extra_content_menu', '# Uberyoji Boot ROMs', 'uberyoji_mister_boot_roms_mgl',
+             'uberyoji_mister_boot_roms_mgl', 'Uberyoji Boot ROMs'),
+            ('rannysnice_wallpapers_menu', '# Wallpapers Enabled', 'Ranny-Snice/Ranny-Snice-Wallpapers',
+             'Ranny-Snice/Ranny-Snice-Wallpapers', 'Ranny Snice Wallpapers'),
+            ('anime0t4ku_wallpapers_menu', '# Unrestricted Anime0t4ku 16:9 Wallpapers',
+             'anime0t4ku_wallpapers', 'anime0t4ku_wallpapers', 'Unrestricted Anime0t4ku Wallpapers'),
+            ('anime0t4ku_wallpapers_menu', '# PCN Challenge 16:9 Wallpapers',
+             'pcn_challenge_wallpapers', 'pcn_challenge_wallpapers', 'PCN Challenge Wallpapers'),
+        ]
+
+        for args in expected:
+            self._assert_uninstall_action(*args)
+
+    def test_distribution_and_names_txt_entries___do_not_offer_uninstall(self):
+        excluded = [
+            ('main_menu_login', '# Main Distribution'),
+            ('main_menu_account', '# Main Distribution'),
+            ('main_distribution_menu', '# Distribution Enabled'),
+            ('tools_and_scripts_menu', '# Names TXT'),
+            ('names_txt_menu', '# Names TXT'),
+        ]
+
+        for menu, title in excluded:
+            self.assertNotIn('uninstall', self._entry(menu, title)['actions'], f'{menu}: {title}')
+
+    def test_manuals_select_all_entry___has_uninstall_all_for_every_manual_database(self):
+        manual_db_ids = list(gather_variable_declarations(self.model, 'manuals'))
+        entry = self.model['items']['game_manuals_en_db_menu']['entries'][0]
+        action = entry['actions']['uninstall_all']
+
+        self.assertEqual('ajgowans_manuals_dbs_installed', action['if'])
+        ui = action['chain'][0]['actions'][0]['fixed'][0]
+        self.assertEqual(manual_db_ids, ui['db_ids'])
+        self.assertEqual('All Manuals Databases', ui['title'])
+        self.assertEqual(
+            {'type': 'select_all_ajgowans_manuals_dbs', 'action': 'unapply'},
+            ui['on_success'][-2],
+        )
+
+    def test_each_manual_database_entry___has_its_own_uninstall_action(self):
+        manual_variables = gather_variable_declarations(self.model, 'manuals')
+        entries = self.model['items']['game_manuals_en_db_menu']['entries']
+        matched_variables = set()
+
+        for entry in entries:
+            if not entry:
+                continue
+
+            variables = [
+                variable for variable in manual_variables
+                if f'{{{variable}:' in entry.get('description', '')
+            ]
+            if not variables:
+                continue
+
+            self.assertEqual(1, len(variables), entry['title'])
+            variable = variables[0]
+            matched_variables.add(variable)
+            self._assert_uninstall_action(
+                'game_manuals_en_db_menu',
+                entry['title'],
+                variable,
+                variable,
+                f"{entry['title'].lstrip('# ')} Manuals",
+            )
+
+            ui = entry['actions']['uninstall']['chain'][0]['actions'][0]['fixed'][0]
+            self.assertIn(
+                {'type': 'select_all_ajgowans_manuals_dbs', 'action': 'unapply'},
+                ui['on_success'],
+                entry['title'],
+            )
+
+        self.assertEqual(set(manual_variables), matched_variables)
+
+    def test_entries_that_lead_to_a_menu___do_not_offer_uninstall(self):
+        submenu_targets = set(self.model['items'])
+        for menu, item in self.model['items'].items():
+            for entry in item.get('entries', []):
+                if not entry:
+                    continue
+                targets = _navigate_targets(entry.get('actions', {}).get('ok', []))
+                if targets & submenu_targets:
+                    self.assertNotIn(
+                        'uninstall',
+                        entry['actions'],
+                        f"{menu}: {entry.get('title')} -> {sorted(targets & submenu_targets)}",
+                    )
+
+    def test_zaparoo_database_toggle_uninstall___disables_frontend_and_immediately_removes_its_ini_sections(self):
+        expected_cleanup = [
+            {'type': 'set_variable', 'target': 'zaparoo_frontend_active', 'value': 'false'},
+            {
+                'type': 'mister_ini_del',
+                'immediate': True,
+                'variable': 'zaparoo_frontend_active',
+                'target': {
+                    'mister': {'main': 'zaparoo/MiSTer_Zaparoo'},
+                    'menu': {'main': 'zaparoo/MiSTer_Zaparoo'},
+                },
+            },
+        ]
+
+        action = self._entry('zaparoo_menu', '# Zaparoo Database')['actions']['uninstall']
+        ui = action['chain'][0]['actions'][0]['fixed'][0]
+        self.assertEqual(expected_cleanup, ui['on_success'][2:-1])
+
+    def test_uninstall_db_action___with_on_success_effects___inserts_them_right_before_navigate_back(self):
+        extra = [{'type': 'set_variable', 'target': 'some_flag', 'value': 'true'}]
+
+        action = uninstall_db_action('some_var', 'some/db', 'Some DB', on_success=extra)
+
+        ui = action['chain'][0]['actions'][0]['fixed'][0]
+        self.assertEqual([
+            {'type': 'set_variable', 'target': 'some_var', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'some/db_installed', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'some_flag', 'value': 'true'},
+            {'type': 'navigate', 'target': 'back'},
+        ], ui['on_success'])
+
+    def test_uninstall_db_action___without_on_success_effects___only_resets_variables_then_navigates_back(self):
+        action = uninstall_db_action('some_var', 'some/db', 'Some DB')
+
+        ui = action['chain'][0]['actions'][0]['fixed'][0]
+        self.assertEqual([
+            {'type': 'set_variable', 'target': 'some_var', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'some/db_installed', 'value': 'false'},
+            {'type': 'navigate', 'target': 'back'},
+        ], ui['on_success'])
+
+    def test_uninstall_db_action_for_id___uses_db_id_as_the_variable(self):
+        extra = [{'type': 'set_variable', 'target': 'some_flag', 'value': 'true'}]
+
+        self.assertEqual(
+            uninstall_db_action('some/db', 'some/db', 'Some DB', on_success=extra),
+            uninstall_db_action_for_id('some/db', 'Some DB', on_success=extra),
+        )
+
+    def test_uninstall_db_action_manuals___resets_each_database_and_aggregate_state(self):
+        db_ids = ['manuals/one', 'manuals/two']
+        extra = [{'type': 'set_variable', 'target': 'some_flag', 'value': 'true'}]
+
+        action = uninstall_db_action_manuals('all_manuals', db_ids, 'Game Manuals', on_success=extra)
+
+        self.assertEqual('all_manuals', action['if'])
+        confirm = action['chain'][0]
+        self.assertEqual([
+            'This will uninstall 2 manuals databases.',
+            ' ',
+            'All their contents will be deleted from your system.',
+            'Do you really want to uninstall them?',
+        ], confirm['text'])
+
+        ui = confirm['actions'][0]['fixed'][0]
+        self.assertEqual(db_ids, ui['db_ids'])
+        self.assertEqual([
+            {'type': 'set_variable', 'target': 'manuals/one', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'manuals/two', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'manuals/one_installed', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'manuals/two_installed', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'all_manuals', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'some_flag', 'value': 'true'},
+            {'type': 'navigate', 'target': 'back'},
+        ], ui['on_success'])
+
     def test_other_cores_entries___are_in_expected_order(self):
         entries = self.model['items']['other_cores_menu']['entries']
 
         self.assertEqual([
             '# Coin-Op Collection',
             '# RetroAchievements Cores',
-            '# Physical Disc',
+            '# Physical CD Support',
             '# Unofficial Distribution',
             '# Arcade Offset',
             '# LLAPI Forks Folder',
@@ -327,15 +632,16 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# MegaVGMDrive',
         ], [entry.get('title') for entry in entries])
 
-    def test_dreamster_entry___when_enabling___shows_actionable_message_and_enables(self):
+    def test_dreamster_entry___toggles_without_message_and_exposes_requirements_as_info(self):
         app = self._execute_multidatabase_action('# DreamSTer', 'MultiDatabases/dreamster', 'false')
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/dreamster'))
-        self.assertEqual(1, len(app.messages))
-        self.assertEqual('DreamSTer', app.messages[0]['header'])
-        self.assertIn('dc_boot.bin', ' '.join(app.messages[0]['text']))
-        self.assertIn('dc_flash.bin', ' '.join(app.messages[0]['text']))
+        self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
+        info = self._execute_other_cores_info('# DreamSTer')
+        self.assertEqual('DreamSTer', info.messages[0]['header'])
+        self.assertIn('dc_boot.bin', ' '.join(info.messages[0]['text']))
+        self.assertIn('dc_flash.bin', ' '.join(info.messages[0]['text']))
 
     def test_dreamster_entry___when_disabling___rotates_without_message(self):
         app = self._execute_multidatabase_action('# DreamSTer', 'MultiDatabases/dreamster', 'true')
@@ -344,17 +650,18 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
 
-    def test_duke3d_entry___when_enabling___arms_ini_sections_after_the_message(self):
+    def test_duke3d_entry___when_enabling___arms_ini_sections_without_message_and_exposes_info(self):
         app = self._execute_multidatabase_action('# MiSTer Duke3D', 'MultiDatabases/duke3d', 'false')
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/duke3d'))
-        self.assertEqual(1, len(app.messages))
-        self.assertIn('DUKE3D.GRP', ' '.join(app.messages[0]['text']))
+        self.assertEqual([], app.messages)
         self.assertEqual([
             {'type': 'mister_ini_add', 'variable': 'MultiDatabases/duke3d',
              'target': {'DUKE3D': {'main': 'Mister_duke3d', 'vga_scaler': '0'},
                         'Mister_duke3d': {'main': 'Mister_duke3d', 'vga_scaler': '0'}}},
         ], app.mister_ini_effects)
+        info = self._execute_other_cores_info('# MiSTer Duke3D')
+        self.assertIn('DUKE3D.GRP', ' '.join(info.messages[0]['text']))
 
     def test_duke3d_entry___when_disabling___rotates_without_firing_anything(self):
         app = self._execute_multidatabase_action('# MiSTer Duke3D', 'MultiDatabases/duke3d', 'true')
@@ -363,66 +670,87 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
 
-    def test_megavgmdrive_entry___when_enabling___mentions_vgm_folder(self):
+    def test_megavgmdrive_entry___toggles_without_message_and_exposes_vgm_folder_as_info(self):
         app = self._execute_multidatabase_action('# MegaVGMDrive', 'MultiDatabases/megavgmdrive', 'false')
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/megavgmdrive'))
-        self.assertIn('games/MegaVGMDrive/', ' '.join(app.messages[0]['text']))
+        self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
+        info = self._execute_other_cores_info('# MegaVGMDrive')
+        self.assertIn('games/MegaVGMDrive/', ' '.join(info.messages[0]['text']))
 
-    def test_quake_entry___when_enabling___arms_ini_sections_and_mentions_pak(self):
+    def test_quake_entry___when_enabling___arms_ini_sections_without_message_and_exposes_info(self):
         app = self._execute_multidatabase_action('# MiSTer Quake', 'MultiDatabases/mister-quake', 'false')
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/mister-quake'))
-        self.assertIn('PAK0.PAK', ' '.join(app.messages[0]['text']))
+        self.assertEqual([], app.messages)
         self.assertEqual([
             {'type': 'mister_ini_add', 'variable': 'MultiDatabases/mister-quake',
              'target': {'Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'},
                         'MiSTer_Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'}}},
         ], app.mister_ini_effects)
+        info = self._execute_other_cores_info('# MiSTer Quake')
+        self.assertIn('PAK0.PAK', ' '.join(info.messages[0]['text']))
 
-    def test_mms2_gb_entry___when_enabling___warns_about_required_hardware(self):
+    def test_mms2_gb_entry___toggles_without_message_and_exposes_hardware_requirements_as_info(self):
         app = self._execute_multidatabase_action('# MMS2 GB Core', 'MultiDatabases/mms2-gb', 'false')
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/mms2-gb'))
-        self.assertIn('Heber Multisystem 2', ' '.join(app.messages[0]['text']))
-        self.assertIn('USER button', ' '.join(app.messages[0]['text']))
+        self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
+        info = self._execute_other_cores_info('# MMS2 GB Core')
+        self.assertIn('Heber Multisystem 2', ' '.join(info.messages[0]['text']))
+        self.assertIn('USER button', ' '.join(info.messages[0]['text']))
 
-    def test_paprium_entry___when_enabling___mentions_rom_folder(self):
+    def test_paprium_entry___toggles_without_message_and_exposes_rom_folder_as_info(self):
         app = self._execute_multidatabase_action('# Paprium MegaDrive', 'MultiDatabases/paprium', 'false')
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/paprium'))
-        self.assertIn('games/PapriumMD/', ' '.join(app.messages[0]['text']))
+        self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
+        info = self._execute_other_cores_info('# Paprium MegaDrive')
+        self.assertIn('games/PapriumMD/', ' '.join(info.messages[0]['text']))
 
-    def test_physical_disc_entry___when_enabling___arms_cd_section_and_mentions_drive(self):
-        app = self._execute_multidatabase_action('# Physical Disc', 'MultiDatabases/physical-disc', 'false')
+    def test_physical_disc_entry___when_enabling___arms_cd_section_without_message_and_exposes_info(self):
+        app = self._execute_multidatabase_action('# Physical CD Support', 'MultiDatabases/physical-disc', 'false')
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/physical-disc'))
-        self.assertIn('USB CD-drive', ' '.join(app.messages[0]['text']))
-        self.assertIn('Zaparoo', ' '.join(app.messages[0]['text']))
+        self.assertEqual([], app.messages)
         self.assertEqual([
             {'type': 'mister_ini_add', 'variable': 'MultiDatabases/physical-disc',
              'target': {'CD-*': {'main': 'MiSTer_Physical-CD'}}},
         ], app.mister_ini_effects)
+        info = self._execute_other_cores_info('# Physical CD Support')
+        self.assertIn('USB CD-drive', ' '.join(info.messages[0]['text']))
+        self.assertIn('Zaparoo', ' '.join(info.messages[0]['text']))
 
-    def test_sonic_mania_entry___when_enabling___arms_ini_sections_and_mentions_data_rsdk(self):
+    def test_sonic_mania_entry___when_enabling___arms_ini_sections_without_message_and_exposes_info(self):
         app = self._execute_multidatabase_action('# Sonic Mania MiSTer', 'MultiDatabases/sonic-mania', 'false')
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/sonic-mania'))
-        self.assertIn('Data.rsdk', ' '.join(app.messages[0]['text']))
+        self.assertEqual([], app.messages)
         self.assertEqual([
             {'type': 'mister_ini_add', 'variable': 'MultiDatabases/sonic-mania',
              'target': {'Sonic Mania': {'main': 'MiSTer_SonicMania'},
                         'Sonic Mania (4:3)': {'main': 'MiSTer_SonicMania'}}},
         ], app.mister_ini_effects)
+        info = self._execute_other_cores_info('# Sonic Mania MiSTer')
+        self.assertIn('Data.rsdk', ' '.join(info.messages[0]['text']))
 
     def _execute_multidatabase_action(self, title, variable, value):
         entry = self._entry('other_cores_menu', title)
         return self._execute_tools_action(
             entry['actions']['ok'],
             {variable: value},
+            entrypoint='other_cores_menu',
+            initial_history=['main_menu_login'],
+        )
+
+    def _execute_other_cores_info(self, title):
+        entry = self._entry('other_cores_menu', title)
+        return self._execute_tools_action(
+            entry['actions']['info'],
+            {},
             entrypoint='other_cores_menu',
             initial_history=['main_menu_login'],
         )
@@ -741,6 +1069,22 @@ def _chain_violations(model):
             if is_terminal_effect(effect):
                 violations.append(f'{location}[{index}]')
     return violations
+
+
+def _navigate_targets(node):
+    if isinstance(node, list):
+        result = set()
+        for item in node:
+            result.update(_navigate_targets(item))
+        return result
+
+    if not isinstance(node, dict):
+        return set()
+
+    result = {node['target']} if node.get('type') == 'navigate' else set()
+    for value in node.values():
+        result.update(_navigate_targets(value))
+    return result
 
 
 class TestGatherEffectChains(unittest.TestCase):
