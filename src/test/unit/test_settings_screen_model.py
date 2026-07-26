@@ -33,6 +33,15 @@ from update_all.ui_model_utilities import gather_variable_declarations, dynamic_
     gather_effects_by_type
 
 
+_HYBRID_CORE_TITLES = {
+    '# MiSTer Frontier',
+    '# DreamSTer',
+    '# Sonic Mania MiSTer',
+    '# MiSTer Duke3D',
+    '# MiSTer Quake',
+}
+
+
 class TestSettingsScreenModel(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -340,16 +349,25 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('RetroAchievements Setup', action[2]['missing_credentials'][0]['header'])
         self.assertEqual(action, entry['actions']['toggle'])
 
-    def test_other_cores_menu___has_select_info_back_buttons(self):
-        menu = dict(self.model['items']['other_cores_menu'])
-        expand_type(menu, self.model['base_types'])
+    def test_core_menus___have_select_info_back_buttons(self):
+        for menu_id in ('other_cores_menu', 'hybrid_cores_menu'):
+            with self.subTest(menu_id=menu_id):
+                menu = dict(self.model['items'][menu_id])
+                expand_type(menu, self.model['base_types'])
 
-        self.assertEqual('ui', menu['type'])
-        self.assertEqual([
-            {'title': 'Select', 'type': 'symbol', 'symbol': 'ok'},
-            {'title': 'Info', 'type': 'symbol', 'symbol': 'info'},
-            {'title': 'Back', 'type': 'fixed', 'fixed': [{'type': 'navigate', 'target': 'back'}]},
-        ], menu['actions'])
+                self.assertEqual('ui', menu['type'])
+                self.assertEqual([
+                    {'title': 'Select', 'type': 'symbol', 'symbol': 'ok'},
+                    {'title': 'Info', 'type': 'symbol', 'symbol': 'info'},
+                    {'title': 'Back', 'type': 'fixed', 'fixed': [{'type': 'navigate', 'target': 'back'}]},
+                ], menu['actions'])
+
+    def test_other_cores_menu___has_hybrid_cores_submenu_at_bottom(self):
+        entry = self.model['items']['other_cores_menu']['entries'][-1]
+
+        self.assertEqual('# Hybrid Cores', entry['title'])
+        self.assertEqual('Hybrid FPGA/ARM cores and ports', entry['description'])
+        self.assertEqual([{'type': 'navigate', 'target': 'hybrid_cores_menu'}], entry['actions']['ok'])
 
     def test_other_cores_db_entries___have_conditional_uninstall_action(self):
         expected = {
@@ -392,7 +410,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         }
 
         for title, (variable, db_id) in expected.items():
-            entry = self._entry('other_cores_menu', title)
+            entry = self._entry(self._core_menu(title), title)
             action = entry['actions'].get('uninstall')
             self.assertIsNotNone(action, title)
             self.assertEqual(f'{db_id}_installed', action['if'], title)
@@ -624,13 +642,28 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# MMS2 GB Core',
             '# Alt Cores',
             '# Dual RAM Console Cores',
+            '# MegaVGMDrive',
+            '# Hybrid Cores',
+        ], [entry.get('title') for entry in entries])
+
+    def test_hybrid_cores_entries___are_in_expected_order(self):
+        menu = self.model['items']['hybrid_cores_menu']
+
+        self.assertEqual('Hybrid Cores', menu['header'])
+        self.assertEqual([
+            'MiSTerOrganize/MiSTer_Frontier',
+            'MultiDatabases/dreamster',
+            'MultiDatabases/sonic-mania',
+            'MultiDatabases/duke3d',
+            'MultiDatabases/mister-quake',
+        ], list(menu['variables']))
+        self.assertEqual([
             '# MiSTer Frontier',
             '# DreamSTer',
             '# Sonic Mania MiSTer',
             '# MiSTer Duke3D',
             '# MiSTer Quake',
-            '# MegaVGMDrive',
-        ], [entry.get('title') for entry in entries])
+        ], [entry.get('title') for entry in menu['entries']])
 
     def test_dreamster_entry___toggles_without_message_and_exposes_requirements_as_info(self):
         app = self._execute_multidatabase_action('# DreamSTer', 'MultiDatabases/dreamster', 'false')
@@ -638,7 +671,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('MultiDatabases/dreamster'))
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
-        info = self._execute_other_cores_info('# DreamSTer')
+        info = self._execute_core_info('# DreamSTer')
         self.assertEqual('DreamSTer', info.messages[0]['header'])
         self.assertIn('dc_boot.bin', ' '.join(info.messages[0]['text']))
         self.assertIn('dc_flash.bin', ' '.join(info.messages[0]['text']))
@@ -660,7 +693,7 @@ class TestSettingsScreenModel(unittest.TestCase):
              'target': {'DUKE3D': {'main': 'Mister_duke3d', 'vga_scaler': '0'},
                         'Mister_duke3d': {'main': 'Mister_duke3d', 'vga_scaler': '0'}}},
         ], app.mister_ini_effects)
-        info = self._execute_other_cores_info('# MiSTer Duke3D')
+        info = self._execute_core_info('# MiSTer Duke3D')
         self.assertIn('DUKE3D.GRP', ' '.join(info.messages[0]['text']))
 
     def test_duke3d_entry___when_disabling___rotates_without_firing_anything(self):
@@ -676,7 +709,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('MultiDatabases/megavgmdrive'))
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
-        info = self._execute_other_cores_info('# MegaVGMDrive')
+        info = self._execute_core_info('# MegaVGMDrive')
         self.assertIn('games/MegaVGMDrive/', ' '.join(info.messages[0]['text']))
 
     def test_quake_entry___when_enabling___arms_ini_sections_without_message_and_exposes_info(self):
@@ -689,7 +722,7 @@ class TestSettingsScreenModel(unittest.TestCase):
              'target': {'Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'},
                         'MiSTer_Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'}}},
         ], app.mister_ini_effects)
-        info = self._execute_other_cores_info('# MiSTer Quake')
+        info = self._execute_core_info('# MiSTer Quake')
         self.assertIn('PAK0.PAK', ' '.join(info.messages[0]['text']))
 
     def test_mms2_gb_entry___toggles_without_message_and_exposes_hardware_requirements_as_info(self):
@@ -698,7 +731,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('MultiDatabases/mms2-gb'))
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
-        info = self._execute_other_cores_info('# MMS2 GB Core')
+        info = self._execute_core_info('# MMS2 GB Core')
         self.assertIn('Heber Multisystem 2', ' '.join(info.messages[0]['text']))
         self.assertIn('USER button', ' '.join(info.messages[0]['text']))
 
@@ -708,7 +741,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('MultiDatabases/paprium'))
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
-        info = self._execute_other_cores_info('# Paprium MegaDrive')
+        info = self._execute_core_info('# Paprium MegaDrive')
         self.assertIn('games/PapriumMD/', ' '.join(info.messages[0]['text']))
 
     def test_physical_disc_entry___when_enabling___arms_cd_section_without_message_and_exposes_info(self):
@@ -720,7 +753,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             {'type': 'mister_ini_add', 'variable': 'MultiDatabases/physical-disc',
              'target': {'CD-*': {'main': 'MiSTer_Physical-CD'}}},
         ], app.mister_ini_effects)
-        info = self._execute_other_cores_info('# Physical CD Support')
+        info = self._execute_core_info('# Physical CD Support')
         self.assertIn('USB CD-drive', ' '.join(info.messages[0]['text']))
         self.assertIn('Zaparoo', ' '.join(info.messages[0]['text']))
 
@@ -734,26 +767,32 @@ class TestSettingsScreenModel(unittest.TestCase):
              'target': {'Sonic Mania': {'main': 'MiSTer_SonicMania'},
                         'Sonic Mania (4:3)': {'main': 'MiSTer_SonicMania'}}},
         ], app.mister_ini_effects)
-        info = self._execute_other_cores_info('# Sonic Mania MiSTer')
+        info = self._execute_core_info('# Sonic Mania MiSTer')
         self.assertIn('Data.rsdk', ' '.join(info.messages[0]['text']))
 
     def _execute_multidatabase_action(self, title, variable, value):
-        entry = self._entry('other_cores_menu', title)
+        menu = self._core_menu(title)
+        entry = self._entry(menu, title)
         return self._execute_tools_action(
             entry['actions']['ok'],
             {variable: value},
-            entrypoint='other_cores_menu',
-            initial_history=['main_menu_login'],
+            entrypoint=menu,
+            initial_history=['main_menu_login'] + (['other_cores_menu'] if menu == 'hybrid_cores_menu' else []),
         )
 
-    def _execute_other_cores_info(self, title):
-        entry = self._entry('other_cores_menu', title)
+    def _execute_core_info(self, title):
+        menu = self._core_menu(title)
+        entry = self._entry(menu, title)
         return self._execute_tools_action(
             entry['actions']['info'],
             {},
-            entrypoint='other_cores_menu',
-            initial_history=['main_menu_login'],
+            entrypoint=menu,
+            initial_history=['main_menu_login'] + (['other_cores_menu'] if menu == 'hybrid_cores_menu' else []),
         )
+
+    @staticmethod
+    def _core_menu(title):
+        return 'hybrid_cores_menu' if title in _HYBRID_CORE_TITLES else 'other_cores_menu'
 
     def test_jtcores_submenu___has_no_separate_auto_enable_option(self):
         entries = self.model['items']['jtcores_menu']['entries']

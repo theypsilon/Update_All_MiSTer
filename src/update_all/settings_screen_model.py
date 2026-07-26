@@ -1014,15 +1014,10 @@ def settings_screen_model():
                 "MikeS11/YC_Builds-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "ajgowans/alt-cores": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "TheJesusFish/Dual-Ram-Console-Cores": {"group": "db", "default": "false", "values": ["false", "true"]},
-                "MiSTerOrganize/MiSTer_Frontier": {"group": "db", "default": "false", "values": ["false", "true"]},
-                "MultiDatabases/dreamster": {"group": "db", "default": "false", "values": ["false", "true"]},
-                "MultiDatabases/duke3d": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/megavgmdrive": {"group": "db", "default": "false", "values": ["false", "true"]},
-                "MultiDatabases/mister-quake": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mms2-gb": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/paprium": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/physical-disc": {"group": "db", "default": "false", "values": ["false", "true"]},
-                "MultiDatabases/sonic-mania": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
@@ -1246,6 +1241,41 @@ def settings_screen_model():
                     }
                 },
                 {
+                    "title": "# MegaVGMDrive",
+                    "description": "{MultiDatabases/megavgmdrive:enabled} Mega Drive/Genesis VGM player",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/megavgmdrive", "MegaVGMDrive"),
+                        "ok": [{"type": "rotate_variable", "target": "MultiDatabases/megavgmdrive"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "MegaVGMDrive",
+                            "text": [
+                                "Mega Drive/Genesis VGM music player.",
+                                " ",
+                                "Place your own VGM files in",
+                                "games/MegaVGMDrive/",
+                            ],
+                        }],
+                    }
+                },
+                {
+                    "title": "# Hybrid Cores",
+                    "description": "Hybrid FPGA/ARM cores and ports",
+                    "actions": {"ok": [{"type": "navigate", "target": "hybrid_cores_menu"}]}
+                },
+            ]
+        },
+        "hybrid_cores_menu": {
+            "type": "dialog_sub_menu_info",
+            "header": "Hybrid Cores",
+            "variables": {
+                "MiSTerOrganize/MiSTer_Frontier": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/dreamster": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/sonic-mania": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/duke3d": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/mister-quake": {"group": "db", "default": "false", "values": ["false", "true"]},
+            },
+            "entries": [
+                {
                     "title": "# MiSTer Frontier",
                     "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} Hybrid FPGA+ARM cores",
                     "actions": {"uninstall": uninstall_db_action_for_id("MiSTerOrganize/MiSTer_Frontier", "MiSTer Frontier"),
@@ -1385,23 +1415,6 @@ def settings_screen_model():
                                 " ",
                                 "Requires your own PAK0.PAK data file.",
                                 "Copy it to games/quake/id1/",
-                            ],
-                        }],
-                    }
-                },
-                {
-                    "title": "# MegaVGMDrive",
-                    "description": "{MultiDatabases/megavgmdrive:enabled} Mega Drive/Genesis VGM player",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/megavgmdrive", "MegaVGMDrive"),
-                        "ok": [{"type": "rotate_variable", "target": "MultiDatabases/megavgmdrive"}],
-                        "info": [{
-                            "ui": "message",
-                            "header": "MegaVGMDrive",
-                            "text": [
-                                "Mega Drive/Genesis VGM music player.",
-                                " ",
-                                "Place your own VGM files in",
-                                "games/MegaVGMDrive/",
                             ],
                         }],
                     }
