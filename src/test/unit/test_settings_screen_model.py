@@ -367,7 +367,17 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertEqual('# Hybrid Cores', entry['title'])
         self.assertEqual('Hybrid FPGA/ARM cores and ports', entry['description'])
-        self.assertEqual([{'type': 'navigate', 'target': 'hybrid_cores_menu'}], entry['actions']['ok'])
+        self.assertEqual([{
+            'ui': 'message',
+            'header': 'About Hybrid Cores',
+            'text': [
+                "Hybrid cores combine FPGA logic with software running on MiSTer's ARM processor.",
+                ' ',
+                'Unlike traditional MiSTer cores, they do not recreate the complete system in FPGA hardware.',
+                'The FPGA is therefore not fully taken advantage of when using these cores.',
+            ],
+            'effects': [{'type': 'navigate', 'target': 'hybrid_cores_menu'}],
+        }], entry['actions']['ok'])
 
     def test_other_cores_db_entries___have_conditional_uninstall_action(self):
         expected = {
