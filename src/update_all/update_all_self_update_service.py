@@ -22,7 +22,7 @@ from typing import Optional
 from update_all.cli_output_formatting import bold
 from update_all.config import Config
 from update_all.constants import BACKGROUND_JOBS_SOFT_TIMEOUT, FILE_settings_screen_model_json_zip, \
-    FILE_update_all_self_update_resume, FILE_update_all_pyz
+    FILE_update_all_self_update_downloader_log, FILE_update_all_self_update_resume, FILE_update_all_pyz
 from update_all.databases import all_dbs, ALL_DB_IDS
 from update_all.downloader_service import DownloaderService
 from update_all.fetcher import Fetcher
@@ -125,6 +125,7 @@ class UpdateAllSelfUpdateService:
                 config,
                 self._ini_repository.downloader_ini_standard_path(),
                 ['--run-only', ALL_DB_IDS['UPDATE_ALL_MISTER']],
+                self._file_system.resolve(FILE_update_all_self_update_downloader_log),
             )
             if return_code != 0:
                 self._logger.debug(f'Early Update All Downloader run failed with error code {return_code}.')

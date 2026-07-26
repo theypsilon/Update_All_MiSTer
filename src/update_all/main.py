@@ -40,8 +40,13 @@ from update_all.other import GenericProvider
 
 def main(env, args=None):
     locale.setlocale(locale.LC_CTYPE, "")
+    args = sys.argv if args is None else args
     local_repository_provider = GenericProvider()
-    logger = FileLoggerDecorator(PrintLogger(), initial_logfile_path())
+    logger = FileLoggerDecorator(
+        PrintLogger(),
+        initial_logfile_path(),
+        append=len(args) > 1 and args[1] == '--continue',
+    )
     # noinspection PyBroadException
     try:
         exit_code = execute_update_all(logger, local_repository_provider, env, args=args)

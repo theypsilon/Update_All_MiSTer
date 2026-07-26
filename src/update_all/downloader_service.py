@@ -45,8 +45,8 @@ class DownloaderService:
 
         return self._run_with_fallbacks(config, env, quiet)
 
-    def execute_downloader_command(self, config: Config, downloader_ini_path: str, args: list[str], quiet: bool = False) -> int:
-        env = self._prepare_env(config, downloader_ini_path, config.skip_linux_update, None, None)
+    def execute_downloader_command(self, config: Config, downloader_ini_path: str, args: list[str], logfile: Optional[str], quiet: bool = False) -> int:
+        env = self._prepare_env(config, downloader_ini_path, config.skip_linux_update, logfile, None)
         return self._run_with_fallbacks(config, env, quiet, args=args)
 
     def _prepare_env(self, config: Config, downloader_ini_path: str, skip_linux_update: bool, logfile: Optional[str], default_db: Optional[Database]) -> dict[str, str]:

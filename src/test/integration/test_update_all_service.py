@@ -23,7 +23,8 @@ from typing import Optional
 from update_all.config import Config
 from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_REQUIRES_EARLY_EXIT, \
     COMMAND_SHOW_CHIP_ID_RESULT, FILE_update_all_pyz, FILE_settings_screen_model_json_zip, \
-    FILE_update_all_self_update_resume, EXIT_CODE_CAN_CONTINUE, BACKGROUND_JOBS_SOFT_TIMEOUT
+    FILE_update_all_self_update_downloader_log, FILE_update_all_self_update_resume, EXIT_CODE_CAN_CONTINUE, \
+    BACKGROUND_JOBS_SOFT_TIMEOUT
 from update_all.countdown import CountdownOutcome
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
@@ -372,6 +373,7 @@ class TestUpdateAllService(unittest.TestCase):
             (
                 '/media/fat/downloader.ini',
                 ['--run-only', 'update_all_mister'],
+                '/media/fat/' + FILE_update_all_self_update_downloader_log.lower(),
                 False,
             ),
         ], downloader.command_calls)
@@ -757,8 +759,8 @@ class _DownloaderServiceStub:
         self.update_calls = []
         self.cleanup_calls = 0
 
-    def execute_downloader_command(self, _config, downloader_ini_path, args, quiet=False):
-        self.command_calls.append((downloader_ini_path, args, quiet))
+    def execute_downloader_command(self, _config, downloader_ini_path, args, logfile, quiet=False):
+        self.command_calls.append((downloader_ini_path, args, logfile, quiet))
         return self.command_return_code
 
     def execute_downloader(self, config, downloader_ini_path, skip_linux_update, logfile, default_db, quiet=False):

@@ -230,12 +230,12 @@ class TrivialLoggerDecorator(Logger):
 
 
 class FileLoggerDecorator(TrivialLoggerDecorator):
-    def __init__(self, decorated_logger, initial_logfile_path):
+    def __init__(self, decorated_logger, initial_logfile_path, append=False):
         super().__init__(decorated_logger)
         self._logfile = tempfile.NamedTemporaryFile('w', delete=False)
         self._eager_logfile: Optional[TextIOWrapper] = None
         self._final_logfile_path = initial_logfile_path
-        self._append_to_final_logfile = False
+        self._append_to_final_logfile = append
 
     def set_logfile(self, logfile_path, append=False, eager=False):
         self._final_logfile_path = logfile_path
@@ -261,7 +261,10 @@ class FileLoggerDecorator(TrivialLoggerDecorator):
         self._logfile.truncate(0)
 
     def configure(self, config):
-        self.set_logfile(os.path.join(config.base_system_path, FILE_update_all_log))
+        self.set_logfile(
+            os.path.join(config.base_system_path, FILE_update_all_log),
+            append=self._append_to_final_logfile,
+        )
         self._decorated_logger.configure(config)
 
     def finalize(self):

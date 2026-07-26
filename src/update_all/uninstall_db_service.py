@@ -56,6 +56,7 @@ class UninstallDbService:
             config,
             self._ini_repository.downloader_ini_standard_path(),
             args,
+            None,
         )
 
         if return_code == 0:
