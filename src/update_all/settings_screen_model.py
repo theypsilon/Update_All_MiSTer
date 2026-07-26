@@ -62,15 +62,6 @@ def _crt_direct_video_warning(target): return {
 
 _ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22265593856  # ~20.7 GB at 128KB cluster, see estimate_manuals_db_space.json
 
-_HYBRID_CORE_SOFTWARE_DESCRIPTIONS = {
-    "MultiDatabases/dreamster": "DreamSTer is an experimental Dreamcast emulator that runs in software rather than in the FPGA.",
-    "MultiDatabases/sonic-mania": "Sonic Mania runs as a native recompilation of its reverse-engineered engine, in software rather than in the FPGA.",
-    "MultiDatabases/duke3d": "MiSTer Duke3D is a native engine port that runs in software rather than in the FPGA.",
-    "MultiDatabases/mister-quake": "MiSTer Quake is a native engine port that runs in software rather than in the FPGA.",
-    "MiSTerOrganize/MiSTer_Frontier": "MiSTer Frontier's PICO-8 emulator and OpenBOR engine ports run in software rather than in the FPGA.",
-}
-
-
 def _enable_all_manuals_confirm(): return {
     "ui": "confirm",
     "header": "Enable All Manuals DBs?",
@@ -175,11 +166,7 @@ def _try_toggle_file_dependent_core(variable, title, file_instructions, enable_e
             "ui": "confirm",
             "header": f"Enable {title}?",
             "preselected_action": "No",
-            "text": [
-                *file_instructions,
-                " ",
-                f"Do you want to enable {title}?",
-            ],
+            "text": file_instructions,
             "actions": [
                 {"title": "Yes", "type": "fixed", "fixed": [
                     {"type": "rotate_variable", "target": variable},
@@ -1202,6 +1189,7 @@ def settings_screen_model():
                             "Paprium MegaDrive",
                             [
                                 "Paprium MegaDrive requires files from your own copy of the game.",
+                                "You can launch Paprium MegaDrive from MiSTer's Custom Cores folder.",
                                 "Copy the Paprium ROM and WAV files to:",
                                 "games/PapriumMD/",
                             ],
@@ -1213,6 +1201,7 @@ def settings_screen_model():
                                 "FPGA core fork of MiSTer's Mega Drive core.",
                                 "It implements Paprium's custom cartridge and MCU behavior in FPGA hardware.",
                                 "It lets you play Paprium from MiSTer's main menu with its streamed graphics and WAV soundtrack.",
+                                "You can launch Paprium MegaDrive from MiSTer's Custom Cores folder.",
                                 "You must add your own Paprium game and WAV soundtrack files manually before playing.",
                             ],
                         }],
@@ -1222,7 +1211,16 @@ def settings_screen_model():
                     "title": "# MMS2 GB Core",
                     "description": "{MultiDatabases/mms2-gb:enabled} Physical Game Boy cartridges",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/mms2-gb", "MMS2 GB Core"),
-                        "ok": [{"type": "rotate_variable", "target": "MultiDatabases/mms2-gb"}],
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/mms2-gb",
+                            "MMS2 GB Core",
+                            [
+                                "MMS2 GB Core plays physical Game Boy and Game Boy Color cartridges.",
+                                "You can launch the MMS2 GB core from MiSTer's MMS2 folder.",
+                                "It requires a Heber Multisystem 2 with compatible cartridge hardware.",
+                                "Hold the USER button while inserting or removing a cartridge.",
+                            ],
+                        ),
                         "info": [{
                             "ui": "message",
                             "header": "MMS2 GB Core",
@@ -1234,6 +1232,7 @@ def settings_screen_model():
                                 "compatible cartridge hardware.",
                                 "Hold the USER button while inserting",
                                 "or removing a cartridge.",
+                                "You can launch the MMS2 GB core from MiSTer's MMS2 folder.",
                             ],
                         }],
                     }
@@ -1292,6 +1291,7 @@ def settings_screen_model():
                             "MegaVGMDrive",
                             [
                                 "MegaVGMDrive plays VGM music files that you provide.",
+                                "You can launch MegaVGMDrive from MiSTer's Custom Cores folder.",
                                 "Copy them to:",
                                 "games/MegaVGMDrive/",
                             ],
@@ -1303,6 +1303,7 @@ def settings_screen_model():
                                 "Standalone FPGA music-player core.",
                                 "It recreates Mega Drive/Genesis and supported Sega arcade sound chips in FPGA hardware to play VGM tracks.",
                                 "It behaves like a hardware jukebox where you select VGM tracks and listen to game music generated by those sound cores.",
+                                "You can launch MegaVGMDrive from MiSTer's Custom Cores folder.",
                                 "You must manually add the VGM music files you want to hear.",
                             ],
                         }],
@@ -1344,7 +1345,8 @@ def settings_screen_model():
                             "MultiDatabases/dreamster",
                             "DreamSTer",
                             [
-                                _HYBRID_CORE_SOFTWARE_DESCRIPTIONS["MultiDatabases/dreamster"],
+                                "DreamSTer is an experimental Dreamcast emulator that runs in software rather than in the FPGA.",
+                                "You can launch DreamSTer from MiSTer's Scripts folder.",
                                 " ",
                                 "DreamSTer requires Dreamcast BIOS files.",
                                 "Copy dc_boot.bin and dc_flash.bin to:",
@@ -1355,9 +1357,10 @@ def settings_screen_model():
                             "ui": "message",
                             "header": "DreamSTer",
                             "text": [
-                                _HYBRID_CORE_SOFTWARE_DESCRIPTIONS["MultiDatabases/dreamster"],
+                                "DreamSTer is an experimental Dreamcast emulator that runs in software rather than in the FPGA.",
                                 "Enabling this database installs the DreamSTer emulator, including its launcher, TUI, and minicast runtime.",
                                 "Its game browser lets you browse and launch supported Dreamcast games directly on MiSTer, with experimental compatibility.",
+                                "You can launch DreamSTer from MiSTer's Scripts folder.",
                                 "You must add Dreamcast BIOS and game files manually before playing.",
                             ],
                         }],
@@ -1377,7 +1380,8 @@ def settings_screen_model():
                             "MultiDatabases/sonic-mania",
                             "Sonic Mania MiSTer",
                             [
-                                _HYBRID_CORE_SOFTWARE_DESCRIPTIONS["MultiDatabases/sonic-mania"],
+                                "Sonic Mania runs as a native recompilation of its reverse-engineered engine, in software rather than in the FPGA.",
+                                "You can launch Sonic Mania MiSTer from MiSTer's Other folder.",
                                 " ",
                                 "Sonic Mania MiSTer requires Data.rsdk from your own Sonic Mania installation.",
                                 "Copy it to:",
@@ -1395,9 +1399,10 @@ def settings_screen_model():
                             "ui": "message",
                             "header": "Sonic Mania MiSTer",
                             "text": [
-                                _HYBRID_CORE_SOFTWARE_DESCRIPTIONS["MultiDatabases/sonic-mania"],
+                                "Sonic Mania runs as a native recompilation of its reverse-engineered engine, in software rather than in the FPGA.",
                                 "Enabling this database installs the Sonic Mania RSDKv5 runtime, MiSTer launcher, and 16:9 and 4:3 display cores.",
                                 "You can launch and play Sonic Mania from MiSTer's main menu in either 16:9 or 4:3.",
+                                "You can launch Sonic Mania MiSTer from MiSTer's Other folder.",
                                 "You must manually add game data from your own Sonic Mania installation before playing.",
                             ],
                         }],
@@ -1417,7 +1422,8 @@ def settings_screen_model():
                             "MultiDatabases/duke3d",
                             "MiSTer Duke3D",
                             [
-                                _HYBRID_CORE_SOFTWARE_DESCRIPTIONS["MultiDatabases/duke3d"],
+                                "MiSTer Duke3D is a native engine port that runs in software rather than in the FPGA.",
+                                "You can launch MiSTer Duke3D from MiSTer's Other folder.",
                                 " ",
                                 "MiSTer Duke3D requires DUKE3D.GRP from your own game installation.",
                                 "Copy it to:",
@@ -1435,9 +1441,10 @@ def settings_screen_model():
                             "ui": "message",
                             "header": "MiSTer Duke3D",
                             "text": [
-                                _HYBRID_CORE_SOFTWARE_DESCRIPTIONS["MultiDatabases/duke3d"],
+                                "MiSTer Duke3D is a native engine port that runs in software rather than in the FPGA.",
                                 "Enabling this database installs the Duke Nukem 3D engine runtime, MiSTer launcher, and display core.",
                                 "You can launch and play Duke Nukem 3D directly from MiSTer's main menu with its original software-rendered look.",
+                                "You can launch MiSTer Duke3D from MiSTer's Other folder.",
                                 "You must manually add game data from your own Duke Nukem 3D installation before playing.",
                             ],
                         }],
@@ -1457,7 +1464,8 @@ def settings_screen_model():
                             "MultiDatabases/mister-quake",
                             "MiSTer Quake",
                             [
-                                _HYBRID_CORE_SOFTWARE_DESCRIPTIONS["MultiDatabases/mister-quake"],
+                                "MiSTer Quake is a native engine port that runs in software rather than in the FPGA.",
+                                "You can launch MiSTer Quake from MiSTer's Other folder.",
                                 " ",
                                 "MiSTer Quake requires PAK0.PAK from your own game installation.",
                                 "Copy it to:",
@@ -1475,9 +1483,10 @@ def settings_screen_model():
                             "ui": "message",
                             "header": "MiSTer Quake",
                             "text": [
-                                _HYBRID_CORE_SOFTWARE_DESCRIPTIONS["MultiDatabases/mister-quake"],
+                                "MiSTer Quake is a native engine port that runs in software rather than in the FPGA.",
                                 "Enabling this database installs the Quake engine runtime, MiSTer launcher, and display core.",
                                 "You can launch and play Quake directly from MiSTer's main menu with its original software-rendered look.",
+                                "You can launch MiSTer Quake from MiSTer's Other folder.",
                                 "You must manually add game data from your own Quake installation before playing.",
                             ],
                         }],
@@ -1491,7 +1500,8 @@ def settings_screen_model():
                             "MiSTerOrganize/MiSTer_Frontier",
                             "MiSTer Frontier",
                             [
-                                _HYBRID_CORE_SOFTWARE_DESCRIPTIONS["MiSTerOrganize/MiSTer_Frontier"],
+                                "MiSTer Frontier's PICO-8 emulator and OpenBOR engine ports run in software rather than in the FPGA.",
+                                "You can launch MiSTer Frontier's cores from MiSTer's Other folder.",
                                 " ",
                                 "MiSTer Frontier requires you to provide the games you want to run.",
                                 "Copy PICO-8 carts (.p8 or .p8.png) to:",
@@ -1505,9 +1515,10 @@ def settings_screen_model():
                             "ui": "message",
                             "header": "MiSTer Frontier",
                             "text": [
-                                _HYBRID_CORE_SOFTWARE_DESCRIPTIONS["MiSTerOrganize/MiSTer_Frontier"],
+                                "MiSTer Frontier's PICO-8 emulator and OpenBOR engine ports run in software rather than in the FPGA.",
                                 "Enabling this database installs the PICO-8 emulator and legacy and modern OpenBOR engine ports, with their MiSTer launchers, FPGA output cores, and documentation.",
                                 "You can launch PICO-8 carts and legacy or modern OpenBOR games from MiSTer's main menu with native video and audio output.",
+                                "You can launch MiSTer Frontier's cores from MiSTer's Other folder.",
                                 "You must manually add the PICO-8 carts and OpenBOR game modules you want to play.",
                             ],
                         }]

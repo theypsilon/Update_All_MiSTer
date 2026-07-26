@@ -736,7 +736,6 @@ class TestSettingsScreenModel(unittest.TestCase):
                 prompt = ' '.join(confirm['text'])
                 for path in paths:
                     self.assertIn(path, prompt)
-                self.assertIn(f"Do you want to enable {title.removeprefix('# ')}?", prompt)
 
     def test_hybrid_core_enable_confirmations___identify_what_runs_outside_the_fpga(self):
         for title, expected_description in _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS.items():
@@ -752,6 +751,48 @@ class TestSettingsScreenModel(unittest.TestCase):
                 info = self._execute_core_info(title)
 
                 self.assertEqual(expected_description, info.messages[0]['text'][0])
+
+    def test_special_core_menu_locations___are_identical_in_enable_confirmation_and_info(self):
+        self._assert_core_menu_location(
+            '# Paprium MegaDrive',
+            'MultiDatabases/paprium',
+            "You can launch Paprium MegaDrive from MiSTer's Custom Cores folder.",
+        )
+        self._assert_core_menu_location(
+            '# MMS2 GB Core',
+            'MultiDatabases/mms2-gb',
+            "You can launch the MMS2 GB core from MiSTer's MMS2 folder.",
+        )
+        self._assert_core_menu_location(
+            '# MegaVGMDrive',
+            'MultiDatabases/megavgmdrive',
+            "You can launch MegaVGMDrive from MiSTer's Custom Cores folder.",
+        )
+        self._assert_core_menu_location(
+            '# DreamSTer',
+            'MultiDatabases/dreamster',
+            "You can launch DreamSTer from MiSTer's Scripts folder.",
+        )
+        self._assert_core_menu_location(
+            '# Sonic Mania MiSTer',
+            'MultiDatabases/sonic-mania',
+            "You can launch Sonic Mania MiSTer from MiSTer's Other folder.",
+        )
+        self._assert_core_menu_location(
+            '# MiSTer Duke3D',
+            'MultiDatabases/duke3d',
+            "You can launch MiSTer Duke3D from MiSTer's Other folder.",
+        )
+        self._assert_core_menu_location(
+            '# MiSTer Quake',
+            'MultiDatabases/mister-quake',
+            "You can launch MiSTer Quake from MiSTer's Other folder.",
+        )
+        self._assert_core_menu_location(
+            '# MiSTer Frontier',
+            'MiSTerOrganize/MiSTer_Frontier',
+            "You can launch MiSTer Frontier's cores from MiSTer's Other folder.",
+        )
 
     def test_hybrid_core_info___explains_what_enabling_the_database_installs(self):
         for title in _HYBRID_CORE_TITLES:
@@ -899,8 +940,13 @@ class TestSettingsScreenModel(unittest.TestCase):
         info = self._execute_core_info('# MiSTer Quake')
         self.assertIn('Quake engine runtime', ' '.join(info.messages[0]['text']))
 
-    def test_mms2_gb_entry___toggles_without_message_and_exposes_hardware_requirements_as_info(self):
-        app = self._execute_multidatabase_action('# MMS2 GB Core', 'MultiDatabases/mms2-gb', 'false')
+    def test_mms2_gb_entry___when_yes_is_selected___enables_and_exposes_hardware_requirements_as_info(self):
+        app = self._execute_multidatabase_action(
+            '# MMS2 GB Core',
+            'MultiDatabases/mms2-gb',
+            'false',
+            confirm_action_title='Yes',
+        )
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/mms2-gb'))
         self.assertEqual([], app.messages)
@@ -963,6 +1009,13 @@ class TestSettingsScreenModel(unittest.TestCase):
 
                 for path in paths:
                     self.assertNotIn(path, text)
+
+    def _assert_core_menu_location(self, title, variable, expected_location):
+        app = self._execute_multidatabase_action(title, variable, 'false')
+        info = self._execute_core_info(title)
+
+        self.assertIn(expected_location, app.confirms[0]['text'])
+        self.assertIn(expected_location, info.messages[0]['text'])
 
     def _execute_multidatabase_action(self, title, variable, value, confirm_action_title=None):
         menu = self._core_menu(title)
