@@ -18,7 +18,8 @@
 import unittest
 
 from update_all.config import Config
-from update_all.databases import all_dbs, ids_sequence, ALL_DB_IDS, AllDBs, Database
+from update_all.databases import all_dbs, all_mirrors, ids_sequence, ALL_DB_IDS, AllDBs, AllDBsAndiBr, Database, \
+    MIRROR_ANDI_BR, MIRROR_MYSTICAL_REALM_ORG
 from update_all.ini_repository import candidate_databases
 
 
@@ -35,6 +36,30 @@ class TestDatabases(unittest.TestCase):
 
     def test_names_locale_by_db_url___on_names_char18_common_jp_db_url___returns_proper_region_value(self):
         self.assertEqual('JP', names_locale_by_db_url(all_dbs('').NAMES_CHAR18_COMMON_JP_TXT.db_url)[0])
+
+    def test_all_mirrors___includes_mystical_realm_and_andi_br(self):
+        self.assertEqual(
+            (MIRROR_MYSTICAL_REALM_ORG, MIRROR_ANDI_BR),
+            all_mirrors(),
+        )
+
+    def test_all_dbs___with_andi_br_mirror___prepends_proxy_to_every_database_url(self):
+        original_dbs = AllDBs()
+        mirrored_dbs = all_dbs(MIRROR_ANDI_BR)
+
+        self.assertIsInstance(mirrored_dbs, AllDBsAndiBr)
+        for name, original_db in original_dbs.__dict__.items():
+            if not isinstance(original_db, Database):
+                continue
+
+            with self.subTest(database=name):
+                mirrored_db = getattr(mirrored_dbs, name)
+                self.assertEqual(original_db.db_id, mirrored_db.db_id)
+                self.assertEqual(original_db.title, mirrored_db.title)
+                self.assertEqual(
+                    'http://proxy.andi.com.br/' + original_db.db_url,
+                    mirrored_db.db_url,
+                )
 
 def candidate_dbs(): return candidate_databases(Config())
 def names_locale_by_db_url(db_url: str) -> tuple[str, str, str]: return all_dbs('').names_locale_by_db_url(db_url)

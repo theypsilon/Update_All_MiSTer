@@ -281,9 +281,11 @@ class AllDBs:
 ALL_DB_IDS: dict[str, str] = {name: db.db_id for name, db in AllDBs().__dict__.items() if not name.startswith('_') and isinstance(db, Database)}
 
 MIRROR_MYSTICAL_REALM_ORG = 'mysticalrealm'
+MIRROR_ANDI_BR = 'andi_br'
 
 def all_mirrors(): return (
-    MIRROR_MYSTICAL_REALM_ORG
+    MIRROR_MYSTICAL_REALM_ORG,
+    MIRROR_ANDI_BR,
 )
 
 class AllDBsMysticalRealmOrgMirror(AllDBs):
@@ -306,12 +308,22 @@ class AllDBsMysticalRealmOrgMirror(AllDBs):
 
                 db.db_url = 'https://uam-mirror.mysticalrealm.org/' + res_path
 
+class AllDBsAndiBr(AllDBs):
+    def __init__(self):
+        super().__init__()
+
+        for db in self.all_dbs_list():
+            db.db_url = 'http://proxy.andi.com.br/' + db.db_url
+
 def all_dbs(mirror: Optional[str]) -> AllDBs:
     if not mirror or mirror == 'off':
         return AllDBs()
 
     if mirror == MIRROR_MYSTICAL_REALM_ORG:
         return AllDBsMysticalRealmOrgMirror()
+
+    if mirror == MIRROR_ANDI_BR:
+        return AllDBsAndiBr()
 
     raise ValueError(f'Unknown mirror: {mirror}')
 
