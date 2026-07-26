@@ -359,7 +359,7 @@ class TestUpdateAllService(unittest.TestCase):
             (
                 '/media/fat/downloader.ini',
                 ['--run-only', 'update_all_mister'],
-                True,
+                False,
             ),
         ], downloader.command_calls)
         self.assertEqual(

@@ -116,12 +116,12 @@ class UpdateAllEarlyUpdateService:
 
             config = self._config_provider.get()
             update_all_db = all_dbs(config.mirror).UPDATE_ALL_MISTER
-            self._logger.debug(f'Running early update for {update_all_db.db_id}.')
+            self._logger.print('A new version of Update All is available.')
+            self._logger.print('Installing it now. The update process will continue automatically...')
             return_code = self._downloader_service.execute_downloader_command(
                 config,
                 self._ini_repository.downloader_ini_standard_path(),
                 ['--run-only', update_all_db.db_id],
-                quiet=True,
             )
             if return_code != 0:
                 self._logger.debug(f'Early Update All Downloader run failed with error code {return_code}.')
