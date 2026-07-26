@@ -54,6 +54,34 @@ _FILE_DEPENDENT_CORE_PATHS = {
     ),
 }
 
+_HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
+    '# DreamSTer': 'DreamSTer is an experimental Dreamcast emulator that runs in software rather than in the FPGA.',
+    '# Sonic Mania MiSTer': 'Sonic Mania runs as a native recompilation of its reverse-engineered engine, in software rather than in the FPGA.',
+    '# MiSTer Duke3D': 'MiSTer Duke3D is a native engine port that runs in software rather than in the FPGA.',
+    '# MiSTer Quake': 'MiSTer Quake is a native engine port that runs in software rather than in the FPGA.',
+    '# MiSTer Frontier': "MiSTer Frontier's PICO-8 emulator and OpenBOR engine ports run in software rather than in the FPGA.",
+}
+
+_FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
+    '# Paprium MegaDrive': "lets you play Paprium from MiSTer's main menu",
+    '# MegaVGMDrive': 'hardware jukebox',
+    '# DreamSTer': 'browse and launch supported Dreamcast games',
+    '# Sonic Mania MiSTer': 'launch and play Sonic Mania',
+    '# MiSTer Duke3D': 'launch and play Duke Nukem 3D',
+    '# MiSTer Quake': 'launch and play Quake',
+    '# MiSTer Frontier': 'launch PICO-8 carts and legacy or modern OpenBOR games',
+}
+
+_FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
+    '# Paprium MegaDrive': 'add your own Paprium game and WAV soundtrack files manually',
+    '# MegaVGMDrive': 'manually add the VGM music files',
+    '# DreamSTer': 'add Dreamcast BIOS and game files manually',
+    '# Sonic Mania MiSTer': 'manually add game data from your own Sonic Mania installation',
+    '# MiSTer Duke3D': 'manually add game data from your own Duke Nukem 3D installation',
+    '# MiSTer Quake': 'manually add game data from your own Quake installation',
+    '# MiSTer Frontier': 'manually add the PICO-8 carts and OpenBOR game modules',
+}
+
 
 class TestSettingsScreenModel(unittest.TestCase):
 
@@ -687,6 +715,13 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# MiSTer Quake',
             '# MiSTer Frontier',
         ], [entry.get('title') for entry in menu['entries']])
+        self.assertEqual([
+            '{MultiDatabases/dreamster:enabled} Maintainer: skmp',
+            '{MultiDatabases/sonic-mania:enabled} Maintainer: kimchiman52',
+            '{MultiDatabases/duke3d:enabled} Maintainer: neofreno',
+            '{MultiDatabases/mister-quake:enabled} Maintainer: neofreno',
+            '{MiSTerOrganize/MiSTer_Frontier:enabled} Maintainer: MiSTerOrganize',
+        ], [entry.get('description') for entry in menu['entries']])
 
     def test_file_dependent_core_entries___when_enabling___show_paths_and_preselect_no(self):
         for title, (variable, paths) in _FILE_DEPENDENT_CORE_PATHS.items():
@@ -702,6 +737,51 @@ class TestSettingsScreenModel(unittest.TestCase):
                 for path in paths:
                     self.assertIn(path, prompt)
                 self.assertIn(f"Do you want to enable {title.removeprefix('# ')}?", prompt)
+
+    def test_hybrid_core_enable_confirmations___identify_what_runs_outside_the_fpga(self):
+        for title, expected_description in _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS.items():
+            with self.subTest(title=title):
+                variable, _paths = _FILE_DEPENDENT_CORE_PATHS[title]
+                app = self._execute_multidatabase_action(title, variable, 'false')
+
+                self.assertIn(expected_description, app.confirms[0]['text'])
+
+    def test_hybrid_core_info___starts_with_the_authoritative_confirmation_description(self):
+        for title, expected_description in _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS.items():
+            with self.subTest(title=title):
+                info = self._execute_core_info(title)
+
+                self.assertEqual(expected_description, info.messages[0]['text'][0])
+
+    def test_hybrid_core_info___explains_what_enabling_the_database_installs(self):
+        for title in _HYBRID_CORE_TITLES:
+            with self.subTest(title=title):
+                info = self._execute_core_info(title)
+                text = info.messages[0]['text']
+
+                self.assertGreaterEqual(len(text), 3)
+                self.assertIn('Enabling this database installs', ' '.join(text))
+
+    def test_fpga_core_info___does_not_state_that_enabling_installs_the_core_and_launcher(self):
+        for title in ('# Paprium MegaDrive', '# MegaVGMDrive'):
+            with self.subTest(title=title):
+                info = self._execute_core_info(title)
+
+                self.assertNotIn('Enabling this database installs', ' '.join(info.messages[0]['text']))
+
+    def test_file_dependent_core_info___explains_the_experience_it_provides(self):
+        for title, experience_phrase in _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES.items():
+            with self.subTest(title=title):
+                info = self._execute_core_info(title)
+
+                self.assertIn(experience_phrase, ' '.join(info.messages[0]['text']))
+
+    def test_file_dependent_core_info___states_which_content_must_be_added_manually(self):
+        for title, manual_content_phrase in _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES.items():
+            with self.subTest(title=title):
+                info = self._execute_core_info(title)
+
+                self.assertIn(manual_content_phrase, ' '.join(info.messages[0]['text']))
 
     def test_file_dependent_core_entries___when_no_is_selected___remain_disabled(self):
         for title, (variable, _paths) in _FILE_DEPENDENT_CORE_PATHS.items():
@@ -732,8 +812,12 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertEqual('true', app.ui.get_value(variable))
         self.assertEqual([], app.mister_ini_effects)
+        info = self._execute_core_info('# MiSTer Frontier')
+        text = ' '.join(info.messages[0]['text'])
+        self.assertIn('PICO-8 carts', text)
+        self.assertIn('OpenBOR games', text)
 
-    def test_dreamster_entry___when_yes_is_selected___enables_and_exposes_requirements_as_info(self):
+    def test_dreamster_entry___when_yes_is_selected___enables_and_identifies_emulator_in_info(self):
         app = self._execute_multidatabase_action(
             '# DreamSTer',
             'MultiDatabases/dreamster',
@@ -746,8 +830,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.mister_ini_effects)
         info = self._execute_core_info('# DreamSTer')
         self.assertEqual('DreamSTer', info.messages[0]['header'])
-        self.assertIn('dc_boot.bin', ' '.join(info.messages[0]['text']))
-        self.assertIn('dc_flash.bin', ' '.join(info.messages[0]['text']))
+        self.assertIn('minicast', ' '.join(info.messages[0]['text']))
 
     def test_dreamster_entry___when_disabling___rotates_without_message(self):
         app = self._execute_multidatabase_action('# DreamSTer', 'MultiDatabases/dreamster', 'true')
@@ -756,7 +839,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
 
-    def test_duke3d_entry___when_yes_is_selected___arms_ini_sections_and_exposes_info(self):
+    def test_duke3d_entry___when_yes_is_selected___arms_ini_sections_and_identifies_recompilation_in_info(self):
         app = self._execute_multidatabase_action(
             '# MiSTer Duke3D',
             'MultiDatabases/duke3d',
@@ -772,7 +855,7 @@ class TestSettingsScreenModel(unittest.TestCase):
                         'Mister_duke3d': {'main': 'Mister_duke3d', 'vga_scaler': '0'}}},
         ], app.mister_ini_effects)
         info = self._execute_core_info('# MiSTer Duke3D')
-        self.assertIn('DUKE3D.GRP', ' '.join(info.messages[0]['text']))
+        self.assertIn('Duke Nukem 3D engine runtime', ' '.join(info.messages[0]['text']))
 
     def test_duke3d_entry___when_disabling___rotates_without_firing_anything(self):
         app = self._execute_multidatabase_action('# MiSTer Duke3D', 'MultiDatabases/duke3d', 'true')
@@ -781,7 +864,8 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
 
-    def test_megavgmdrive_entry___when_yes_is_selected___enables_and_exposes_vgm_folder_as_info(self):
+    def test_megavgmdrive_entry___when_yes_is_selected___enables_and_identifies_fpga_player_in_info(self):
+        entry = self._entry('other_cores_menu', '# MegaVGMDrive')
         app = self._execute_multidatabase_action(
             '# MegaVGMDrive',
             'MultiDatabases/megavgmdrive',
@@ -792,10 +876,12 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('MultiDatabases/megavgmdrive'))
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
+        self.assertEqual('{MultiDatabases/megavgmdrive:enabled} Maintainer: dai-VGM', entry['description'])
         info = self._execute_core_info('# MegaVGMDrive')
-        self.assertIn('games/MegaVGMDrive/', ' '.join(info.messages[0]['text']))
+        self.assertIn('Standalone FPGA music-player core', ' '.join(info.messages[0]['text']))
+        self.assertIn('hardware jukebox', ' '.join(info.messages[0]['text']))
 
-    def test_quake_entry___when_yes_is_selected___arms_ini_sections_and_exposes_info(self):
+    def test_quake_entry___when_yes_is_selected___arms_ini_sections_and_identifies_recompilation_in_info(self):
         app = self._execute_multidatabase_action(
             '# MiSTer Quake',
             'MultiDatabases/mister-quake',
@@ -811,7 +897,7 @@ class TestSettingsScreenModel(unittest.TestCase):
                         'MiSTer_Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'}}},
         ], app.mister_ini_effects)
         info = self._execute_core_info('# MiSTer Quake')
-        self.assertIn('PAK0.PAK', ' '.join(info.messages[0]['text']))
+        self.assertIn('Quake engine runtime', ' '.join(info.messages[0]['text']))
 
     def test_mms2_gb_entry___toggles_without_message_and_exposes_hardware_requirements_as_info(self):
         app = self._execute_multidatabase_action('# MMS2 GB Core', 'MultiDatabases/mms2-gb', 'false')
@@ -823,7 +909,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertIn('Heber Multisystem 2', ' '.join(info.messages[0]['text']))
         self.assertIn('USER button', ' '.join(info.messages[0]['text']))
 
-    def test_paprium_entry___when_yes_is_selected___enables_and_exposes_rom_folder_as_info(self):
+    def test_paprium_entry___when_yes_is_selected___enables_and_identifies_fpga_core_in_info(self):
         app = self._execute_multidatabase_action(
             '# Paprium MegaDrive',
             'MultiDatabases/paprium',
@@ -835,7 +921,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
         info = self._execute_core_info('# Paprium MegaDrive')
-        self.assertIn('games/PapriumMD/', ' '.join(info.messages[0]['text']))
+        self.assertIn("FPGA core fork of MiSTer's Mega Drive core", ' '.join(info.messages[0]['text']))
 
     def test_physical_disc_entry___when_enabling___arms_cd_section_without_message_and_exposes_info(self):
         app = self._execute_multidatabase_action('# Physical CD Support', 'MultiDatabases/physical-disc', 'false')
@@ -850,7 +936,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertIn('USB CD-drive', ' '.join(info.messages[0]['text']))
         self.assertIn('Zaparoo', ' '.join(info.messages[0]['text']))
 
-    def test_sonic_mania_entry___when_yes_is_selected___arms_ini_sections_and_exposes_info(self):
+    def test_sonic_mania_entry___when_yes_is_selected___arms_ini_sections_and_identifies_recompilation_in_info(self):
         app = self._execute_multidatabase_action(
             '# Sonic Mania MiSTer',
             'MultiDatabases/sonic-mania',
@@ -866,7 +952,17 @@ class TestSettingsScreenModel(unittest.TestCase):
                         'Sonic Mania (4:3)': {'main': 'MiSTer_SonicMania'}}},
         ], app.mister_ini_effects)
         info = self._execute_core_info('# Sonic Mania MiSTer')
-        self.assertIn('Data.rsdk', ' '.join(info.messages[0]['text']))
+        self.assertIn('RSDKv5 runtime', ' '.join(info.messages[0]['text']))
+        self.assertIn('16:9 and 4:3 display cores', ' '.join(info.messages[0]['text']))
+
+    def test_file_dependent_core_info___does_not_repeat_confirmation_paths(self):
+        for title, (_variable, paths) in _FILE_DEPENDENT_CORE_PATHS.items():
+            with self.subTest(title=title):
+                info = self._execute_core_info(title)
+                text = ' '.join(info.messages[0]['text'])
+
+                for path in paths:
+                    self.assertNotIn(path, text)
 
     def _execute_multidatabase_action(self, title, variable, value, confirm_action_title=None):
         menu = self._core_menu(title)
