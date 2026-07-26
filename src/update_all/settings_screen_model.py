@@ -158,6 +158,33 @@ def _try_toggle_big_manual_db(target, title, count, size): return [
 ]
 
 
+def _try_toggle_file_dependent_core(variable, title, file_instructions, enable_effects=()): return [
+    {
+        "type": "condition",
+        "variable": variable,
+        "true": [{"type": "rotate_variable", "target": variable}],
+        "false": [{
+            "ui": "confirm",
+            "header": f"Enable {title}?",
+            "preselected_action": "No",
+            "text": [
+                *file_instructions,
+                " ",
+                f"Do you want to enable {title}?",
+            ],
+            "actions": [
+                {"title": "Yes", "type": "fixed", "fixed": [
+                    {"type": "rotate_variable", "target": variable},
+                    *enable_effects,
+                    {"type": "navigate", "target": "back"},
+                ]},
+                {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+            ],
+        }],
+    },
+]
+
+
 def _try_toggle_mrext_with_zaparoo_prompt(): return [
     {
         "type": "condition",
@@ -1162,7 +1189,15 @@ def settings_screen_model():
                     "title": "# Paprium MegaDrive",
                     "description": "{MultiDatabases/paprium:enabled} Maintainer: Pezz82",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/paprium", "Paprium MegaDrive"),
-                        "ok": [{"type": "rotate_variable", "target": "MultiDatabases/paprium"}],
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/paprium",
+                            "Paprium MegaDrive",
+                            [
+                                "Paprium MegaDrive requires files from your own copy of the game.",
+                                "Copy the Paprium ROM and WAV files to:",
+                                "games/PapriumMD/",
+                            ],
+                        ),
                         "info": [{
                             "ui": "message",
                             "header": "Paprium MegaDrive",
@@ -1244,7 +1279,15 @@ def settings_screen_model():
                     "title": "# MegaVGMDrive",
                     "description": "{MultiDatabases/megavgmdrive:enabled} Mega Drive/Genesis VGM player",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/megavgmdrive", "MegaVGMDrive"),
-                        "ok": [{"type": "rotate_variable", "target": "MultiDatabases/megavgmdrive"}],
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/megavgmdrive",
+                            "MegaVGMDrive",
+                            [
+                                "MegaVGMDrive plays VGM music files that you provide.",
+                                "Copy them to:",
+                                "games/MegaVGMDrive/",
+                            ],
+                        ),
                         "info": [{
                             "ui": "message",
                             "header": "MegaVGMDrive",
@@ -1289,7 +1332,15 @@ def settings_screen_model():
                     "title": "# DreamSTer",
                     "description": "{MultiDatabases/dreamster:enabled} Hybrid FPGA/ARM Dreamcast emulator",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/dreamster", "DreamSTer"),
-                        "ok": [{"type": "rotate_variable", "target": "MultiDatabases/dreamster"}],
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/dreamster",
+                            "DreamSTer",
+                            [
+                                "DreamSTer requires Dreamcast BIOS files.",
+                                "Copy dc_boot.bin and dc_flash.bin to:",
+                                "games/Dreamcast/",
+                            ],
+                        ),
                         "info": [{
                             "ui": "message",
                             "header": "DreamSTer",
@@ -1313,19 +1364,22 @@ def settings_screen_model():
                              "Sonic Mania (4:3)": {"main": "MiSTer_SonicMania"},
                          }},
                     ]),
-                        "ok": [{
-                            "type": "condition",
-                            "variable": "MultiDatabases/sonic-mania",
-                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/sonic-mania"}],
-                            "false": [
-                                {"type": "rotate_variable", "target": "MultiDatabases/sonic-mania"},
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/sonic-mania",
+                            "Sonic Mania MiSTer",
+                            [
+                                "Sonic Mania MiSTer requires Data.rsdk from your own Sonic Mania installation.",
+                                "Copy it to:",
+                                "games/sonic-mania/Data.rsdk",
+                            ],
+                            [
                                 {"type": "mister_ini_add", "variable": "MultiDatabases/sonic-mania",
                                  "target": {
                                      "Sonic Mania": {"main": "MiSTer_SonicMania"},
                                      "Sonic Mania (4:3)": {"main": "MiSTer_SonicMania"},
                                  }},
                             ],
-                        }],
+                        ),
                         "info": [{
                             "ui": "message",
                             "header": "Sonic Mania MiSTer",
@@ -1349,19 +1403,22 @@ def settings_screen_model():
                              "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"},
                          }},
                     ]),
-                        "ok": [{
-                            "type": "condition",
-                            "variable": "MultiDatabases/duke3d",
-                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/duke3d"}],
-                            "false": [
-                                {"type": "rotate_variable", "target": "MultiDatabases/duke3d"},
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/duke3d",
+                            "MiSTer Duke3D",
+                            [
+                                "MiSTer Duke3D requires DUKE3D.GRP from your own game installation.",
+                                "Copy it to:",
+                                "games/DUKE3D/duke3d.grp",
+                            ],
+                            [
                                 {"type": "mister_ini_add", "variable": "MultiDatabases/duke3d",
                                  "target": {
                                      "DUKE3D": {"main": "Mister_duke3d", "vga_scaler": "0"},
                                      "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"},
                                  }},
                             ],
-                        }],
+                        ),
                         "info": [{
                             "ui": "message",
                             "header": "MiSTer Duke3D",
@@ -1384,19 +1441,22 @@ def settings_screen_model():
                              "MiSTer_Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
                          }},
                     ]),
-                        "ok": [{
-                            "type": "condition",
-                            "variable": "MultiDatabases/mister-quake",
-                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/mister-quake"}],
-                            "false": [
-                                {"type": "rotate_variable", "target": "MultiDatabases/mister-quake"},
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/mister-quake",
+                            "MiSTer Quake",
+                            [
+                                "MiSTer Quake requires PAK0.PAK from your own game installation.",
+                                "Copy it to:",
+                                "games/quake/id1/",
+                            ],
+                            [
                                 {"type": "mister_ini_add", "variable": "MultiDatabases/mister-quake",
                                  "target": {
                                      "Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
                                      "MiSTer_Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
                                  }},
                             ],
-                        }],
+                        ),
                         "info": [{
                             "ui": "message",
                             "header": "MiSTer Quake",
@@ -1413,7 +1473,18 @@ def settings_screen_model():
                     "title": "# MiSTer Frontier",
                     "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} Hybrid FPGA+ARM cores",
                     "actions": {"uninstall": uninstall_db_action_for_id("MiSTerOrganize/MiSTer_Frontier", "MiSTer Frontier"),
-                        "ok": [{"type": "rotate_variable", "target": "MiSTerOrganize/MiSTer_Frontier"}],
+                        "ok": _try_toggle_file_dependent_core(
+                            "MiSTerOrganize/MiSTer_Frontier",
+                            "MiSTer Frontier",
+                            [
+                                "MiSTer Frontier requires you to provide the games you want to run.",
+                                "Copy PICO-8 carts (.p8 or .p8.png) to:",
+                                "games/PICO-8/Carts/",
+                                "Copy OpenBOR game modules (.pak) to:",
+                                "games/OpenBOR/Paks/",
+                                "After updating, run Scripts/Install_MiSTer_Frontier.sh once to finish setup.",
+                            ],
+                        ),
                         "info": [{
                             "ui": "message",
                             "header": "MiSTer Frontier",

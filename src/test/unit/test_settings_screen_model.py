@@ -41,6 +41,19 @@ _HYBRID_CORE_TITLES = {
     '# MiSTer Quake',
 }
 
+_FILE_DEPENDENT_CORE_PATHS = {
+    '# Paprium MegaDrive': ('MultiDatabases/paprium', ('games/PapriumMD/',)),
+    '# MegaVGMDrive': ('MultiDatabases/megavgmdrive', ('games/MegaVGMDrive/',)),
+    '# DreamSTer': ('MultiDatabases/dreamster', ('games/Dreamcast/',)),
+    '# Sonic Mania MiSTer': ('MultiDatabases/sonic-mania', ('games/sonic-mania/Data.rsdk',)),
+    '# MiSTer Duke3D': ('MultiDatabases/duke3d', ('games/DUKE3D/duke3d.grp',)),
+    '# MiSTer Quake': ('MultiDatabases/mister-quake', ('games/quake/id1/',)),
+    '# MiSTer Frontier': (
+        'MiSTerOrganize/MiSTer_Frontier',
+        ('games/PICO-8/Carts/', 'games/OpenBOR/Paks/', 'Scripts/Install_MiSTer_Frontier.sh'),
+    ),
+}
+
 
 class TestSettingsScreenModel(unittest.TestCase):
 
@@ -675,8 +688,58 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# MiSTer Frontier',
         ], [entry.get('title') for entry in menu['entries']])
 
-    def test_dreamster_entry___toggles_without_message_and_exposes_requirements_as_info(self):
-        app = self._execute_multidatabase_action('# DreamSTer', 'MultiDatabases/dreamster', 'false')
+    def test_file_dependent_core_entries___when_enabling___show_paths_and_preselect_no(self):
+        for title, (variable, paths) in _FILE_DEPENDENT_CORE_PATHS.items():
+            with self.subTest(title=title):
+                app = self._execute_multidatabase_action(title, variable, 'false')
+
+                self.assertEqual('false', app.ui.get_value(variable))
+                self.assertEqual(1, len(app.confirms))
+                confirm = app.confirms[0]
+                self.assertEqual(f"Enable {title.removeprefix('# ')}?", confirm['header'])
+                self.assertEqual('No', confirm['preselected_action'])
+                prompt = ' '.join(confirm['text'])
+                for path in paths:
+                    self.assertIn(path, prompt)
+                self.assertIn(f"Do you want to enable {title.removeprefix('# ')}?", prompt)
+
+    def test_file_dependent_core_entries___when_no_is_selected___remain_disabled(self):
+        for title, (variable, _paths) in _FILE_DEPENDENT_CORE_PATHS.items():
+            with self.subTest(title=title):
+                app = self._execute_multidatabase_action(title, variable, 'false', confirm_action_title='No')
+
+                self.assertEqual('false', app.ui.get_value(variable))
+                self.assertEqual([], app.mister_ini_effects)
+
+    def test_file_dependent_core_entries___when_disabling___disable_without_confirmation(self):
+        for title, (variable, _paths) in _FILE_DEPENDENT_CORE_PATHS.items():
+            with self.subTest(title=title):
+                app = self._execute_multidatabase_action(title, variable, 'true')
+
+                self.assertEqual('false', app.ui.get_value(variable))
+                self.assertEqual([], app.confirms)
+                self.assertEqual([], app.mister_ini_effects)
+
+    def test_mister_frontier_entry___when_yes_is_selected___enables(self):
+        variable = 'MiSTerOrganize/MiSTer_Frontier'
+
+        app = self._execute_multidatabase_action(
+            '# MiSTer Frontier',
+            variable,
+            'false',
+            confirm_action_title='Yes',
+        )
+
+        self.assertEqual('true', app.ui.get_value(variable))
+        self.assertEqual([], app.mister_ini_effects)
+
+    def test_dreamster_entry___when_yes_is_selected___enables_and_exposes_requirements_as_info(self):
+        app = self._execute_multidatabase_action(
+            '# DreamSTer',
+            'MultiDatabases/dreamster',
+            'false',
+            confirm_action_title='Yes',
+        )
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/dreamster'))
         self.assertEqual([], app.messages)
@@ -693,8 +756,13 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
 
-    def test_duke3d_entry___when_enabling___arms_ini_sections_without_message_and_exposes_info(self):
-        app = self._execute_multidatabase_action('# MiSTer Duke3D', 'MultiDatabases/duke3d', 'false')
+    def test_duke3d_entry___when_yes_is_selected___arms_ini_sections_and_exposes_info(self):
+        app = self._execute_multidatabase_action(
+            '# MiSTer Duke3D',
+            'MultiDatabases/duke3d',
+            'false',
+            confirm_action_title='Yes',
+        )
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/duke3d'))
         self.assertEqual([], app.messages)
@@ -713,8 +781,13 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
 
-    def test_megavgmdrive_entry___toggles_without_message_and_exposes_vgm_folder_as_info(self):
-        app = self._execute_multidatabase_action('# MegaVGMDrive', 'MultiDatabases/megavgmdrive', 'false')
+    def test_megavgmdrive_entry___when_yes_is_selected___enables_and_exposes_vgm_folder_as_info(self):
+        app = self._execute_multidatabase_action(
+            '# MegaVGMDrive',
+            'MultiDatabases/megavgmdrive',
+            'false',
+            confirm_action_title='Yes',
+        )
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/megavgmdrive'))
         self.assertEqual([], app.messages)
@@ -722,8 +795,13 @@ class TestSettingsScreenModel(unittest.TestCase):
         info = self._execute_core_info('# MegaVGMDrive')
         self.assertIn('games/MegaVGMDrive/', ' '.join(info.messages[0]['text']))
 
-    def test_quake_entry___when_enabling___arms_ini_sections_without_message_and_exposes_info(self):
-        app = self._execute_multidatabase_action('# MiSTer Quake', 'MultiDatabases/mister-quake', 'false')
+    def test_quake_entry___when_yes_is_selected___arms_ini_sections_and_exposes_info(self):
+        app = self._execute_multidatabase_action(
+            '# MiSTer Quake',
+            'MultiDatabases/mister-quake',
+            'false',
+            confirm_action_title='Yes',
+        )
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/mister-quake'))
         self.assertEqual([], app.messages)
@@ -745,8 +823,13 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertIn('Heber Multisystem 2', ' '.join(info.messages[0]['text']))
         self.assertIn('USER button', ' '.join(info.messages[0]['text']))
 
-    def test_paprium_entry___toggles_without_message_and_exposes_rom_folder_as_info(self):
-        app = self._execute_multidatabase_action('# Paprium MegaDrive', 'MultiDatabases/paprium', 'false')
+    def test_paprium_entry___when_yes_is_selected___enables_and_exposes_rom_folder_as_info(self):
+        app = self._execute_multidatabase_action(
+            '# Paprium MegaDrive',
+            'MultiDatabases/paprium',
+            'false',
+            confirm_action_title='Yes',
+        )
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/paprium'))
         self.assertEqual([], app.messages)
@@ -767,8 +850,13 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertIn('USB CD-drive', ' '.join(info.messages[0]['text']))
         self.assertIn('Zaparoo', ' '.join(info.messages[0]['text']))
 
-    def test_sonic_mania_entry___when_enabling___arms_ini_sections_without_message_and_exposes_info(self):
-        app = self._execute_multidatabase_action('# Sonic Mania MiSTer', 'MultiDatabases/sonic-mania', 'false')
+    def test_sonic_mania_entry___when_yes_is_selected___arms_ini_sections_and_exposes_info(self):
+        app = self._execute_multidatabase_action(
+            '# Sonic Mania MiSTer',
+            'MultiDatabases/sonic-mania',
+            'false',
+            confirm_action_title='Yes',
+        )
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/sonic-mania'))
         self.assertEqual([], app.messages)
@@ -780,12 +868,13 @@ class TestSettingsScreenModel(unittest.TestCase):
         info = self._execute_core_info('# Sonic Mania MiSTer')
         self.assertIn('Data.rsdk', ' '.join(info.messages[0]['text']))
 
-    def _execute_multidatabase_action(self, title, variable, value):
+    def _execute_multidatabase_action(self, title, variable, value, confirm_action_title=None):
         menu = self._core_menu(title)
         entry = self._entry(menu, title)
         return self._execute_tools_action(
             entry['actions']['ok'],
             {variable: value},
+            confirm_action_title=confirm_action_title,
             entrypoint=menu,
             initial_history=['main_menu_login'] + (['other_cores_menu'] if menu == 'hybrid_cores_menu' else []),
         )
