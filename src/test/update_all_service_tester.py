@@ -26,7 +26,7 @@ from test.retroachievements_service_tester import RetroAchievementsServiceTester
 from test.retroaccount_gateway_tester import RetroAccountGatewayTester
 from test.spy_os_utils import SpyOsUtils
 from test.update_all_background_jobs_service_tester import UpdateAllBackgroundJobsServiceTester
-from test.update_all_early_update_service_tester import UpdateAllEarlyUpdateServiceTester
+from test.update_all_self_update_service_tester import UpdateAllSelfUpdateServiceTester
 from test.zaparoo_service_tester import ZaparooServiceTester
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
@@ -67,7 +67,7 @@ from update_all.retroaccount_gateway import RetroAccountGateway
 from update_all.ui_engine import UiContext, UiRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 from update_all.update_all_background_jobs_service import UpdateAllBackgroundJobsService
-from update_all.update_all_early_update_service import UpdateAllEarlyUpdateService
+from update_all.update_all_self_update_service import UpdateAllSelfUpdateService
 from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllService
 from update_all.uninstall_db_service import UninstallDbService
 from update_all.zaparoo_service import ZaparooService
@@ -370,7 +370,7 @@ class UpdateAllServiceTester(UpdateAllService):
                  downloader_service: DownloaderService = None,
                  fetcher: FetcherStub = None,
                  background_jobs_service: UpdateAllBackgroundJobsService = None,
-                 early_update_service: UpdateAllEarlyUpdateService = None):
+                 self_update_service: UpdateAllSelfUpdateService = None):
 
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
@@ -391,7 +391,7 @@ class UpdateAllServiceTester(UpdateAllService):
         )
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
         downloader_service = downloader_service or DownloaderService(NoLogger(), file_system, os_utils)
-        early_update_service = early_update_service or UpdateAllEarlyUpdateServiceTester(
+        self_update_service = self_update_service or UpdateAllSelfUpdateServiceTester(
             config_provider=config_provider,
             logger=NoLogger(),
             file_system=file_system,
@@ -401,9 +401,8 @@ class UpdateAllServiceTester(UpdateAllService):
         )
         background_jobs_service = background_jobs_service or UpdateAllBackgroundJobsServiceTester(
             logger=NoLogger(),
-            fetcher=FetcherStub(config_provider=config_provider),
             retroaccount=retroaccount,
-            early_update_service=early_update_service,
+            self_update_service=self_update_service,
         )
 
         super().__init__(
@@ -424,7 +423,7 @@ class UpdateAllServiceTester(UpdateAllService):
             zaparoo_service=zaparoo_service,
             downloader_service=downloader_service,
             background_jobs_service=background_jobs_service,
-            early_update_service=early_update_service,
+            self_update_service=self_update_service,
         )
 
 class UpdateAllServiceFlowTester(UpdateAllServiceTester):
@@ -443,12 +442,12 @@ class _FlowBackgroundJobsService(UpdateAllBackgroundJobsServiceTester):
         super().__init__()
         self._events = events
 
-    def start_background_jobs(self, check_for_early_update: bool = False):
-        del check_for_early_update
+    def start_background_jobs(self, check_for_self_update: bool = False):
+        del check_for_self_update
         self._events.append('start_background_jobs')
         return None
 
-    def finish_background_jobs_before_outro(self) -> None:
+    def finish_background_jobs_before_outro(self, _self_update_check) -> None:
         self._events.append('finish_background_jobs_before_outro')
 
 

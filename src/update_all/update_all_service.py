@@ -19,7 +19,7 @@ import datetime
 import enum
 import os
 import time
-from typing import Optional
+from typing import Callable, Optional
 
 from update_all.analogue_pocket.firmware_update import pocket_firmware_update
 from update_all.analogue_pocket.pocket_backup import pocket_backup
@@ -49,7 +49,6 @@ from update_all.logger import Logger, close_print_tmp_log_file
 from update_all.os_utils import OsUtils, LinuxOsUtils
 from update_all.settings_screen import SettingsScreen
 from update_all.settings_screen_standard_curses_printer import SettingsScreenStandardCursesPrinter
-from update_all.settings_screen_trivial_curses_printer import SettingsScreenTrivialCursesPrinter
 from update_all.store_migrator import StoreMigrator
 from update_all.migrations import migrations
 from update_all.local_repository import LocalRepository
@@ -63,8 +62,8 @@ from update_all.retroaccount import RetroAccountService
 from update_all.retroaccount_gateway import RetroAccountGateway
 from update_all.retroachievements_service import RetroAchievementsService
 from update_all.update_output import LtsvUpdateOutput, NoopUpdateOutput
-from update_all.update_all_background_jobs_service import UpdateAllBackgroundJobsService, UpdateAllEarlyUpdateCheck
-from update_all.update_all_early_update_service import UpdateAllEarlyUpdateService
+from update_all.update_all_background_jobs_service import UpdateAllBackgroundJobsService, UpdateAllSelfUpdateCheck
+from update_all.update_all_self_update_service import UpdateAllSelfUpdateService, UpdateAllResumePoint
 from update_all.uninstall_db_service import UninstallDbService
 from update_all.zaparoo_service import ZaparooService
 
@@ -87,17 +86,16 @@ class UpdateAllServiceFactory:
         store_provider = GenericProvider[LocalStore]()
         file_system = FileSystemFactory(config_provider, {}, self._logger).create_for_system_scope()
         fetcher = Fetcher(config_provider, logger=None)
-        early_update_fetcher = Fetcher(config_provider, logger=None)
         os_utils = LinuxOsUtils(config_provider=config_provider, logger=self._logger, fetcher=fetcher)
         downloader_service = DownloaderService(self._logger, file_system, os_utils)
         ini_repository = IniRepository(self._logger, file_system=file_system, os_utils=os_utils)
-        early_update_service = UpdateAllEarlyUpdateService(
+        self_update_service = UpdateAllSelfUpdateService(
             config_provider,
             self._logger,
             file_system,
             ini_repository,
             downloader_service,
-            early_update_fetcher,
+            fetcher,
         )
         mister_ini_repository = MisterIniRepository(file_system, self._logger)
         config_reader = ConfigReader(self._logger, env, ini_repository=ini_repository)
@@ -120,9 +118,8 @@ class UpdateAllServiceFactory:
         )
         background_jobs_service = UpdateAllBackgroundJobsService(
             self._logger,
-            fetcher,
             retroaccount,
-            early_update_service,
+            self_update_service,
         )
         retroachievements_service = RetroAchievementsService(
             file_system,
@@ -191,7 +188,7 @@ class UpdateAllServiceFactory:
             zaparoo_service=zaparoo_service,
             downloader_service=downloader_service,
             background_jobs_service=background_jobs_service,
-            early_update_service=early_update_service,
+            self_update_service=self_update_service,
         )
 
 
@@ -277,7 +274,7 @@ class UpdateAllService:
                  zaparoo_service: ZaparooService,
                  downloader_service: DownloaderService,
                  background_jobs_service: UpdateAllBackgroundJobsService,
-                 early_update_service: UpdateAllEarlyUpdateService):
+                 self_update_service: UpdateAllSelfUpdateService):
         self._config_provider = config_provider
         self._logger = logger
         self._file_system = file_system
@@ -295,7 +292,7 @@ class UpdateAllService:
         self._zaparoo_service = zaparoo_service
         self._downloader_service = downloader_service
         self._background_jobs_service = background_jobs_service
-        self._early_update_service = early_update_service
+        self._self_update_service = self_update_service
         self._exit_code = 0
         self._end_time = 0.0
         self._error_reports: list[str] = []
@@ -309,16 +306,23 @@ class UpdateAllService:
 
         ts = terminal_size()
         self._logger.debug(f'Update All flow started: pass={run_pass.name}.')
-        print_sequence_before_downloader = False
+        consumed_resume_point: Optional[UpdateAllResumePoint] = None
+        deferred_self_update_check: Optional[UpdateAllSelfUpdateCheck] = None
+        should_print_sequence = False
+
         if run_pass == UpdateAllServicePass.Continue:
             self._environment_setup.setup_environment(ts, NoopUpdateOutput())
-            resume_settings_screen = self._early_update_service.take_resume_settings_screen()
-            destination = 'settings-screen' if resume_settings_screen else 'downloader'
+            consumed_resume_point = self._self_update_service.take_resume_point()
+            destination = (
+                'downloader'
+                if consumed_resume_point is None
+                else consumed_resume_point.value.replace('_', '-')
+            )
             self._logger.debug(f'Update All flow destination: {destination}.')
             self._background_jobs_service.start_background_jobs()
-            if resume_settings_screen:
+            if consumed_resume_point == UpdateAllResumePoint.SETTINGS_SCREEN:
                 self._show_settings_screen()
-                print_sequence_before_downloader = True
+                should_print_sequence = True
         elif run_pass == UpdateAllServicePass.RetroAccountSync:
             update_output = LtsvUpdateOutput()
             env_result = self._environment_setup.setup_environment(ts, update_output)
@@ -334,46 +338,63 @@ class UpdateAllService:
                 return EXIT_CODE_REQUIRES_EARLY_EXIT
 
             if run_pass == UpdateAllServicePass.NewRun:
-                self._early_update_service.remove_resume_point()
+                self._self_update_service.remove_resume_point()
             if command == COMMAND_TIMELINE:
                 self._download_update_all_db_and_show_interactive_timeline()
                 return self._exit_code
-            elif command == COMMAND_LATEST_LOG:
+            if command == COMMAND_LATEST_LOG:
                 self._show_log_viewer_with_latest_log()
                 return self._exit_code
-            elif command == COMMAND_SHOW_CHIP_ID_RESULT:
+            if command == COMMAND_SHOW_CHIP_ID_RESULT:
                 self._show_chip_id_result()
                 return self._exit_code
-            else:
-                self._test_routine()
-                early_update_check = self._background_jobs_service.start_background_jobs(
-                    check_for_early_update=run_pass == UpdateAllServicePass.NewRun,
-                )
-                self._show_intro()
-                countdown_outcome = self._countdown_for_settings_screen()
-                resume_settings_screen = countdown_outcome == CountdownOutcome.SETTINGS_SCREEN
-                destination = 'settings-screen' if resume_settings_screen else 'downloader'
-                self._logger.debug(f'Update All flow destination: {destination}.')
-                if early_update_check is not None and self._try_early_update_and_prepare_restart(
-                        early_update_check,
-                        resume_settings_screen,
-                ):
-                    return EXIT_CODE_CAN_CONTINUE
-                if countdown_outcome == CountdownOutcome.SETTINGS_SCREEN:
-                    self._show_settings_screen()
-                print_sequence_before_downloader = True
 
-        if print_sequence_before_downloader:
+            self._test_routine()
+            self_update_check = self._background_jobs_service.start_background_jobs(
+                check_for_self_update=run_pass == UpdateAllServicePass.NewRun,
+            )
+            self._show_intro()
+            countdown_outcome = self._countdown_for_settings_screen()
+            open_settings_screen = countdown_outcome == CountdownOutcome.SETTINGS_SCREEN
+            destination = 'settings-screen' if open_settings_screen else 'downloader'
+            self._logger.debug(f'Update All flow destination: {destination}.')
+            if open_settings_screen:
+                # Reset point 1: install Update All first so Settings opens with the new code and model.
+                if self_update_check is not None:
+                    if self._try_restart_prep_if_needed(
+                        self_update_check,
+                        self._self_update_service.try_update_before_settings_and_prepare_restart,
+                    ):
+                        return EXIT_CODE_CAN_CONTINUE
+                self._show_settings_screen()
+            else:
+                deferred_self_update_check = self_update_check
+            should_print_sequence = True
+
+        if should_print_sequence:
             self._print_sequence()
         self._pre_run_tweaks()
-        self._background_jobs_service.wait_for_retroaccount_before_downloader()
-        self._run_downloader()
-        self._sync_downloader_launcher()
+
+        if consumed_resume_point != UpdateAllResumePoint.AFTER_DOWNLOADER:
+            self._background_jobs_service.wait_for_retroaccount_before_downloader()
+            standard_downloader_ran_successfully = self._run_standard_downloader_if_enabled()
+            self._sync_downloader_launcher()
+
+            # Reset point 2 is prepared only after this full Downloader phase succeeds.
+            if (
+                deferred_self_update_check is not None
+                and standard_downloader_ran_successfully
+                and self._try_restart_prep_if_needed(
+                    deferred_self_update_check,
+                    self._self_update_service.try_prepare_restart_after_downloader,
+                )
+            ):
+                return EXIT_CODE_CAN_CONTINUE
 
         self._run_pocket_tools()
         self._run_arcade_organizer()
         self._cleanup()
-        self._background_jobs_service.finish_background_jobs_before_outro()
+        self._background_jobs_service.finish_background_jobs_before_outro(deferred_self_update_check)
         self._show_outro()
         self._show_interactive_log_viewer_and_timeline()
         self._reboot_if_needed()
@@ -533,28 +554,15 @@ class UpdateAllService:
             config.skip_linux_update = True
             config.autoreboot = False
 
-    def _try_early_update_and_prepare_restart(
+    def _try_restart_prep_if_needed(
             self,
-            early_update_check: UpdateAllEarlyUpdateCheck,
-            resume_settings_screen: bool,
+            self_update_check: UpdateAllSelfUpdateCheck,
+            prepare_restart: Callable[[], bool],
     ) -> bool:
-        if not self._background_jobs_service.wait_for_early_update_check(early_update_check):
-            self._background_jobs_service.abort_early_update_check(early_update_check)
-            self._logger.debug('Early Update All check timed out; continuing with the normal update flow.')
-            return False
-
-        try:
-            update_is_needed = self._background_jobs_service.finish_early_update_check(early_update_check)
-        except Exception as e:
-            self._background_jobs_service.abort_early_update_check(early_update_check)
-            self._logger.debug('Could not check whether Update All needs an early update.')
-            self._logger.debug(e)
-            return False
-
-        if not self._early_update_service.try_update_and_prepare_restart(
-                update_is_needed,
-                resume_settings_screen,
-        ):
+        update_is_needed = self._background_jobs_service.wait_for_self_update_needed_with_soft_timeout(
+            self_update_check,
+        )
+        if update_is_needed is not True or not prepare_restart():
             return False
 
         try:
@@ -565,11 +573,11 @@ class UpdateAllService:
             self._logger.debug(e)
         return True
 
-    def _run_downloader(self) -> None:
+    def _run_standard_downloader_if_enabled(self) -> bool:
         config = self._config_provider.get()
         if len(active_databases(config)) == 0 or config.skip_downloader:
             self._logger.debug('Standard Downloader skipped.')
-            return
+            return False
 
         self._draw_separator()
         return_code = self._downloader_service.execute_downloader(config, self._ini_repository.downloader_ini_standard_path(), config.skip_linux_update, None, None)
@@ -577,6 +585,8 @@ class UpdateAllService:
             self._logger.debug(f'Standard Downloader failed: return_code={return_code}.')
             self._exit_code = 10
             self._error_reports.append('Scripts/.config/downloader/downloader.log')
+            return False
+        return True
 
     def _sync_downloader_launcher(self) -> None:
         if not self._file_system.is_file(FILE_downloader_launcher_downloader_script) or not self._file_system.is_file(FILE_downloader_launcher_update_script):

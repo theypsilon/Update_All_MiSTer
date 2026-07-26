@@ -23,12 +23,12 @@ from typing import Optional
 from update_all.config import Config
 from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_REQUIRES_EARLY_EXIT, \
     COMMAND_SHOW_CHIP_ID_RESULT, FILE_update_all_pyz, FILE_settings_screen_model_json_zip, \
-    FILE_update_all_early_update_resume, EXIT_CODE_CAN_CONTINUE, BACKGROUND_JOBS_SOFT_TIMEOUT
+    FILE_update_all_self_update_resume, EXIT_CODE_CAN_CONTINUE, BACKGROUND_JOBS_SOFT_TIMEOUT
 from update_all.countdown import CountdownOutcome
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
-from update_all.update_all_background_jobs_service import UpdateAllEarlyUpdateCheck
+from update_all.update_all_background_jobs_service import UpdateAllSelfUpdateCheck
 from update_all.update_output import LtsvUpdateOutput
 from update_all.update_all_service import UpdateAllService, UpdateAllServicePass
 from test.countdown_stub import CountdownStub
@@ -112,7 +112,7 @@ class TestUpdateAllService(unittest.TestCase):
         logger = LoggerSpy()
         settings_screen = SettingsScreenStub()
         sut, _ = tester(
-            files={FILE_update_all_early_update_resume: {'content': 'settings_screen'}},
+            files={FILE_update_all_self_update_resume: {'content': 'settings_screen'}},
             config=Config(databases=default_databases(), non_interactive=True),
             settings_screen=settings_screen,
             logger=logger,
@@ -224,11 +224,7 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertIs(retroaccount.mister_sync_calls[0], env_stub.setup_environment_calls[0][1])
 
     def test_full_run___ordinary_flows___preserve_standard_downloader_tail_order(self):
-        standard_tail = [
-            'pre_run_tweaks',
-            'wait_for_retroaccount_before_downloader',
-            'run_downloader',
-            'sync_downloader_launcher',
+        post_downloader_tail = [
             'run_pocket_tools',
             'run_arcade_organizer',
             'cleanup',
@@ -236,6 +232,13 @@ class TestUpdateAllService(unittest.TestCase):
             'show_outro',
             'show_interactive_log_viewer_and_timeline',
             'reboot_if_needed',
+        ]
+        standard_tail = [
+            'pre_run_tweaks',
+            'wait_for_retroaccount_before_downloader',
+            'run_downloader',
+            'sync_downloader_launcher',
+            *post_downloader_tail,
         ]
         cases = (
             (
@@ -256,6 +259,16 @@ class TestUpdateAllService(unittest.TestCase):
                     'show_settings_screen',
                     'print_sequence',
                     *standard_tail,
+                ],
+            ),
+            (
+                UpdateAllServicePass.Continue,
+                'after_downloader',
+                CountdownOutcome.CONTINUE,
+                [
+                    'start_background_jobs',
+                    'pre_run_tweaks',
+                    *post_downloader_tail,
                 ],
             ),
             (
@@ -286,7 +299,7 @@ class TestUpdateAllService(unittest.TestCase):
         for run_pass, resume_point, countdown_outcome, expected_events in cases:
             with self.subTest(run_pass=run_pass, resume_point=resume_point, countdown_outcome=countdown_outcome):
                 files = {} if resume_point is None else {
-                    FILE_update_all_early_update_resume: {'content': resume_point},
+                    FILE_update_all_self_update_resume: {'content': resume_point},
                 }
                 sut, _ = tester(
                     files=files,
@@ -299,8 +312,8 @@ class TestUpdateAllService(unittest.TestCase):
                 self.assertEqual(0, result)
                 self.assertEqual(expected_events, sut.events)
 
-    def test_full_run___when_early_update_hashes_match___runs_normal_downloader_without_targeted_update(self):
-        files = _early_update_files('pyz-md5', 'model-md5')
+    def test_full_run___when_self_update_hashes_match___runs_normal_downloader_without_targeted_update(self):
+        files = _self_update_files('pyz-md5', 'model-md5')
         fetcher = FetcherStub(response=(200, _update_all_db('pyz-md5', 'model-md5')))
         downloader = _DownloaderServiceStub()
         sut, _ = tester(
@@ -316,7 +329,7 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual([], downloader.command_calls)
         self.assertEqual(1, len(downloader.update_calls))
 
-    def test_full_run___when_either_early_update_file_is_missing___does_not_fetch_or_run_targeted_update(self):
+    def test_full_run___when_either_self_update_file_is_missing___does_not_fetch_or_run_targeted_update(self):
         cases = (
             {FILE_settings_screen_model_json_zip: {'hash': 'model-md5'}},
             {FILE_update_all_pyz: {'hash': 'pyz-md5'}},
@@ -339,11 +352,11 @@ class TestUpdateAllService(unittest.TestCase):
                 self.assertEqual([], downloader.command_calls)
                 self.assertEqual(1, len(downloader.update_calls))
 
-    def test_full_run___when_early_update_is_needed_before_settings___updates_quietly_and_resumes_at_settings(self):
+    def test_full_run___when_update_is_needed_before_settings___runs_targeted_update_and_resumes_at_settings(self):
         downloader = _DownloaderServiceStub()
         settings_screen = SettingsScreenStub()
         sut, state = tester(
-            files=_early_update_files('old-pyz-md5', 'old-model-md5'),
+            files=_self_update_files('old-pyz-md5', 'old-model-md5'),
             fetcher=FetcherStub(response=(200, _update_all_db('new-pyz-md5', 'new-model-md5'))),
             downloader_service=downloader,
             countdown=CountdownStub(CountdownOutcome.SETTINGS_SCREEN),
@@ -364,14 +377,14 @@ class TestUpdateAllService(unittest.TestCase):
         ], downloader.command_calls)
         self.assertEqual(
             'settings_screen',
-            state.files[FILE_update_all_early_update_resume]['content'],
+            state.files[FILE_update_all_self_update_resume]['content'],
         )
 
-    def test_full_run___after_early_update_before_settings___resumes_settings_then_runs_standard_downloader_once(self):
+    def test_full_run___after_self_update_before_settings___resumes_settings_then_runs_standard_downloader_once(self):
         downloader = _DownloaderServiceStub()
         settings_screen = SettingsScreenStub()
         sut, state = tester(
-            files=_early_update_files('old-pyz-md5', 'old-model-md5'),
+            files=_self_update_files('old-pyz-md5', 'old-model-md5'),
             fetcher=FetcherStub(response=(200, _update_all_db('new-pyz-md5', 'new-model-md5'))),
             downloader_service=downloader,
             countdown=CountdownStub(CountdownOutcome.SETTINGS_SCREEN),
@@ -386,12 +399,12 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(1, settings_screen.load_main_menu_calls)
         self.assertEqual(1, len(downloader.command_calls))
         self.assertEqual(1, len(downloader.update_calls))
-        self.assertNotIn(FILE_update_all_early_update_resume, state.files)
+        self.assertNotIn(FILE_update_all_self_update_resume, state.files)
 
-    def test_full_run___when_early_update_is_needed_before_downloader___updates_quietly_and_resumes_at_downloader(self):
+    def test_full_run___when_update_is_needed_without_settings___runs_standard_downloader_then_prepares_post_downloader_restart(self):
         downloader = _DownloaderServiceStub()
         sut, state = tester(
-            files=_early_update_files('old-pyz-md5', 'old-model-md5'),
+            files=_self_update_files('old-pyz-md5', 'old-model-md5'),
             fetcher=FetcherStub(response=(200, _update_all_db('new-pyz-md5', 'new-model-md5'))),
             downloader_service=downloader,
         )
@@ -399,15 +412,37 @@ class TestUpdateAllService(unittest.TestCase):
         result = sut.full_run(UpdateAllServicePass.NewRun)
 
         self.assertEqual(EXIT_CODE_CAN_CONTINUE, result)
-        self.assertEqual([], downloader.update_calls)
-        self.assertNotIn(FILE_update_all_early_update_resume, state.files)
+        self.assertEqual([], downloader.command_calls)
+        self.assertEqual(1, len(downloader.update_calls))
+        self.assertEqual(
+            'after_downloader',
+            state.files[FILE_update_all_self_update_resume]['content'],
+        )
 
-    def test_full_run___when_targeted_early_update_fails___continues_with_normal_downloader(self):
-        downloader = _DownloaderServiceStub(command_return_code=7)
+    def test_full_run___after_post_downloader_restart___continues_after_downloader_without_running_it_again(self):
+        downloader = _DownloaderServiceStub()
         sut, state = tester(
-            files=_early_update_files('old-pyz-md5', 'old-model-md5'),
+            files=_self_update_files('old-pyz-md5', 'old-model-md5'),
             fetcher=FetcherStub(response=(200, _update_all_db('new-pyz-md5', 'new-model-md5'))),
             downloader_service=downloader,
+        )
+
+        first_result = sut.full_run(UpdateAllServicePass.NewRun)
+        second_result = sut.full_run(UpdateAllServicePass.Continue)
+
+        self.assertEqual(EXIT_CODE_CAN_CONTINUE, first_result)
+        self.assertEqual(0, second_result)
+        self.assertEqual([], downloader.command_calls)
+        self.assertEqual(1, len(downloader.update_calls))
+        self.assertNotIn(FILE_update_all_self_update_resume, state.files)
+
+    def test_full_run___when_targeted_update_before_settings_fails___continues_with_normal_downloader(self):
+        downloader = _DownloaderServiceStub(command_return_code=7)
+        sut, state = tester(
+            files=_self_update_files('old-pyz-md5', 'old-model-md5'),
+            fetcher=FetcherStub(response=(200, _update_all_db('new-pyz-md5', 'new-model-md5'))),
+            downloader_service=downloader,
+            countdown=CountdownStub(CountdownOutcome.SETTINGS_SCREEN),
         )
 
         result = sut.full_run(UpdateAllServicePass.NewRun)
@@ -415,14 +450,15 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(0, result)
         self.assertEqual(1, len(downloader.command_calls))
         self.assertEqual(1, len(downloader.update_calls))
-        self.assertNotIn(FILE_update_all_early_update_resume, state.files)
+        self.assertNotIn(FILE_update_all_self_update_resume, state.files)
 
-    def test_full_run___when_targeted_early_update_succeeds___restarts_without_rechecking_installed_files(self):
+    def test_full_run___when_targeted_update_before_settings_succeeds___restarts_without_rechecking_installed_files(self):
         downloader = _DownloaderServiceStub()
         sut, state = tester(
-            files=_early_update_files('old-pyz-md5', 'old-model-md5'),
+            files=_self_update_files('old-pyz-md5', 'old-model-md5'),
             fetcher=FetcherStub(response=(200, _update_all_db('new-pyz-md5', 'new-model-md5'))),
             downloader_service=downloader,
+            countdown=CountdownStub(CountdownOutcome.SETTINGS_SCREEN),
         )
 
         result = sut.full_run(UpdateAllServicePass.NewRun)
@@ -430,9 +466,12 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(EXIT_CODE_CAN_CONTINUE, result)
         self.assertEqual(1, len(downloader.command_calls))
         self.assertEqual([], downloader.update_calls)
-        self.assertNotIn(FILE_update_all_early_update_resume, state.files)
+        self.assertEqual(
+            'settings_screen',
+            state.files[FILE_update_all_self_update_resume]['content'],
+        )
 
-    def test_full_run___when_early_update_manifest_is_invalid___continues_with_normal_downloader(self):
+    def test_full_run___when_self_update_manifest_is_invalid___continues_with_normal_downloader(self):
         responses = (
             (503, b''),
             (200, b'not-json'),
@@ -444,7 +483,7 @@ class TestUpdateAllService(unittest.TestCase):
                 downloader = _DownloaderServiceStub()
                 fetcher = FetcherStub(response=response)
                 sut, _ = tester(
-                    files=_early_update_files('old-pyz-md5', 'old-model-md5'),
+                    files=_self_update_files('old-pyz-md5', 'old-model-md5'),
                     fetcher=fetcher,
                     downloader_service=downloader,
                 )
@@ -460,7 +499,7 @@ class TestUpdateAllService(unittest.TestCase):
         fetcher = FetcherStub(response=(200, _update_all_db('new-pyz-md5', 'new-model-md5')))
         downloader = _DownloaderServiceStub()
         sut, _ = tester(
-            files=_early_update_files('old-pyz-md5', 'old-model-md5'),
+            files=_self_update_files('old-pyz-md5', 'old-model-md5'),
             fetcher=fetcher,
             downloader_service=downloader,
         )
@@ -472,7 +511,7 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual([], downloader.command_calls)
         self.assertEqual(1, len(downloader.update_calls))
 
-    def test_full_run___when_early_update_check_times_out___waits_once_and_continues_expected_flow(self):
+    def test_full_run___when_self_update_check_times_out___waits_once_and_continues_expected_flow(self):
         cases = (
             (CountdownOutcome.SETTINGS_SCREEN, 1),
             (CountdownOutcome.CONTINUE, 0),
@@ -483,7 +522,7 @@ class TestUpdateAllService(unittest.TestCase):
                 downloader = _DownloaderServiceStub()
                 settings_screen = SettingsScreenStub()
                 sut, _ = tester(
-                    files=_early_update_files('old-pyz-md5', 'old-model-md5'),
+                    files=_self_update_files('old-pyz-md5', 'old-model-md5'),
                     countdown=CountdownStub(countdown_outcome),
                     downloader_service=downloader,
                     settings_screen=settings_screen,
@@ -493,25 +532,26 @@ class TestUpdateAllService(unittest.TestCase):
                 result = sut.full_run(UpdateAllServicePass.NewRun)
 
                 self.assertEqual(0, result)
-                self.assertEqual([BACKGROUND_JOBS_SOFT_TIMEOUT], sut.early_update_wait_calls)
+                self.assertEqual([BACKGROUND_JOBS_SOFT_TIMEOUT], sut.self_update_wait_calls)
                 self.assertEqual(expected_settings_calls, settings_screen.load_main_menu_calls)
                 self.assertEqual([], downloader.command_calls)
                 self.assertEqual(1, len(downloader.update_calls))
 
-    def test_full_run___when_continuing_early_update___resumes_at_recorded_point(self):
+    def test_full_run___when_continuing_self_update___resumes_at_recorded_point(self):
         cases = (
-            ('settings_screen', 1),
-            ('downloader', 0),
-            ('unknown', 0),
+            ('settings_screen', 1, 1),
+            ('downloader', 0, 1),
+            ('after_downloader', 0, 0),
+            ('unknown', 0, 1),
         )
 
-        for resume_point, expected_settings_calls in cases:
+        for resume_point, expected_settings_calls, expected_downloader_calls in cases:
             with self.subTest(resume_point=resume_point):
                 settings_screen = SettingsScreenStub()
                 downloader = _DownloaderServiceStub()
                 sut, state = tester(
                     files={
-                        FILE_update_all_early_update_resume: {'content': resume_point},
+                        FILE_update_all_self_update_resume: {'content': resume_point},
                     },
                     settings_screen=settings_screen,
                     downloader_service=downloader,
@@ -521,10 +561,10 @@ class TestUpdateAllService(unittest.TestCase):
 
                 self.assertEqual(0, result)
                 self.assertEqual(expected_settings_calls, settings_screen.load_main_menu_calls)
-                self.assertEqual(1, len(downloader.update_calls))
-                self.assertNotIn(FILE_update_all_early_update_resume, state.files)
+                self.assertEqual(expected_downloader_calls, len(downloader.update_calls))
+                self.assertNotIn(FILE_update_all_self_update_resume, state.files)
 
-    def test_full_run___when_continuing_without_early_update_marker___runs_standard_downloader(self):
+    def test_full_run___when_continuing_without_self_update_marker___runs_standard_downloader(self):
         settings_screen = SettingsScreenStub()
         downloader = _DownloaderServiceStub()
         sut, _ = tester(
@@ -538,12 +578,12 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(0, settings_screen.load_main_menu_calls)
         self.assertEqual(1, len(downloader.update_calls))
 
-    def test_full_run___when_early_update_marker_cannot_be_read___runs_standard_downloader(self):
+    def test_full_run___when_self_update_marker_cannot_be_read___runs_standard_downloader(self):
         settings_screen = SettingsScreenStub()
         downloader = _DownloaderServiceStub()
         sut, _ = tester(
             files={
-                FILE_update_all_early_update_resume: {'content': 'settings_screen'},
+                FILE_update_all_self_update_resume: {'content': 'settings_screen'},
             },
             settings_screen=settings_screen,
             downloader_service=downloader,
@@ -565,8 +605,32 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(0, settings_screen.load_main_menu_calls)
         self.assertEqual(1, len(downloader.update_calls))
 
+    def test_full_run___when_after_downloader_marker_cannot_be_removed___runs_standard_downloader(self):
+        settings_screen = SettingsScreenStub()
+        downloader = _DownloaderServiceStub()
+        sut, state = tester(
+            files={
+                FILE_update_all_self_update_resume: {'content': 'after_downloader'},
+            },
+            settings_screen=settings_screen,
+            downloader_service=downloader,
+        )
 
-def _early_update_files(pyz_hash: str, model_hash: str) -> dict[str, dict[str, str]]:
+        def unremovable_marker(_path, verbose=True):
+            del verbose
+            raise OSError('unremovable')
+
+        sut._file_system.unlink = unremovable_marker
+
+        result = sut.full_run(UpdateAllServicePass.Continue)
+
+        self.assertEqual(0, result)
+        self.assertEqual(0, settings_screen.load_main_menu_calls)
+        self.assertEqual(1, len(downloader.update_calls))
+        self.assertIn(FILE_update_all_self_update_resume, state.files)
+
+
+def _self_update_files(pyz_hash: str, model_hash: str) -> dict[str, dict[str, str]]:
     return {
         FILE_update_all_pyz: {'hash': pyz_hash},
         FILE_settings_screen_model_json_zip: {'hash': model_hash},
@@ -600,8 +664,9 @@ class _DownloaderTailOrderUpdateAllService(UpdateAllServiceTester):
         self.events.append('pre_run_tweaks')
         super()._pre_run_tweaks()
 
-    def _run_downloader(self) -> None:
+    def _run_standard_downloader_if_enabled(self) -> bool:
         self.events.append('run_downloader')
+        return True
 
     def _sync_downloader_launcher(self) -> None:
         self.events.append('sync_downloader_launcher')
@@ -633,8 +698,8 @@ class _PendingBackgroundUpdateAllService(UpdateAllServiceTester):
         self._pending_background_jobs_service = background_jobs_service
 
     @property
-    def early_update_wait_calls(self):
-        return self._pending_background_jobs_service.early_update_check.wait_calls
+    def self_update_wait_calls(self):
+        return self._pending_background_jobs_service.self_update_check.wait_calls
 
 
 class _RecordingStartBackgroundJobsService(UpdateAllBackgroundJobsServiceTester):
@@ -642,35 +707,35 @@ class _RecordingStartBackgroundJobsService(UpdateAllBackgroundJobsServiceTester)
         super().__init__()
         self._events = events
 
-    def start_background_jobs(self, check_for_early_update: bool = False):
-        del check_for_early_update
+    def start_background_jobs(self, check_for_self_update: bool = False):
+        del check_for_self_update
         self._events.append('start_background_jobs')
         return None
 
     def wait_for_retroaccount_before_downloader(self) -> None:
         self._events.append('wait_for_retroaccount_before_downloader')
 
-    def finish_background_jobs_before_outro(self) -> None:
+    def finish_background_jobs_before_outro(self, _self_update_check) -> None:
         self._events.append('finish_background_jobs_before_outro')
 
 
 class _PendingBackgroundJobsService(UpdateAllBackgroundJobsServiceTester):
     def __init__(self):
         super().__init__()
-        self.early_update_check = None
+        self.self_update_check = None
 
     def start_background_jobs(
             self,
-            check_for_early_update: bool = False,
-    ) -> Optional[UpdateAllEarlyUpdateCheck]:
-        if not check_for_early_update:
+            check_for_self_update: bool = False,
+    ) -> Optional[UpdateAllSelfUpdateCheck]:
+        if not check_for_self_update:
             return None
 
-        self.early_update_check = _ImmediateTimeoutEarlyUpdateCheck()
-        return self.early_update_check
+        self.self_update_check = _ImmediateTimeoutSelfUpdateCheck()
+        return self.self_update_check
 
 
-class _ImmediateTimeoutEarlyUpdateCheck(UpdateAllEarlyUpdateCheck):
+class _ImmediateTimeoutSelfUpdateCheck(UpdateAllSelfUpdateCheck):
     def __init__(self):
         super().__init__(Future(), Future())
         self.wait_calls = []

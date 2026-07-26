@@ -15,13 +15,15 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import enum
 import json
+from typing import Optional
 
 from update_all.cli_output_formatting import bold
 from update_all.config import Config
 from update_all.constants import BACKGROUND_JOBS_SOFT_TIMEOUT, FILE_settings_screen_model_json_zip, \
-    FILE_update_all_early_update_resume, FILE_update_all_pyz
-from update_all.databases import all_dbs
+    FILE_update_all_self_update_resume, FILE_update_all_pyz
+from update_all.databases import all_dbs, ALL_DB_IDS
 from update_all.downloader_service import DownloaderService
 from update_all.fetcher import Fetcher
 from update_all.file_system import FileSystem
@@ -30,11 +32,16 @@ from update_all.logger import Logger
 from update_all.other import GenericProvider
 
 
-_RESUME_SETTINGS_SCREEN = 'settings_screen'
 _UPDATE_FILES = (FILE_update_all_pyz, FILE_settings_screen_model_json_zip)
 
 
-class UpdateAllEarlyUpdateService:
+@enum.unique
+class UpdateAllResumePoint(enum.Enum):
+    SETTINGS_SCREEN = 'settings_screen'
+    AFTER_DOWNLOADER = 'after_downloader'
+
+
+class UpdateAllSelfUpdateService:
     def __init__(
             self,
             config_provider: GenericProvider[Config],
@@ -105,18 +112,9 @@ class UpdateAllEarlyUpdateService:
             for path in _UPDATE_FILES
         }
 
-    def try_update_and_prepare_restart(
-            self,
-            update_is_needed: bool,
-            resume_settings_screen: bool,
-    ) -> bool:
+    def try_update_before_settings_and_prepare_restart(self) -> bool:
         try:
-            self._fetcher.cleanup()
-            if not update_is_needed:
-                return False
-
             config = self._config_provider.get()
-            update_all_db = all_dbs(config.mirror).UPDATE_ALL_MISTER
             self._logger.print()
             self._logger.print(bold('A NEW VERSION OF UPDATE ALL IS AVAILABLE!'))
             self._logger.print()
@@ -126,52 +124,63 @@ class UpdateAllEarlyUpdateService:
             return_code = self._downloader_service.execute_downloader_command(
                 config,
                 self._ini_repository.downloader_ini_standard_path(),
-                ['--run-only', update_all_db.db_id],
+                ['--run-only', ALL_DB_IDS['UPDATE_ALL_MISTER']],
             )
             if return_code != 0:
                 self._logger.debug(f'Early Update All Downloader run failed with error code {return_code}.')
                 return False
 
-            if resume_settings_screen:
-                self._file_system.write_file_contents(
-                    FILE_update_all_early_update_resume,
-                    _RESUME_SETTINGS_SCREEN,
-                )
-            destination = 'settings-screen' if resume_settings_screen else 'downloader'
-            self._logger.debug(f'Early Update All update completed; restart destination: {destination}.')
+            self._file_system.write_file_contents(
+                FILE_update_all_self_update_resume,
+                UpdateAllResumePoint.SETTINGS_SCREEN.value,
+            )
+            self._logger.debug('Early Update All update completed; restart destination: settings-screen.')
             return True
         except Exception as e:
             self._logger.debug('Could not complete the early Update All Downloader run.')
             self._logger.debug(e)
             return False
 
-    def take_resume_settings_screen(self) -> bool:
-        if not self._file_system.is_file(FILE_update_all_early_update_resume):
+    def try_prepare_restart_after_downloader(self) -> bool:
+        try:
+            self._file_system.write_file_contents(
+                FILE_update_all_self_update_resume,
+                UpdateAllResumePoint.AFTER_DOWNLOADER.value,
+            )
+            self._logger.debug('Update All was updated by the standard Downloader; restart destination: after-downloader.')
+            return True
+        except Exception as e:
+            self._logger.debug('Could not prepare the restart after the standard Downloader updated Update All.')
+            self._logger.debug(e)
             return False
 
+    def take_resume_point(self) -> Optional[UpdateAllResumePoint]:
         try:
-            resume_point = self._file_system.read_file_contents(FILE_update_all_early_update_resume)
-            if resume_point == _RESUME_SETTINGS_SCREEN:
-                return True
-            self._logger.debug(f'Ignoring unknown early Update All resume point: {resume_point}')
-            return False
+            if not self._file_system.is_file(FILE_update_all_self_update_resume):
+                return None
+            resume_point = self._file_system.read_file_contents(FILE_update_all_self_update_resume)
         except Exception as e:
             self._logger.debug('Could not read the early Update All resume point.')
             self._logger.debug(e)
-            return False
-        finally:
             self.remove_resume_point()
+            return None
 
-    def remove_resume_point(self) -> None:
         try:
-            self._file_system.unlink(FILE_update_all_early_update_resume, verbose=False)
+            parsed_resume_point = UpdateAllResumePoint(resume_point)
+        except ValueError:
+            self._logger.debug(f'Ignoring unknown early Update All resume point: {resume_point}')
+            self.remove_resume_point()
+            return None
+
+        # Resume markers are one-shot. If consumption cannot be confirmed, resume before Downloader.
+        if not self.remove_resume_point():
+            return None
+        return parsed_resume_point
+
+    def remove_resume_point(self) -> bool:
+        try:
+            return self._file_system.unlink(FILE_update_all_self_update_resume, verbose=False)
         except Exception as e:
             self._logger.debug('Could not remove the early Update All resume point.')
             self._logger.debug(e)
-
-    def abort_check(self) -> None:
-        try:
-            self._fetcher.cleanup()
-        except Exception as e:
-            self._logger.debug('Could not clean up the early Update All check.')
-            self._logger.debug(e)
+            return False

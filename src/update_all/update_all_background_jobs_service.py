@@ -20,14 +20,13 @@ from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError, wait
 from typing import Optional
 
 from update_all.constants import BACKGROUND_JOBS_HARD_TIMEOUT, BACKGROUND_JOBS_SOFT_TIMEOUT
-from update_all.fetcher import Fetcher
 from update_all.logger import Logger
 from update_all.retroaccount import RetroAccountService
-from update_all.update_all_early_update_service import UpdateAllEarlyUpdateService
+from update_all.update_all_self_update_service import UpdateAllSelfUpdateService
 from update_all.update_output import NoopUpdateOutput
 
 
-class UpdateAllEarlyUpdateCheck:
+class UpdateAllSelfUpdateCheck:
     def __init__(self, expected_hashes_future: Future, installed_hashes_future: Future):
         self._futures = (expected_hashes_future, installed_hashes_future)
 
@@ -48,39 +47,47 @@ class UpdateAllBackgroundJobsService:
     def __init__(
             self,
             logger: Logger,
-            fetcher: Fetcher,
             retroaccount: RetroAccountService,
-            early_update_service: UpdateAllEarlyUpdateService,
+            self_update_service: UpdateAllSelfUpdateService,
     ):
         self._logger = logger
-        self._fetcher = fetcher
         self._retroaccount = retroaccount
-        self._early_update_service = early_update_service
+        self._self_update_service = self_update_service
         self._executor: Optional[ThreadPoolExecutor] = None
         self._retroaccount_future: Optional[Future] = None
 
     def start_background_jobs(
             self,
-            check_for_early_update: bool = False,
-    ) -> Optional[UpdateAllEarlyUpdateCheck]:
+            check_for_self_update: bool = False,
+    ) -> Optional[UpdateAllSelfUpdateCheck]:
         executor = ThreadPoolExecutor(max_workers=3)
         self._executor = executor
-        early_update_check = self._start_early_update_check(executor) if check_for_early_update else None
+        self_update_check = self._start_self_update_check(executor) if check_for_self_update else None
         self._retroaccount_future = executor.submit(self._sync_retroaccount)
-        return early_update_check
+        return self_update_check
 
-    def wait_for_early_update_check(self, check: UpdateAllEarlyUpdateCheck) -> bool:
-        return check.wait(BACKGROUND_JOBS_SOFT_TIMEOUT)
+    def wait_for_self_update_needed_with_soft_timeout(
+            self,
+            check: UpdateAllSelfUpdateCheck,
+    ) -> Optional[bool]:
+        if not check.wait(BACKGROUND_JOBS_SOFT_TIMEOUT):
+            self.discard_self_update_check(check)
+            self._logger.debug('Update All update check timed out; continuing with the normal update flow.')
+            return None
 
-    def finish_early_update_check(self, check: UpdateAllEarlyUpdateCheck) -> bool:
-        expected_hashes, installed_hashes = check.results()
-        return self._early_update_service.is_update_needed(
-            expected_hashes,
-            installed_hashes,
-        )
+        try:
+            expected_hashes, installed_hashes = check.results()
+            return self._self_update_service.is_update_needed(
+                expected_hashes,
+                installed_hashes,
+            )
+        except Exception as e:
+            self.discard_self_update_check(check)
+            self._logger.debug('Could not check whether Update All needs an update.')
+            self._logger.debug(e)
+            return None
 
-    def abort_early_update_check(self, check: UpdateAllEarlyUpdateCheck) -> None:
-        self._early_update_service.abort_check()
+    def discard_self_update_check(self, check: UpdateAllSelfUpdateCheck) -> None:
         check.cancel()
 
     def wait_for_retroaccount_before_downloader(self) -> None:
@@ -100,7 +107,6 @@ class UpdateAllBackgroundJobsService:
 
     def stop_background_jobs_for_restart(self) -> None:
         if self._retroaccount_future is not None and not self._retroaccount_future.done():
-            self._fetcher.cleanup()
             self._retroaccount_future.cancel()
         self._retroaccount_future = None
 
@@ -108,7 +114,13 @@ class UpdateAllBackgroundJobsService:
             self._executor.shutdown(wait=False, cancel_futures=True)
             self._executor = None
 
-    def finish_background_jobs_before_outro(self) -> None:
+    def finish_background_jobs_before_outro(
+            self,
+            self_update_check: Optional[UpdateAllSelfUpdateCheck],
+    ) -> None:
+        if self_update_check is not None:
+            self.discard_self_update_check(self_update_check)
+
         if self._executor is None:
             return
 
@@ -120,7 +132,6 @@ class UpdateAllBackgroundJobsService:
                     time.sleep(0.25)
 
                 if not self._retroaccount_future.done():
-                    self._fetcher.cleanup()
                     self._retroaccount_future.result(timeout=5)
                 self._retroaccount_future = None
                 self._logger.print(flush=True)
@@ -137,14 +148,14 @@ class UpdateAllBackgroundJobsService:
         self._retroaccount.mister_sync(NoopUpdateOutput())
         self._logger.bench('UpdateAllService: Background job END')
 
-    def _start_early_update_check(
+    def _start_self_update_check(
             self,
             executor: ThreadPoolExecutor,
-    ) -> Optional[UpdateAllEarlyUpdateCheck]:
-        if not self._early_update_service.can_check_for_update():
+    ) -> Optional[UpdateAllSelfUpdateCheck]:
+        if not self._self_update_service.can_check_for_update():
             self._logger.debug('Early Update All check skipped.')
             return None
-        return UpdateAllEarlyUpdateCheck(
-            executor.submit(self._early_update_service.fetch_expected_hashes),
-            executor.submit(self._early_update_service.hash_installed_files),
+        return UpdateAllSelfUpdateCheck(
+            executor.submit(self._self_update_service.fetch_expected_hashes),
+            executor.submit(self._self_update_service.hash_installed_files),
         )

@@ -15,29 +15,25 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
-from test.fetcher_stub import FetcherStub
 from test.logger_tester import NoLogger
-from test.update_all_early_update_service_tester import UpdateAllEarlyUpdateServiceTester
-from update_all.fetcher import Fetcher
+from test.update_all_self_update_service_tester import UpdateAllSelfUpdateServiceTester
 from update_all.logger import Logger
 from update_all.retroaccount import RetroAccountService
 from update_all.update_all_background_jobs_service import UpdateAllBackgroundJobsService
-from update_all.update_all_early_update_service import UpdateAllEarlyUpdateService
+from update_all.update_all_self_update_service import UpdateAllSelfUpdateService
 
 
 class UpdateAllBackgroundJobsServiceTester(UpdateAllBackgroundJobsService):
     def __init__(
             self,
             logger: Logger = None,
-            fetcher: Fetcher = None,
             retroaccount: RetroAccountService = None,
-            early_update_service: UpdateAllEarlyUpdateService = None,
+            self_update_service: UpdateAllSelfUpdateService = None,
     ):
         super().__init__(
             logger or NoLogger(),
-            fetcher or FetcherStub(),
             retroaccount or _RetroAccountServiceStub(),
-            early_update_service or UpdateAllEarlyUpdateServiceTester(),
+            self_update_service or UpdateAllSelfUpdateServiceTester(),
         )
 
 

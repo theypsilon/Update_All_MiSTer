@@ -27,10 +27,10 @@ from update_all.file_system import FileSystem
 from update_all.ini_repository import IniRepository
 from update_all.logger import Logger
 from update_all.other import GenericProvider
-from update_all.update_all_early_update_service import UpdateAllEarlyUpdateService
+from update_all.update_all_self_update_service import UpdateAllSelfUpdateService
 
 
-class UpdateAllEarlyUpdateServiceTester(UpdateAllEarlyUpdateService):
+class UpdateAllSelfUpdateServiceTester(UpdateAllSelfUpdateService):
     def __init__(
             self,
             config_provider: GenericProvider[Config] = None,
