@@ -41,6 +41,11 @@ class EnvDict(TypedDict):
     HTTP_PROXY: Optional[str]
     HTTPS_PROXY: Optional[str]
     MIRROR_ID: str
+    UPDATE_ALL_MISTER_DB_URL: str
+    UPDATE_ALL_DOWNLOADER_PATH: str
+    UPDATE_ALL_DOWNLOADER_URL: str
+    UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH: str
+    UPDATE_ALL_NON_INTERACTIVE: str
     RETROACCOUNT_DOMAIN: str
     real_start_time: float
 
@@ -62,6 +67,11 @@ class Config:
     http_proxy: str = ''
     http_config: Optional[HttpConfig] = None
     retroaccount_domain: str = DOMAIN_default_retroaccount
+    update_all_mister_db_url: Optional[str] = None
+    downloader_path: Optional[str] = None
+    downloader_url: Optional[str] = None
+    downloader_python_compatible_path: Optional[str] = None
+    non_interactive: bool = False
 
     # General options
     base_path: str = MEDIA_FAT

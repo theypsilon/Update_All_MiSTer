@@ -25,6 +25,8 @@ from test.mister_video_mode_service_tester import MisterVideoModeServiceTester
 from test.retroachievements_service_tester import RetroAchievementsServiceTester
 from test.retroaccount_gateway_tester import RetroAccountGatewayTester
 from test.spy_os_utils import SpyOsUtils
+from test.update_all_background_jobs_service_tester import UpdateAllBackgroundJobsServiceTester
+from test.update_all_early_update_service_tester import UpdateAllEarlyUpdateServiceTester
 from test.zaparoo_service_tester import ZaparooServiceTester
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
@@ -37,7 +39,10 @@ from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OP
     KENV_TRANSITION_SERVICE_ONLY, FILE_patreon_key, COMMAND_STANDARD, FILE_timeline_short, KENV_TIMELINE_PLUS_PATH, \
     DEFAULT_TRANSITION_SERVICE_ONLY, KENV_SKIP_DOWNLOADER, DEFAULT_SKIP_DOWNLOADER, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
     KENV_TIMELINE_SHORT_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID, \
-    KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, KENV_UPDATE_ALL_CHIP_ID_RESULT
+    KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, KENV_UPDATE_ALL_CHIP_ID_RESULT, \
+    KENV_UPDATE_ALL_MISTER_DB_URL, KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, \
+    KENV_UPDATE_ALL_NON_INTERACTIVE, DEFAULT_UPDATE_ALL_NON_INTERACTIVE, \
+    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
 from update_all.countdown import Countdown
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs, all_dbs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
@@ -45,6 +50,7 @@ from update_all.jtcores_service import JtcoresService
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
+from update_all.logger import Logger
 from update_all.log_viewer import LogViewer
 from update_all.mister_ini_repository import MisterIniRepository
 from update_all.mister_video_mode_service import MisterVideoModeService
@@ -60,6 +66,8 @@ from update_all.retroaccount import RetroAccountService
 from update_all.retroaccount_gateway import RetroAccountGateway
 from update_all.ui_engine import UiContext, UiRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
+from update_all.update_all_background_jobs_service import UpdateAllBackgroundJobsService
+from update_all.update_all_early_update_service import UpdateAllEarlyUpdateService
 from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllService
 from update_all.uninstall_db_service import UninstallDbService
 from update_all.zaparoo_service import ZaparooService
@@ -81,6 +89,11 @@ def default_env():
         KENV_HTTP_PROXY: '',
         KENV_HTTPS_PROXY: '',
         KENV_MIRROR_ID: '',
+        KENV_UPDATE_ALL_MISTER_DB_URL: '',
+        KENV_UPDATE_ALL_DOWNLOADER_PATH: '',
+        KENV_UPDATE_ALL_DOWNLOADER_URL: '',
+        KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH: '',
+        KENV_UPDATE_ALL_NON_INTERACTIVE: DEFAULT_UPDATE_ALL_NON_INTERACTIVE,
         KENV_RETROACCOUNT_DOMAIN: DOMAIN_default_retroaccount,
         'real_start_time': 0.0,
     }
@@ -247,15 +260,23 @@ class SettingsScreenTester(SettingsScreen):
 
 
 class SettingsScreenStub:
-    def __init__(self, load_chip_id_result_menu_result=None):
+    def __init__(self, load_chip_id_result_menu_result=None, load_main_menu_result=None):
         self._load_chip_id_result_menu_result = load_chip_id_result_menu_result
+        self._load_main_menu_result = load_main_menu_result
         self.load_chip_id_result_menu_calls = 0
+        self.load_main_menu_calls = 0
 
     def load_chip_id_result_menu(self):
         self.load_chip_id_result_menu_calls += 1
         if isinstance(self._load_chip_id_result_menu_result, Exception):
             raise self._load_chip_id_result_menu_result
         return self._load_chip_id_result_menu_result
+
+    def load_main_menu(self):
+        self.load_main_menu_calls += 1
+        if isinstance(self._load_main_menu_result, Exception):
+            raise self._load_main_menu_result
+        return self._load_main_menu_result
 
 
 class UiContextStub(UiContext):
@@ -334,7 +355,8 @@ class LogViewerTester(LogViewer):
         return True
 
 class UpdateAllServiceTester(UpdateAllService):
-    def __init__(self, environment_setup: EnvironmentSetup = None,
+    def __init__(self, logger: Logger = None,
+                 environment_setup: EnvironmentSetup = None,
                  config_provider: GenericProvider[Config] = None,
                  file_system: FileSystem = None,
                  os_utils: OsUtils = None,
@@ -345,7 +367,10 @@ class UpdateAllServiceTester(UpdateAllService):
                  local_repository: LocalRepository = None,
                  zaparoo_service: ZaparooService = None,
                  retroaccount: RetroAccountService = None,
-                 downloader_service: DownloaderService = None):
+                 downloader_service: DownloaderService = None,
+                 fetcher: FetcherStub = None,
+                 background_jobs_service: UpdateAllBackgroundJobsService = None,
+                 early_update_service: UpdateAllEarlyUpdateService = None):
 
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
@@ -365,10 +390,25 @@ class UpdateAllServiceTester(UpdateAllService):
             zaparoo_service=zaparoo_service,
         )
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
+        downloader_service = downloader_service or DownloaderService(NoLogger(), file_system, os_utils)
+        early_update_service = early_update_service or UpdateAllEarlyUpdateServiceTester(
+            config_provider=config_provider,
+            logger=NoLogger(),
+            file_system=file_system,
+            ini_repository=self.ini_repository,
+            downloader_service=downloader_service,
+            fetcher=fetcher or FetcherStub(config_provider=config_provider),
+        )
+        background_jobs_service = background_jobs_service or UpdateAllBackgroundJobsServiceTester(
+            logger=NoLogger(),
+            fetcher=FetcherStub(config_provider=config_provider),
+            retroaccount=retroaccount,
+            early_update_service=early_update_service,
+        )
 
         super().__init__(
             config_provider=config_provider,
-            logger=NoLogger(),
+            logger=logger or NoLogger(),
             file_system=file_system,
             os_utils=os_utils,
             countdown=countdown or CountdownStub(),
@@ -382,30 +422,34 @@ class UpdateAllServiceTester(UpdateAllService):
             timeline=TimelineTester(file_system=file_system, config_provider=config_provider, retroaccount=retroaccount),
             retroaccount=retroaccount,
             zaparoo_service=zaparoo_service,
-            downloader_service=downloader_service or DownloaderService(NoLogger(), file_system, os_utils),
-            fetcher=FetcherStub(config_provider=config_provider)
+            downloader_service=downloader_service,
+            background_jobs_service=background_jobs_service,
+            early_update_service=early_update_service,
         )
-
-    def _soft_wait_background_jobs(self) -> None:
-        pass
-
-    def _hard_wait_background_jobs(self) -> None:
-        pass
-
 
 class UpdateAllServiceFlowTester(UpdateAllServiceTester):
     def __init__(self, *args, **kwargs):
+        events = []
+        kwargs['background_jobs_service'] = _FlowBackgroundJobsService(events)
         super().__init__(*args, **kwargs)
-        self.events = []
-
-    def _start_background_jobs(self) -> None:
-        self.events.append('start_background_jobs')
-
-    def _hard_wait_background_jobs(self) -> None:
-        self.events.append('hard_wait_background_jobs')
+        self.events = events
 
     def _show_outro(self) -> None:
         self.events.append('show_outro')
+
+
+class _FlowBackgroundJobsService(UpdateAllBackgroundJobsServiceTester):
+    def __init__(self, events: list[str]):
+        super().__init__()
+        self._events = events
+
+    def start_background_jobs(self, check_for_early_update: bool = False):
+        del check_for_early_update
+        self._events.append('start_background_jobs')
+        return None
+
+    def finish_background_jobs_before_outro(self) -> None:
+        self._events.append('finish_background_jobs_before_outro')
 
 
 class ArcadeOrganizerServiceStub(ArcadeOrganizerService):

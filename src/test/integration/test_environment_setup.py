@@ -21,7 +21,9 @@ from test.ini_assertions import testableIni
 from test.testing_objects import downloader_ini, update_all_ini, update_jtcores_ini, update_names_txt_ini
 from update_all.config import Config
 from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, FILE_update_all_storage, KENV_TRANSITION_SERVICE_ONLY, \
-    KENV_UPDATE_ALL_CHIP_ID_RESULT, MEDIA_FAT
+    KENV_UPDATE_ALL_CHIP_ID_RESULT, MEDIA_FAT, KENV_UPDATE_ALL_MISTER_DB_URL, \
+    KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, KENV_UPDATE_ALL_NON_INTERACTIVE, \
+    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
 from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT, all_dbs
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.local_store import LocalStore
@@ -98,6 +100,53 @@ class TestEnvironmentSetup(unittest.TestCase):
                 databases={all_dbs('').UPDATE_ALL_MISTER.db_id},
                 chip_id_result='0123456789abcdef'
             )
+        )
+
+    def test_setup___with_update_all_mister_url_override___stores_optional_url_without_changing_downloader_ini(self):
+        override = 'http://127.0.0.1:8765/update_all_db.json'
+        default_ini = Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()
+
+        self.assertSetup(
+            files={downloader_ini: default_ini},
+            env={KENV_UPDATE_ALL_MISTER_DB_URL: f' {override} '},
+            expected_files={downloader_ini: default_ini},
+            expected_config=Config(
+                databases=default_databases(),
+                update_all_mister_db_url=override,
+            ),
+        )
+
+    def test_setup___with_downloader_overrides___stores_optional_path_and_url_without_changing_downloader_ini(self):
+        path = '/tmp/fake_downloader'
+        url = 'http://127.0.0.1:8765/downloader.pyz'
+        python_compatible_path = '/tmp/python3.9'
+        default_ini = Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()
+
+        self.assertSetup(
+            files={downloader_ini: default_ini},
+            env={
+                KENV_UPDATE_ALL_DOWNLOADER_PATH: f' {path} ',
+                KENV_UPDATE_ALL_DOWNLOADER_URL: f' {url} ',
+                KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH: f' {python_compatible_path} ',
+            },
+            expected_files={downloader_ini: default_ini},
+            expected_config=Config(
+                databases=default_databases(),
+                downloader_path=path,
+                downloader_url=url,
+                downloader_python_compatible_path=python_compatible_path,
+            ),
+        )
+
+    def test_setup___with_non_interactive_override___stores_non_interactive_config(self):
+        self.assertSetup(
+            files={downloader_ini: ''},
+            env={KENV_UPDATE_ALL_NON_INTERACTIVE: ' true '},
+            expected_files={downloader_ini: Path('test/fixtures/downloader_ini/downloader_ini_empty_but_update_all.ini').read_text()},
+            expected_config=Config(
+                databases={all_dbs('').UPDATE_ALL_MISTER.db_id},
+                non_interactive=True,
+            ),
         )
 
     def test_setup___with_default_downloader_ini_and_update_all_ini_with_disabled_arcade_organizer___returns_config_with_default_databases_and_disabled_ao(self):

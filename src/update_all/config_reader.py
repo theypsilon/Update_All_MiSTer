@@ -24,7 +24,9 @@ from update_all.file_system import FileSystem
 from update_all.config import Config, EnvDict
 from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOCATION_STR, MISTER_ENVIRONMENT, KENV_DEBUG, \
     KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, \
-    FILE_retroaccount_cfg, K_RETROACCOUNT_DOMAIN, KENV_UPDATE_ALL_CHIP_ID_RESULT
+    FILE_retroaccount_cfg, K_RETROACCOUNT_DOMAIN, KENV_UPDATE_ALL_CHIP_ID_RESULT, KENV_UPDATE_ALL_MISTER_DB_URL, \
+    KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, KENV_UPDATE_ALL_NON_INTERACTIVE, \
+    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
 from update_all.databases import DB_ID_NAMES_TXT, model_variables_by_db_id, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, DB_ID_MREXT_TAPTO
 from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
@@ -74,6 +76,11 @@ class ConfigReader:
         config.timeline_short_path = self._env.get('TIMELINE_SHORT_PATH', config.timeline_short_path).strip()
         config.timeline_plus_path = self._env.get('TIMELINE_PLUS_PATH', config.timeline_plus_path).strip()
         config.mirror = self._env.get('MIRROR_ID', config.mirror).strip().lower()
+        config.update_all_mister_db_url = self._env.get(KENV_UPDATE_ALL_MISTER_DB_URL, '').strip() or None
+        config.downloader_path = self._env.get(KENV_UPDATE_ALL_DOWNLOADER_PATH, '').strip() or None
+        config.downloader_url = self._env.get(KENV_UPDATE_ALL_DOWNLOADER_URL, '').strip() or None
+        config.downloader_python_compatible_path = self._env.get(KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH, '').strip() or None
+        config.non_interactive = str_to_bool(self._env.get(KENV_UPDATE_ALL_NON_INTERACTIVE, '').strip().lower())
         config.retroaccount_domain = self._env.get('RETROACCOUNT_DOMAIN', DOMAIN_default_retroaccount).strip().rstrip('/')
         if self._env['HTTP_PROXY'] or self._env['HTTPS_PROXY']:
             config.http_config = http_config(http_proxy=self._env['HTTP_PROXY'], https_proxy=self._env['HTTPS_PROXY'])

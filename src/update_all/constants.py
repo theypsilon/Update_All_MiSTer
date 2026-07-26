@@ -29,6 +29,7 @@ DEFAULT_LOCATION_STR: Final[str] = 'MiSTer'
 DEFAULT_DEBUG: Final[str] = 'false'
 DEFAULT_TRANSITION_SERVICE_ONLY: Final[str] = 'false'
 DEFAULT_SKIP_DOWNLOADER: Final[str] = 'false'
+DEFAULT_UPDATE_ALL_NON_INTERACTIVE: Final[str] = 'false'
 
 MISTER_ENVIRONMENT: Final[str] = 'mister'
 FILE_mister_version: Final[str] = '/MiSTer.version'
@@ -51,9 +52,11 @@ API_retroaccount_device_hardware_id: Final[str] = '/api/mister/device/hardware-i
 
 # Downloader files
 FILE_update_all_pyz: Final[str] = 'Scripts/.config/update_all/update_all.pyz'
+FILE_settings_screen_model_json_zip: Final[str] = 'Scripts/.config/update_all/settings_screen_model.json.zip'
 FILE_update_all_zipped_storage: Final[str] = 'Scripts/.config/update_all/update_all.json.zip'
 FILE_update_all_storage: Final[str] = 'Scripts/.config/update_all/update_all.json'
 FILE_update_all_log: Final[str] = 'Scripts/.config/update_all/update_all.log'
+FILE_update_all_early_update_resume: Final[str] = '/tmp/update_all_early_update_resume'
 FILE_update_all_chip_id_linker_log: Final[str] = 'Scripts/.config/update_all/chip-id-linker.log'
 FILE_update_all_print_tmp_log: Final[str] = '/tmp/update_all_print.log'
 FILE_update_all_launcher: Final[str] = 'Scripts/update_all.sh'
@@ -177,6 +180,11 @@ KENV_LC_HTTP_PROXY: Final[str] = 'http_proxy'
 KENV_HTTPS_PROXY: Final[str] = 'HTTPS_PROXY'
 KENV_LC_HTTPS_PROXY: Final[str] = 'https_proxy'
 KENV_MIRROR_ID: Final[str] = 'MIRROR_ID'
+KENV_UPDATE_ALL_MISTER_DB_URL: Final[str] = 'UPDATE_ALL_MISTER_DB_URL'
+KENV_UPDATE_ALL_DOWNLOADER_PATH: Final[str] = 'UPDATE_ALL_DOWNLOADER_PATH'
+KENV_UPDATE_ALL_DOWNLOADER_URL: Final[str] = 'UPDATE_ALL_DOWNLOADER_URL'
+KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH: Final[str] = 'UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH'
+KENV_UPDATE_ALL_NON_INTERACTIVE: Final[str] = 'UPDATE_ALL_NON_INTERACTIVE'
 
 # Exit codes
 EXIT_CODE_REQUIRES_EARLY_EXIT: Final[int] = 1

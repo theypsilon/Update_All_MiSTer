@@ -29,7 +29,10 @@ from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, \
     DEFAULT_SKIP_DOWNLOADER, KENV_PATREON_KEY_PATH, FILE_patreon_key, KENV_COMMAND, COMMAND_STANDARD, \
     KENV_TIMELINE_SHORT_PATH, FILE_timeline_short, KENV_TIMELINE_PLUS_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, \
     KENV_LC_HTTP_PROXY, KENV_LC_HTTPS_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID, KENV_UPDATE_ALL_CHIP_ID_RESULT, \
-    KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, MEDIA_FAT, FILE_update_all_log
+    KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, MEDIA_FAT, FILE_update_all_log, \
+    KENV_UPDATE_ALL_MISTER_DB_URL, KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, \
+    KENV_UPDATE_ALL_NON_INTERACTIVE, DEFAULT_UPDATE_ALL_NON_INTERACTIVE, \
+    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
 
 from update_all.logger import FileLoggerDecorator, PrintLogger
 from update_all.other import GenericProvider
@@ -77,7 +80,9 @@ def execute_update_all(logger: FileLoggerDecorator, local_repository_provider, e
         full_run_param = UpdateAllServicePass.NewRun
 
     factory = UpdateAllServiceFactory(logger, local_repository_provider=local_repository_provider)
-    return factory.create(env).full_run(full_run_param)
+    exit_code = factory.create(env).full_run(full_run_param)
+    logger.debug(f'Update All flow finished: exit_code={exit_code}.')
+    return exit_code
 
 
 def read_env(default_commit: str, real_start_time: float) -> EnvDict:
@@ -96,6 +101,11 @@ def read_env(default_commit: str, real_start_time: float) -> EnvDict:
         KENV_HTTP_PROXY: os.getenv(KENV_HTTP_PROXY) or os.getenv(KENV_LC_HTTP_PROXY),
         KENV_HTTPS_PROXY: os.getenv(KENV_HTTPS_PROXY) or os.getenv(KENV_LC_HTTPS_PROXY),
         KENV_MIRROR_ID: os.getenv(KENV_MIRROR_ID, ''),
+        KENV_UPDATE_ALL_MISTER_DB_URL: os.getenv(KENV_UPDATE_ALL_MISTER_DB_URL, ''),
+        KENV_UPDATE_ALL_DOWNLOADER_PATH: os.getenv(KENV_UPDATE_ALL_DOWNLOADER_PATH, ''),
+        KENV_UPDATE_ALL_DOWNLOADER_URL: os.getenv(KENV_UPDATE_ALL_DOWNLOADER_URL, ''),
+        KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH: os.getenv(KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH, ''),
+        KENV_UPDATE_ALL_NON_INTERACTIVE: os.getenv(KENV_UPDATE_ALL_NON_INTERACTIVE, DEFAULT_UPDATE_ALL_NON_INTERACTIVE),
         KENV_RETROACCOUNT_DOMAIN: os.getenv(KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount),
         'real_start_time': real_start_time
     }

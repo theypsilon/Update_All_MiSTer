@@ -141,16 +141,12 @@ class RetroAccountService(RetroAccountClient):
         self._device_label: Optional[str] = None
         self._update_all_patreon_key_prev_file: Optional[_RetroAccountFileDescription] = None
         self._important_messages: list[ImportantMessage] = []
-        self._sync_done = False
 
     def update_all_extras_sync_state(self) -> BenefitState:
         return self._update_all_extras_sync_state
 
     def jtbeta_access_sync_state(self) -> BenefitState:
         return self._jtbeta_access_sync_state
-
-    def has_synced(self) -> bool:
-        return self._sync_done
 
     def get_device_label(self) -> Optional[str]:
         return self._device_label
@@ -439,8 +435,6 @@ class RetroAccountService(RetroAccountClient):
 
         if transition.credentials_were_revoked:
             self._report_forced_logout('Your credentials were revoked!')
-
-        self._sync_done = True
 
     def _report_forced_logout(self, message: str) -> None:
         self._important_messages.append(('print', '\nYou\'ve been logged out from RetroAccount.'))

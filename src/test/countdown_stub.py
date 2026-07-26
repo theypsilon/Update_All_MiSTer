@@ -21,6 +21,8 @@ from update_all.countdown import Countdown, CountdownOutcome
 class CountdownStub(Countdown):
     def __init__(self, outcome: CountdownOutcome = CountdownOutcome.CONTINUE):
         self._outcome = outcome
+        self.execute_count_calls = []
 
-    def execute_count(self, _) -> CountdownOutcome:
+    def execute_count(self, count) -> CountdownOutcome:
+        self.execute_count_calls.append(count)
         return self._outcome
