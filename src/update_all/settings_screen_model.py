@@ -1268,33 +1268,13 @@ def settings_screen_model():
             "type": "dialog_sub_menu_info",
             "header": "Hybrid Cores",
             "variables": {
-                "MiSTerOrganize/MiSTer_Frontier": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/dreamster": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/sonic-mania": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/duke3d": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-quake": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MiSTerOrganize/MiSTer_Frontier": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
-                {
-                    "title": "# MiSTer Frontier",
-                    "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} Hybrid FPGA+ARM cores",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MiSTerOrganize/MiSTer_Frontier", "MiSTer Frontier"),
-                        "ok": [{"type": "rotate_variable", "target": "MiSTerOrganize/MiSTer_Frontier"}],
-                        "info": [{
-                            "ui": "message",
-                            "header": "MiSTer Frontier",
-                            "text": [
-                                "Software-based gaming platforms on MiSTer:",
-                                "fantasy consoles, game engines, and retro",
-                                "graphics systems as hybrid FPGA+ARM cores.",
-                                " ",
-                                "ARM runs the emulator/engine, FPGA drives",
-                                "video and audio directly to hardware for",
-                                "native CRT-friendly, zero-lag output.",
-                            ],
-                        }]
-                    }
-                },
                 {
                     "title": "# DreamSTer",
                     "description": "{MultiDatabases/dreamster:enabled} Hybrid FPGA/ARM Dreamcast emulator",
@@ -1417,6 +1397,26 @@ def settings_screen_model():
                                 "Copy it to games/quake/id1/",
                             ],
                         }],
+                    }
+                },
+                {
+                    "title": "# MiSTer Frontier",
+                    "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} Hybrid FPGA+ARM cores",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MiSTerOrganize/MiSTer_Frontier", "MiSTer Frontier"),
+                        "ok": [{"type": "rotate_variable", "target": "MiSTerOrganize/MiSTer_Frontier"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "MiSTer Frontier",
+                            "text": [
+                                "Software-based gaming platforms on MiSTer:",
+                                "fantasy consoles, game engines, and retro",
+                                "graphics systems as hybrid FPGA+ARM cores.",
+                                " ",
+                                "ARM runs the emulator/engine, FPGA drives",
+                                "video and audio directly to hardware for",
+                                "native CRT-friendly, zero-lag output.",
+                            ],
+                        }]
                     }
                 },
             ]

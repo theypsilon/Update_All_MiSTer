@@ -651,18 +651,18 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertEqual('Hybrid Cores', menu['header'])
         self.assertEqual([
-            'MiSTerOrganize/MiSTer_Frontier',
             'MultiDatabases/dreamster',
             'MultiDatabases/sonic-mania',
             'MultiDatabases/duke3d',
             'MultiDatabases/mister-quake',
+            'MiSTerOrganize/MiSTer_Frontier',
         ], list(menu['variables']))
         self.assertEqual([
-            '# MiSTer Frontier',
             '# DreamSTer',
             '# Sonic Mania MiSTer',
             '# MiSTer Duke3D',
             '# MiSTer Quake',
+            '# MiSTer Frontier',
         ], [entry.get('title') for entry in menu['entries']])
 
     def test_dreamster_entry___toggles_without_message_and_exposes_requirements_as_info(self):
