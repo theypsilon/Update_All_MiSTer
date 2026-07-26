@@ -17,6 +17,7 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 import json
 
+from update_all.cli_output_formatting import bold
 from update_all.config import Config
 from update_all.constants import BACKGROUND_JOBS_SOFT_TIMEOUT, FILE_settings_screen_model_json_zip, \
     FILE_update_all_early_update_resume, FILE_update_all_pyz
@@ -116,8 +117,12 @@ class UpdateAllEarlyUpdateService:
 
             config = self._config_provider.get()
             update_all_db = all_dbs(config.mirror).UPDATE_ALL_MISTER
-            self._logger.print('A new version of Update All is available.')
-            self._logger.print('Installing it now. The update process will continue automatically...')
+            self._logger.print()
+            self._logger.print(bold('A NEW VERSION OF UPDATE ALL IS AVAILABLE!'))
+            self._logger.print()
+            self._logger.print('Installing it now.')
+            self._logger.print('The update process will continue automatically...')
+            self._logger.print()
             return_code = self._downloader_service.execute_downloader_command(
                 config,
                 self._ini_repository.downloader_ini_standard_path(),
