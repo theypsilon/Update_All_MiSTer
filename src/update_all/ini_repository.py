@@ -385,11 +385,12 @@ class IniRepository:
         base_path = self._extra_db_ini_base_path()
         result: List[str] = []
         downloader_folder = f'{base_path}/{EXTRA_DB_INI_FOLDER}'
-        for name in sorted(self._file_system.list_file_names_in_folder(downloader_folder)):
-            if name.startswith('.'):
-                continue
-            if name.lower().endswith('.ini'):
-                result.append(f'{EXTRA_DB_INI_FOLDER}/{name}')
+        if self._file_system.is_folder(downloader_folder):
+            for name in sorted(self._file_system.list_file_names_in_folder(downloader_folder)):
+                if name.startswith('.'):
+                    continue
+                if name.lower().endswith('.ini'):
+                    result.append(f'{EXTRA_DB_INI_FOLDER}/{name}')
 
         for name in sorted(self._file_system.list_file_names_in_folder(base_path)):
             lower = name.lower()

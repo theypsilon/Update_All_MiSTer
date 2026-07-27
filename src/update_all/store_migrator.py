@@ -41,6 +41,7 @@ class StoreMigrator:
             self._migrations[i](local_store)
 
         local_store['migration_version'] = self.latest_migration_version()
+        local_store['_dirty'] = True
 
         self._logger.bench('Migration done.')
 

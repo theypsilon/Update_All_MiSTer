@@ -17,7 +17,10 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 import unittest
 
+from test.logger_tester import NoLogger
+from update_all.local_store import LocalStore
 from update_all.migrations import migration_v7, migration_v8, migration_v9, migration_v10, migration_v11
+from update_all.store_migrator import StoreMigrator
 
 
 class TestMigrations(unittest.TestCase):
@@ -83,3 +86,19 @@ class TestMigrations(unittest.TestCase):
         migration_v11(local_store)
 
         self.assertEqual(True, local_store['allow_retroaccount_jt_beta_auto_enable'])
+
+    def test_store_migrator___after_running_migrations___marks_store_for_persistence(self):
+        props = {'migration_version': 0}
+
+        StoreMigrator([lambda _local_store: None], NoLogger()).migrate(props)
+
+        local_store = LocalStore(props)
+        self.assertTrue(local_store.needs_save())
+        self.assertEqual(1, local_store.unwrap_props()['migration_version'])
+
+    def test_store_migrator___when_already_current___does_not_mark_store_for_persistence(self):
+        props = {'migration_version': 1}
+
+        StoreMigrator([lambda _local_store: None], NoLogger()).migrate(props)
+
+        self.assertFalse(LocalStore(props).needs_save())

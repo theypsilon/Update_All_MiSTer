@@ -14,14 +14,19 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import tempfile
 from pathlib import Path
 
 from test.ini_assertions import assertEqualIni
+from test.logger_tester import LoggerSpy
+from test.spy_os_utils import SpyOsUtils
 from test.testing_objects import downloader_ini
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, DOWNLOADER_INI_STANDARD_PATH, MEDIA_FAT
 from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, all_dbs
-from update_all.ini_repository import read_ini_contents
+from update_all.file_system import FileSystemFactory as ProductionFileSystemFactory
+from update_all.ini_repository import IniRepository, read_ini_contents
+from update_all.other import GenericProvider
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.update_all_service_tester import default_databases, IniRepositoryTester
@@ -414,6 +419,18 @@ class TestIniRepository(unittest.TestCase):
             'downloader_a-first.ini',
             'downloader_z-last.ini',
         ], sources['duplicate_db'])
+
+    def test_read_extra_db_ini_files___without_optional_downloader_folder___returns_empty_without_debug_error(self):
+        with tempfile.TemporaryDirectory() as base_path:
+            config_provider = GenericProvider[Config]()
+            config_provider.initialize(Config(base_path=base_path, base_system_path=base_path))
+            logger = LoggerSpy()
+            file_system = ProductionFileSystemFactory(config_provider, {}, logger).create_for_system_scope()
+            ini_repository = IniRepository(logger, file_system, SpyOsUtils())
+            ini_repository.initialize_downloader_ini_base_path(base_path)
+
+            self.assertEqual(({}, {}), ini_repository.read_extra_db_ini_files())
+            self.assertEqual([], logger.debug_lines)
 
     def test_strip_db_ids_from_extra_files___removes_sections_keeps_others_and_deletes_emptied_files(self):
         multi_path = f'{MEDIA_FAT}/downloader/multi.ini'.lower()
