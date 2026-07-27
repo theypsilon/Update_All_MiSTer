@@ -57,7 +57,7 @@ class TestDatabases(unittest.TestCase):
                 self.assertEqual(original_db.db_id, mirrored_db.db_id)
                 self.assertEqual(original_db.title, mirrored_db.title)
                 self.assertEqual(
-                    'http://proxy.andi.com.br/' + original_db.db_url,
+                    'https://mister.cc.cd/' + original_db.db_url,
                     mirrored_db.db_url,
                 )
 
