@@ -313,7 +313,7 @@ class AllDBsAndiBr(AllDBs):
         super().__init__()
 
         for db in self.all_dbs_list():
-            db.db_url = 'http://proxy.andi.com.br/' + db.db_url
+            db.db_url = 'https://mister.cc.cd/' + db.db_url
 
 def all_dbs(mirror: Optional[str]) -> AllDBs:
     if not mirror or mirror == 'off':
