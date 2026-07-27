@@ -499,6 +499,8 @@ class TestSettingsScreenModel(unittest.TestCase):
              'MiSTer Extensions'),
             ('tools_and_scripts_menu', '# MiSTer Super Attract Mode', 'mistersam_files_downloader',
              'MiSTer_SAM_files', 'MiSTer Super Attract Mode'),
+            ('tools_and_scripts_menu', '# 240p Test Suites', 'ajgowans/240p',
+             'ajgowans/240p', '240p Test Suites'),
             ('tools_and_scripts_menu', '# Anime0t4ku MiSTer Scripts', 'anime0t4ku_mister_scripts',
              'anime0t4ku_mister_scripts', 'Anime0t4ku MiSTer Scripts'),
             ('tools_and_scripts_menu', '# tty2oled Add-on script', 'tty2oled_files_downloader',

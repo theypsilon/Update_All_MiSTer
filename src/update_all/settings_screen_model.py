@@ -1531,6 +1531,7 @@ def settings_screen_model():
             "header": "Tools & Scripts",
             "variables": {
                 "mistersam_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
+                "ajgowans/240p": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "mrext/all": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "anime0t4ku_mister_scripts": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "tty2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
@@ -1579,6 +1580,25 @@ def settings_screen_model():
                         "uninstall": uninstall_db_action(
                             "mistersam_files_downloader", "MiSTer_SAM_files", "MiSTer Super Attract Mode"),
                         "ok": [{"type": "rotate_variable", "target": "mistersam_files_downloader"}],
+                    }
+                },
+                {
+                    "title": "# 240p Test Suites",
+                    "description": "{ajgowans/240p:enabled} Maintainer: Moondandy",
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id("ajgowans/240p", "240p Test Suites"),
+                        "ok": [{"type": "rotate_variable", "target": "ajgowans/240p"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "240p Test Suites",
+                            "text": [
+                                "Includes a 240p core in Utilities.",
+                                "The 240p ROMs are available for these systems:",
+                                "Gameboy, GBA, Master System, MegaCD, Megadrive, MiSTer, N64, Neo Geo,",
+                                "Neo Geo CD, NES, Playstation, Sega 32X, Saturn, SNES, TurboGrafx16,",
+                                "TurboGrafx16 CD",
+                            ],
+                        }],
                     }
                 },
                 {
