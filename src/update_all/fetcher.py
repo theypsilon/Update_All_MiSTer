@@ -60,6 +60,7 @@ class Fetcher:
         with self._lock:
             if self._cleaned_up:
                 raise RuntimeError('Fetcher: already cleaned up')
+
             if self._gw is None:
                 config = self._config_provider.get()
                 ssl_ctx, ssl_err = context_from_curl_ssl(config.curl_ssl)
