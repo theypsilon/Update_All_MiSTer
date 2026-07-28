@@ -65,7 +65,7 @@ class Fetcher:
                 config = self._config_provider.get()
                 ssl_ctx, ssl_err = context_from_curl_ssl(config.curl_ssl)
                 if ssl_err is not None:
-                    raise RuntimeError(f'Fetcher: SSL context error: {ssl_err}')
+                    raise RuntimeError(f'Fetcher: SSL context error {ssl_err}')
 
                 self._gw = HttpGateway(
                     ssl_ctx=ssl_ctx or ssl.create_default_context(),
