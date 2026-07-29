@@ -2190,7 +2190,29 @@ def settings_screen_model():
                 {
                     "title": "# Mirror",
                     "description": "{mirror}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "mirror"}]}
+                    "actions": {"ok": [{
+                        "type": "condition",
+                        "variable": "mirror",
+                        "off": [{
+                            "ui": "confirm",
+                            "header": "EXPERIMENTAL MIRROR",
+                            "alert_level": "red",
+                            "text": [
+                                "The 'Andi Brazil' mirror is an experimental mirror.",
+                                "If you see some errors at the end of the updates,",
+                                "try disabling this option and run the update again.",
+                            ],
+                            "preselected_action": "No",
+                            "actions": [
+                                {"title": "Yes", "type": "fixed", "fixed": [
+                                    {"type": "rotate_variable", "target": "mirror"},
+                                    {"type": "navigate", "target": "back"},
+                                ]},
+                                {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                            ],
+                        }],
+                        "andi_br": [{"type": "rotate_variable", "target": "mirror"}],
+                    }]}
                 }
             ]
         },
