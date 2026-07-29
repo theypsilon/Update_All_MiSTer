@@ -216,7 +216,7 @@ class SettingsScreen(UiApplication):
         local_store = self._store_provider.get()
         ui.set_value('ui_theme', local_store.get_theme())
         mirror = local_store.get_mirror()
-        # @TODO (mirror) ui.set_value('mirror', mirror if mirror else config.mirror)
+        ui.set_value('mirror', mirror if mirror else config.mirror)
         ui.set_value('countdown_time', str(local_store.get_countdown_time()))
         ui.set_value('log_viewer', str(local_store.get_log_viewer()).lower())
         ui.set_value('use_settings_screen_theme_in_log_viewer', str(local_store.get_use_settings_screen_theme_in_log_viewer()).lower())
@@ -1002,7 +1002,7 @@ class SettingsScreen(UiApplication):
         store.set_monochrome_ui(config.monochrome_ui)
         store.set_allow_retroaccount_jt_beta_auto_enable(ui.get_value('allow_retroaccount_jt_beta_auto_enable') != 'false')
         store.set_ajgowans_manuals_dbs_general_selector(ui.get_value('ajgowans_manuals_dbs_general_selector') != 'false')
-        # @TODO (mirror) store.set_mirror(ui.get_value('mirror'))
+        store.set_mirror(ui.get_value('mirror'))
 
     def _does_arcade_oganizer_need_save(self, ui: UiContext):
         arcade_organizer_ini = self._ini_repository.get_arcade_organizer_ini()

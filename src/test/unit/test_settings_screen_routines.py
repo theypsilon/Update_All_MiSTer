@@ -31,7 +31,7 @@ from test.update_all_service_tester import SettingsScreenTester, UiContextStub, 
 from update_all.config import Config
 from update_all.constants import FILE_MiSTer_ini, FILE_downloader_fingerprints_json, \
     FILE_downloader_launcher_update_script, FILE_downloader_launcher_downloader_script
-from update_all.databases import AllDBs, all_dbs
+from update_all.databases import AllDBs, MIRROR_ANDI_BR, all_dbs
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider
 from update_all.retroaccount import BenefitState, ChipIdAttachResult
@@ -309,6 +309,19 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         _sut, ui = tester(config=config, store=store)
 
         self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_general_selector'))
+
+    def test_initialize_ui___with_mirror_in_store___loads_it_into_the_mirror_variable(self):
+        store = local_store()
+        store.set_mirror(MIRROR_ANDI_BR)
+
+        _sut, ui = tester(store=store)
+
+        self.assertEqual(MIRROR_ANDI_BR, ui.get_value('mirror'))
+
+    def test_initialize_ui___without_mirror_anywhere___keeps_the_mirror_variable_on_a_value_the_formatter_reads_as_off(self):
+        _sut, ui = tester()
+
+        self.assertEqual('Off.', settings_screen_model()['formatters']['mirror'][ui.get_value('mirror')])
 
     def test_initialize_ui___stores_media_fat_available_space_as_raw_bytes(self):
         file_system = FileSystemFactory.from_state(available_space={'/media/fat': 20 * 1024 * 1024 * 1024}).create_for_system_scope()

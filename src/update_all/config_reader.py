@@ -94,9 +94,7 @@ class ConfigReader:
         config.boot_time = config.start_time - self._env.get('real_start_time')
 
     def fill_config_with_database_sections(self, config: Config, downloader_ini: Dict[str, IniParser]) -> None:
-        extra_ini, extra_sources = self._ini_repository.read_extra_db_ini_files()
-        # Downloader reads downloader.ini first and ignores duplicate db_ids from later drop-ins.
-        all_ini = {**extra_ini, **downloader_ini}
+        all_ini, extra_sources = self._ini_repository.resolve_all_database_sections(downloader_ini)
         config.database_sources = extra_sources
 
         for db_id, variable in model_variables_by_db_id().items():
@@ -113,7 +111,8 @@ class ConfigReader:
 
         if DB_ID_DISTRIBUTION_MISTER in all_ini:
             parser = all_ini[DB_ID_DISTRIBUTION_MISTER]
-            config.encc_forks = db_defs.encc_forks_by_distribution_mister_db_url(parser.get_string('db_url', None))
+            distribution_mister_db_url = parser.get_string('db_url', None)
+            config.encc_forks = db_defs.encc_forks_by_distribution_mister_db_url(distribution_mister_db_url)
 
         if ALL_DB_IDS['JTCORES'] in all_ini:
             parser = all_ini[ALL_DB_IDS['JTCORES']]

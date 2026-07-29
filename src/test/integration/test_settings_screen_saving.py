@@ -26,7 +26,7 @@ from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_
 from update_all.ini_repository import read_ini_contents, SEPARATE_DB_INI_FILES
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, TerminalSize
-from update_all.databases import db_ids_to_model_variable_pairs, all_dbs
+from update_all.databases import db_ids_to_model_variable_pairs, all_dbs, MIRROR_ANDI_BR
 from update_all.settings_screen import SettingsScreen
 from update_all.store_migrator import make_new_local_store
 from update_all.update_output import NoopUpdateOutput
@@ -84,6 +84,21 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.calculate_needs_save(ui)
         self.assertEqual('  - downloader.ini', ui.get_value('needs_save_file_list'))
         self.assertEqual('true', ui.get_value('needs_save'))
+
+    def test_save___with_mirror_selected___writes_mirrored_db_urls_and_persists_the_mirror(self) -> None:
+        sut, ui, state = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('mirror', MIRROR_ANDI_BR)
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('downloader.ini', ui.get_value('needs_save_file_list'))
+        self.assertIn('mirror', ui.get_value('needs_save_file_list'))
+        self.assertEqual(
+            all_dbs(MIRROR_ANDI_BR).MISTER_DEVEL_DISTRIBUTION_MISTER.db_url,
+            read_ini_contents(state.files[downloader_ini]['content'])['distribution_mister']['db_url'],
+        )
+        self.assertEqual(MIRROR_ANDI_BR, sut._store_provider.get().get_mirror())
 
     def test_calculate_needs_save___with_default_downloader_ini___returns_no_changes(self) -> None:
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})

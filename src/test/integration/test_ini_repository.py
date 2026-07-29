@@ -25,6 +25,7 @@ from update_all.config import Config
 from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, DOWNLOADER_INI_STANDARD_PATH, MEDIA_FAT
 from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, all_dbs
 from update_all.file_system import FileSystemFactory as ProductionFileSystemFactory
+from update_all.ini_parser import IniParser
 from update_all.ini_repository import IniRepository, read_ini_contents
 from update_all.other import GenericProvider
 from test.fake_filesystem import FileSystemFactory
@@ -41,6 +42,31 @@ def test_write_downloader_ini(files=None, folders=None, config: Config = None):
 
 
 class TestIniRepository(unittest.TestCase):
+
+    def test_write_database_configuration___resolves_winning_distribution_url_after_fork_change(self):
+        config = Config(
+            databases=default_databases(),
+            encc_forks='db9',
+        )
+        state = FileSystemState(files={
+            downloader_ini: {
+                'content': Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(),
+            },
+        })
+        repository = IniRepositoryTester(
+            file_system=FileSystemFactory(state=state).create_for_system_scope(),
+        )
+        repository.resolve_all_database_sections({
+            db_id: IniParser(section)
+            for db_id, section in repository.get_downloader_ini(cached=False).items()
+        })
+
+        repository.write_database_configuration(config)
+
+        self.assertEqual(
+            all_dbs('').MISTER_DB9_DISTRIBUTION_MISTER.db_url,
+            repository.resolved_database_url(DB_ID_DISTRIBUTION_MISTER),
+        )
 
     def test_write_downloader_ini___over_dirty_downloader_ini_after_changing_some_options___writes_changed_downloader(self):
         config = Config(
@@ -419,6 +445,27 @@ class TestIniRepository(unittest.TestCase):
             'downloader_a-first.ini',
             'downloader_z-last.ini',
         ], sources['duplicate_db'])
+
+    def test_resolved_database_url___when_distribution_is_only_in_drop_ins___uses_first_scanned(self):
+        state = FileSystemState(files={
+            downloader_ini: {
+                'content': '[update_all_mister]\ndb_url = https://update-all\n',
+            },
+            f'{MEDIA_FAT}/downloader/z-last.ini': {
+                'content': '[distribution_mister]\ndb_url = https://folder-z\n',
+            },
+            f'{MEDIA_FAT}/downloader/a-first.ini': {
+                'content': '[distribution_mister]\ndb_url = https://folder-a\n',
+            },
+        })
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        ini_repository.resolve_all_database_sections({})
+
+        self.assertEqual(
+            'https://folder-a',
+            ini_repository.resolved_database_url(DB_ID_DISTRIBUTION_MISTER),
+        )
 
     def test_read_extra_db_ini_files___without_optional_downloader_folder___returns_empty_without_debug_error(self):
         with tempfile.TemporaryDirectory() as base_path:

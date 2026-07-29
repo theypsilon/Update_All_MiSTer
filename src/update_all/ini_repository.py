@@ -69,6 +69,7 @@ class IniRepository:
         self._base_path = None
         self._downloader_ini = None
         self._arcade_organizer_ini = None
+        self._resolved_database_sections: Dict[str, IniParser] = {}
 
     def initialize_downloader_ini_base_path(self, base_path: str) -> None:
         self._base_path = base_path
@@ -377,6 +378,18 @@ class IniRepository:
 
         return sections, sources
 
+    def resolve_all_database_sections(
+            self,
+            downloader_ini: Dict[str, IniParser],
+    ) -> Tuple[Dict[str, IniParser], Dict[str, List[str]]]:
+        extra_ini, extra_sources = self.read_extra_db_ini_files()
+        self._resolved_database_sections = {**extra_ini, **downloader_ini}
+        return self._resolved_database_sections, extra_sources
+
+    def resolved_database_url(self, db_id: str) -> Optional[str]:
+        section = self._resolved_database_sections.get(db_id.lower())
+        return section.get_string('db_url', None) if section is not None else None
+
     def refresh_database_sources(self, config: Config) -> None:
         _, sources = self.read_extra_db_ini_files()
         config.database_sources = sources
@@ -479,6 +492,10 @@ class IniRepository:
 
         self.write_downloader_ini(config)
         self.write_separate_db_ini_files(config)
+        self.resolve_all_database_sections({
+            db_id: IniParser(section)
+            for db_id, section in self.get_downloader_ini(cached=False).items()
+        })
 
     @staticmethod
     def _build_separate_db_section(db: Database, config: Config) -> str:

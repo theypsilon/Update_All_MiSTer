@@ -560,7 +560,7 @@ def settings_screen_model():
         "encc_forks": {"devel": "MiSTer-devel", "db9": "MiSTer-DB9", "aitorgomez": "AitorGomez Fork"},
         "encc_forks_description": {"devel": "Official Cores from MiSTer-devel", "db9": "DB9 / SNAC8 forks with ENCC", "aitorgomez": "AitorGomez Fork"},
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
-# @TODO (mirror)       "mirror": {"": "Off.", "off": "Off.", "mysticalrealm": "Mystical Realm"},
+        "mirror": {"": "Off.", "off": "Off.", "andi_br": "Andi Brazil"},
         "overscan": {"none": "None", "low": "Low", "medium": "Medium", "high": "High", "maximum": "Max"},
         "bytes_to_gb": {},
         "device_label_message": {},
@@ -2149,7 +2149,7 @@ def settings_screen_model():
                 "log_viewer": {"group": "store", "default": "true", "values": ["false", "true"]},
                 "overscan": {"group": "store", "default": "medium", "values": ["none", "low", "medium", "high", "maximum"]},
                 "monochrome_ui": {"group": "store", "default": "false", "values": ["false", "true"]},
-# @TODO (mirror)                "mirror": {"group": "store", "default": "off", "values": ["off", "mysticalrealm"]},
+                "mirror": {"group": "store", "default": "off", "values": ["off", "andi_br"]},
             },
             "entries": [
                 {
@@ -2187,11 +2187,11 @@ def settings_screen_model():
                     "description": "{monochrome_ui:enabled}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "monochrome_ui"}, {"type": "apply_theme"}]}
                 },
-                # {
-                #     "title": "# Mirror",
-                #     "description": "{mirror}",
-                #     "actions": {"ok": [{"type": "rotate_variable", "target": "mirror"}]}
-                # }
+                {
+                    "title": "# Mirror",
+                    "description": "{mirror}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "mirror"}]}
+                }
             ]
         },
         "system_video_mode_menu": {

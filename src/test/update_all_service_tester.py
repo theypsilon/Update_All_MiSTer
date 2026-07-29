@@ -251,7 +251,13 @@ class SettingsScreenTester(SettingsScreen):
                 or UninstallDbService(
                     ini_repository,
                     config_provider,
-                    DownloaderService(NoLogger(), file_system, os_utils),
+                    DownloaderService(
+                        NoLogger(),
+                        file_system,
+                        os_utils,
+                        ini_repository,
+                        FetcherStub(config_provider=config_provider),
+                    ),
                     file_system,
                     NoLogger(),
                 )
@@ -376,6 +382,7 @@ class UpdateAllServiceTester(UpdateAllService):
         os_utils = os_utils or SpyOsUtils()
         config_provider = config_provider or GenericProvider[Config]()
         store_provider = store_provider or GenericProvider[LocalStore]()
+        fetcher = fetcher or FetcherStub(config_provider=config_provider)
 
         ao_service = ArcadeOrganizerServiceStub()
         retroaccount = retroaccount or RetroAccountServiceTester(file_system=file_system, config_provider=config_provider)
@@ -390,14 +397,20 @@ class UpdateAllServiceTester(UpdateAllService):
             zaparoo_service=zaparoo_service,
         )
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
-        downloader_service = downloader_service or DownloaderService(NoLogger(), file_system, os_utils)
+        downloader_service = downloader_service or DownloaderService(
+            NoLogger(),
+            file_system,
+            os_utils,
+            self.ini_repository,
+            fetcher,
+        )
         self_update_service = self_update_service or UpdateAllSelfUpdateServiceTester(
             config_provider=config_provider,
             logger=NoLogger(),
             file_system=file_system,
             ini_repository=self.ini_repository,
             downloader_service=downloader_service,
-            fetcher=fetcher or FetcherStub(config_provider=config_provider),
+            fetcher=fetcher,
         )
         background_jobs_service = background_jobs_service or UpdateAllBackgroundJobsServiceTester(
             logger=NoLogger(),

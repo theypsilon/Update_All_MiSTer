@@ -47,17 +47,22 @@ class UpdateAllSelfUpdateServiceTester(UpdateAllSelfUpdateService):
         file_system = file_system or FileSystemFactory(
             config_provider=config_provider,
         ).create_for_system_scope()
+        ini_repository = ini_repository or _IniRepositoryStub()
+        fetcher = fetcher or FetcherStub(config_provider=config_provider)
 
         super().__init__(
             config_provider,
             logger,
             file_system,
-            ini_repository or _IniRepositoryStub(),
-            downloader_service or DownloaderService(logger, file_system, SpyOsUtils()),
-            fetcher or FetcherStub(config_provider=config_provider),
+            ini_repository,
+            downloader_service or DownloaderService(logger, file_system, SpyOsUtils(), ini_repository, fetcher),
+            fetcher,
         )
 
 
 class _IniRepositoryStub:
     def downloader_ini_standard_path(self) -> str:
         return f'{MEDIA_FAT}/{DOWNLOADER_INI_STANDARD_PATH}'
+
+    def resolved_database_url(self, _db_id: str):
+        return None

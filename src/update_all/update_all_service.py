@@ -87,8 +87,8 @@ class UpdateAllServiceFactory:
         file_system = FileSystemFactory(config_provider, {}, self._logger).create_for_system_scope()
         fetcher = Fetcher(config_provider, logger=None)
         os_utils = LinuxOsUtils(config_provider=config_provider, logger=self._logger, fetcher=fetcher)
-        downloader_service = DownloaderService(self._logger, file_system, os_utils)
         ini_repository = IniRepository(self._logger, file_system=file_system, os_utils=os_utils)
+        downloader_service = DownloaderService(self._logger, file_system, os_utils, ini_repository, fetcher)
         self_update_service = UpdateAllSelfUpdateService(
             config_provider,
             self._logger,

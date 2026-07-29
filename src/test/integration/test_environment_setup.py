@@ -35,6 +35,10 @@ from test.update_all_service_tester import EnvironmentSetupTester, default_datab
 import unittest
 
 
+_DISTRIBUTION_MISTER_DB_URL = all_dbs('').MISTER_DEVEL_DISTRIBUTION_MISTER.db_url
+_DISTRIBUTION_MISTER_DB9_URL = all_dbs('').MISTER_DB9_DISTRIBUTION_MISTER.db_url
+
+
 class TestEnvironmentSetup(unittest.TestCase):
 
     def assertSetup(self, files: Dict[str, Any] = None, env: dict[str, str] = None, expected_files: Dict[str, str] = None, expected_config: Config = None, expected_result: EnvironmentSetupResult = None) -> None:
@@ -201,6 +205,53 @@ class TestEnvironmentSetup(unittest.TestCase):
             database_sources={'jtcores': ['downloader/override.ini']},
             download_beta_cores=False,
         ))
+
+    def test_setup___with_duplicate_distribution_in_drop_in___main_downloader_ini_url_wins(self):
+        main_url = _DISTRIBUTION_MISTER_DB9_URL
+        drop_in_url = _DISTRIBUTION_MISTER_DB_URL
+        main_ini = (
+            f'[distribution_mister]\n'
+            f'db_url = {main_url}\n\n'
+            f'[update_all_mister]\n'
+            f'db_url = {all_dbs("").UPDATE_ALL_MISTER.db_url}\n'
+        )
+        drop_in_path = f'{MEDIA_FAT}/downloader/override.ini'
+        drop_in_ini = f'[distribution_mister]\ndb_url = {drop_in_url}\n'
+
+        self.assertSetup(
+            files={
+                downloader_ini: main_ini,
+                drop_in_path: drop_in_ini,
+            },
+            expected_config=Config(
+                databases={all_dbs('').UPDATE_ALL_MISTER.db_id, 'distribution_mister'},
+                encc_forks='db9',
+                database_sources={'distribution_mister': ['downloader/override.ini']},
+            ),
+        )
+
+    def test_setup___with_duplicate_distribution_drop_ins___first_scanned_url_wins(self):
+        first_url = _DISTRIBUTION_MISTER_DB9_URL
+        second_url = _DISTRIBUTION_MISTER_DB_URL
+        main_ini = (
+            f'[update_all_mister]\n'
+            f'db_url = {all_dbs("").UPDATE_ALL_MISTER.db_url}\n'
+        )
+
+        self.assertSetup(
+            files={
+                downloader_ini: main_ini,
+                f'{MEDIA_FAT}/downloader/a.ini': f'[distribution_mister]\ndb_url = {first_url}\n',
+                f'{MEDIA_FAT}/downloader/b.ini': f'[distribution_mister]\ndb_url = {second_url}\n',
+            },
+            expected_config=Config(
+                databases={all_dbs('').UPDATE_ALL_MISTER.db_id, 'distribution_mister'},
+                encc_forks='db9',
+                database_sources={
+                    'distribution_mister': ['downloader/a.ini', 'downloader/b.ini'],
+                },
+            ),
+        )
 
     def test_setup___with_downloader_with_just_jtcores_with_mister_inheritance_filter_db___returns_config_has_not_jtpremium_but_has_beta_cores(self):
         self.assertSetup(files={
