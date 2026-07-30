@@ -215,7 +215,7 @@ def add_doc_section(doc: list[str], section: dict[str, Any], names_dict: dict[st
 
     for category in categories:
         formatted_category = category['category']
-        if formatted_category in ('system'):
+        if formatted_category == 'system':
             formatted_category = f"{formatted_category.capitalize()} file"
         else:
             formatted_category = formatted_category.capitalize()
