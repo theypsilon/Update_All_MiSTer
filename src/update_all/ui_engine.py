@@ -376,8 +376,7 @@ class _EffectResolver:
             elif 'type' not in effect:
                 raise ValueError('Effects should either have property `ui` or property `type`.')
             elif effect['type'] == 'condition':
-                variable = effect['variable']
-                return self.resolve_effect_chain(effect[self._ui.get_value(variable)])
+                return self.resolve_effect_chain(self._condition_chain(effect))
             elif effect['type'] == 'navigate':
                 return effect['target']
             elif effect['type'] == 'rotate_variable':
@@ -441,6 +440,18 @@ class _EffectResolver:
                 raise NotImplementedError(f'Wrong effect type :"{effect["type"]}"')
 
         return result
+
+    def _condition_chain(self, effect):
+        variable = effect['variable']
+        value = self._ui.get_value(variable)
+        if value in effect:
+            return effect[value]
+
+        possible_values = self._data['variables'].get(variable, {}).get('values')
+        if possible_values and value not in possible_values and possible_values[0] in effect:
+            return effect[possible_values[0]]
+
+        raise ValueError(f'Condition on variable "{variable}" has no branch for value "{value}".')
 
     def _resolve_number_operand(self, operand):
         if isinstance(operand, bool):

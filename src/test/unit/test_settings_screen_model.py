@@ -23,7 +23,8 @@ from test.ui_model_test_utils import special_navigate_targets, gather_target_var
     gather_effect_chains, is_terminal_effect
 from test.update_all_service_tester import default_databases
 from update_all.config_reader import Config
-from update_all.databases import model_variables_by_db_id, db_ids_by_model_variables, AllDBs, all_dbs
+from update_all.databases import model_variables_by_db_id, db_ids_by_model_variables, AllDBs, all_dbs, \
+    MIRROR_ANDI_BR, MIRROR_MYSTICAL_REALM_ORG
 from update_all.settings_screen_model import settings_screen_model, uninstall_db_action, uninstall_db_action_for_id, \
     uninstall_db_action_manuals
 from update_all.ui_engine import EffectChain, Interpolator, UiApplication, UiContext, UiRuntime, UiSection, \
@@ -1245,6 +1246,46 @@ class TestSettingsScreenModel(unittest.TestCase):
         )
         execute_ui_engine(entrypoint, self.model, app, RuntimeStub(), initial_history=initial_history)
         return app
+
+    def _mirror_action_chain(self):
+        return self._entry('system_options_menu', '# Mirror')['actions']['ok']
+
+    def _execute_mirror_action(self, mirror_value, confirm_action_title=None):
+        return self._execute_tools_action(
+            self._mirror_action_chain(),
+            {'mirror': mirror_value},
+            confirm_action_title,
+            entrypoint='system_options_menu',
+        )
+
+    def test_mirror_entry___when_mirror_is_off___asks_to_confirm_the_experimental_mirror(self):
+        app = self._execute_mirror_action('off')
+
+        self.assertEqual('EXPERIMENTAL MIRROR', app.last_confirm['header'])
+        self.assertEqual('off', app.ui.get_value('mirror'))
+
+    def test_mirror_entry___when_mirror_is_not_configured_anywhere___asks_to_confirm_the_experimental_mirror(self):
+        app = self._execute_mirror_action('')
+
+        self.assertEqual('EXPERIMENTAL MIRROR', app.last_confirm['header'])
+        self.assertEqual('', app.ui.get_value('mirror'))
+
+    def test_mirror_entry___when_mirror_is_not_configured_anywhere_and_confirmed___activates_the_experimental_mirror(self):
+        app = self._execute_mirror_action('', confirm_action_title='Yes')
+
+        self.assertEqual('andi_br', app.ui.get_value('mirror'))
+
+    def test_mirror_entry___when_mirror_is_set_through_a_mirror_file___asks_to_confirm_the_experimental_mirror(self):
+        app = self._execute_mirror_action(MIRROR_MYSTICAL_REALM_ORG)
+
+        self.assertEqual('EXPERIMENTAL MIRROR', app.last_confirm['header'])
+        self.assertEqual(MIRROR_MYSTICAL_REALM_ORG, app.ui.get_value('mirror'))
+
+    def test_mirror_entry___when_the_experimental_mirror_is_active___deactivates_it_without_asking(self):
+        app = self._execute_mirror_action(MIRROR_ANDI_BR)
+
+        self.assertIsNone(app.last_confirm)
+        self.assertEqual('off', app.ui.get_value('mirror'))
 
     def test_retroaccount_device_verification_result___attaches_chip_id_before_displaying_message(self):
         screen = self.model['items']['retroaccount_device_verification_result']
