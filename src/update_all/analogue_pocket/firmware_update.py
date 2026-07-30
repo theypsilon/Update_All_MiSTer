@@ -51,15 +51,7 @@ def pocket_firmware_update(curl_ssl: str, local_repository: LocalRepository, log
         logger.print(' - 4. Try this tool again.')
         return False
 
-    already_on_latest_firmware = False
-    for firmware in glob.glob(os.path.join(mount, 'pocket_firmware*.bin')):
-        firmware_name = Path(firmware).name.lower()
-        if firmware_name == firmware_info['file'].lower():
-            already_on_latest_firmware = True
-            break
-
-        logger.print(f'Removing old firmware file: {firmware_name}')
-        os.remove(firmware)
+    already_on_latest_firmware = remove_old_firmware_files(mount, firmware_info['file'], logger)
 
     if already_on_latest_firmware:
         logger.print(f'Your Pocket already contains the latest firmware version {firmware_info["version"]}')
@@ -99,6 +91,20 @@ def pocket_firmware_update(curl_ssl: str, local_repository: LocalRepository, log
     logger.print('Firmware updated successfully!')
 
     return True
+
+
+def remove_old_firmware_files(mount: str, latest_firmware_file: str, logger: Logger) -> bool:
+    already_on_latest_firmware = False
+    for firmware in glob.glob(os.path.join(mount, 'pocket_firmware*.bin')):
+        firmware_name = Path(firmware).name.lower()
+        if firmware_name == latest_firmware_file.lower():
+            already_on_latest_firmware = True
+            continue
+
+        logger.print(f'Removing old firmware file: {firmware_name}')
+        os.remove(firmware)
+
+    return already_on_latest_firmware
 
 
 def count_decimals(number):

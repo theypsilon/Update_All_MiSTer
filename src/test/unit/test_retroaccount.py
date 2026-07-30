@@ -439,10 +439,14 @@ def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None
 
 def default_sync_files():
     return {
-        FILE_retroaccount_user_json: {'content': json.dumps({'device_id': 'device-1', 'refresh_token': 'refresh-1'})},
+        FILE_retroaccount_user_json: {'content': json.dumps(_current_credentials())},
         FILE_patreon_key: {'hash': 'old-md5', 'content': 'old-key'},
         FILE_patreon_key_md5: {'content': 'old-md5'},
     }
+
+
+def _current_credentials():
+    return {'device_id': 'device-1', 'refresh_token': 'refresh-1'}
 
 
 def activate_prev_patreon_key_url(sut: RetroAccountService):

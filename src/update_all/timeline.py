@@ -214,14 +214,14 @@ def add_doc_section(doc: list[str], section: dict[str, Any], names_dict: dict[st
     doc.append("-" * columns + "\n")
 
     for category in categories:
-        formatted_category = category['category']
-        if formatted_category in ('system'):
-            formatted_category = f"{formatted_category.capitalize()} file"
+        raw_category = category['category']
+        if raw_category == 'system':
+            formatted_category = f"{raw_category.capitalize()} file"
         else:
-            formatted_category = formatted_category.capitalize()
+            formatted_category = raw_category.capitalize()
 
         if len(category["files"]) > 1:
-            if formatted_category == 'utility':
+            if raw_category == 'utility':
                 formatted_category = 'Utilities'
             else:
                 formatted_category += 's'
