@@ -332,15 +332,19 @@ class EnvironmentSetupTester(EnvironmentSetupImpl):
                  store_provider: GenericProvider[LocalStore] = None,
                  file_system: FileSystem = None,
                  os_utils: OsUtils = None,
+                 ini_repository: IniRepository = None,
                  env: dict[str, str] = None):
 
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
-        config_reader = config_reader or ConfigReaderTester(file_system=file_system, env=env)
+        # Production shares a single IniRepository between these two, and reading the downloader ini
+        # is what initializes its base path. Keep them together or writes end up on unrelated paths.
+        ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
+        config_reader = config_reader or ConfigReaderTester(downloader_ini_repository=ini_repository, file_system=file_system, env=env)
         config_provider = config_provider or GenericProvider[Config]()
         store_provider = store_provider or GenericProvider[LocalStore]()
 
-        transition_service = transition_service or TransitionServiceTester(file_system=file_system, os_utils=os_utils)
+        transition_service = transition_service or TransitionServiceTester(file_system=file_system, os_utils=os_utils, ini_repository=ini_repository)
         local_repository = local_repository or LocalRepositoryTester(file_system=file_system)
 
         super().__init__(NoLogger(), config_reader, config_provider, transition_service, local_repository, store_provider, file_system)

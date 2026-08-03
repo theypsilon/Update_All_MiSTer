@@ -167,6 +167,7 @@ class AllDBs:
         self.MANUALSDB_TURBOGRAFXCD = Database(db_id='ajgowans/manualsdb-turbografxcd', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-turbografxcd/db/db.json.zip', title='TurboGrafx CD Manuals')
         self.MANUALSDB_VC4000 = Database(db_id='ajgowans/manualsdb-vc4000', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-vc4000/db/db.json.zip', title='VC 4000 Manuals')
         self.MANUALSDB_VECTREX = Database(db_id='ajgowans/manualsdb-vectrex', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-vectrex/db/db.json.zip', title='Vectrex Manuals')
+        self.MANUALSDB_VIRTUALBOY = Database(db_id='ajgowans/manualsdb-virtualboy', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-virtualboy/db/db.json.zip', title='Virtual Boy Manuals')
         self.MANUALSDB_WONDERSWANC = Database(db_id='ajgowans/manualsdb-wonderswanc', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-wonderswanc/db/db.json.zip', title='WonderSwan Color Manuals')
 
     def all_dbs_list(self) -> List[Database]:

@@ -81,6 +81,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._transition_service.from_old_db_urls_to_actual_db_urls(config, downloader_ini, update_output)
         self._transition_service.from_no_update_all_mister_db_to_adding_it(config, downloader_ini, update_output)
         self._transition_service.from_downloader_ini_to_separate_db_ini_files(downloader_ini, update_output)
+        self._transition_service.from_select_all_manuals_to_adding_new_manuals_dbs(config, local_store, update_output)
         if local_store.needs_save():
             self._local_repository.save_store(local_store)
 

@@ -18,19 +18,22 @@
 import unittest
 import json
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.ini_assertions import assertEqualIni, testableIni
 from test.testing_objects import downloader_ini, update_all_ini, update_arcade_organizer_ini, update_names_txt_ini, \
-    update_jtcores_ini, downloader_store
-from test.update_all_service_tester import TransitionServiceTester, local_store, IniRepositoryTester, ConfigReaderTester
+    update_jtcores_ini, downloader_store, manuals_ini, ini_with_db_ids as downloader_ini_with_db_ids, all_manuals_db_ids
+from test.update_all_service_tester import TransitionServiceTester, local_store, IniRepositoryTester, \
+    ConfigReaderTester, default_env
 from test.update_output_tester import UpdateOutputTester
 from test.spy_os_utils import SpyOsUtils
 from update_all.config import Config
+from update_all.constants import KENV_SKIP_DOWNLOADER
 from update_all.databases import ALL_DB_IDS, all_dbs, DB_ID_DISTRIBUTION_MISTER, DB_ID_MREXT_ALL, DB_ID_MREXT_TAPTO, \
     DB_ID_ZAPAROO_MISTER
+from update_all.ini_repository import read_ini_contents
 from update_all.transition_service import RELATED_DATABASE_ACTIVATION_RELATIONSHIPS
 from update_all.update_output import NoopUpdateOutput
 
@@ -69,16 +72,26 @@ def test_transitions_with_state(config: Config, fs_state: FileSystemState, store
     return fs_state
 
 
-def downloader_ini_with_db_ids(*db_ids: str) -> str:
-    dbs_by_id = {db.db_id: db for db in all_dbs('').all_dbs_list()}
-    return '\n'.join(f'[{db_id}]\ndb_url = {db_url_for(db_id, dbs_by_id)}\n' for db_id in db_ids)
+def run_manuals_transition(files: Dict[str, str], store=None, update_output=None, os_utils=None, env=None):
+    config = Config()
+    fs_state = FileSystemState(config=config, files={filename: {'content': content} for filename, content in files.items()})
+    fs = FileSystemFactory(state=fs_state).create_for_system_scope()
+    os_utils = os_utils or SpyOsUtils()
+    ini_repos = IniRepositoryTester(file_system=fs, os_utils=os_utils)
+    config_reader = ConfigReaderTester(downloader_ini_repository=ini_repos, file_system=fs, env=None if env is None else {**default_env(), **env})
+    sut = TransitionServiceTester(file_system=fs, os_utils=os_utils, ini_repository=ini_repos)
+    config_reader.fill_config_with_environment(config)
+    config_reader.fill_config_with_database_sections(config, config_reader.read_downloader_ini())
+    sut.from_select_all_manuals_to_adding_new_manuals_dbs(config, store or local_store(), update_output or NoopUpdateOutput())
+    return fs_state
 
 
-def db_url_for(db_id: str, dbs_by_id) -> str:
-    if db_id in dbs_by_id:
-        return dbs_by_id[db_id].db_url
+def manuals_db_ids_in(fs_state: FileSystemState) -> List[str]:
+    path = manuals_ini.lower()
+    if path not in fs_state.files:
+        return []
 
-    return 'https://example.com/external-db.json.zip'
+    return read_ini_contents(fs_state.files[path]['content']).sections()
 
 
 class TestTransitionService(unittest.TestCase):
@@ -276,6 +289,85 @@ class TestTransitionService(unittest.TestCase):
             testableIni(fs.files[downloader_ini]['content'])
         )
         self.assertEqual([target], store.get_introduced_related_database_ids())
+
+    def test_manuals_select_all_active_and_one_manuals_db_missing___activates_the_missing_one(self):
+        already_active = all_manuals_db_ids()
+        missing = already_active.pop()
+        store = local_store()
+        store.set_ajgowans_manuals_dbs_general_selector(True)
+
+        fs = run_manuals_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+            manuals_ini: downloader_ini_with_db_ids(*already_active),
+        }, store=store)
+
+        self.assertEqual(sorted(all_manuals_db_ids()), sorted(manuals_db_ids_in(fs)))
+        self.assertIn(missing, manuals_db_ids_in(fs))
+
+    def test_manuals_select_all_inactive_and_one_manuals_db_missing___does_not_activate_it(self):
+        already_active = all_manuals_db_ids()
+        missing = already_active.pop()
+
+        fs = run_manuals_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+            manuals_ini: downloader_ini_with_db_ids(*already_active),
+        }, store=local_store())
+
+        self.assertEqual(sorted(already_active), sorted(manuals_db_ids_in(fs)))
+        self.assertNotIn(missing, manuals_db_ids_in(fs))
+
+    def test_manuals_select_all_active_and_no_manuals_db_active___activates_all_of_them(self):
+        store = local_store()
+        store.set_ajgowans_manuals_dbs_general_selector(True)
+
+        fs = run_manuals_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+        }, store=store)
+
+        self.assertEqual(sorted(all_manuals_db_ids()), sorted(manuals_db_ids_in(fs)))
+
+    def test_manuals_select_all_active_and_skipping_downloader___does_not_activate_anything(self):
+        store = local_store()
+        store.set_ajgowans_manuals_dbs_general_selector(True)
+
+        fs = run_manuals_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+        }, store=store, env={KENV_SKIP_DOWNLOADER: 'true'})
+
+        self.assertEqual([], manuals_db_ids_in(fs))
+
+    def test_manuals_select_all_active_and_every_manuals_db_active___emits_no_transition(self):
+        store = local_store()
+        store.set_ajgowans_manuals_dbs_general_selector(True)
+        os_utils = SpyOsUtils()
+        output = UpdateOutputTester(os_utils)
+
+        run_manuals_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+            manuals_ini: downloader_ini_with_db_ids(*all_manuals_db_ids()),
+        }, store=store, update_output=output, os_utils=os_utils)
+
+        self.assertEqual([], output.transition_calls)
+        self.assertEqual([], os_utils.calls_to_sleep)
+
+    def test_manuals_transition_event___is_emitted_with_added_db_ids_and_does_not_wait(self):
+        already_active = all_manuals_db_ids()
+        missing = already_active.pop()
+        store = local_store()
+        store.set_ajgowans_manuals_dbs_general_selector(True)
+        os_utils = SpyOsUtils()
+        output = UpdateOutputTester(os_utils)
+
+        run_manuals_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+            manuals_ini: downloader_ini_with_db_ids(*already_active),
+        }, store=store, update_output=output, os_utils=os_utils)
+
+        self.assertEqual([(
+            'from_select_all_manuals_to_adding_new_manuals_dbs',
+            {'db_ids': missing},
+        )], output.transition_calls)
+        self.assertEqual([], os_utils.calls_to_sleep)
 
     def test_related_database_relationships___has_only_zaparoo_relationship(self):
         self.assertEqual(1, len(RELATED_DATABASE_ACTIVATION_RELATIONSHIPS))

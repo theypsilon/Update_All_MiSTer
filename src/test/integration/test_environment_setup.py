@@ -14,24 +14,27 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import json
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from test.ini_assertions import testableIni
-from test.testing_objects import downloader_ini, update_all_ini, update_jtcores_ini, update_names_txt_ini
+from test.testing_objects import downloader_ini, update_all_ini, update_jtcores_ini, update_names_txt_ini, \
+    manuals_ini, store_json, ini_with_db_ids, all_manuals_db_ids
 from update_all.config import Config
 from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, FILE_update_all_storage, KENV_TRANSITION_SERVICE_ONLY, \
     KENV_UPDATE_ALL_CHIP_ID_RESULT, MEDIA_FAT, KENV_UPDATE_ALL_MISTER_DB_URL, \
     KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, KENV_UPDATE_ALL_NON_INTERACTIVE, \
     KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
-from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT, all_dbs
+from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT, all_dbs, ALL_DB_IDS
 from update_all.environment_setup import EnvironmentSetupResult
+from update_all.ini_repository import read_ini_contents
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, TerminalSize
 from update_all.update_output import NoopUpdateOutput
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
-from test.update_all_service_tester import EnvironmentSetupTester, default_databases, default_env
+from test.update_all_service_tester import EnvironmentSetupTester, default_databases, default_env, local_store
 import unittest
 
 
@@ -73,10 +76,11 @@ class TestEnvironmentSetup(unittest.TestCase):
         )
 
     def test_setup___with_empty_downloader_ini_and_custom_location_str___returns_config_with_custom_paths_and_not_mister_activated(self):
+        custom_downloader_ini = '/custom/downloader.ini'
         self.assertSetup(
-            files={downloader_ini: ''},
+            files={custom_downloader_ini: ''},
             env={KENV_LOCATION_STR: '/custom'},
-            expected_files={downloader_ini: Path('test/fixtures/downloader_ini/downloader_ini_empty_but_update_all.ini').read_text()},
+            expected_files={custom_downloader_ini: Path('test/fixtures/downloader_ini/downloader_ini_empty_but_update_all.ini').read_text()},
             expected_config=Config(not_mister=True, base_path='/custom', base_system_path='/custom', databases={all_dbs('').UPDATE_ALL_MISTER.db_id})
         )
 
@@ -270,6 +274,40 @@ class TestEnvironmentSetup(unittest.TestCase):
             expected_files={downloader_ini: Path('test/fixtures/downloader_ini/db_url_changes/mistersam_on_db.ini').read_text()}
         )
 
+    def test_setup___with_select_all_manuals_active_and_a_new_manuals_db___adds_it_without_opening_the_settings_screen(self):
+        already_active = all_manuals_db_ids()
+        new_db_id = already_active.pop()
+        store = local_store()
+        store.set_ajgowans_manuals_dbs_general_selector(True)
+        state = self.manuals_state(already_active, store)
+
+        EnvironmentSetupTester(
+            file_system=FileSystemFactory(state=state).create_for_system_scope()
+        ).setup_environment(TerminalSize(columns=80, lines=40), NoopUpdateOutput())
+
+        self.assertEqual(sorted(all_manuals_db_ids()), sorted(db_ids_in_ini(state, manuals_ini)))
+        self.assertNotIn(new_db_id, state.files[downloader_ini.lower()]['content'])
+
+    def test_setup___with_select_all_manuals_inactive_and_a_new_manuals_db___does_not_add_it(self):
+        already_active = all_manuals_db_ids()
+        new_db_id = already_active.pop()
+        state = self.manuals_state(already_active, local_store())
+
+        EnvironmentSetupTester(
+            file_system=FileSystemFactory(state=state).create_for_system_scope()
+        ).setup_environment(TerminalSize(columns=80, lines=40), NoopUpdateOutput())
+
+        self.assertEqual(sorted(already_active), sorted(db_ids_in_ini(state, manuals_ini)))
+        self.assertNotIn(new_db_id, db_ids_in_ini(state, manuals_ini))
+
+    @staticmethod
+    def manuals_state(active_manuals_db_ids: List[str], store) -> FileSystemState:
+        return FileSystemState(files={
+            downloader_ini: {'content': ini_with_db_ids(ALL_DB_IDS['JTCORES'], ALL_DB_IDS['UPDATE_ALL_MISTER'])},
+            manuals_ini: {'content': ini_with_db_ids(*active_manuals_db_ids)},
+            store_json: {'content': json.dumps(store.unwrap_props())},
+        })
+
     def test_setup___with_transition_service_only_env_var___returns_requires_early_exit_result(self):
         self.assertSetup(
             env={KENV_TRANSITION_SERVICE_ONLY: ' TRUE '},
@@ -279,6 +317,13 @@ class TestEnvironmentSetup(unittest.TestCase):
             expected_config=Config(databases=default_databases(), transition_service_only=True),
             expected_result=EnvironmentSetupResult(requires_early_exit=True)
         )
+
+
+def db_ids_in_ini(state: FileSystemState, path: str) -> List[str]:
+    if path.lower() not in state.files:
+        return []
+
+    return read_ini_contents(state.files[path.lower()]['content']).sections()
 
 
 def processIni(maybe_ini):

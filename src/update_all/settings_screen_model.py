@@ -60,14 +60,14 @@ def _crt_direct_video_warning(target): return {
 }
 
 
-_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22265593856  # ~20.7 GB at 128KB cluster, see estimate_manuals_db_space.json
+_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22312648704  # ~20.8 GB at 128KB cluster, see estimate_manuals_db_space.json
 
 def _enable_all_manuals_confirm(): return {
     "ui": "confirm",
     "header": "Enable All Manuals DBs?",
     "text": [
         "This will activate all manuals databases.",
-        "That is a large download, 8102 files and around 20.7 GB.",
+        "That is a large download, 8123 files and around 20.8 GB.",
         "It will take hours!",
         "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
         "Are you sure you want to continue?",
@@ -87,7 +87,7 @@ def _not_enough_space_for_manuals_warning(): return {
     "header": "Not Enough Free Space!",
     "alert_level": "black",
     "text": [
-        "Enabling all manuals DBs requires 8102 files and around 20.7 GB.",
+        "Enabling all manuals DBs requires 8123 files and around 20.8 GB.",
         "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
         "Installing all manuals will likely fill up your storage and cause problems.",
         "Free up space or enable only individual manuals instead.",
@@ -501,6 +501,7 @@ def _manual_db_variables(): return {
     "ajgowans/manualsdb-turbografxcd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-vc4000": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-vectrex": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-virtualboy": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-wonderswanc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
 }
 
@@ -1769,7 +1770,7 @@ def settings_screen_model():
             "entries": [
                 {
                     "title": " {ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_title}",
-                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8102 files | 20.7GB total",
+                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8123 files | 20.8GB total",
                     "actions": {
                         "uninstall_all": uninstall_db_action_manuals(
                             "ajgowans_manuals_dbs_installed",
@@ -2047,6 +2048,11 @@ def settings_screen_model():
                     "title": "# Vectrex",
                     "description": "{ajgowans/manualsdb-vectrex:enabled} 31",
                     "actions": _manual_db_actions("ajgowans/manualsdb-vectrex", "Vectrex Manuals"),
+                },
+                {
+                    "title": "# Virtual Boy",
+                    "description": "{ajgowans/manualsdb-virtualboy:enabled} 21",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-virtualboy", "Virtual Boy Manuals"),
                 },
                 {
                     "title": "# WonderSwan Color",

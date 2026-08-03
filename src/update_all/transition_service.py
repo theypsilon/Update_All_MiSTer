@@ -21,8 +21,8 @@ from update_all.config import Config
 from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
 from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, \
-    DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ALL_DB_IDS, DB_ID_MREXT_ALL, DB_ID_MREXT_TAPTO, \
-    DB_ID_ZAPAROO_MISTER
+    DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ajgowans_manualsdbs, ALL_DB_IDS, DB_ID_MREXT_ALL, \
+    DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER
 from update_all.ini_parser import IniParser
 from update_all.ini_repository import IniRepository, SEPARATE_DB_INI_FILES_BY_FILENAME
 from update_all.file_system import FileSystem
@@ -399,6 +399,31 @@ class TransitionService:
         )
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)
+
+    def from_select_all_manuals_to_adding_new_manuals_dbs(self, config: Config, store: LocalStore, update_output: UpdateOutput):
+        if config.skip_downloader:
+            return
+
+        if not store.get_ajgowans_manuals_dbs_general_selector():
+            return
+
+        activated = [db.db_id for db in ajgowans_manualsdbs() if not config.is_database_enabled(db.db_id)]
+        if len(activated) == 0:
+            return
+
+        for db_id in activated:
+            config.set_database_enabled(db_id, True)
+
+        self._ini_repository.write_database_configuration(config)
+        self._logger.print('Activating new manuals databases:')
+        for db_id in activated:
+            self._logger.print(f'  - Added DB with id [{db_id}]')
+        self._logger.print('You may remove them from the Settings Screen.')
+        self._logger.print()
+        update_output.transition(
+            'from_select_all_manuals_to_adding_new_manuals_dbs',
+            db_ids=','.join(activated)
+        )
 
 #
 # set_default_options:
