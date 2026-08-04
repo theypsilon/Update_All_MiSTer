@@ -34,7 +34,7 @@ if file_has_changed("master", "origin/master", "latest.id"):
 
     subprocess.run(['git', 'push', 'origin', 'master'], check=True)
 
-    subprocess.run('cd build; sha256sum update_all.pyz > update_all.pyz.sha256', shell=True, check=True)
+    subprocess.run(['sha256sum', 'build/update_all.pyz'], stdout=open('build/update_all.pyz.sha256', 'w'), check=True)
     subprocess.run(['zip', 'build/update_all.zip', 'update_all.sh'], check=True)
 
     release_tag = datetime.datetime.now().strftime("UpdateAll_%Y-%m-%d_%H.%M.%S")
