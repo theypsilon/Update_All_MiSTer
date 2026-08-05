@@ -102,7 +102,7 @@ class UpdateAllServiceFactory:
         store_migrator = StoreMigrator(migrations(), self._logger)
         local_repository = LocalRepository(self._logger, file_system, store_migrator)
         self._local_repository_provider.initialize(local_repository)
-        transition_service = TransitionService(logger=self._logger, file_system=file_system, os_utils=os_utils, ini_repository=ini_repository)
+        transition_service = TransitionService(logger=self._logger, file_system=file_system, os_utils=os_utils, ini_repository=ini_repository, mister_ini_repository=mister_ini_repository)
         printer = SettingsScreenStandardCursesPrinter()
         ao_service = ArcadeOrganizerService(self._logger, fetcher)
         encryption = Encryption(self._logger, config_provider, file_system)

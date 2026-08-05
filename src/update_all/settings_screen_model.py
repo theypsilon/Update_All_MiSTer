@@ -512,7 +512,8 @@ def _retroachievements_cfg_installed_message(): return {
     "text": [
         "retroachievements.cfg has also been created in the root of your SD card.",
         " ",
-        "Before playing, open it and add your RetroAchievements.org username and password.",
+        "Before playing, open it and set username= and password= to your own RetroAchievements.org account.",
+        "It ships with a sample username, so replace it with yours.",
     ],
 }
 
@@ -523,7 +524,8 @@ def _retroachievements_cfg_missing_credentials_message(): return {
     "text": [
         "retroachievements.cfg was found in the root of your SD card, but the password is still blank.",
         " ",
-        "Add your RetroAchievements.org username and password before using these cores.",
+        "Set username= and password= to your own RetroAchievements.org account before using these cores.",
+        "It ships with a sample username, so replace it with yours.",
     ],
 }
 
@@ -534,7 +536,8 @@ def _retroachievements_cfg_install_failed_message(): return {
     "text": [
         "retroachievements.cfg could not be created automatically.",
         " ",
-        "Please create it in the root of your SD card and add your RetroAchievements.org username and password before using these cores.",
+        "Turning this database off and on again retries the download.",
+        "You can also create the file in the root of your SD card, with username= and password= from your RetroAchievements.org account.",
     ],
 }
 
@@ -1045,7 +1048,7 @@ def settings_screen_model():
             "entries": [
                 {
                     "title": "# Coin-Op Collection",
-                    "description": "{coin_op_collection_downloader:enabled}",
+                    "description": "{coin_op_collection_downloader:enabled} Arcades made by Coin-Op team",
                     "actions": {"uninstall": uninstall_db_action("coin_op_collection_downloader", "Coin-OpCollection/Distribution-MiSTerFPGA", "Coin-Op Collection"),
                         "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
                         "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
@@ -1053,7 +1056,7 @@ def settings_screen_model():
                 },
                 {
                     "title": "# RetroAchievements Cores",
-                    "description": "{theypsilon/RetroAchievementsDB_MiSTer:enabled} Maintainer: odelot",
+                    "description": "{theypsilon/RetroAchievementsDB_MiSTer:enabled} Cores with achievement support",
                     "actions": {"uninstall": uninstall_db_action_for_id("theypsilon/RetroAchievementsDB_MiSTer", "RetroAchievements Cores", on_success=[
                         {"type": "mister_ini_del", "immediate": True, "variable": "theypsilon/RetroAchievementsDB_MiSTer",
                          "target": {"RA_*": {"main": "MiSTer_RA"}}},
@@ -1063,16 +1066,19 @@ def settings_screen_model():
                         "info": [{
                             "ui": "message",
                             "header": "RetroAchievements Cores",
-                            "text": ["RetroAchievements-enabled MiSTer runtime and cores"],
+                            "text": [
+                                "RetroAchievements-enabled MiSTer runtime and cores",
+                                "Maintainer: odelot",
+                            ],
                         }]
                     }
                 },
                 {
                     "title": "# Physical CD Support",
-                    "description": "{MultiDatabases/physical-disc:enabled} Maintainer: Anime0t4ku",
+                    "description": "{MultiDatabases/physical-disc:enabled} Play games from a USB CD drive",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/physical-disc", "Physical CD Support", on_success=[
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/physical-disc",
-                         "target": {"CD-*": {"main": "MiSTer_Physical-CD"}}},
+                         "target": {"A0CD-*": {"main": "MiSTer_Physical-CD"}}},
                     ]),
                         "ok": [{
                             "type": "condition",
@@ -1081,7 +1087,7 @@ def settings_screen_model():
                             "false": [
                                 {"type": "rotate_variable", "target": "MultiDatabases/physical-disc"},
                                 {"type": "mister_ini_add", "variable": "MultiDatabases/physical-disc",
-                                 "target": {"CD-*": {"main": "MiSTer_Physical-CD"}}},
+                                 "target": {"A0CD-*": {"main": "MiSTer_Physical-CD"}}},
                             ],
                         }],
                         "info": [{
@@ -1092,13 +1098,14 @@ def settings_screen_model():
                                 " ",
                                 "Keep other disc readers (Zaparoo)",
                                 "disabled during playback.",
+                                "Maintainer: Anime0t4ku",
                             ],
                         }],
                     }
                 },
                 {
                     "title": "# Unofficial Distribution",
-                    "description": "{unofficial_updater:enabled} Maintainer: theypsilon",
+                    "description": "{unofficial_updater:enabled} Unofficial, early-access cores",
                     "actions": {"uninstall": uninstall_db_action("unofficial_updater", "theypsilon_unofficial_distribution", "Unofficial Distribution"),
                         "ok": [{"type": "rotate_variable", "target": "unofficial_updater"}],
                         "info": [{
@@ -1107,38 +1114,45 @@ def settings_screen_model():
                             "text": [
                                 "Some unofficial and early-access cores:",
                                 "- zx48 (ZX Spectrum) from Kyp",
-                                "- Nemesis from GX400 Friends"
+                                "- Nemesis from GX400 Friends",
+                                "Maintainer: theypsilon"
                             ],
                         }]
                     }
                 },
                 {
                     "title": "# Arcade Offset",
-                    "description": "{arcade_offset_downloader:enabled} Maintainer: Toya",
+                    "description": "{arcade_offset_downloader:enabled} Hacks for popular arcade games",
                     "actions": {"uninstall": uninstall_db_action("arcade_offset_downloader", "arcade_offset_folder", "Arcade Offset"),
                         "ok": [{"type": "rotate_variable", "target": "arcade_offset_downloader"}],
                         "info": [{
                             "ui": "message",
                             "header": "Arcade Offset folder",
-                            "text": ["Hacks for popular arcade games maintained by Toya"],
+                            "text": [
+                                "Hacks for popular arcade games",
+                                "Maintainer: Toya",
+                            ],
                         }]
                     }
                 },
                 {
                     "title": "# LLAPI Forks Folder",
-                    "description": "{llapi_updater:enabled}",
+                    "description": "{llapi_updater:enabled} Core forks with LLAPI support",
                     "actions": {"uninstall": uninstall_db_action("llapi_updater", "llapi_folder", "LLAPI Forks Folder"),
                         "ok": [{"type": "rotate_variable", "target": "llapi_updater"}],
                         "info": [{
                             "ui": "message",
                             "header": "LLAPI Forks Folder",
-                            "text": ["Cores for BlisSTer and other addons using the Low-Latency API"],
+                            "text": [
+                                "Cores for BlisSTer and other addons using the Low-Latency API",
+                                "Maintainer: MiSTer-LLAPI",
+                            ],
                         }]
                     }
                 },
                 {
                     "title": "# Y/C Builds",
-                    "description": "{MikeS11/YC_Builds-MiSTer:enabled} Maintainer: MikeS11",
+                    "description": "{MikeS11/YC_Builds-MiSTer:enabled} Core forks with Y/C output",
                     "actions": {"uninstall": uninstall_db_action_for_id("MikeS11/YC_Builds-MiSTer", "Y/C Builds"),
                         "ok": [{
                             "type": "condition",
@@ -1152,6 +1166,7 @@ def settings_screen_model():
                                     "The Y/C Builds need a modified VGA cable. And if you don't have it, the cores won't display correctly.",
                                     " ",
                                     "Do you have a modified cable compatible with the Y/C Builds?",
+                                    "Maintainer: MikeS11",
                                 ],
                                 "actions": [
                                     {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": "MikeS11/YC_Builds-MiSTer"}, {"type": "navigate", "target": "back"}]},
@@ -1164,26 +1179,30 @@ def settings_screen_model():
                             "header": "Y/C Builds",
                             "text": [
                                 "Forks with Y/C outputs for cores that don't",
-                                "support these outputs yet officially."
+                                "support these outputs yet officially.",
+                                "Maintainer: MikeS11"
                             ],
                         }]
                     }
                 },
                 {
                     "title": "# agg23's MiSTer Cores",
-                    "description": "{agg23_db:enabled}",
+                    "description": "{agg23_db:enabled} Game & Watch and Tamagotchi",
                     "actions": {"uninstall": uninstall_db_action_for_id("agg23_db", "agg23's MiSTer Cores"),
                         "ok": [{"type": "rotate_variable", "target": "agg23_db"}],
                         "info": [{
                             "ui": "message",
                             "header": "agg23's MiSTer Cores",
-                            "text": ["Cores made by agg23, including Tamagotchi and Game & Watch."],
+                            "text": [
+                                "Cores including Tamagotchi and Game & Watch.",
+                                "Maintainer: agg23",
+                            ],
                         }]
                     }
                 },
                 {
                     "title": "# Paprium MegaDrive",
-                    "description": "{MultiDatabases/paprium:enabled} Maintainer: Pezz82",
+                    "description": "{MultiDatabases/paprium:enabled} MD fork that runs Paprium",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/paprium", "Paprium MegaDrive"),
                         "ok": _try_toggle_file_dependent_core(
                             "MultiDatabases/paprium",
@@ -1193,6 +1212,7 @@ def settings_screen_model():
                                 "You can launch Paprium MegaDrive from MiSTer's Custom Cores folder.",
                                 "Copy the Paprium ROM and WAV files to:",
                                 "games/PapriumMD/",
+                                "Maintainer: Pezz82",
                             ],
                         ),
                         "info": [{
@@ -1204,6 +1224,7 @@ def settings_screen_model():
                                 "It lets you play Paprium from MiSTer's main menu with its streamed graphics and WAV soundtrack.",
                                 "You can launch Paprium MegaDrive from MiSTer's Custom Cores folder.",
                                 "You must add your own Paprium game and WAV soundtrack files manually before playing.",
+                                "Maintainer: Pezz82",
                             ],
                         }],
                     }
@@ -1220,6 +1241,7 @@ def settings_screen_model():
                                 "You can launch the MMS2 GB core from MiSTer's MMS2 folder.",
                                 "It requires a Heber Multisystem 2 with compatible cartridge hardware.",
                                 "Hold the USER button while inserting or removing a cartridge.",
+                                "Maintainer: Heber-co-uk",
                             ],
                         ),
                         "info": [{
@@ -1234,27 +1256,29 @@ def settings_screen_model():
                                 "Hold the USER button while inserting",
                                 "or removing a cartridge.",
                                 "You can launch the MMS2 GB core from MiSTer's MMS2 folder.",
+                                "Maintainer: Heber-co-uk",
                             ],
                         }],
                     }
                 },
                 {
                     "title": "# Alt Cores",
-                    "description": "{ajgowans/alt-cores:enabled}",
+                    "description": "{ajgowans/alt-cores:enabled} Overclocked and legacy builds",
                     "actions": {"uninstall": uninstall_db_action_for_id("ajgowans/alt-cores", "Alt Cores"),
                         "ok": [{"type": "rotate_variable", "target": "ajgowans/alt-cores"}],
                         "info": [{
                             "ui": "message",
                             "header": "Alt Cores",
                             "text": [
-                                "Modified versions of some cores. Folder: Other"
+                                "Modified versions of some cores. Folder: Other",
+                                "Maintainer: Moondandy"
                             ],
                         }]
                     }
                 },
                 {
                     "title": "# Dual RAM Console Cores",
-                    "description": "{TheJesusFish/Dual-Ram-Console-Cores:enabled} Maintainer: TheJesusFish",
+                    "description": "{TheJesusFish/Dual-Ram-Console-Cores:enabled} Console cores with dual SDRAM",
                     "actions": {"uninstall": uninstall_db_action_for_id("TheJesusFish/Dual-Ram-Console-Cores", "Dual RAM Console Cores"),
                         "ok": [{
                             "type": "condition",
@@ -1269,6 +1293,7 @@ def settings_screen_model():
                                     "Only users who have two SDRAMs in their MiSTer should enable this option.",
                                     " ",
                                     "Do you have dual SDRAM modules installed?",
+                                    "Maintainer: TheJesusFish",
                                 ],
                                 "actions": [
                                     {"title": "Yes", "type": "fixed", "fixed": [{"type": "rotate_variable", "target": "TheJesusFish/Dual-Ram-Console-Cores"}, {"type": "navigate", "target": "back"}]},
@@ -1279,13 +1304,16 @@ def settings_screen_model():
                         "info": [{
                             "ui": "message",
                             "header": "Dual RAM Console Cores",
-                            "text": ["Console cores with dual SDRAM support."],
+                            "text": [
+                                "Console cores with dual SDRAM support.",
+                                "Maintainer: TheJesusFish",
+                            ],
                         }]
                     }
                 },
                 {
                     "title": "# MegaVGMDrive",
-                    "description": "{MultiDatabases/megavgmdrive:enabled} Maintainer: dai-VGM",
+                    "description": "{MultiDatabases/megavgmdrive:enabled} MD VGM music player core",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/megavgmdrive", "MegaVGMDrive"),
                         "ok": _try_toggle_file_dependent_core(
                             "MultiDatabases/megavgmdrive",
@@ -1295,6 +1323,7 @@ def settings_screen_model():
                                 "You can launch MegaVGMDrive from MiSTer's Custom Cores folder.",
                                 "Copy them to:",
                                 "games/MegaVGMDrive/",
+                                "Maintainer: dai-VGM",
                             ],
                         ),
                         "info": [{
@@ -1306,6 +1335,7 @@ def settings_screen_model():
                                 "It behaves like a hardware jukebox where you select VGM tracks and listen to game music generated by those sound cores.",
                                 "You can launch MegaVGMDrive from MiSTer's Custom Cores folder.",
                                 "You must manually add the VGM music files you want to hear.",
+                                "Maintainer: dai-VGM",
                             ],
                         }],
                     }
@@ -1335,12 +1365,14 @@ def settings_screen_model():
                 "MultiDatabases/sonic-mania": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/duke3d": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-quake": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/solarus": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/3s-arm": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MiSTerOrganize/MiSTer_Frontier": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
                     "title": "# DreamSTer",
-                    "description": "{MultiDatabases/dreamster:enabled} Maintainer: skmp",
+                    "description": "{MultiDatabases/dreamster:enabled} Experimental Dreamcast emulator",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/dreamster", "DreamSTer"),
                         "ok": _try_toggle_file_dependent_core(
                             "MultiDatabases/dreamster",
@@ -1352,6 +1384,7 @@ def settings_screen_model():
                                 "DreamSTer requires Dreamcast BIOS files.",
                                 "Copy dc_boot.bin and dc_flash.bin to:",
                                 "games/Dreamcast/",
+                                "Maintainer: skmp",
                             ],
                         ),
                         "info": [{
@@ -1363,13 +1396,14 @@ def settings_screen_model():
                                 "Its game browser lets you browse and launch supported Dreamcast games directly on MiSTer, with experimental compatibility.",
                                 "You can launch DreamSTer from MiSTer's Scripts folder.",
                                 "You must add Dreamcast BIOS and game files manually before playing.",
+                                "Maintainer: skmp",
                             ],
                         }],
                     }
                 },
                 {
                     "title": "# Sonic Mania MiSTer",
-                    "description": "{MultiDatabases/sonic-mania:enabled} Maintainer: kimchiman52",
+                    "description": "{MultiDatabases/sonic-mania:enabled} Sonic Mania native port",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/sonic-mania", "Sonic Mania MiSTer", on_success=[
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/sonic-mania",
                          "target": {
@@ -1387,6 +1421,7 @@ def settings_screen_model():
                                 "Sonic Mania MiSTer requires Data.rsdk from your own Sonic Mania installation.",
                                 "Copy it to:",
                                 "games/sonic-mania/Data.rsdk",
+                                "Maintainer: kimchiman52",
                             ],
                             [
                                 {"type": "mister_ini_add", "variable": "MultiDatabases/sonic-mania",
@@ -1405,13 +1440,14 @@ def settings_screen_model():
                                 "You can launch and play Sonic Mania from MiSTer's main menu in either 16:9 or 4:3.",
                                 "You can launch Sonic Mania MiSTer from MiSTer's Other folder.",
                                 "You must manually add game data from your own Sonic Mania installation before playing.",
+                                "Maintainer: kimchiman52",
                             ],
                         }],
                     }
                 },
                 {
                     "title": "# MiSTer Duke3D",
-                    "description": "{MultiDatabases/duke3d:enabled} Maintainer: neofreno",
+                    "description": "{MultiDatabases/duke3d:enabled} Duke Nukem 3D engine port",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/duke3d", "MiSTer Duke3D", on_success=[
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/duke3d",
                          "target": {
@@ -1429,6 +1465,7 @@ def settings_screen_model():
                                 "MiSTer Duke3D requires DUKE3D.GRP from your own game installation.",
                                 "Copy it to:",
                                 "games/DUKE3D/duke3d.grp",
+                                "Maintainer: neofreno",
                             ],
                             [
                                 {"type": "mister_ini_add", "variable": "MultiDatabases/duke3d",
@@ -1447,13 +1484,14 @@ def settings_screen_model():
                                 "You can launch and play Duke Nukem 3D directly from MiSTer's main menu with its original software-rendered look.",
                                 "You can launch MiSTer Duke3D from MiSTer's Other folder.",
                                 "You must manually add game data from your own Duke Nukem 3D installation before playing.",
+                                "Maintainer: neofreno",
                             ],
                         }],
                     }
                 },
                 {
                     "title": "# MiSTer Quake",
-                    "description": "{MultiDatabases/mister-quake:enabled} Maintainer: neofreno",
+                    "description": "{MultiDatabases/mister-quake:enabled} Quake engine port",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/mister-quake", "MiSTer Quake", on_success=[
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/mister-quake",
                          "target": {
@@ -1471,6 +1509,7 @@ def settings_screen_model():
                                 "MiSTer Quake requires PAK0.PAK from your own game installation.",
                                 "Copy it to:",
                                 "games/quake/id1/",
+                                "Maintainer: neofreno",
                             ],
                             [
                                 {"type": "mister_ini_add", "variable": "MultiDatabases/mister-quake",
@@ -1489,13 +1528,89 @@ def settings_screen_model():
                                 "You can launch and play Quake directly from MiSTer's main menu with its original software-rendered look.",
                                 "You can launch MiSTer Quake from MiSTer's Other folder.",
                                 "You must manually add game data from your own Quake installation before playing.",
+                                "Maintainer: neofreno",
+                            ],
+                        }],
+                    }
+                },
+                {
+                    "title": "# Solarus MiSTer",
+                    "description": "{MultiDatabases/solarus:enabled} Solarus 2D action-RPG engine",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/solarus", "Solarus MiSTer"),
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/solarus",
+                            "Solarus MiSTer",
+                            [
+                                "Solarus MiSTer runs the Solarus 2D action-RPG engine in software rather than in the FPGA.",
+                                "You can launch Solarus MiSTer from MiSTer's Scripts folder.",
+                                " ",
+                                "Solarus MiSTer requires a 128 MB SDRAM expansion board.",
+                                "It also requires quests, which are separate downloads.",
+                                "Copy their .sol files to:",
+                                "games/Solarus/quests/",
+                                "After updating, run Scripts/Solarus.sh once to finish setup.",
+                                "Maintainer: gmcnaught",
+                            ],
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "Solarus MiSTer",
+                            "text": [
+                                "Solarus MiSTer runs the Solarus 2D action-RPG engine in software rather than in the FPGA.",
+                                "Enabling this database installs the Solarus engine, its display core, launcher scripts and documentation.",
+                                "You can play Solarus quests, such as fan-made Zelda-like adventures, from MiSTer's main menu, picking one from the OSD with Load Quest.",
+                                "You can launch Solarus MiSTer from MiSTer's Scripts folder.",
+                                "You must manually add the quests you want to play, and a 128 MB SDRAM expansion board is required.",
+                                "Maintainer: gmcnaught",
+                            ],
+                        }],
+                    }
+                },
+                {
+                    "title": "# 3S-ARM",
+                    "description": "{MultiDatabases/3s-arm:enabled} Street Fighter III: 3rd Strike port",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/3s-arm", "3S-ARM", on_success=[
+                        {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/3s-arm",
+                         "target": {
+                             "3S-ARM": {"main": "MiSTer_3S-ARM"},
+                         }},
+                    ]),
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/3s-arm",
+                            "3S-ARM",
+                            [
+                                "3S-ARM is a native port of the PlayStation 2 version of Street Fighter III: 3rd Strike that runs in software rather than in the FPGA.",
+                                "You can launch 3S-ARM from MiSTer's Other folder.",
+                                " ",
+                                "3S-ARM requires SF33RD.AFS from your own PlayStation 2 copy of the game.",
+                                "Copy it to:",
+                                "games/3s-arm/resources/SF33RD.AFS",
+                                "Maintainer: kimchiman52",
+                            ],
+                            [
+                                {"type": "mister_ini_add", "variable": "MultiDatabases/3s-arm",
+                                 "target": {
+                                     "3S-ARM": {"main": "MiSTer_3S-ARM"},
+                                 }},
+                            ],
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "3S-ARM",
+                            "text": [
+                                "3S-ARM is a native port of the PlayStation 2 version of Street Fighter III: 3rd Strike that runs in software rather than in the FPGA.",
+                                "Enabling this database installs the 3rd Strike runtime, MiSTer launcher, and display core.",
+                                "You can launch and play Street Fighter III: 3rd Strike directly from MiSTer's main menu.",
+                                "You can launch 3S-ARM from MiSTer's Other folder.",
+                                "You must manually add game data from your own PlayStation 2 copy before playing.",
+                                "Maintainer: kimchiman52",
                             ],
                         }],
                     }
                 },
                 {
                     "title": "# MiSTer Frontier",
-                    "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} Maintainer: MiSTerOrganize",
+                    "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} PICO-8 and OpenBOR engine ports",
                     "actions": {"uninstall": uninstall_db_action_for_id("MiSTerOrganize/MiSTer_Frontier", "MiSTer Frontier"),
                         "ok": _try_toggle_file_dependent_core(
                             "MiSTerOrganize/MiSTer_Frontier",
@@ -1510,6 +1625,7 @@ def settings_screen_model():
                                 "Copy OpenBOR game modules (.pak) to:",
                                 "games/OpenBOR/Paks/",
                                 "After updating, run Scripts/Install_MiSTer_Frontier.sh once to finish setup.",
+                                "Maintainer: MiSTerOrganize",
                             ],
                         ),
                         "info": [{
@@ -1521,6 +1637,7 @@ def settings_screen_model():
                                 "You can launch PICO-8 carts and legacy or modern OpenBOR games from MiSTer's main menu with native video and audio output.",
                                 "You can launch MiSTer Frontier's cores from MiSTer's Other folder.",
                                 "You must manually add the PICO-8 carts and OpenBOR game modules you want to play.",
+                                "Maintainer: MiSTerOrganize",
                             ],
                         }]
                     }
@@ -1528,13 +1645,15 @@ def settings_screen_model():
             ]
         },
         "tools_and_scripts_menu": {
-            "type": "dialog_sub_menu",
+            "type": "dialog_sub_menu_info",
             "header": "Tools & Scripts",
             "variables": {
                 "mistersam_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "ajgowans/240p": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "mrext/all": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "anime0t4ku_mister_scripts": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/mister-hifi": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/misterfin": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "tty2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "i2c2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "retrospy/retrospy-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -1568,7 +1687,7 @@ def settings_screen_model():
                 },
                 {
                     "title": "# MiSTer Extensions (wizzo)",
-                    "description": "{mrext/all:enabled}",
+                    "description": "{mrext/all:enabled} Search, Random, Remote and more",
                     "actions": {
                         "uninstall": uninstall_db_action_for_id("mrext/all", "MiSTer Extensions"),
                         "ok": _try_toggle_mrext_with_zaparoo_prompt(),
@@ -1576,7 +1695,7 @@ def settings_screen_model():
                 },
                 {
                     "title": "# MiSTer Super Attract Mode",
-                    "description": "{mistersam_files_downloader:enabled}",
+                    "description": "{mistersam_files_downloader:enabled} Plays random games while idle",
                     "actions": {
                         "uninstall": uninstall_db_action(
                             "mistersam_files_downloader", "MiSTer_SAM_files", "MiSTer Super Attract Mode"),
@@ -1585,7 +1704,7 @@ def settings_screen_model():
                 },
                 {
                     "title": "# 240p Test Suites",
-                    "description": "{ajgowans/240p:enabled} Maintainer: Moondandy",
+                    "description": "{ajgowans/240p:enabled} Test ROMs and core for calibration",
                     "actions": {
                         "uninstall": uninstall_db_action_for_id("ajgowans/240p", "240p Test Suites"),
                         "ok": [{"type": "rotate_variable", "target": "ajgowans/240p"}],
@@ -1598,13 +1717,14 @@ def settings_screen_model():
                                 "Gameboy, GBA, Master System, MegaCD, Megadrive, MiSTer, N64, Neo Geo,",
                                 "Neo Geo CD, NES, Playstation, Sega 32X, Saturn, SNES, TurboGrafx16,",
                                 "TurboGrafx16 CD",
+                                "Maintainer: Moondandy",
                             ],
                         }],
                     }
                 },
                 {
                     "title": "# Anime0t4ku MiSTer Scripts",
-                    "description": "{anime0t4ku_mister_scripts:enabled}",
+                    "description": "{anime0t4ku_mister_scripts:enabled} Time, saves, wallpaper and more",
                     "actions": {
                         "uninstall": uninstall_db_action_for_id(
                             "anime0t4ku_mister_scripts", "Anime0t4ku MiSTer Scripts"),
@@ -1612,8 +1732,77 @@ def settings_screen_model():
                     }
                 },
                 {
+                    "title": "# MiSTer Hi-Fi",
+                    "description": "{MultiDatabases/mister-hifi:enabled} MP3, FLAC and Audio CD player",
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "MultiDatabases/mister-hifi", "MiSTer Hi-Fi"),
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/mister-hifi",
+                            "MiSTer Hi-Fi",
+                            [
+                                "MiSTer Hi-Fi is a controller-first music player that runs as ARM software, without an FPGA core.",
+                                "You can launch MiSTer Hi-Fi from MiSTer's Scripts folder.",
+                                " ",
+                                "MiSTer Hi-Fi requires your own music files, on the SD card or a USB drive.",
+                                "You browse to them inside MiSTer Hi-Fi, which opens at the root of each drive.",
+                                "Audio CD playback requires an optical drive connected to your MiSTer.",
+                                "Maintainer: Anime0t4ku",
+                            ],
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "MiSTer Hi-Fi",
+                            "text": [
+                                "MiSTer Hi-Fi is a controller-first music player that runs as ARM software, without an FPGA core.",
+                                "Enabling this database installs the MiSTer Hi-Fi player, its launcher, and a network share configuration template.",
+                                "You can play MP3, FLAC and WAV files, M3U playlists and Audio CDs, with album artwork, a spectrum visualizer, a 5-band equalizer and OLED mode.",
+                                "Audio CD playback requires an optical drive connected to your MiSTer.",
+                                "You can launch MiSTer Hi-Fi from MiSTer's Scripts folder.",
+                                "You must manually add the music you want to play.",
+                                "Maintainer: Anime0t4ku",
+                            ],
+                        }],
+                    }
+                },
+                {
+                    "title": "# MiSTerFin",
+                    "description": "{MultiDatabases/misterfin:enabled} Jellyfin media client",
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "MultiDatabases/misterfin", "MiSTerFin"),
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/misterfin",
+                            "MiSTerFin",
+                            [
+                                "MiSTerFin is a Jellyfin media client that runs as ARM software, without an FPGA core.",
+                                "You can launch MiSTerFin from MiSTer's Scripts folder.",
+                                " ",
+                                "MiSTerFin requires your own Jellyfin server.",
+                                "Copy the installed jellyfin.conf.example, write your server URL into it, and save it as:",
+                                "misterfin/jellyfin.conf",
+                                "MiSTerFin then shows a Quick Connect code you enter in Jellyfin from another device.",
+                                "Maintainer: puddingstudio",
+                            ],
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "MiSTerFin",
+                            "text": [
+                                "MiSTerFin is a Jellyfin media client that runs as ARM software, without an FPGA core.",
+                                "Enabling this database installs the MiSTerFin client, its bundled media player, launcher, fonts and assets.",
+                                "You can browse and play your Jellyfin library on MiSTer, with the video transcoded by your own server.",
+                                "You can launch MiSTerFin from MiSTer's Scripts folder.",
+                                "You must manually supply your own jellyfin.conf with your server URL, then sign in on screen with a Quick Connect code.",
+                                "Leave MiSTerFin's built-in updater alone, since the next Update All run restores the version this database installs.",
+                                "Maintainer: puddingstudio",
+                            ],
+                        }],
+                    }
+                },
+                {
                     "title": "# tty2oled Add-on script",
-                    "description": "{tty2oled_files_downloader:enabled}",
+                    "description": "{tty2oled_files_downloader:enabled} Core art on an Arduino display",
                     "actions": {
                         "uninstall": uninstall_db_action(
                             "tty2oled_files_downloader", "tty2oled_files", "tty2oled Add-on script"),
@@ -1622,7 +1811,7 @@ def settings_screen_model():
                 },
                 {
                     "title": "# i2c2oled Add-on script",
-                    "description": "{i2c2oled_files_downloader:enabled}",
+                    "description": "{i2c2oled_files_downloader:enabled} Core art on a tiny i2c display",
                     "actions": {
                         "uninstall": uninstall_db_action(
                             "i2c2oled_files_downloader", "i2c2oled_files", "i2c2oled Add-on script"),
@@ -1631,7 +1820,7 @@ def settings_screen_model():
                 },
                 {
                     "title": "# RetroSpy utility",
-                    "description": "{retrospy/retrospy-MiSTer:enabled}",
+                    "description": "{retrospy/retrospy-MiSTer:enabled} Live controller input viewer",
                     "actions": {
                         "uninstall": uninstall_db_action_for_id(
                             "retrospy/retrospy-MiSTer", "RetroSpy utility"),

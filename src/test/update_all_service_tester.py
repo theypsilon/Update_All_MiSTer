@@ -318,10 +318,10 @@ def default_databases(add: list[str] = None, sub: list[str] = None) -> set[str]:
 
 
 class TransitionServiceTester(TransitionService):
-    def __init__(self, file_system: FileSystem = None, os_utils: OsUtils = None, ini_repository: IniRepository = None):
+    def __init__(self, file_system: FileSystem = None, os_utils: OsUtils = None, ini_repository: IniRepository = None, mister_ini_repository: MisterIniRepository = None):
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         os_utils = os_utils or SpyOsUtils()
-        super().__init__(logger=NoLogger(), file_system=file_system, os_utils=os_utils, ini_repository=ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils))
+        super().__init__(logger=NoLogger(), file_system=file_system, os_utils=os_utils, ini_repository=ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils), mister_ini_repository=mister_ini_repository or MisterIniRepositoryTester(file_system=file_system))
 
 
 class EnvironmentSetupTester(EnvironmentSetupImpl):

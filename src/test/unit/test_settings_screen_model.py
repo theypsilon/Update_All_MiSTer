@@ -40,7 +40,18 @@ _HYBRID_CORE_TITLES = {
     '# Sonic Mania MiSTer',
     '# MiSTer Duke3D',
     '# MiSTer Quake',
+    '# Solarus MiSTer',
+    '# 3S-ARM',
 }
+
+# ARM apps ship no FPGA core at all, so they live in Tools & Scripts instead of
+# Hybrid Cores, but they follow the same info + enable confirmation conventions.
+_ARM_APP_TITLES = {
+    '# MiSTer Hi-Fi',
+    '# MiSTerFin',
+}
+
+_SOFTWARE_DATABASE_TITLES = _HYBRID_CORE_TITLES | _ARM_APP_TITLES
 
 _FILE_DEPENDENT_CORE_PATHS = {
     '# Paprium MegaDrive': ('MultiDatabases/paprium', ('games/PapriumMD/',)),
@@ -49,10 +60,16 @@ _FILE_DEPENDENT_CORE_PATHS = {
     '# Sonic Mania MiSTer': ('MultiDatabases/sonic-mania', ('games/sonic-mania/Data.rsdk',)),
     '# MiSTer Duke3D': ('MultiDatabases/duke3d', ('games/DUKE3D/duke3d.grp',)),
     '# MiSTer Quake': ('MultiDatabases/mister-quake', ('games/quake/id1/',)),
+    '# Solarus MiSTer': ('MultiDatabases/solarus', ('games/Solarus/quests/', 'Scripts/Solarus.sh')),
+    '# 3S-ARM': ('MultiDatabases/3s-arm', ('games/3s-arm/resources/SF33RD.AFS',)),
     '# MiSTer Frontier': (
         'MiSTerOrganize/MiSTer_Frontier',
         ('games/PICO-8/Carts/', 'games/OpenBOR/Paks/', 'Scripts/Install_MiSTer_Frontier.sh'),
     ),
+    # Hi-Fi reads music from anywhere on the SD card or a USB drive, so its confirmation
+    # has no path to show. Its network share config is optional and left to the tool.
+    '# MiSTer Hi-Fi': ('MultiDatabases/mister-hifi', ()),
+    '# MiSTerFin': ('MultiDatabases/misterfin', ('misterfin/jellyfin.conf',)),
 }
 
 _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
@@ -60,7 +77,43 @@ _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
     '# Sonic Mania MiSTer': 'Sonic Mania runs as a native recompilation of its reverse-engineered engine, in software rather than in the FPGA.',
     '# MiSTer Duke3D': 'MiSTer Duke3D is a native engine port that runs in software rather than in the FPGA.',
     '# MiSTer Quake': 'MiSTer Quake is a native engine port that runs in software rather than in the FPGA.',
+    '# Solarus MiSTer': 'Solarus MiSTer runs the Solarus 2D action-RPG engine in software rather than in the FPGA.',
+    '# 3S-ARM': '3S-ARM is a native port of the PlayStation 2 version of Street Fighter III: 3rd Strike that runs in software rather than in the FPGA.',
     '# MiSTer Frontier': "MiSTer Frontier's PICO-8 emulator and OpenBOR engine ports run in software rather than in the FPGA.",
+}
+
+_ARM_APP_OUTSIDE_FPGA_DESCRIPTIONS = {
+    '# MiSTer Hi-Fi': 'MiSTer Hi-Fi is a controller-first music player that runs as ARM software, without an FPGA core.',
+    '# MiSTerFin': 'MiSTerFin is a Jellyfin media client that runs as ARM software, without an FPGA core.',
+}
+
+_OUTSIDE_FPGA_DESCRIPTIONS = {**_HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS, **_ARM_APP_OUTSIDE_FPGA_DESCRIPTIONS}
+
+# Every database entry that explains itself must credit whoever maintains it, both in
+# its info message and in its enable confirmation when it has one.
+_DATABASE_MAINTAINERS = {
+    '# RetroAchievements Cores': 'odelot',
+    '# Physical CD Support': 'Anime0t4ku',
+    '# Unofficial Distribution': 'theypsilon',
+    '# Arcade Offset': 'Toya',
+    '# LLAPI Forks Folder': 'MiSTer-LLAPI',
+    '# Y/C Builds': 'MikeS11',
+    "# agg23's MiSTer Cores": 'agg23',
+    '# Paprium MegaDrive': 'Pezz82',
+    '# MMS2 GB Core': 'Heber-co-uk',
+    '# Alt Cores': 'Moondandy',
+    '# Dual RAM Console Cores': 'TheJesusFish',
+    '# MegaVGMDrive': 'dai-VGM',
+    '# DreamSTer': 'skmp',
+    '# Sonic Mania MiSTer': 'kimchiman52',
+    '# MiSTer Duke3D': 'neofreno',
+    '# MiSTer Quake': 'neofreno',
+    '# Solarus MiSTer': 'gmcnaught',
+    '# 3S-ARM': 'kimchiman52',
+    '# MiSTer Frontier': 'MiSTerOrganize',
+    '# 240p Test Suites': 'Moondandy',
+    '# MiSTer Hi-Fi': 'Anime0t4ku',
+    '# MiSTerFin': 'puddingstudio',
 }
 
 _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
@@ -70,7 +123,11 @@ _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
     '# Sonic Mania MiSTer': 'launch and play Sonic Mania',
     '# MiSTer Duke3D': 'launch and play Duke Nukem 3D',
     '# MiSTer Quake': 'launch and play Quake',
+    '# Solarus MiSTer': 'play Solarus quests',
+    '# 3S-ARM': 'launch and play Street Fighter III: 3rd Strike',
     '# MiSTer Frontier': 'launch PICO-8 carts and legacy or modern OpenBOR games',
+    '# MiSTer Hi-Fi': 'play MP3, FLAC and WAV files',
+    '# MiSTerFin': 'browse and play your Jellyfin library',
 }
 
 _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
@@ -80,7 +137,11 @@ _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
     '# Sonic Mania MiSTer': 'manually add game data from your own Sonic Mania installation',
     '# MiSTer Duke3D': 'manually add game data from your own Duke Nukem 3D installation',
     '# MiSTer Quake': 'manually add game data from your own Quake installation',
+    '# Solarus MiSTer': 'manually add the quests you want to play',
+    '# 3S-ARM': 'manually add game data from your own PlayStation 2 copy',
     '# MiSTer Frontier': 'manually add the PICO-8 carts and OpenBOR game modules',
+    '# MiSTer Hi-Fi': 'manually add the music you want to play',
+    '# MiSTerFin': 'manually supply your own jellyfin.conf',
 }
 
 
@@ -446,7 +507,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         # Entries that write to MiSTer.ini on install must undo those edits on uninstall.
         ini_del_targets = {
             '# RetroAchievements Cores': {'RA_*': {'main': 'MiSTer_RA'}},
-            '# Physical CD Support': {'CD-*': {'main': 'MiSTer_Physical-CD'}},
+            '# Physical CD Support': {'A0CD-*': {'main': 'MiSTer_Physical-CD'}},
             '# Sonic Mania MiSTer': {
                 'Sonic Mania': {'main': 'MiSTer_SonicMania'},
                 'Sonic Mania (4:3)': {'main': 'MiSTer_SonicMania'},
@@ -504,6 +565,10 @@ class TestSettingsScreenModel(unittest.TestCase):
              'ajgowans/240p', '240p Test Suites'),
             ('tools_and_scripts_menu', '# Anime0t4ku MiSTer Scripts', 'anime0t4ku_mister_scripts',
              'anime0t4ku_mister_scripts', 'Anime0t4ku MiSTer Scripts'),
+            ('tools_and_scripts_menu', '# MiSTer Hi-Fi', 'MultiDatabases/mister-hifi',
+             'MultiDatabases/mister-hifi', 'MiSTer Hi-Fi'),
+            ('tools_and_scripts_menu', '# MiSTerFin', 'MultiDatabases/misterfin',
+             'MultiDatabases/misterfin', 'MiSTerFin'),
             ('tools_and_scripts_menu', '# tty2oled Add-on script', 'tty2oled_files_downloader',
              'tty2oled_files', 'tty2oled Add-on script'),
             ('tools_and_scripts_menu', '# i2c2oled Add-on script', 'i2c2oled_files_downloader',
@@ -709,6 +774,8 @@ class TestSettingsScreenModel(unittest.TestCase):
             'MultiDatabases/sonic-mania',
             'MultiDatabases/duke3d',
             'MultiDatabases/mister-quake',
+            'MultiDatabases/solarus',
+            'MultiDatabases/3s-arm',
             'MiSTerOrganize/MiSTer_Frontier',
         ], list(menu['variables']))
         self.assertEqual([
@@ -716,14 +783,18 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# Sonic Mania MiSTer',
             '# MiSTer Duke3D',
             '# MiSTer Quake',
+            '# Solarus MiSTer',
+            '# 3S-ARM',
             '# MiSTer Frontier',
         ], [entry.get('title') for entry in menu['entries']])
         self.assertEqual([
-            '{MultiDatabases/dreamster:enabled} Maintainer: skmp',
-            '{MultiDatabases/sonic-mania:enabled} Maintainer: kimchiman52',
-            '{MultiDatabases/duke3d:enabled} Maintainer: neofreno',
-            '{MultiDatabases/mister-quake:enabled} Maintainer: neofreno',
-            '{MiSTerOrganize/MiSTer_Frontier:enabled} Maintainer: MiSTerOrganize',
+            '{MultiDatabases/dreamster:enabled} Experimental Dreamcast emulator',
+            '{MultiDatabases/sonic-mania:enabled} Sonic Mania native port',
+            '{MultiDatabases/duke3d:enabled} Duke Nukem 3D engine port',
+            '{MultiDatabases/mister-quake:enabled} Quake engine port',
+            '{MultiDatabases/solarus:enabled} Solarus 2D action-RPG engine',
+            '{MultiDatabases/3s-arm:enabled} Street Fighter III: 3rd Strike port',
+            '{MiSTerOrganize/MiSTer_Frontier:enabled} PICO-8 and OpenBOR engine ports',
         ], [entry.get('description') for entry in menu['entries']])
 
     def test_file_dependent_core_entries___when_enabling___show_paths_and_preselect_no(self):
@@ -740,16 +811,16 @@ class TestSettingsScreenModel(unittest.TestCase):
                 for path in paths:
                     self.assertIn(path, prompt)
 
-    def test_hybrid_core_enable_confirmations___identify_what_runs_outside_the_fpga(self):
-        for title, expected_description in _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS.items():
+    def test_software_database_enable_confirmations___identify_what_runs_outside_the_fpga(self):
+        for title, expected_description in _OUTSIDE_FPGA_DESCRIPTIONS.items():
             with self.subTest(title=title):
                 variable, _paths = _FILE_DEPENDENT_CORE_PATHS[title]
                 app = self._execute_multidatabase_action(title, variable, 'false')
 
                 self.assertIn(expected_description, app.confirms[0]['text'])
 
-    def test_hybrid_core_info___starts_with_the_authoritative_confirmation_description(self):
-        for title, expected_description in _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS.items():
+    def test_software_database_info___starts_with_the_authoritative_confirmation_description(self):
+        for title, expected_description in _OUTSIDE_FPGA_DESCRIPTIONS.items():
             with self.subTest(title=title):
                 info = self._execute_core_info(title)
 
@@ -792,13 +863,64 @@ class TestSettingsScreenModel(unittest.TestCase):
             "You can launch MiSTer Quake from MiSTer's Other folder.",
         )
         self._assert_core_menu_location(
+            '# Solarus MiSTer',
+            'MultiDatabases/solarus',
+            "You can launch Solarus MiSTer from MiSTer's Scripts folder.",
+        )
+        self._assert_core_menu_location(
+            '# 3S-ARM',
+            'MultiDatabases/3s-arm',
+            "You can launch 3S-ARM from MiSTer's Other folder.",
+        )
+        self._assert_core_menu_location(
             '# MiSTer Frontier',
             'MiSTerOrganize/MiSTer_Frontier',
             "You can launch MiSTer Frontier's cores from MiSTer's Other folder.",
         )
+        self._assert_core_menu_location(
+            '# MiSTer Hi-Fi',
+            'MultiDatabases/mister-hifi',
+            "You can launch MiSTer Hi-Fi from MiSTer's Scripts folder.",
+        )
+        self._assert_core_menu_location(
+            '# MiSTerFin',
+            'MultiDatabases/misterfin',
+            "You can launch MiSTerFin from MiSTer's Scripts folder.",
+        )
 
-    def test_hybrid_core_info___explains_what_enabling_the_database_installs(self):
-        for title in _HYBRID_CORE_TITLES:
+    def test_database_entries___credit_their_maintainer_in_info_and_enable_confirmation(self):
+        for title, maintainer in _DATABASE_MAINTAINERS.items():
+            with self.subTest(title=title):
+                credit = f'Maintainer: {maintainer}'
+                entry = self._entry(self._core_menu(title), title)
+
+                # The credit line must be the only mention of the maintainer, so the
+                # surrounding copy never repeats what the credit already says.
+                self.assertEqual([credit], _lines_naming(maintainer, self._execute_core_info(title).messages[0]['text']))
+
+                for confirm in _entry_confirms(entry):
+                    self.assertEqual([credit], _lines_naming(maintainer, confirm['text']), confirm['header'])
+
+    def test_entry_descriptions___leave_the_maintainer_credit_to_the_info_and_confirmation_texts(self):
+        credited_descriptions = [
+            f"{entry.get('title')}: {entry.get('description')}"
+            for item in self.model['items'].values() for entry in item.get('entries', [])
+            if entry and 'Maintainer' in entry.get('description', '')
+        ]
+
+        self.assertEqual([], credited_descriptions)
+
+    def test_database_entries_with_an_info_action___are_all_covered_by_the_maintainer_credits(self):
+        titled_entries = [
+            entry.get('title') for item in self.model['items'].values()
+            for entry in item.get('entries', []) if entry and 'info' in entry.get('actions', {})
+        ]
+
+        self.assertGreaterEqual(len(titled_entries), 20)
+        self.assertEqual(sorted(_DATABASE_MAINTAINERS), sorted(titled_entries))
+
+    def test_software_database_info___explains_what_enabling_the_database_installs(self):
+        for title in _SOFTWARE_DATABASE_TITLES:
             with self.subTest(title=title):
                 info = self._execute_core_info(title)
                 text = info.messages[0]['text']
@@ -920,7 +1042,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('MultiDatabases/megavgmdrive'))
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
-        self.assertEqual('{MultiDatabases/megavgmdrive:enabled} Maintainer: dai-VGM', entry['description'])
+        self.assertEqual('{MultiDatabases/megavgmdrive:enabled} MD VGM music player core', entry['description'])
         info = self._execute_core_info('# MegaVGMDrive')
         self.assertIn('Standalone FPGA music-player core', ' '.join(info.messages[0]['text']))
         self.assertIn('hardware jukebox', ' '.join(info.messages[0]['text']))
@@ -979,7 +1101,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.messages)
         self.assertEqual([
             {'type': 'mister_ini_add', 'variable': 'MultiDatabases/physical-disc',
-             'target': {'CD-*': {'main': 'MiSTer_Physical-CD'}}},
+             'target': {'A0CD-*': {'main': 'MiSTer_Physical-CD'}}},
         ], app.mister_ini_effects)
         info = self._execute_core_info('# Physical CD Support')
         self.assertIn('USB CD-drive', ' '.join(info.messages[0]['text']))
@@ -1041,9 +1163,15 @@ class TestSettingsScreenModel(unittest.TestCase):
             initial_history=['main_menu_login'] + (['other_cores_menu'] if menu == 'hybrid_cores_menu' else []),
         )
 
-    @staticmethod
-    def _core_menu(title):
-        return 'hybrid_cores_menu' if title in _HYBRID_CORE_TITLES else 'other_cores_menu'
+    def _core_menu(self, title):
+        menus = [
+            menu for menu, item in self.model['items'].items()
+            for entry in item.get('entries', [])
+            if entry and entry.get('title') == title
+        ]
+
+        self.assertEqual(1, len(menus), f'{title} should live in exactly one menu, found: {menus}')
+        return menus[0]
 
     def test_jtcores_submenu___has_no_separate_auto_enable_option(self):
         entries = self.model['items']['jtcores_menu']['entries']
@@ -1331,6 +1459,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         # RetroAchievements is add-only (no del); Zaparoo and the MultiDatabases that
         # document MiSTer.ini sections have adds, only Zaparoo has a del.
         multidb_ini_variables = {
+            'MultiDatabases/3s-arm',
             'MultiDatabases/duke3d',
             'MultiDatabases/mister-quake',
             'MultiDatabases/physical-disc',
@@ -1390,6 +1519,27 @@ class TestSettingsScreenModel(unittest.TestCase):
         violations = _chain_violations(self.model)
 
         self.assertEqual([], violations)
+
+
+def _lines_naming(maintainer, text):
+    return [line for line in text if maintainer in line]
+
+
+def _entry_confirms(entry):
+    confirms = []
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get('ui') == 'confirm':
+                confirms.append(node)
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(entry.get('actions', {}).get('ok', []))
+    return confirms
 
 
 def _chain_violations(model):

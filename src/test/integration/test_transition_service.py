@@ -30,7 +30,7 @@ from test.update_all_service_tester import TransitionServiceTester, local_store,
 from test.update_output_tester import UpdateOutputTester
 from test.spy_os_utils import SpyOsUtils
 from update_all.config import Config
-from update_all.constants import KENV_SKIP_DOWNLOADER
+from update_all.constants import FILE_MiSTer_ini, KENV_SKIP_DOWNLOADER, MEDIA_FAT
 from update_all.databases import ALL_DB_IDS, all_dbs, DB_ID_DISTRIBUTION_MISTER, DB_ID_MREXT_ALL, DB_ID_MREXT_TAPTO, \
     DB_ID_ZAPAROO_MISTER
 from update_all.ini_repository import read_ini_contents
@@ -84,6 +84,21 @@ def run_manuals_transition(files: Dict[str, str], store=None, update_output=None
     config_reader.fill_config_with_database_sections(config, config_reader.read_downloader_ini())
     sut.from_select_all_manuals_to_adding_new_manuals_dbs(config, store or local_store(), update_output or NoopUpdateOutput())
     return fs_state
+
+
+mister_ini_path = f'{MEDIA_FAT}/{FILE_MiSTer_ini}'
+
+
+def run_physical_disc_transition(mister_ini: str = None, update_output=None, db_enabled: bool = True):
+    config = Config()
+    config.set_database_enabled(ALL_DB_IDS['PHYSICAL_DISC'], db_enabled)
+    files = {} if mister_ini is None else {mister_ini_path: {'content': mister_ini}}
+    fs_state = FileSystemState(config=config, files=files)
+    fs = FileSystemFactory(state=fs_state).create_for_system_scope()
+    sut = TransitionServiceTester(file_system=fs)
+    sut.from_physical_disc_cd_section_to_a0cd_section(config, update_output or NoopUpdateOutput())
+    path = mister_ini_path.lower()
+    return None if path not in fs_state.files else fs_state.files[path]['content']
 
 
 def manuals_db_ids_in(fs_state: FileSystemState) -> List[str]:
@@ -368,6 +383,57 @@ class TestTransitionService(unittest.TestCase):
             {'db_ids': missing},
         )], output.transition_calls)
         self.assertEqual([], os_utils.calls_to_sleep)
+
+    def test_physical_disc_old_cd_section___is_moved_to_the_a0cd_section(self):
+        result = run_physical_disc_transition('[mister]\nfoo=bar\n\n[CD-*]\nmain=MiSTer_Physical-CD\n')
+
+        self.assertEqual('[mister]\nfoo=bar\n\n[A0CD-*]\nmain=MiSTer_Physical-CD\n', result)
+
+    def test_physical_disc_old_cd_section_with_other_keys___keeps_them_and_moves_only_the_main_key(self):
+        result = run_physical_disc_transition('[CD-*]\nvideo_mode=8\nmain=MiSTer_Physical-CD\n')
+
+        self.assertEqual('[CD-*]\nvideo_mode=8\n\n[A0CD-*]\nmain=MiSTer_Physical-CD\n', result)
+
+    def test_physical_disc_both_sections_present___drops_the_leftover_cd_section(self):
+        result = run_physical_disc_transition(
+            '[CD-*]\nmain=MiSTer_Physical-CD\n\n[A0CD-*]\nmain=MiSTer_Physical-CD\n')
+
+        self.assertEqual('[A0CD-*]\nmain=MiSTer_Physical-CD\n', result)
+
+    def test_physical_disc_cd_section_of_another_core___is_left_alone(self):
+        original = '[CD-*]\nmain=SomeoneElse\n'
+
+        self.assertEqual(original, run_physical_disc_transition(original))
+
+    def test_physical_disc_without_old_cd_section___does_not_touch_mister_ini(self):
+        original = '[A0CD-*]\nmain=MiSTer_Physical-CD\n'
+
+        self.assertEqual(original, run_physical_disc_transition(original))
+
+    def test_physical_disc_without_mister_ini___does_not_create_it(self):
+        self.assertIsNone(run_physical_disc_transition())
+
+    def test_physical_disc_db_disabled___leaves_the_old_cd_section_alone(self):
+        original = '[CD-*]\nmain=MiSTer_Physical-CD\n'
+
+        self.assertEqual(original, run_physical_disc_transition(original, db_enabled=False))
+
+    def test_physical_disc_old_cd_section___emits_the_transition(self):
+        update_output = UpdateOutputTester()
+
+        run_physical_disc_transition('[CD-*]\nmain=MiSTer_Physical-CD\n', update_output)
+
+        self.assertEqual(
+            [('from_physical_disc_cd_section_to_a0cd_section', {'old_section': 'CD-*', 'new_section': 'A0CD-*'})],
+            update_output.transition_calls,
+        )
+
+    def test_physical_disc_without_old_cd_section___emits_no_transition(self):
+        update_output = UpdateOutputTester()
+
+        run_physical_disc_transition('[A0CD-*]\nmain=MiSTer_Physical-CD\n', update_output)
+
+        self.assertEqual([], update_output.transition_calls)
 
     def test_related_database_relationships___has_only_zaparoo_relationship(self):
         self.assertEqual(1, len(RELATED_DATABASE_ACTIVATION_RELATIONSHIPS))

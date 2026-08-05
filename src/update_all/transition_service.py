@@ -16,9 +16,9 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 from collections import Counter
-from typing import Dict, List, Tuple
+from typing import Dict, Final, List, Tuple
 from update_all.config import Config
-from update_all.constants import FILE_update_all_ini, FILE_update_jtcores_ini, \
+from update_all.constants import FILE_MiSTer_ini, FILE_update_all_ini, FILE_update_jtcores_ini, \
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
 from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, \
     DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ajgowans_manualsdbs, ALL_DB_IDS, DB_ID_MREXT_ALL, \
@@ -28,6 +28,7 @@ from update_all.ini_repository import IniRepository, SEPARATE_DB_INI_FILES_BY_FI
 from update_all.file_system import FileSystem
 from update_all.local_store import LocalStore
 from update_all.logger import Logger
+from update_all.mister_ini_repository import MisterIniRepository
 from update_all.os_utils import OsUtils
 from update_all.settings_screen_model import settings_screen_model
 from update_all.update_output import UpdateOutput
@@ -35,6 +36,14 @@ from update_all.ui_model_utilities import gather_variable_declarations, dynamic_
 
 
 default_arcade_organizer_enabled = Config().arcade_organizer
+
+# Physical CD Support used to write its MiSTer.ini section as [CD-*]. The cores were
+# renamed, so new installs write [A0CD-*] and the old section has to move over.
+# @TODO: Remove after 2026-11 along with from_physical_disc_cd_section_to_a0cd_section.
+PHYSICAL_DISC_OLD_INI_SECTION: Final[str] = 'CD-*'
+PHYSICAL_DISC_INI_SECTION: Final[str] = 'A0CD-*'
+PHYSICAL_DISC_INI_KEY: Final[str] = 'main'
+PHYSICAL_DISC_INI_VALUE: Final[str] = 'MiSTer_Physical-CD'
 
 RELATED_DATABASE_ACTIVATION_RELATIONSHIPS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
     (
@@ -49,11 +58,12 @@ RELATED_DATABASE_ACTIVATION_RELATIONSHIPS: Tuple[Tuple[str, Tuple[str, ...]], ..
 
 class TransitionService:
 
-    def __init__(self, logger: Logger, file_system: FileSystem, os_utils: OsUtils, ini_repository: IniRepository):
+    def __init__(self, logger: Logger, file_system: FileSystem, os_utils: OsUtils, ini_repository: IniRepository, mister_ini_repository: MisterIniRepository):
         self._logger = logger
         self._file_system = file_system
         self._os_utils = os_utils
         self._ini_repository = ini_repository
+        self._mister_ini_repository = mister_ini_repository
         self._file_checks: Dict[str, bool] = {}
         self._created_downloader_ini = False
 
@@ -423,6 +433,49 @@ class TransitionService:
         update_output.transition(
             'from_select_all_manuals_to_adding_new_manuals_dbs',
             db_ids=','.join(activated)
+        )
+
+    # @TODO: Remove after 2026-11 (added 2026-08).
+    #
+    # This is the only reader of MiSTer.ini during environment setup, so it costs every
+    # run a file read and parse that did not happen before, for a rename that each
+    # affected user only needs applied once. Delete this method, its constants, its call
+    # in environment_setup.py and its tests once the window has passed. Anyone who has
+    # not run Update All within it keeps a stale [CD-*] section, which is the trade being
+    # made here.
+    def from_physical_disc_cd_section_to_a0cd_section(self, config: Config, update_output: UpdateOutput):
+        if not config.is_database_enabled(ALL_DB_IDS['PHYSICAL_DISC']):
+            return
+
+        if not self._mister_ini_repository.has_mister_ini_key(
+                (PHYSICAL_DISC_OLD_INI_SECTION,), PHYSICAL_DISC_INI_KEY, PHYSICAL_DISC_INI_VALUE):
+            return
+
+        try:
+            self._mister_ini_repository.ensure_mister_ini_key(
+                PHYSICAL_DISC_INI_SECTION,
+                PHYSICAL_DISC_INI_KEY,
+                PHYSICAL_DISC_INI_VALUE,
+                create_if_missing=True,
+            )
+            self._mister_ini_repository.remove_mister_ini_key(
+                PHYSICAL_DISC_OLD_INI_SECTION,
+                PHYSICAL_DISC_INI_KEY,
+                PHYSICAL_DISC_INI_VALUE,
+                remove_empty_section=True,
+            )
+        except Exception as e:
+            self._logger.print(f'ERROR! Could not update {FILE_MiSTer_ini} ([{PHYSICAL_DISC_OLD_INI_SECTION}])')
+            self._logger.debug(e)
+            return
+
+        self._logger.print(
+            f'Moved [{PHYSICAL_DISC_OLD_INI_SECTION}] to [{PHYSICAL_DISC_INI_SECTION}] in {FILE_MiSTer_ini}.')
+        self._logger.print()
+        update_output.transition(
+            'from_physical_disc_cd_section_to_a0cd_section',
+            old_section=PHYSICAL_DISC_OLD_INI_SECTION,
+            new_section=PHYSICAL_DISC_INI_SECTION,
         )
 
 #
