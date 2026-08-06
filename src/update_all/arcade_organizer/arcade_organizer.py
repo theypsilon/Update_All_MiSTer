@@ -1150,7 +1150,7 @@ class ArcadeOrganizer:
     def create_year(self):
         self.impl_create_single_link('YEAR_DIR', 'year', 'ORGDIR_Year')
 
-        if self._config['YEAR_DIR'] and isinstance(self._description['year'], int) and self._config['DECADES_DIR']:
+        if isinstance(self._description['year'], int) and self._config['DECADES_DIR']:
             if self._description['year'] < 1980:
                 self.create_symlink("%s/_%s/" % (self._config['ORGDIR_Year'], "The 1970s"))
 

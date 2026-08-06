@@ -170,6 +170,36 @@ class TestArcadeOrganizerPCIntegration(unittest.TestCase):
         with zipfile.ZipFile(self.mad_db_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             zipf.writestr('mad_db.json', json.dumps(mad_db))
 
+    def _year_folders(self, paths):
+        prefix = os.path.join('_3 Collections', '_3 By Year') + os.sep
+        return {p[len(prefix):].split(os.sep)[0] for p in paths if p.startswith(prefix)}
+
+    def test_decade_folders___with_year_folders_disabled___are_still_created(self):
+        self._create_ini_file(YEAR_DIR='false', DECADES_DIR='true')
+
+        success = self.ao_service.run_arcade_organizer_organize_all_mras(self._make_config())
+        self.assertTrue(success)
+
+        paths = self._get_organized_mra_paths()
+        self.assertIn(os.path.join('_3 Collections', '_3 By Year', '_The 1980s', 'pacman.mra'), paths)
+
+        year_folders = self._year_folders(paths)
+        self.assertEqual(set(), {f for f in year_folders if not f.startswith('_The ')},
+                         "Only decade folders should be created when YEAR_DIR is disabled")
+
+    def test_year_folders___with_decade_folders_disabled___are_still_created(self):
+        self._create_ini_file(YEAR_DIR='true', DECADES_DIR='false')
+
+        success = self.ao_service.run_arcade_organizer_organize_all_mras(self._make_config())
+        self.assertTrue(success)
+
+        paths = self._get_organized_mra_paths()
+        self.assertIn(os.path.join('_3 Collections', '_3 By Year', '_1980', 'pacman.mra'), paths)
+
+        year_folders = self._year_folders(paths)
+        self.assertEqual(set(), {f for f in year_folders if f.startswith('_The ')},
+                         "No decade folders should be created when DECADES_DIR is disabled")
+
     def test_complete_pc_flow(self):
         """Full realistic PC flow: fresh build, verify, incremental, add content, rebuild."""
 
