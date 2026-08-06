@@ -26,7 +26,7 @@ from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.logger_tester import LoggerSpy, NoLogger
 from update_all.config import Config
-from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbeta_alt, FILE_patreon_key, FILE_patreon_key_md5, \
+from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FOLDER_mame, FILE_jtbeta, FILE_jtbeta_alt, FILE_patreon_key, FILE_patreon_key_md5, \
     FILE_retroaccount_device_id, FILE_retroaccount_user_json, FILE_retroaccount_verified_chip_id
 from update_all.other import GenericProvider
 from update_all.retroaccount import BenefitState, ChipIdAttachResult, RetroAccountService, any_to_retroaccount_file_description
@@ -176,6 +176,27 @@ class TestRetroAccountService(unittest.TestCase):
             ('print', 'New jtbeta.zip from JOTEGO installed!'),
             ('debug', 'jtbeta.zip MD5: installed-md5'),
             ('debug', f'jtbeta.zip also copied to {alt_jtbeta_path}'),
+            ('debug', f'jtbeta.zip also copied to {usb_jtbeta_path}'),
+        ], sut.consume_important_messages())
+
+    def test_mister_sync___when_several_drives_have_the_games_mame_folder___copies_jtbeta_only_to_the_first_one(self):
+        usb_jtbeta_path = f'{OTHER_MEDIA[1]}/{FILE_jtbeta}'
+        sut, file_system, gateway, _encryption = tester(
+            files=default_sync_files(),
+            folders=[f'{OTHER_MEDIA[1]}/{FOLDER_mame}', f'{OTHER_MEDIA[2]}/{FOLDER_mame}'],
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'jtbeta_file': {'url': 'https://example.com/jtbeta.zip', 'md5': 'expected-md5', 'size': 1024}}},
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual([(FILE_jtbeta, 'https://example.com/jtbeta.zip')], gateway.install_calls)
+        self.assertTrue(file_system.is_file(FILE_jtbeta))
+        self.assertTrue(file_system.is_file(usb_jtbeta_path))
+        self.assertFalse(file_system.is_file(f'{OTHER_MEDIA[2]}/{FILE_jtbeta}'))
+        self.assertEqual([
+            ('print', 'New jtbeta.zip from JOTEGO installed!'),
+            ('debug', 'jtbeta.zip MD5: installed-md5'),
             ('debug', f'jtbeta.zip also copied to {usb_jtbeta_path}'),
         ], sut.consume_important_messages())
 
@@ -419,11 +440,11 @@ class TestAnyToRetroAccountFileDescription(unittest.TestCase):
 def mister_sync(sut: RetroAccountService) -> None:
     sut.mister_sync(NoopUpdateOutput())
 
-def tester(files=None, gateway_result=SessionResult.VALID, gateway_response=None, logger=None, jtcores_service=None):
+def tester(files=None, folders=None, gateway_result=SessionResult.VALID, gateway_response=None, logger=None, jtcores_service=None):
     config = Config()
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config)
-    state = FileSystemState(files=files or {}, config=config)
+    state = FileSystemState(files=files or {}, folders=folders, config=config)
     file_system = FileSystemFactory(state=state).create_for_system_scope()
     gateway = _RetroAccountGatewayStub(file_system, gateway_result, gateway_response)
     encryption = _EncryptionSpy()

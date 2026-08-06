@@ -25,7 +25,7 @@ from update_all.logger import Logger
 from update_all.file_system import FileSystem
 from update_all.config import Config
 from update_all.other import GenericProvider, any_to_bool, any_to_nonfalsy_str
-from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FILE_jtbeta, FILE_jtbeta_alt, FILE_retroaccount_user_json, \
+from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FOLDER_mame, FILE_jtbeta, FILE_jtbeta_alt, FILE_retroaccount_user_json, \
     FILE_retroaccount_device_id, FILE_retroaccount_verified_chip_id, FILE_patreon_key_md5, \
     FILE_patreon_key_prev, FILE_JOTEGO_mra_pack_json, FILE_JOTEGO_mra_pack_ini
 from update_all.encryption import Encryption, EncryptionResult
@@ -492,9 +492,19 @@ class RetroAccountService(RetroAccountClient):
             self._logger.debug('RetroAccountService: Could not install jtbeta.zip.')
             self._logger.debug(e)
         try:
-            other_paths = [os.path.join(MEDIA_FAT, FILE_jtbeta_alt)] + [os.path.join(p, FILE_jtbeta) for p in OTHER_MEDIA]
-            for o_path in other_paths:
-                if self._file_system.is_file(o_path):
+            alt_path = os.path.join(MEDIA_FAT, FILE_jtbeta_alt)
+            if self._file_system.is_file(alt_path):
+                self._file_system.copy(FILE_jtbeta, alt_path)
+                self._logger.debug(f'RetroAccountService: Copied jtbeta.zip to {alt_path}')
+                self._important_messages.append(('debug', f'jtbeta.zip also copied to {alt_path}'))
+
+            mame_folder_found = False
+            for drive in OTHER_MEDIA:
+                has_mame_folder = not mame_folder_found and self._file_system.is_folder(os.path.join(drive, FOLDER_mame))
+                mame_folder_found |= has_mame_folder
+
+                o_path = os.path.join(drive, FILE_jtbeta)
+                if has_mame_folder or self._file_system.is_file(o_path):
                     self._file_system.copy(FILE_jtbeta, o_path)
                     self._logger.debug(f'RetroAccountService: Copied jtbeta.zip to {o_path}')
                     self._important_messages.append(('debug', f'jtbeta.zip also copied to {o_path}'))
