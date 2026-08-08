@@ -1,0 +1,176 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Gaplus Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Boogie Wings MRA: Boogie Wings",
+              "type": "standalone"
+            },
+            {
+              "name": "Night Slashers MRA: Night Slashers",
+              "type": "standalone"
+            },
+            {
+              "name": "Trio The Punch MRA: Trio The Punch",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "PSX",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-08-08",
+      "timestamps": [
+        1786171927,
+        1786194422,
+        1786206769
+      ],
+      "title": "Updated TODAY (2026-08-08)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Asteroids Core",
+              "type": "standalone"
+            },
+            {
+              "name": "DECOCassette Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix Core",
+              "type": "standalone"
+            },
+            {
+              "name": "SNK6502 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Salamander Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Asteroids MRAs: Asteroids Deluxe, Asteroids Deluxe, Asteroids, Lunar Lander",
+              "type": "standalone"
+            },
+            {
+              "name": "Cave Banpresto MRA: Bishoujo Senshi Sailor Moon",
+              "type": "standalone"
+            },
+            {
+              "name": "DECOCassette MRAs: 18 Challenge Pro Golf, Angler Dangler, Astro Fantasia, Boulder Dash, Bump 'n' Jump, Burger Time, Burnin Rubber, Cluster Buster, DECO Darksoft Multigame, DECO Test Tape, DS Telejan, Fighting Ice Hockey, Flash Boy, Flying Ball, Hamburger (Japan), Highway Chase, Lock'n'Chase, Lucky Poker, Manhattan (Japan), Mission-X, Nebula, Night Star, Ocean to Ocean, Oozumou - Grand Sumo, Peter Pepper's Ice Cream Factory, Pro Bowling, Pro Soccer, Pro Tennis, Rootin' Tootin', Scrum Try, Skater, Super Astro Fighter, Super Doubles Tennis, Sweet Heart, Terranean, The Tower, Tornado, Tournament Pro Golf",
+              "type": "standalone"
+            },
+            {
+              "name": "Kyugo MRAs: Airwolf, Flashgal, Gyrodine, Legend, Repulse, SRD Mission",
+              "type": "standalone"
+            },
+            {
+              "name": "MrJong MRA: Mr. Jong",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix MRA: The Electric Yo-Yo",
+              "type": "standalone"
+            },
+            {
+              "name": "SNK6502 MRAs: Fantasy, Sasuke, Satan Of Saturn, Vanguard",
+              "type": "standalone"
+            },
+            {
+              "name": "Sky Smasher MRA: Sky Smasher",
+              "type": "standalone"
+            },
+            {
+              "name": "freeze MRAs: Freeze, Jack the Giantkiller, Super Casino, Tri-Pool, Zzyzzyxx",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "MacLC",
+              "type": "standalone"
+            },
+            {
+              "name": "PCXT-EGA",
+              "type": "standalone"
+            },
+            {
+              "name": "UK101",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Arcadia",
+              "type": "standalone"
+            },
+            {
+              "name": "SGB",
+              "type": "standalone"
+            },
+            {
+              "name": "VirtualBoy",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1785616464,
+        1785655971,
+        1785668847,
+        1785774316,
+        1785788398,
+        1785792964,
+        1785821731,
+        1785830881,
+        1785858082,
+        1785864218,
+        1785880573,
+        1785884637,
+        1785901313,
+        1785910417,
+        1785949791,
+        1785970734,
+        1785996992,
+        1786063336,
+        1786090445
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1818,
+    "total_file_updates": 1772,
+    "unique_files": 917
+  }
+}
