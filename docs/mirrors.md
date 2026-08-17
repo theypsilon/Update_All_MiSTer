@@ -1,33 +1,34 @@
 # Update All mirrors
 
-A complete mirror covers two stages:
+An Update All mirror rehosts Downloader databases and the files referenced by them. It can also serve the Update All program for a first-run download.
 
-1. The Update All program itself, including the first-run download.
-2. The Downloader databases and the files referenced by those databases.
-
-The `update_all.mirror` file handles the first stage. The mirror definition in [`databases.py`](../src/update_all/databases.py) handles the second.
+The mirror definition in [`databases.py`](../src/update_all/databases.py) maps database URLs to the mirror. Users normally select that mirror from the Settings Screen. An `update_all.mirror` file provides the same configuration before the first run.
 
 ## Use a mirror
+
+### From the Settings Screen
+
+Run `update_all.sh` and press **UP** during the countdown. Open **System Options → Mirror**, choose the mirror, and select **SAVE**. Update All will remember the selection for later runs.
+
+### Before the first run
 
 Place the regular `update_all.sh` launcher in `/media/fat/Scripts`, then create `/media/fat/Scripts/update_all.mirror` next to it:
 
 ```json
 {
-  "mirror_tool_url": "https://mirror.example/theypsilon/Update_All_MiSTer/master/dont_download2.sh",
-  "mirror_id": "example"
+  "mirror_id": "example",
+  "mirror_tool_url": "https://mirror.example/theypsilon/Update_All_MiSTer/master/dont_download2.sh"
 }
 ```
 
+- `mirror_id` must exactly match an ID supported in `databases.py`. It selects the mirrored database URLs.
 - `mirror_tool_url` must be a direct HTTPS URL to a current, executable copy of `dont_download2.sh` or `update_all.pyz`.
-- `mirror_id` must exactly match an ID supported in `databases.py`.
 
-The launcher reads this file before downloading Update All. On a new installation, where no cached `update_all.pyz` exists yet, even that first download comes from `mirror_tool_url`. It then passes `mirror_id` to Update All so the database URLs use the same mirror.
+The launcher reads this file before downloading Update All, allowing a new installation to use the mirror from its first download. Mirror operators can distribute `update_all.sh` and `update_all.mirror` together.
 
-Mirror operators can distribute `update_all.sh` and `update_all.mirror` together, making the setup available to any user. Because a mirror serves executable code, only use one you trust.
+An optional `extra_ntp_servers` value may contain comma-separated NTP hostnames for regions where the launcher's default time servers are unavailable. Because a mirror may serve executable code, only use one you trust.
 
-An optional `extra_ntp_servers` value may contain comma-separated NTP hostnames for regions where the launcher's default time servers are unavailable.
-
-## Host a mirror
+## Host mirror content
 
 ### Choose what to mirror
 
@@ -38,15 +39,21 @@ Build the content list in this order:
 
 Some MultiDatabases entries are already declared in `databases.py`. When an entry appears in both places, use the `databases.py` definition and do not add the README entry a second time.
 
-Also mirror a current runnable Update All build for `mirror_tool_url`. Synchronize the mirror with GitHub at least once every 24 hours so builds, database manifests, and downloadable files do not become stale.
+Synchronize database manifests and downloadable files with GitHub at least once every 24 hours so the mirror does not become stale.
 
 ### Rewrite download URLs
 
 Rehosting only the database JSON is not enough: its file entries may still point to GitHub. When publishing a mirrored database, recursively rewrite URLs from `raw.githubusercontent.com`, `github.com`, and `www.github.com` to the equivalent paths on your mirror. Apply the same rule to zipped database JSON files.
 
+File URLs are either explicit `url` values or `base_files_url` plus the file path, so handle both forms; see Downloader's [custom database format](https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/custom-databases.md).
+
+URL discovery is at most two levels deep: a database may point to an archive's remote summary; see Downloader's [`summary_file` documentation](https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/custom-databases-archives.md#summary_file).
+
 Serve the exact original file bytes behind those rewritten URLs so the sizes and hashes recorded in the database continue to validate. Leave URLs on origins you do not mirror unchanged rather than producing dead mirror links.
 
-### Add the mirror with a PR
+For first-run support, also host a current runnable Update All file for `mirror_tool_url` and synchronize it at least once every 24 hours.
+
+## Add the mirror with a PR
 
 In `src/update_all/databases.py`:
 
@@ -74,11 +81,20 @@ def all_dbs(mirror: Optional[str]) -> AllDBs:
 
 Follow the existing mirror classes for concrete rewrite examples. Keep every database's `db_id` and `title` unchanged.
 
-Add unit coverage in `src/test/unit/test_databases.py` that verifies the new ID is returned by `all_mirrors()` and that every expected URL is rewritten without changing its database ID or title. Run:
+Then register the mirror in `src/update_all/settings_screen_model.py`:
+
+1. Add its friendly name to the `mirror` formatter.
+2. Add its ID to the System Options `mirror` variable's `values`.
+3. Extend the Mirror entry's actions so users can select it.
+
+Add database tests that verify the new ID and URL rewrites without changing database IDs or titles. Add Settings Screen tests for selecting, displaying, and saving the mirror. Run:
 
 ```bash
 cd src
-python3 -m unittest test.unit.test_databases
+python3 -m unittest \
+  test.unit.test_databases \
+  test.unit.test_settings_screen_model \
+  test.unit.test_settings_screen_routines
 ```
 
 In the PR description, include the public mirror base URL, its synchronization schedule, and a ready-to-copy `update_all.mirror` example. Wait until a released Update All build recognizes the new `mirror_id` before distributing that file broadly.
