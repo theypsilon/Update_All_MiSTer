@@ -43,11 +43,11 @@ Synchronize database manifests and downloadable files with GitHub at least once 
 
 ### Rewrite download URLs
 
-Rehosting only the database JSON is not enough: its file entries may still point to GitHub. When publishing a mirrored database, recursively rewrite URLs from `raw.githubusercontent.com`, `github.com`, and `www.github.com` to the equivalent paths on your mirror. Apply the same rule to zipped database JSON files.
+Rehosting only the database JSON is not enough: its file entries may still point to GitHub. When publishing a mirrored database, recursively rewrite URLs from `raw.githubusercontent.com`, `github.com`, and `www.github.com` to the equivalent paths on your mirror.
 
 File URLs are either explicit `url` values or `base_files_url` plus the file path, so handle both forms; see Downloader's [custom database format](https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/custom-databases.md).
 
-URL discovery is at most two levels deep: a database may point to an archive's remote summary; see Downloader's [`summary_file` documentation](https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/custom-databases-archives.md#summary_file).
+URL discovery has at most two levels: first the database, then any remote summaries referenced by its archives. See Downloader's [`summary_file` documentation](https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/custom-databases-archives.md#summary_file).
 
 Serve the exact original file bytes behind those rewritten URLs so the sizes and hashes recorded in the database continue to validate. Leave URLs on origins you do not mirror unchanged rather than producing dead mirror links.
 
