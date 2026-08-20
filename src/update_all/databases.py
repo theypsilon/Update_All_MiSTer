@@ -103,6 +103,7 @@ class AllDBs:
         self.MISTER_FRONTIER = Database(db_id='MiSTerOrganize/MiSTer_Frontier', db_url='https://raw.githubusercontent.com/MiSTerOrganize/MiSTer_Frontier/db/db.json.zip', title='MiSTer Frontier')
 
         # MULTIDATABASES
+        self.DISC_TOOLS = Database(db_id='MultiDatabases/disc-tools', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/disc-tools/db.json', title='Disc Tools')
         self.DREAMSTER = Database(db_id='MultiDatabases/dreamster', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/dreamster/db.json', title='DreamSTer')
         self.DUKE3D = Database(db_id='MultiDatabases/duke3d', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/duke3d/db.json', title='MiSTer Duke3D')
         self.MEGAVGMDRIVE = Database(db_id='MultiDatabases/megavgmdrive', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/megavgmdrive/db.json', title='MegaVGMDrive')

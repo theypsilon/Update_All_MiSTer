@@ -49,6 +49,7 @@ _HYBRID_CORE_TITLES = {
 _ARM_APP_TITLES = {
     '# MiSTer Hi-Fi',
     '# MiSTerFin',
+    '# Disc Tools',
 }
 
 _SOFTWARE_DATABASE_TITLES = _HYBRID_CORE_TITLES | _ARM_APP_TITLES
@@ -70,6 +71,9 @@ _FILE_DEPENDENT_CORE_PATHS = {
     # has no path to show. Its network share config is optional and left to the tool.
     '# MiSTer Hi-Fi': ('MultiDatabases/mister-hifi', ()),
     '# MiSTerFin': ('MultiDatabases/misterfin', ('misterfin/jellyfin.conf',)),
+    # Disc Tools needs an optical drive and blank discs rather than files on the card,
+    # so its confirmation states hardware instead of a path.
+    '# Disc Tools': ('MultiDatabases/disc-tools', ()),
 }
 
 _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
@@ -85,6 +89,7 @@ _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
 _ARM_APP_OUTSIDE_FPGA_DESCRIPTIONS = {
     '# MiSTer Hi-Fi': 'MiSTer Hi-Fi is a controller-first music player that runs as ARM software, without an FPGA core.',
     '# MiSTerFin': 'MiSTerFin is a Jellyfin media client that runs as ARM software, without an FPGA core.',
+    '# Disc Tools': 'Disc Tools is a disc ripping and burning utility that runs as ARM software, without an FPGA core.',
 }
 
 _OUTSIDE_FPGA_DESCRIPTIONS = {**_HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS, **_ARM_APP_OUTSIDE_FPGA_DESCRIPTIONS}
@@ -114,6 +119,7 @@ _DATABASE_MAINTAINERS = {
     '# 240p Test Suites': 'Moondandy',
     '# MiSTer Hi-Fi': 'Anime0t4ku',
     '# MiSTerFin': 'puddingstudio',
+    '# Disc Tools': 'Anime0t4ku',
 }
 
 _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
@@ -128,6 +134,7 @@ _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
     '# MiSTer Frontier': 'launch PICO-8 carts and legacy or modern OpenBOR games',
     '# MiSTer Hi-Fi': 'play MP3, FLAC and WAV files',
     '# MiSTerFin': 'browse and play your Jellyfin library',
+    '# Disc Tools': 'rip physical CDs to BIN/CUE or CHD',
 }
 
 _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
@@ -142,6 +149,7 @@ _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
     '# MiSTer Frontier': 'manually add the PICO-8 carts and OpenBOR game modules',
     '# MiSTer Hi-Fi': 'manually add the music you want to play',
     '# MiSTerFin': 'manually supply your own jellyfin.conf',
+    '# Disc Tools': 'manually supply an optical drive and blank writable discs',
 }
 
 
@@ -569,6 +577,8 @@ class TestSettingsScreenModel(unittest.TestCase):
              'MultiDatabases/mister-hifi', 'MiSTer Hi-Fi'),
             ('tools_and_scripts_menu', '# MiSTerFin', 'MultiDatabases/misterfin',
              'MultiDatabases/misterfin', 'MiSTerFin'),
+            ('tools_and_scripts_menu', '# Disc Tools', 'MultiDatabases/disc-tools',
+             'MultiDatabases/disc-tools', 'Disc Tools'),
             ('tools_and_scripts_menu', '# tty2oled Add-on script', 'tty2oled_files_downloader',
              'tty2oled_files', 'tty2oled Add-on script'),
             ('tools_and_scripts_menu', '# i2c2oled Add-on script', 'i2c2oled_files_downloader',
@@ -887,6 +897,11 @@ class TestSettingsScreenModel(unittest.TestCase):
             'MultiDatabases/misterfin',
             "You can launch MiSTerFin from MiSTer's Scripts folder.",
         )
+        self._assert_core_menu_location(
+            '# Disc Tools',
+            'MultiDatabases/disc-tools',
+            "You can launch Disc Tools from MiSTer's Scripts folder.",
+        )
 
     def test_database_entries___credit_their_maintainer_in_info_and_enable_confirmation(self):
         for title, maintainer in _DATABASE_MAINTAINERS.items():
@@ -1093,6 +1108,30 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.mister_ini_effects)
         info = self._execute_core_info('# Paprium MegaDrive')
         self.assertIn("FPGA core fork of MiSTer's Mega Drive core", ' '.join(info.messages[0]['text']))
+
+    def test_disc_tools_entry___when_yes_is_selected___enables_and_identifies_its_helper_binaries_in_info(self):
+        entry = self._entry('tools_and_scripts_menu', '# Disc Tools')
+        app = self._execute_multidatabase_action(
+            '# Disc Tools',
+            'MultiDatabases/disc-tools',
+            'false',
+            confirm_action_title='Yes',
+        )
+
+        self.assertEqual('true', app.ui.get_value('MultiDatabases/disc-tools'))
+        self.assertEqual([], app.messages)
+        self.assertEqual([], app.mister_ini_effects)
+        self.assertEqual('{MultiDatabases/disc-tools:enabled} Rip and burn CDs on your MiSTer', entry['description'])
+        text = ' '.join(self._execute_core_info('# Disc Tools').messages[0]['text'])
+        self.assertIn('cdrdao, cue2toc, toc2cue, chdman and xorriso', text)
+        self.assertIn('MSU1 and MD+ sets', text)
+
+    def test_disc_tools_entry___enable_confirmation___states_the_optical_drive_requirement(self):
+        app = self._execute_multidatabase_action('# Disc Tools', 'MultiDatabases/disc-tools', 'false')
+
+        self.assertEqual('false', app.ui.get_value('MultiDatabases/disc-tools'))
+        self.assertIn('Disc Tools requires an optical drive connected to your MiSTer.', app.confirms[0]['text'])
+        self.assertIn('Burning also requires blank writable discs.', app.confirms[0]['text'])
 
     def test_physical_disc_entry___when_enabling___arms_cd_section_without_message_and_exposes_info(self):
         app = self._execute_multidatabase_action('# Physical CD Support', 'MultiDatabases/physical-disc', 'false')

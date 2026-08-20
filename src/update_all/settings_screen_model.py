@@ -1654,6 +1654,7 @@ def settings_screen_model():
                 "anime0t4ku_mister_scripts": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-hifi": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/misterfin": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/disc-tools": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "tty2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "i2c2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "retrospy/retrospy-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -1796,6 +1797,40 @@ def settings_screen_model():
                                 "You must manually supply your own jellyfin.conf with your server URL, then sign in on screen with a Quick Connect code.",
                                 "Leave MiSTerFin's built-in updater alone, since the next Update All run restores the version this database installs.",
                                 "Maintainer: puddingstudio",
+                            ],
+                        }],
+                    }
+                },
+                {
+                    "title": "# Disc Tools",
+                    "description": "{MultiDatabases/disc-tools:enabled} Rip and burn CDs on your MiSTer",
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "MultiDatabases/disc-tools", "Disc Tools"),
+                        "ok": _try_toggle_file_dependent_core(
+                            "MultiDatabases/disc-tools",
+                            "Disc Tools",
+                            [
+                                "Disc Tools is a disc ripping and burning utility that runs as ARM software, without an FPGA core.",
+                                "You can launch Disc Tools from MiSTer's Scripts folder.",
+                                " ",
+                                "Disc Tools requires an optical drive connected to your MiSTer.",
+                                "Burning also requires blank writable discs.",
+                                "Maintainer: Anime0t4ku",
+                            ],
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "Disc Tools",
+                            "text": [
+                                "Disc Tools is a disc ripping and burning utility that runs as ARM software, without an FPGA core.",
+                                "Enabling this database installs the Disc Tools application, its launcher, and the cdrdao, cue2toc, toc2cue, chdman and xorriso helper binaries.",
+                                "You can rip physical CDs to BIN/CUE or CHD, burn BIN/CUE and CHD images, and build and burn ISO9660/Joliet data discs for MSU1 and MD+ sets.",
+                                "Rips are read in raw DAO mode, so mixed-mode discs and CD audio tracks are preserved.",
+                                "You can launch Disc Tools from MiSTer's Scripts folder.",
+                                "You must manually supply an optical drive and blank writable discs for burning.",
+                                "CHD conversion runs on MiSTer's ARM CPU, where it can take longer than the rip or burn itself.",
+                                "Maintainer: Anime0t4ku",
                             ],
                         }],
                     }
