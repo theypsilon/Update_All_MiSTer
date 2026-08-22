@@ -1,0 +1,119 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Kangaroo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Toobin Core",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-08-22",
+      "timestamps": [
+        1787361129,
+        1787369108
+      ],
+      "title": "Updated TODAY (2026-08-22)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Denjin Makai Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Laserdisc Games Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Psikyo SH2 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Star Wars Core",
+              "type": "standalone"
+            },
+            {
+              "name": "atarisys 2 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Denjin Makai MRA: Denjin Makai",
+              "type": "standalone"
+            },
+            {
+              "name": "Laserdisc Games MRAs: Dragon's Lair, Space Ace",
+              "type": "standalone"
+            },
+            {
+              "name": "Psikyo SH2 MRAs: Daraku Tenshi The Fallen Angels, Dragon Blaze, Gunbarich, Gunbird 2, Lode Runner - The Dig Fight, Mahjong G-Taste, Mahjong Hot Gimmick Integral, Quiz de Idol! Hot Debut, Sol Divide Sword Of Darkness, Space Bomber, Strikers 1945 II, Strikers 1945 III, Taisen Hot Gimmick, Taisen Hot Gimmick 3 Digital Surfing, Taisen Hot Gimmick 4 Ever, Taisen Hot Gimmick Kairakuten, Tetris The Absolute - The Grand Master 2",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega G80V MRAs: Star Trek, Tac-Scan",
+              "type": "standalone"
+            },
+            {
+              "name": "Star Wars MRAs: Empire Strikes Back, Star Wars",
+              "type": "standalone"
+            },
+            {
+              "name": "Toobin MRA: Toobin",
+              "type": "standalone"
+            },
+            {
+              "name": "atarisys 2 MRAs: 720 Degrees, APB - All Points Bulletin, Championship Sprint, Paperboy, Super Sprint",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "GameAndWatch",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1786760986,
+        1786792828,
+        1786886388,
+        1786888198,
+        1786908554,
+        1786992894,
+        1787000503,
+        1787091777,
+        1787178469,
+        1787215056,
+        1787236545,
+        1787264801,
+        1787275012
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1850,
+    "total_file_updates": 1823,
+    "unique_files": 957
+  }
+}
