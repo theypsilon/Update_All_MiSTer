@@ -35,7 +35,6 @@ class EnvDict(TypedDict):
     SKIP_DOWNLOADER: str
     PATREON_KEY_PATH: str
     COMMAND: str
-    UPDATE_ALL_CHIP_ID_RESULT: str
     TIMELINE_SHORT_PATH: str
     TIMELINE_PLUS_PATH: str
     HTTP_PROXY: Optional[str]

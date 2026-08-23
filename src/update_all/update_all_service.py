@@ -36,7 +36,7 @@ from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_m
     ARCADE_ORGANIZER_INI, MISTER_DOWNLOADER_VERSION, EXIT_CODE_REQUIRES_EARLY_EXIT, \
     EXIT_CODE_CAN_CONTINUE, supporter_plus_patrons, FILE_downloader_needs_reboot_after_linux_update, \
     FILE_downloader_launcher_downloader_script, FILE_downloader_launcher_update_script, \
-    COMMAND_TIMELINE, COMMAND_LATEST_LOG, COMMAND_SHOW_CHIP_ID_RESULT, \
+    COMMAND_TIMELINE, COMMAND_LATEST_LOG, COMMAND_STANDARD, FILE_update_all_chip_id_result_handoff, \
     FILE_update_all_print_tmp_log, FILE_mister_version, FILE_JOTEGO_mra_pack_ini
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
 from update_all.ini_repository import IniRepository, active_databases
@@ -44,7 +44,7 @@ from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer, create_log_document, to_overscanned_doc
 from update_all.mister_ini_repository import MisterIniRepository
 from update_all.jtcores_service import JtcoresService
-from update_all.other import GenericProvider, terminal_size
+from update_all.other import GenericProvider, is_chip_id_value, terminal_size
 from update_all.logger import Logger, close_print_tmp_log_file
 from update_all.os_utils import OsUtils, LinuxOsUtils
 from update_all.settings_screen import SettingsScreen
@@ -256,6 +256,16 @@ def calculate_reading_sections_summary(config: Config, downloader_ini_path: str)
     return None
 
 
+def _is_chip_id_result(value: str) -> bool:
+    """What the FPGA ID linker hands off: the chip ID itself, or one of its FAILURE_* codes (which may
+    embed hex words, a core name, an exit code or another FAILURE_* code)."""
+    if is_chip_id_value(value):
+        return True
+    if not value.startswith('FAILURE_') or len(value) > 100:
+        return False
+    return all(c.isascii() and c.isprintable() and not c.isspace() for c in value)
+
+
 class UpdateAllService:
     def __init__(self, config_provider: GenericProvider[Config],
                  logger: Logger,
@@ -345,9 +355,12 @@ class UpdateAllService:
             if command == COMMAND_LATEST_LOG:
                 self._show_log_viewer_with_latest_log()
                 return self._exit_code
-            if command == COMMAND_SHOW_CHIP_ID_RESULT:
-                self._show_chip_id_result()
-                return self._exit_code
+            if command == COMMAND_STANDARD and run_pass == UpdateAllServicePass.NewRun:
+                chip_id_result = self._take_chip_id_result_handoff()
+                if chip_id_result:
+                    self._config_provider.get().chip_id_result = chip_id_result
+                    self._show_chip_id_result()
+                    return self._exit_code
 
             self._test_routine()
             self_update_check = self._background_jobs_service.start_background_jobs(
@@ -445,6 +458,27 @@ class UpdateAllService:
             return
 
         exit(0)
+
+    def _take_chip_id_result_handoff(self) -> str:
+        """Result left by the FPGA ID linker worker for this run. One-shot: the file goes away on read."""
+        if self._config_provider.get().non_interactive:
+            return ''
+        try:
+            if not self._file_system.is_file(FILE_update_all_chip_id_result_handoff):
+                return ''
+            chip_id_result = self._file_system.read_file_contents(FILE_update_all_chip_id_result_handoff).strip()
+            self._file_system.unlink(FILE_update_all_chip_id_result_handoff, verbose=False)
+        except Exception as e:
+            self._logger.debug('Could not read the FPGA ID result handoff; continuing with the standard flow')
+            self._logger.debug(e)
+            return ''
+
+        if not _is_chip_id_result(chip_id_result):
+            self._logger.debug('Ignoring invalid FPGA ID result handoff: ', repr(chip_id_result[:64]))
+            return ''
+
+        self._logger.debug('FPGA ID result handoff found: ', chip_id_result)
+        return chip_id_result
 
     def _show_chip_id_result(self) -> None:
         self._logger.debug('Loading Settings Screen FPGA ID result menu.')

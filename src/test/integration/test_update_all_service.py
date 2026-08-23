@@ -22,7 +22,7 @@ from typing import Optional
 
 from update_all.config import Config
 from update_all.constants import FILE_mister_downloader_needs_reboot, EXIT_CODE_REQUIRES_EARLY_EXIT, \
-    COMMAND_SHOW_CHIP_ID_RESULT, FILE_update_all_pyz, FILE_settings_screen_model_json_zip, \
+    FILE_update_all_chip_id_result_handoff, FILE_update_all_pyz, FILE_settings_screen_model_json_zip, \
     FILE_update_all_self_update_downloader_log, FILE_update_all_self_update_resume, EXIT_CODE_CAN_CONTINUE, \
     BACKGROUND_JOBS_SOFT_TIMEOUT
 from update_all.countdown import CountdownOutcome
@@ -177,10 +177,12 @@ class TestUpdateAllService(unittest.TestCase):
         sut, _ = tester(config=Config(databases=default_databases(), transition_service_only=True), env_stub=stub)
         self.assertEqual(EXIT_CODE_REQUIRES_EARLY_EXIT, sut.full_run(UpdateAllServicePass.NewRun))
 
-    def test_full_run___with_show_chip_id_result_command___opens_chip_id_result_menu_and_returns_without_update_flow(self):
+    def test_full_run___with_a_chip_id_result_handoff___opens_chip_id_result_menu_and_returns_without_update_flow(self):
         settings_screen = SettingsScreenStub(load_chip_id_result_menu_result='menu')
-        sut, _ = tester(
-            config=Config(databases=default_databases(), command=COMMAND_SHOW_CHIP_ID_RESULT),
+        config = Config(databases=default_databases())
+        sut, state = tester(
+            files={FILE_update_all_chip_id_result_handoff: {'content': '0123456789abcdef\n'}},
+            config=config,
             settings_screen=settings_screen,
             service_type=UpdateAllServiceFlowTester,
         )
@@ -190,11 +192,30 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(0, result)
         self.assertEqual([], sut.events)
         self.assertEqual(1, settings_screen.load_chip_id_result_menu_calls)
+        self.assertEqual('0123456789abcdef', config.chip_id_result)
+        self.assertNotIn(FILE_update_all_chip_id_result_handoff, state.files)
 
-    def test_full_run___with_show_chip_id_result_command_and_menu_failure___returns_without_update_flow(self):
+    def test_full_run___with_a_failure_chip_id_result_handoff___opens_chip_id_result_menu_with_the_failure(self):
+        settings_screen = SettingsScreenStub(load_chip_id_result_menu_result='menu')
+        config = Config(databases=default_databases())
+        sut, state = tester(
+            files={FILE_update_all_chip_id_result_handoff: {'content': 'FAILURE_RELAUNCH_TIMEOUTERROR\n'}},
+            config=config,
+            settings_screen=settings_screen,
+            service_type=UpdateAllServiceFlowTester,
+        )
+
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
+
+        self.assertEqual([], sut.events)
+        self.assertEqual(1, settings_screen.load_chip_id_result_menu_calls)
+        self.assertEqual('FAILURE_RELAUNCH_TIMEOUTERROR', config.chip_id_result)
+        self.assertNotIn(FILE_update_all_chip_id_result_handoff, state.files)
+
+    def test_full_run___with_a_chip_id_result_handoff_and_menu_failure___returns_without_update_flow(self):
         settings_screen = SettingsScreenStub(load_chip_id_result_menu_result=RuntimeError('boom'))
         sut, _ = tester(
-            config=Config(databases=default_databases(), command=COMMAND_SHOW_CHIP_ID_RESULT),
+            files={FILE_update_all_chip_id_result_handoff: {'content': '0123456789abcdef\n'}},
             settings_screen=settings_screen,
             service_type=UpdateAllServiceFlowTester,
         )
@@ -204,6 +225,75 @@ class TestUpdateAllService(unittest.TestCase):
         self.assertEqual(0, result)
         self.assertEqual([], sut.events)
         self.assertEqual(1, settings_screen.load_chip_id_result_menu_calls)
+
+    def test_full_run___with_a_garbage_chip_id_result_handoff___removes_it_and_runs_the_standard_flow(self):
+        settings_screen = SettingsScreenStub()
+        config = Config(databases=default_databases())
+        sut, state = tester(
+            files={FILE_update_all_chip_id_result_handoff: {'content': 'rm -rf / # not a result\n'}},
+            config=config,
+            settings_screen=settings_screen,
+            service_type=UpdateAllServiceFlowTester,
+        )
+
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
+
+        self.assertEqual(['start_background_jobs', 'finish_background_jobs_before_outro', 'show_outro'], sut.events)
+        self.assertEqual(0, settings_screen.load_chip_id_result_menu_calls)
+        self.assertEqual('', config.chip_id_result)
+        self.assertNotIn(FILE_update_all_chip_id_result_handoff, state.files)
+
+    def test_full_run___without_a_chip_id_result_handoff___runs_the_standard_flow(self):
+        settings_screen = SettingsScreenStub()
+        sut, _ = tester(settings_screen=settings_screen, service_type=UpdateAllServiceFlowTester)
+
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
+
+        self.assertEqual(['start_background_jobs', 'finish_background_jobs_before_outro', 'show_outro'], sut.events)
+        self.assertEqual(0, settings_screen.load_chip_id_result_menu_calls)
+
+    def test_full_run___with_a_chip_id_result_handoff_but_non_interactive___leaves_it_alone_and_runs_the_standard_flow(self):
+        settings_screen = SettingsScreenStub()
+        sut, state = tester(
+            files={FILE_update_all_chip_id_result_handoff: {'content': '0123456789abcdef\n'}},
+            config=Config(databases=default_databases(), non_interactive=True),
+            settings_screen=settings_screen,
+            service_type=UpdateAllServiceFlowTester,
+        )
+
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRun))
+
+        self.assertEqual(['start_background_jobs', 'finish_background_jobs_before_outro', 'show_outro'], sut.events)
+        self.assertEqual(0, settings_screen.load_chip_id_result_menu_calls)
+        self.assertIn(FILE_update_all_chip_id_result_handoff, state.files)
+
+    def test_full_run___with_a_chip_id_result_handoff_on_a_non_stop_run___leaves_it_alone_and_runs_the_standard_flow(self):
+        settings_screen = SettingsScreenStub()
+        sut, state = tester(
+            files={FILE_update_all_chip_id_result_handoff: {'content': '0123456789abcdef\n'}},
+            settings_screen=settings_screen,
+            service_type=UpdateAllServiceFlowTester,
+        )
+
+        self.assertEqual(0, sut.full_run(UpdateAllServicePass.NewRunNonStop))
+
+        self.assertEqual(['start_background_jobs', 'finish_background_jobs_before_outro', 'show_outro'], sut.events)
+        self.assertEqual(0, settings_screen.load_chip_id_result_menu_calls)
+        self.assertIn(FILE_update_all_chip_id_result_handoff, state.files)
+
+    def test_full_run___with_a_chip_id_result_handoff_when_env_setup_requires_early_exit___keeps_it_for_the_next_run(self):
+        stub = EnvironmentSetupStub(EnvironmentSetupResult(requires_early_exit=True))
+        settings_screen = SettingsScreenStub()
+        sut, state = tester(
+            files={FILE_update_all_chip_id_result_handoff: {'content': '0123456789abcdef\n'}},
+            env_stub=stub,
+            settings_screen=settings_screen,
+        )
+
+        self.assertEqual(EXIT_CODE_REQUIRES_EARLY_EXIT, sut.full_run(UpdateAllServicePass.NewRun))
+
+        self.assertEqual(0, settings_screen.load_chip_id_result_menu_calls)
+        self.assertIn(FILE_update_all_chip_id_result_handoff, state.files)
 
     def test_full_run___with_retroaccount_sync_pass___syncs_and_returns_without_update_flow(self):
         env_stub = EnvironmentSetupStub()

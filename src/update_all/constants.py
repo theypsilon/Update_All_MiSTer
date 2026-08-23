@@ -59,6 +59,7 @@ FILE_update_all_log: Final[str] = 'Scripts/.config/update_all/update_all.log'
 FILE_update_all_self_update_resume: Final[str] = '/tmp/update_all_early_update_resume'
 FILE_update_all_self_update_downloader_log: Final[str] = 'Scripts/.config/update_all/self_update_downloader.log'
 FILE_update_all_chip_id_linker_log: Final[str] = 'Scripts/.config/update_all/chip-id-linker.log'
+FILE_update_all_chip_id_result_handoff: Final[str] = '/tmp/update_all_chip_id_result'
 FILE_update_all_print_tmp_log: Final[str] = '/tmp/update_all_print.log'
 FILE_update_all_launcher: Final[str] = 'Scripts/update_all.sh'
 FILE_pocket_firmware_details_json: Final[str] = "Scripts/.config/update_all/pocket_firmware_details.json"
@@ -162,7 +163,6 @@ K_KEEP_USBMOUNT_CONF: Final[str] = "keep_usbmount_conf"
 COMMAND_STANDARD: Final[str] = 'STANDARD'
 COMMAND_TIMELINE: Final[str] = 'TIMELINE'
 COMMAND_LATEST_LOG: Final[str] = 'LATEST_LOG'
-COMMAND_SHOW_CHIP_ID_RESULT: Final[str] = 'SHOW_CHIP_ID_RESULT'
 
 
 # Env
@@ -174,7 +174,6 @@ KENV_TRANSITION_SERVICE_ONLY: Final[str] = 'TRANSITION_SERVICE_ONLY'
 KENV_SKIP_DOWNLOADER: Final[str] = 'SKIP_DOWNLOADER'
 KENV_PATREON_KEY_PATH: Final[str] = 'PATREON_KEY_PATH'
 KENV_COMMAND: Final[str] = 'COMMAND'
-KENV_UPDATE_ALL_CHIP_ID_RESULT: Final[str] = 'UPDATE_ALL_CHIP_ID_RESULT'
 KENV_TIMELINE_SHORT_PATH: Final[str] = 'TIMELINE_SHORT_PATH'
 KENV_TIMELINE_PLUS_PATH: Final[str] = 'TIMELINE_PLUS_PATH'
 KENV_HTTP_PROXY: Final[str] = 'HTTP_PROXY'

@@ -72,6 +72,10 @@ def empty_store_without_base_path():
     return {}
 
 
+def is_chip_id_value(value: str) -> bool:
+    return len(value) == 16 and all(c in '0123456789abcdefABCDEF' for c in value)
+
+
 def _current_tty() -> str:
     try:
         return os.ttyname(0)

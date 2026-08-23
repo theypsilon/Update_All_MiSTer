@@ -38,6 +38,7 @@ import sys
 import time
 from typing import NamedTuple, Optional
 
+from update_all.constants import FILE_update_all_chip_id_result_handoff
 from update_all.logger import FileLoggerDecorator
 from update_all.other import current_update_all_archive_path
 
@@ -90,6 +91,8 @@ CHIP_ID_RELAUNCH_SCRIPT_STARTED_PATH = '/tmp/update_all_chipid_relaunch_started'
 CHIP_ID_RELAUNCH_SCRIPT_START_TIMEOUT_SECONDS = 5.0
 CHIP_ID_UPDATE_ALL_PYZ_RELATIVE_PATH = '.config/update_all/update_all.pyz'
 CHIP_ID_RELAUNCH_RUN_PYZ_PATH = '/tmp/update_all_chipid.pyz'
+CHIP_ID_RESULT_HANDOFF_PATH = FILE_update_all_chip_id_result_handoff
+# UPDATE_ALL_CHIP_ID_RESULT is the env var that carried the result before the handoff file; never forward a stale one.
 CHIP_ID_RELAUNCH_ENV_EXCLUDED_NAMES = frozenset(('COMMAND', 'UPDATE_ALL_CHIP_ID_RESULT', 'PWD', 'OLDPWD', 'SHLVL', '_'))
 CHIP_ID_F9_CONSOLE_TTY = '1'
 CHIP_ID_SCRIPT_CONSOLE_TTY = '3'
@@ -119,9 +122,6 @@ CHIP_ID_UI_DEV_DESTROY = 0x5502
 CHIP_ID_UI_SET_EVBIT = 0x40045564
 CHIP_ID_UI_SET_KEYBIT = 0x40045565
 
-UPDATE_ALL_ENV_COMMAND = 'COMMAND'
-UPDATE_ALL_COMMAND_SHOW_CHIP_ID_RESULT = 'SHOW_CHIP_ID_RESULT'
-UPDATE_ALL_ENV_CHIP_ID_RESULT = 'UPDATE_ALL_CHIP_ID_RESULT'
 
 
 class HpsFpgaStatus(NamedTuple):
@@ -765,6 +765,10 @@ def _relaunch_update_all_from_scripts_menu(
     chip_id_result: str = '',
 ) -> Optional[str]:
     try:
+        handoff_result = _write_chip_id_result_handoff(CHIP_ID_RESULT_HANDOFF_PATH, chip_id_result, linker)
+        if handoff_result is not None:
+            return handoff_result
+
         clear_result = _clear_visible_script_processes(linker)
         if clear_result is not None:
             return clear_result
@@ -789,7 +793,6 @@ def _relaunch_update_all_from_scripts_menu(
             update_all_dir,
             restore_menu_after_relaunch,
             start_marker_path,
-            chip_id_result,
         )
         process = subprocess.Popen([
             'setsid',
@@ -1256,7 +1259,6 @@ def _write_update_all_relaunch_script(
     update_all_dir: str,
     restore_menu_after_relaunch: bool = False,
     start_marker_path: Optional[str] = None,
-    chip_id_result: str = '',
 ) -> None:
     update_all_pyz_path = _update_all_pyz_path(update_all_dir)
     python_executable = sys.executable or '/usr/bin/python3'
@@ -1287,8 +1289,6 @@ mark_update_all_relaunch_started
 export LC_ALL="${{LC_ALL:-en_US.UTF-8}}"
 export HOME="${{HOME:-/root}}"
 export LESSKEY="${{LESSKEY:-/media/fat/linux/lesskey}}"
-export {UPDATE_ALL_ENV_COMMAND}={UPDATE_ALL_COMMAND_SHOW_CHIP_ID_RESULT}
-export {UPDATE_ALL_ENV_CHIP_ID_RESULT}={shlex.quote(chip_id_result)}
 UPDATE_ALL_DIR={shlex.quote(update_all_dir)}
 UPDATE_ALL_PYZ={shlex.quote(update_all_pyz_path)}
 UPDATE_ALL_RUN_PYZ={shlex.quote(CHIP_ID_RELAUNCH_RUN_PYZ_PATH)}
@@ -1404,6 +1404,24 @@ def _is_valid_shell_environment_name(name: str) -> bool:
             return False
 
     return True
+
+
+def _write_chip_id_result_handoff(handoff_path: str, chip_id_result: str, linker: ChipIdLinker) -> Optional[str]:
+    """Hands the result to the Update All run that shows it: the relaunched one, or the next one the user
+    starts from the Scripts menu if the relaunch fails. A FAILURE code is returned only when /tmp is
+    unusable, in which case the relaunch (which lives in /tmp too) could not have worked either."""
+    if not chip_id_result:
+        linker.debug('_write_chip_id_result_handoff: no result to hand off')
+        return None
+
+    try:
+        with open(handoff_path, 'w') as handoff_file:
+            handoff_file.write(f'{chip_id_result}\n')
+        linker.debug(f'_write_chip_id_result_handoff: wrote {chip_id_result} to {handoff_path}')
+        return None
+    except Exception as e:
+        linker.debug(f'_write_chip_id_result_handoff: failed: {type(e).__name__}: {str(e)}')
+        return 'FAILURE_RELAUNCH_HANDOFF_WRITE'
 
 
 def _reset_chip_id_log(log_path: str) -> None:

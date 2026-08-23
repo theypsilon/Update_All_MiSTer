@@ -41,7 +41,7 @@ from update_all.ini_repository import IniRepository
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
-from update_all.other import GenericProvider, calculate_overscan, current_update_all_archive_path, is_mister_scripts_menu_fb_launch
+from update_all.other import GenericProvider, calculate_overscan, current_update_all_archive_path, is_chip_id_value, is_mister_scripts_menu_fb_launch
 from update_all.logger import Logger, CollectorLoggerDecorator
 from update_all.mister_ini_repository import MisterIniRepository
 from update_all.mister_ini_edits import (
@@ -420,7 +420,7 @@ class SettingsScreen(UiApplication):
         verified_chip_id = self._retroaccount.get_verified_chip_id() if self._retroaccount.is_device_verified() else None
         if verified_chip_id:
             return verified_chip_id
-        return chip_id_result.lower() if self._is_chip_id_value(chip_id_result) else ''
+        return chip_id_result.lower() if is_chip_id_value(chip_id_result) else ''
 
     def _retroaccount_device_verification_ui_values(self, chip_id_result: str) -> tuple[str, str, str]:
         verified = self._retroaccount.is_device_verified()
@@ -463,21 +463,15 @@ class SettingsScreen(UiApplication):
             return 'FPGA ID linking in progress'
         if chip_id_result.startswith('FAILURE_'):
             return 'FPGA ID linking failed'
-        if SettingsScreen._is_chip_id_value(chip_id_result):
+        if is_chip_id_value(chip_id_result):
             return 'FPGA ID link pending'
         return 'FPGA ID not linked'
-
-    @staticmethod
-    def _is_chip_id_value(value: str) -> bool:
-        if len(value) != 16:
-            return False
-        return all(c in '0123456789abcdefABCDEF' for c in value)
 
     def retroaccount_attach_chip_id_to_device(self, ui: UiContext) -> str:
         self._logger.debug('[fpga-id] retroaccount_attach_chip_id_to_device: started')
         chip_id_result = self._read_chip_id_result_for_ui()
         ui.set_value('retroaccount_extract_chip_id_result', chip_id_result)
-        if not self._is_chip_id_value(chip_id_result):
+        if not is_chip_id_value(chip_id_result):
             self._logger.debug(
                 f'[fpga-id] retroaccount_attach_chip_id_to_device: invalid FPGA ID result for attach: {chip_id_result}'
             )
@@ -579,7 +573,7 @@ class SettingsScreen(UiApplication):
         if result == 'EXTRACTION_STARTED':
             self._logger.debug('[fpga-id] extract_chip_id: exiting settings screen so curses can shut down before helper start')
             raise SystemExit(0)
-        if self._is_chip_id_value(result):
+        if is_chip_id_value(result):
             self._config_provider.get().chip_id_result = result
             self.retroaccount_attach_chip_id_to_device(ui)
         return 'clear_window'

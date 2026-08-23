@@ -23,7 +23,7 @@ from test.testing_objects import downloader_ini, update_all_ini, update_jtcores_
     manuals_ini, store_json, ini_with_db_ids, all_manuals_db_ids
 from update_all.config import Config
 from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, FILE_update_all_storage, KENV_TRANSITION_SERVICE_ONLY, \
-    KENV_UPDATE_ALL_CHIP_ID_RESULT, MEDIA_FAT, KENV_UPDATE_ALL_MISTER_DB_URL, \
+    MEDIA_FAT, KENV_UPDATE_ALL_MISTER_DB_URL, \
     KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, KENV_UPDATE_ALL_NON_INTERACTIVE, \
     KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
 from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT, all_dbs, ALL_DB_IDS
@@ -97,17 +97,6 @@ class TestEnvironmentSetup(unittest.TestCase):
             expected_files={downloader_ini: Path('test/fixtures/downloader_ini/downloader_ini_empty_but_update_all.ini').read_text()},
             env={KENV_DEBUG: 'true'},
             expected_config=Config(verbose=True, databases={all_dbs('').UPDATE_ALL_MISTER.db_id})
-        )
-
-    def test_setup___with_chip_id_result_env___stores_chip_id_result_in_config(self):
-        self.assertSetup(
-            files={downloader_ini: ''},
-            expected_files={downloader_ini: Path('test/fixtures/downloader_ini/downloader_ini_empty_but_update_all.ini').read_text()},
-            env={KENV_UPDATE_ALL_CHIP_ID_RESULT: '0123456789abcdef'},
-            expected_config=Config(
-                databases={all_dbs('').UPDATE_ALL_MISTER.db_id},
-                chip_id_result='0123456789abcdef'
-            )
         )
 
     def test_setup___with_update_all_mister_url_override___stores_optional_url_without_changing_downloader_ini(self):
