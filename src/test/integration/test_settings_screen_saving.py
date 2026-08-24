@@ -400,62 +400,95 @@ class TestSettingsScreenSaving(unittest.TestCase):
     def test_save__when_enabling_pocket_backup___writes_changes_on_local_store(self):
         self.assertStoreBooleanTransition('pocket_backup', False)
 
-    def test_calculate_needs_save__when_jt_private_releases_toggle_changed_hidden_auto_enable_preference___returns_internal_change(self):
-        sut, ui, _fs = tester(files={downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtpremium.ini').read_text()}})
-
-        self.assertEqual('true', ui.get_value('download_beta_cores'))
-        ui.set_value('download_beta_cores', 'false')
-        ui.set_value('allow_retroaccount_jt_beta_auto_enable', 'false')
-
-        sut.calculate_needs_save(ui)
-
-        self.assertIn('Internals (allow_retroaccount_jt_beta_auto_enable)', ui.get_value('needs_save_file_list'))
-
-    def test_calculate_needs_save__when_disabling_jt_private_releases_with_mister_filter___returns_downloader_ini_change(self):
+    def test_calculate_needs_save__when_disabling_jt_private_releases_with_mister_filter___returns_downloader_ini_and_internal_changes(self):
         sut, ui, _fs = tester(files={downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores_with_mister_inheritance.ini').read_text()}})
 
         self.assertEqual('true', ui.get_value('download_beta_cores'))
-        ui.set_value('download_beta_cores', 'false')
+        toggle_jt_private_releases(ui)
 
         sut.calculate_needs_save(ui)
 
-        self.assertEqual('  - downloader.ini', ui.get_value('needs_save_file_list'))
+        self.assertEqual('  - Internals (allow_retroaccount_jt_beta_auto_enable)\n  - downloader.ini', ui.get_value('needs_save_file_list'))
 
     def test_save__when_disabling_jt_private_releases_with_mister_filter___removes_jtcores_filter(self):
         sut, ui, fs = tester(files={downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores_with_mister_inheritance.ini').read_text()}})
 
         self.assertEqual('true', ui.get_value('download_beta_cores'))
-        ui.set_value('download_beta_cores', 'false')
+        toggle_jt_private_releases(ui)
 
         sut.save(ui)
 
         assertEqualIni(self, 'test/fixtures/downloader_ini/just_jtcores.ini', fs.files[downloader_ini.lower()]['content'])
 
-    def test_save__when_hidden_jt_auto_enable_preference_is_disabled___blocks_future_retroaccount_auto_enable(self):
+    def test_save__when_disabling_jt_private_releases___stores_the_choice_blocking_future_retroaccount_auto_enable(self):
         sut, ui, fs = tester(files={downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtpremium.ini').read_text()}})
 
-        ui.set_value('download_beta_cores', 'false')
-        ui.set_value('allow_retroaccount_jt_beta_auto_enable', 'false')
+        self.assertEqual('true', ui.get_value('download_beta_cores'))
+        toggle_jt_private_releases(ui)
 
         sut.save(ui)
 
+        self.assertEqual(False, fs.files[store_json.lower()]['json']['download_beta_cores'])
         self.assertEqual(False, fs.files[store_json.lower()]['json']['allow_retroaccount_jt_beta_auto_enable'])
 
-    def test_save__when_enabling_jt_private_releases___allows_future_retroaccount_auto_enable(self):
+    def test_save__when_enabling_jt_private_releases___stores_the_choice(self):
+        sut, ui, fs = tester(files={downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores.ini').read_text()}})
+
+        self.assertEqual('false', ui.get_value('download_beta_cores'))
+        toggle_jt_private_releases(ui)
+
+        sut.save(ui)
+
+        self.assertEqual(True, fs.files[store_json.lower()]['json']['download_beta_cores'])
+        self.assertEqual(False, fs.files[store_json.lower()]['json']['allow_retroaccount_jt_beta_auto_enable'])
+
+    def test_save__when_jt_private_releases_is_not_toggled___leaves_retroaccount_auto_enable_authoritative(self):
+        sut, ui, fs = tester(files={downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtpremium.ini').read_text()}})
+
+        ui.set_value('autoreboot', 'true')
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual(True, fs.files[store_json.lower()]['json']['allow_retroaccount_jt_beta_auto_enable'])
+        self.assertEqual(False, fs.files[store_json.lower()]['json']['download_beta_cores'])
+
+    def test_calculate_needs_save__when_jt_private_releases_toggled_while_jtcores_is_disabled___returns_internal_change(self):
+        sut, ui, _fs = tester(files=files_with_jtcores_disabled_and_private_releases_chosen())
+
+        self.assertEqual('true', ui.get_value('download_beta_cores'))
+        toggle_jt_private_releases(ui)
+
+        sut.calculate_needs_save(ui)
+
+        self.assertEqual('  - Internals (download_beta_cores)', ui.get_value('needs_save_file_list'))
+
+    def test_save__when_jt_private_releases_toggled_while_jtcores_is_disabled___writes_changes_on_local_store(self):
+        sut, ui, fs = tester(files=files_with_jtcores_disabled_and_private_releases_chosen())
+
+        toggle_jt_private_releases(ui)
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual(False, fs.files[store_json.lower()]['json']['download_beta_cores'])
+
+    def test_initialize_ui__when_jtcores_is_disabled_and_the_user_never_chose___ignores_the_leftover_store_value(self):
         local_store = make_new_local_store(StoreMigratorTester())
-        local_store['allow_retroaccount_jt_beta_auto_enable'] = False
-        sut, ui, fs = tester(files={
-            downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores.ini').read_text()},
+        local_store['download_beta_cores'] = True
+        _sut, ui, _fs = tester(files={
+            downloader_ini: {'content': downloader_ini_content_only_update_all_db()},
             store_json: {'content': json.dumps(local_store)},
         })
 
         self.assertEqual('false', ui.get_value('download_beta_cores'))
-        ui.set_value('download_beta_cores', 'true')
-        ui.set_value('allow_retroaccount_jt_beta_auto_enable', 'true')
 
-        sut.save(ui)
+    def test_calculate_needs_save__when_jtcores_is_disabled_and_nothing_is_touched___returns_no_changes(self):
+        sut, ui, _fs = tester(files=files_with_jtcores_disabled_and_private_releases_chosen())
 
-        self.assertEqual(True, fs.files[store_json.lower()]['json']['allow_retroaccount_jt_beta_auto_enable'])
+        sut.calculate_needs_save(ui)
+
+        self.assertEqual('', ui.get_value('needs_save_file_list'))
 
     def test_save__when_zaparoo_frontend_active_is_unchanged_false_and_missing___keeps_it_missing_from_local_store(self):
         sut, ui, fs = tester()
@@ -699,6 +732,22 @@ def zaparoo_frontend_del_effect():
     return {"type": "mister_ini_del", "variable": "zaparoo_frontend_active",
             "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"},
                        "menu": {"main": "zaparoo/MiSTer_Zaparoo"}}}
+
+
+def toggle_jt_private_releases(ui: UiContextStub) -> None:
+    """What the Settings Screen model does when the user hits the Install Private Releases entry."""
+    ui.set_value('download_beta_cores', 'false' if ui.get_value('download_beta_cores') == 'true' else 'true')
+    ui.set_value('download_beta_cores_chosen', 'true')
+
+
+def files_with_jtcores_disabled_and_private_releases_chosen() -> dict:
+    local_store = make_new_local_store(StoreMigratorTester())
+    local_store['download_beta_cores'] = True
+    local_store['allow_retroaccount_jt_beta_auto_enable'] = False
+    return {
+        downloader_ini: {'content': downloader_ini_content_only_update_all_db()},
+        store_json: {'content': json.dumps(local_store)},
+    }
 
 
 def tester(files=None) -> Tuple[SettingsScreen, UiContextStub, FileSystemState]:

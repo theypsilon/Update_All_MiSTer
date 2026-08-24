@@ -64,7 +64,9 @@ from update_all.timeline import Timeline
 from update_all.transition_service import TransitionService
 from update_all.retroaccount import RetroAccountService
 from update_all.retroaccount_gateway import RetroAccountGateway
+from update_all.settings_screen_model import settings_screen_model
 from update_all.ui_engine import UiContext, UiRuntime
+from update_all.ui_model_utilities import gather_variable_declarations
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 from update_all.update_all_background_jobs_service import UpdateAllBackgroundJobsService
 from update_all.update_all_self_update_service import UpdateAllSelfUpdateService
@@ -286,7 +288,8 @@ class SettingsScreenStub:
 
 class UiContextStub(UiContext):
     def __init__(self):
-        self.variables = {}
+        # Same seeding the real UiContext does before initialize_ui runs.
+        self.variables = {k: v['default'] for k, v in gather_variable_declarations(settings_screen_model()).items()}
         self.effects = {}
         self.formatters = {}
 

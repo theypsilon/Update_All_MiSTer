@@ -224,23 +224,9 @@ def _try_toggle_zaparoo_database_with_install_prompts(): return [
 
 
 def _toggle_jt_private_releases(): return [
-    {
-        "type": "condition",
-        "variable": "download_beta_cores",
-        "false": [
-            {"type": "set_variable", "target": "download_beta_cores", "value": "true"},
-            {"type": "set_variable", "target": "allow_retroaccount_jt_beta_auto_enable", "value": "true"},
-        ],
-        "true": [
-            {"type": "set_variable", "target": "download_beta_cores", "value": "false"},
-            {
-                "type": "condition",
-                "variable": "retroaccount_jtbeta_access_active",
-                "true": [{"type": "set_variable", "target": "allow_retroaccount_jt_beta_auto_enable", "value": "false"}],
-                "false": [],
-            },
-        ],
-    },
+    {"type": "rotate_variable", "target": "download_beta_cores"},
+    # Consumed by SettingsScreen._fill_store: persists the choice and stops the RetroAccount JTBeta benefit from deciding it.
+    {"type": "set_variable", "target": "download_beta_cores_chosen", "value": "true"},
 ]
 
 
@@ -583,7 +569,7 @@ def settings_screen_model():
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
         "download_beta_cores": {"group": "jt_ini", "default": "false", "values": ["false", "true"]},
-        "allow_retroaccount_jt_beta_auto_enable": {"group": "store", "default": "true", "values": ["false", "true"]},
+        "download_beta_cores_chosen": {"default": "false", "values": ["false", "true"]},
         "bios_getter": {"group": ["ua_ini", "separate_db"], "default": "false", "values": ["false", "true"]},
         "arcade_roms_db_downloader": {"group": ["ua_ini", "separate_db"], "default": "false", "values": ["false", "true"]},
         "names_txt_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
@@ -598,7 +584,6 @@ def settings_screen_model():
         "manuals_space_fits": {"default": ""},
         "has_arcade_organizer_folders": {"default": "false", "values": ["false", "true"]},
         "has_right_available_code": {"default": "false", "values": ["false", "true"]},
-        "retroaccount_jtbeta_access_active": {"default": "false", "values": ["false", "true"]},
         "retroachievements_cfg_status": {"default": "ok", "values": ["ok", "installed", "missing_credentials", "install_failed"]},
     },
     "base_types": {

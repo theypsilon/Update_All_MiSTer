@@ -1219,35 +1219,17 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('# Install Private Releases', entries[1]['title'])
         self.assertEqual(2, len(entries))
 
-    def test_jt_private_releases_entry___when_disabled___enables_private_releases_and_allows_auto_enable(self):
-        app = self._execute_jt_private_releases_action(
-            download_beta_cores='false',
-            allow_retroaccount_jt_beta_auto_enable='false',
-            retroaccount_jtbeta_access_active='false',
-        )
+    def test_jt_private_releases_entry___when_disabled___enables_private_releases_and_marks_it_as_chosen(self):
+        app = self._execute_jt_private_releases_action(download_beta_cores='false')
 
         self.assertEqual('true', app.ui.get_value('download_beta_cores'))
-        self.assertEqual('true', app.ui.get_value('allow_retroaccount_jt_beta_auto_enable'))
+        self.assertEqual('true', app.ui.get_value('download_beta_cores_chosen'))
 
-    def test_jt_private_releases_entry___when_enabled_and_jtbeta_access_active___disables_private_releases_and_blocks_auto_enable(self):
-        app = self._execute_jt_private_releases_action(
-            download_beta_cores='true',
-            allow_retroaccount_jt_beta_auto_enable='true',
-            retroaccount_jtbeta_access_active='true',
-        )
+    def test_jt_private_releases_entry___when_enabled___disables_private_releases_and_marks_it_as_chosen(self):
+        app = self._execute_jt_private_releases_action(download_beta_cores='true')
 
         self.assertEqual('false', app.ui.get_value('download_beta_cores'))
-        self.assertEqual('false', app.ui.get_value('allow_retroaccount_jt_beta_auto_enable'))
-
-    def test_jt_private_releases_entry___when_enabled_without_jtbeta_access_active___disables_private_releases_and_keeps_auto_enable_preference(self):
-        app = self._execute_jt_private_releases_action(
-            download_beta_cores='true',
-            allow_retroaccount_jt_beta_auto_enable='true',
-            retroaccount_jtbeta_access_active='false',
-        )
-
-        self.assertEqual('false', app.ui.get_value('download_beta_cores'))
-        self.assertEqual('true', app.ui.get_value('allow_retroaccount_jt_beta_auto_enable'))
+        self.assertEqual('true', app.ui.get_value('download_beta_cores_chosen'))
 
     def test_zaparoo_submenu___has_enabled_and_frontend_options(self):
         entries = self.model['items']['zaparoo_menu']['entries']
@@ -1368,16 +1350,10 @@ class TestSettingsScreenModel(unittest.TestCase):
     def _jt_private_releases_action_chain(self):
         return self.model['items']['jtcores_menu']['entries'][1]['actions']['ok']
 
-    def _execute_jt_private_releases_action(
-            self,
-            download_beta_cores,
-            allow_retroaccount_jt_beta_auto_enable,
-            retroaccount_jtbeta_access_active,
-    ):
+    def _execute_jt_private_releases_action(self, download_beta_cores):
         return self._execute_tools_action(self._jt_private_releases_action_chain(), {
             'download_beta_cores': download_beta_cores,
-            'allow_retroaccount_jt_beta_auto_enable': allow_retroaccount_jt_beta_auto_enable,
-            'retroaccount_jtbeta_access_active': retroaccount_jtbeta_access_active,
+            'download_beta_cores_chosen': 'false',
         }, entrypoint='jtcores_menu')
 
     def _execute_tools_mrext_action(

@@ -226,7 +226,6 @@ class SettingsScreen(UiApplication):
         ui.set_value('pocket_backup', str(local_store.get_pocket_backup()).lower())
         ui.set_value('retroaccount_domain', config.retroaccount_domain)
         ui.set_value('device_label', self._device_label_for_ui())
-        ui.set_value('retroaccount_jtbeta_access_active', str(self._has_active_jtbeta_access()).lower())
         chip_id_result = self._read_chip_id_result_for_ui()
         self._set_retroaccount_device_verification_ui(ui, chip_id_result)
         ui.set_value('overscan', local_store.get_overscan())
@@ -237,9 +236,10 @@ class SettingsScreen(UiApplication):
             if local_store.has_field('ajgowans_manuals_dbs_general_selector')
             else 'false'
         )
-        ui.set_value('allow_retroaccount_jt_beta_auto_enable', str(local_store.get_allow_retroaccount_jt_beta_auto_enable()).lower())
 
-        if ALL_DB_IDS['JTCORES'] not in config.databases:
+        if ALL_DB_IDS['JTCORES'] not in config.databases and not local_store.get_allow_retroaccount_jt_beta_auto_enable():
+            # With JTCORES off there is no downloader.ini section for this. The flag guards against
+            # reading a value older builds mirrored into the store, which was never a user choice.
             ui.set_value('download_beta_cores', str(local_store.get_download_beta_cores()).lower())
 
         if DB_ID_NAMES_TXT not in config.databases:
@@ -927,8 +927,6 @@ class SettingsScreen(UiApplication):
                 hook(changed=changed, contents=contents)
 
         self._mister_video_mode_service.save_unsaved_kept_mode_to_active_ini()
-        if ALL_DB_IDS['JTCORES'] in config.databases:
-            local_store.set_download_beta_cores(config.download_beta_cores)
 
         if DB_ID_NAMES_TXT in config.databases:
             local_store.set_names_region(config.names_region)
@@ -938,9 +936,6 @@ class SettingsScreen(UiApplication):
         if local_store.needs_save():
             self._local_repository.save_store(local_store)
             self._logger.configure(config)
-
-    def _has_active_jtbeta_access(self) -> bool:
-        return self._retroaccount.jtbeta_access_sync_state() == BenefitState.ACTIVE
 
     def _read_installed_db_ids(self) -> Dict[str, bool]:
         installed_keys = read_installed_db_ids(self._file_system, self._logger)
@@ -994,7 +989,11 @@ class SettingsScreen(UiApplication):
         store.set_pocket_backup(config.pocket_backup)
         store.set_overscan(config.overscan)
         store.set_monochrome_ui(config.monochrome_ui)
-        store.set_allow_retroaccount_jt_beta_auto_enable(ui.get_value('allow_retroaccount_jt_beta_auto_enable') != 'false')
+        if ui.get_value('download_beta_cores_chosen') != 'false':
+            # Stored whether or not JTCORES is enabled: with JTCORES off there is no
+            # downloader.ini section to hold it.
+            store.set_download_beta_cores(config.download_beta_cores)
+            store.set_allow_retroaccount_jt_beta_auto_enable(False)
         store.set_ajgowans_manuals_dbs_general_selector(ui.get_value('ajgowans_manuals_dbs_general_selector') != 'false')
         store.set_mirror(ui.get_value('mirror'))
 
@@ -1241,10 +1240,6 @@ class SettingsScreen(UiApplication):
 
         jtbeta_access = benefit_state_to_message(self._retroaccount.jtbeta_access_sync_state())
         jtbeta_access_ui_key = 'retroaccount_jtbeta_access'
-        jtbeta_access_active_ui_value = str(self._has_active_jtbeta_access()).lower()
-        if ui.get_value('retroaccount_jtbeta_access_active') != jtbeta_access_active_ui_value:
-            ui.set_value('retroaccount_jtbeta_access_active', jtbeta_access_active_ui_value)
-            state_changed = True
         if ui.get_value(jtbeta_access_ui_key) != jtbeta_access:
             ui.set_value(jtbeta_access_ui_key, jtbeta_access)
             ui.set_value('retroaccount_jtbeta_access_support', 'This benefit is active!' if jtbeta_access == ACTIVE_BENEFIT_MSG else 'Support JOTEGO and theypsilon on Patreon to unlock this benefit.')
