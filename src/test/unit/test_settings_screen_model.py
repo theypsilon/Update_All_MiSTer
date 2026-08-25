@@ -40,6 +40,7 @@ _HYBRID_CORE_TITLES = {
     '# Sonic Mania MiSTer',
     '# MiSTer Duke3D',
     '# MiSTer Quake',
+    '# Maldita Castilla MiSTer',
     '# Solarus MiSTer',
     '# 3S-ARM',
 }
@@ -76,11 +77,19 @@ _FILE_DEPENDENT_CORE_PATHS = {
     '# Disc Tools': ('MultiDatabases/disc-tools', ()),
 }
 
+# Maldita Castilla ships its complete game, so it is not file dependent: its enable
+# confirmation welcomes instead of warns and preselects Yes rather than No.
+_SOFTWARE_DATABASE_VARIABLES = {
+    '# Maldita Castilla MiSTer': 'MultiDatabases/maldita-castilla',
+    **{title: variable for title, (variable, _paths) in _FILE_DEPENDENT_CORE_PATHS.items()},
+}
+
 _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
     '# DreamSTer': 'DreamSTer is an experimental Dreamcast emulator that runs in software rather than in the FPGA.',
     '# Sonic Mania MiSTer': 'Sonic Mania runs as a native recompilation of its reverse-engineered engine, in software rather than in the FPGA.',
     '# MiSTer Duke3D': 'MiSTer Duke3D is a native engine port that runs in software rather than in the FPGA.',
     '# MiSTer Quake': 'MiSTer Quake is a native engine port that runs in software rather than in the FPGA.',
+    '# Maldita Castilla MiSTer': "Maldita Castilla MiSTer runs Locomalito's arcade action game on MiSTer's ARM processor, while a custom FPGA core accelerates its graphics.",
     '# Solarus MiSTer': 'Solarus MiSTer runs the Solarus 2D action-RPG engine in software rather than in the FPGA.',
     '# 3S-ARM': '3S-ARM is a native port of the PlayStation 2 version of Street Fighter III: 3rd Strike that runs in software rather than in the FPGA.',
     '# MiSTer Frontier': "MiSTer Frontier's PICO-8 emulator and OpenBOR engine ports run in software rather than in the FPGA.",
@@ -113,6 +122,7 @@ _DATABASE_MAINTAINERS = {
     '# Sonic Mania MiSTer': 'kimchiman52',
     '# MiSTer Duke3D': 'neofreno',
     '# MiSTer Quake': 'neofreno',
+    '# Maldita Castilla MiSTer': 'gmcnaught',
     '# Solarus MiSTer': 'gmcnaught',
     '# 3S-ARM': 'kimchiman52',
     '# MiSTer Frontier': 'MiSTerOrganize',
@@ -784,6 +794,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             'MultiDatabases/sonic-mania',
             'MultiDatabases/duke3d',
             'MultiDatabases/mister-quake',
+            'MultiDatabases/maldita-castilla',
             'MultiDatabases/solarus',
             'MultiDatabases/3s-arm',
             'MiSTerOrganize/MiSTer_Frontier',
@@ -793,6 +804,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# Sonic Mania MiSTer',
             '# MiSTer Duke3D',
             '# MiSTer Quake',
+            '# Maldita Castilla MiSTer',
             '# Solarus MiSTer',
             '# 3S-ARM',
             '# MiSTer Frontier',
@@ -802,6 +814,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             '{MultiDatabases/sonic-mania:enabled} Sonic Mania native port',
             '{MultiDatabases/duke3d:enabled} Duke Nukem 3D engine port',
             '{MultiDatabases/mister-quake:enabled} Quake engine port',
+            "{MultiDatabases/maldita-castilla:enabled} Locomalito's arcade action game",
             '{MultiDatabases/solarus:enabled} Solarus 2D action-RPG engine',
             '{MultiDatabases/3s-arm:enabled} Street Fighter III: 3rd Strike port',
             '{MiSTerOrganize/MiSTer_Frontier:enabled} PICO-8 and OpenBOR engine ports',
@@ -824,7 +837,7 @@ class TestSettingsScreenModel(unittest.TestCase):
     def test_software_database_enable_confirmations___identify_what_runs_outside_the_fpga(self):
         for title, expected_description in _OUTSIDE_FPGA_DESCRIPTIONS.items():
             with self.subTest(title=title):
-                variable, _paths = _FILE_DEPENDENT_CORE_PATHS[title]
+                variable = _SOFTWARE_DATABASE_VARIABLES[title]
                 app = self._execute_multidatabase_action(title, variable, 'false')
 
                 self.assertIn(expected_description, app.confirms[0]['text'])
@@ -871,6 +884,11 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# MiSTer Quake',
             'MultiDatabases/mister-quake',
             "You can launch MiSTer Quake from MiSTer's Other folder.",
+        )
+        self._assert_core_menu_location(
+            '# Maldita Castilla MiSTer',
+            'MultiDatabases/maldita-castilla',
+            "You can launch Maldita Castilla MiSTer from MiSTer's Scripts folder.",
         )
         self._assert_core_menu_location(
             '# Solarus MiSTer',
@@ -1079,6 +1097,50 @@ class TestSettingsScreenModel(unittest.TestCase):
         ], app.mister_ini_effects)
         info = self._execute_core_info('# MiSTer Quake')
         self.assertIn('Quake engine runtime', ' '.join(info.messages[0]['text']))
+
+    def test_maldita_castilla_entry___when_enabling___welcomes_with_included_game_and_preselects_yes(self):
+        app = self._execute_multidatabase_action('# Maldita Castilla MiSTer', 'MultiDatabases/maldita-castilla', 'false')
+
+        self.assertEqual('false', app.ui.get_value('MultiDatabases/maldita-castilla'))
+        self.assertEqual(1, len(app.confirms))
+        confirm = app.confirms[0]
+        self.assertEqual('Enable Maldita Castilla MiSTer?', confirm['header'])
+        self.assertEqual('Yes', confirm['preselected_action'])
+        self.assertIn('The complete game is included, so it is ready to play right after updating.', confirm['text'])
+
+    def test_maldita_castilla_entry___when_yes_is_selected___enables_without_further_effects(self):
+        app = self._execute_multidatabase_action(
+            '# Maldita Castilla MiSTer',
+            'MultiDatabases/maldita-castilla',
+            'false',
+            confirm_action_title='Yes',
+        )
+
+        self.assertEqual('true', app.ui.get_value('MultiDatabases/maldita-castilla'))
+        self.assertEqual([], app.messages)
+        self.assertEqual([], app.mister_ini_effects)
+        info = self._execute_core_info('# Maldita Castilla MiSTer')
+        text = ' '.join(info.messages[0]['text'])
+        self.assertIn('installs the complete game', text)
+        self.assertIn('Locomalito publishes the game under a Creative Commons license', text)
+
+    def test_maldita_castilla_entry___when_no_is_selected___remains_disabled(self):
+        app = self._execute_multidatabase_action(
+            '# Maldita Castilla MiSTer',
+            'MultiDatabases/maldita-castilla',
+            'false',
+            confirm_action_title='No',
+        )
+
+        self.assertEqual('false', app.ui.get_value('MultiDatabases/maldita-castilla'))
+        self.assertEqual([], app.mister_ini_effects)
+
+    def test_maldita_castilla_entry___when_disabling___rotates_without_confirmation(self):
+        app = self._execute_multidatabase_action('# Maldita Castilla MiSTer', 'MultiDatabases/maldita-castilla', 'true')
+
+        self.assertEqual('false', app.ui.get_value('MultiDatabases/maldita-castilla'))
+        self.assertEqual([], app.confirms)
+        self.assertEqual([], app.mister_ini_effects)
 
     def test_mms2_gb_entry___when_yes_is_selected___enables_and_exposes_hardware_requirements_as_info(self):
         app = self._execute_multidatabase_action(

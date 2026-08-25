@@ -1350,6 +1350,7 @@ def settings_screen_model():
                 "MultiDatabases/sonic-mania": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/duke3d": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-quake": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/maldita-castilla": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/solarus": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/3s-arm": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MiSTerOrganize/MiSTer_Frontier": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -1514,6 +1515,47 @@ def settings_screen_model():
                                 "You can launch MiSTer Quake from MiSTer's Other folder.",
                                 "You must manually add game data from your own Quake installation before playing.",
                                 "Maintainer: neofreno",
+                            ],
+                        }],
+                    }
+                },
+                {
+                    "title": "# Maldita Castilla MiSTer",
+                    "description": "{MultiDatabases/maldita-castilla:enabled} Locomalito's arcade action game",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/maldita-castilla", "Maldita Castilla MiSTer"),
+                        "ok": [{
+                            "type": "condition",
+                            "variable": "MultiDatabases/maldita-castilla",
+                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/maldita-castilla"}],
+                            "false": [{
+                                "ui": "confirm",
+                                "header": "Enable Maldita Castilla MiSTer?",
+                                "preselected_action": "Yes",
+                                "text": [
+                                    "Maldita Castilla MiSTer runs Locomalito's arcade action game on MiSTer's ARM processor, while a custom FPGA core accelerates its graphics.",
+                                    "The complete game is included, so it is ready to play right after updating.",
+                                    " ",
+                                    "You can launch Maldita Castilla MiSTer from MiSTer's Scripts folder.",
+                                    "Maintainer: gmcnaught",
+                                ],
+                                "actions": [
+                                    {"title": "Yes", "type": "fixed", "fixed": [
+                                        {"type": "rotate_variable", "target": "MultiDatabases/maldita-castilla"},
+                                        {"type": "navigate", "target": "back"},
+                                    ]},
+                                    {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                                ],
+                            }],
+                        }],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Maldita Castilla MiSTer",
+                            "text": [
+                                "Maldita Castilla MiSTer runs Locomalito's arcade action game on MiSTer's ARM processor, while a custom FPGA core accelerates its graphics.",
+                                "Enabling this database installs the complete game, along with its ARM engine, FPGA core, and launcher scripts.",
+                                "Locomalito publishes the game under a Creative Commons license, so it comes included and is ready to play right after updating.",
+                                "You can launch Maldita Castilla MiSTer from MiSTer's Scripts folder.",
+                                "Maintainer: gmcnaught",
                             ],
                         }],
                     }

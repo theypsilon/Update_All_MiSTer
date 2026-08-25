@@ -106,6 +106,7 @@ class AllDBs:
         self.DISC_TOOLS = Database(db_id='MultiDatabases/disc-tools', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/disc-tools/db.json', title='Disc Tools')
         self.DREAMSTER = Database(db_id='MultiDatabases/dreamster', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/dreamster/db.json', title='DreamSTer')
         self.DUKE3D = Database(db_id='MultiDatabases/duke3d', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/duke3d/db.json', title='MiSTer Duke3D')
+        self.MALDITA_CASTILLA = Database(db_id='MultiDatabases/maldita-castilla', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/maldita-castilla/db.json', title='Maldita Castilla MiSTer')
         self.MEGAVGMDRIVE = Database(db_id='MultiDatabases/megavgmdrive', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/megavgmdrive/db.json', title='MegaVGMDrive')
         self.MISTERFIN = Database(db_id='MultiDatabases/misterfin', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/misterfin/db.json.zip', title='MiSTerFin')
         self.MISTER_HIFI = Database(db_id='MultiDatabases/mister-hifi', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-hifi/db.json', title='MiSTer Hi-Fi')
