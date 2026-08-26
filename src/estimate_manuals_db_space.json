@@ -1,0 +1,3121 @@
+{
+  "databases": [
+    {
+      "db_id": "ajgowans/manualsdb-3do",
+      "title": "3DO Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-3do/db/db.json.zip",
+      "file_count": 133,
+      "sized_file_count": 133,
+      "unsized_file_count": 0,
+      "raw_bytes": 316297645,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 316579840,
+          "estimated_gb": "0.29 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 316850176,
+          "estimated_gb": "0.30 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 317456384,
+          "estimated_gb": "0.30 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 318701568,
+          "estimated_gb": "0.30 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 320929792,
+          "estimated_gb": "0.30 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 325451776,
+          "estimated_gb": "0.30 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 333447168,
+          "estimated_gb": "0.31 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 350748672,
+          "estimated_gb": "0.33 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 384827392,
+          "estimated_gb": "0.36 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-arcadia2001",
+      "title": "Arcadia 2001 Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-arcadia2001/db/db.json.zip",
+      "file_count": 47,
+      "sized_file_count": 47,
+      "unsized_file_count": 0,
+      "raw_bytes": 19824899,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 19910656,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 20004864,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 20168704,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 20348928,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 21299200,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 23199744,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 26738688,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 35651584,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 52428800,
+          "estimated_gb": "0.05 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-atari2600",
+      "title": "Atari 2600 Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-atari2600/db/db.json.zip",
+      "file_count": 490,
+      "sized_file_count": 490,
+      "unsized_file_count": 0,
+      "raw_bytes": 435499327,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 436465664,
+          "estimated_gb": "0.41 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 437420032,
+          "estimated_gb": "0.41 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 439517184,
+          "estimated_gb": "0.41 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 443613184,
+          "estimated_gb": "0.41 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 451543040,
+          "estimated_gb": "0.42 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 466616320,
+          "estimated_gb": "0.43 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 497549312,
+          "estimated_gb": "0.46 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 558891008,
+          "estimated_gb": "0.52 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 666894336,
+          "estimated_gb": "0.62 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-atari5200",
+      "title": "Atari 5200 Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-atari5200/db/db.json.zip",
+      "file_count": 77,
+      "sized_file_count": 77,
+      "unsized_file_count": 0,
+      "raw_bytes": 69169953,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 69312512,
+          "estimated_gb": "0.06 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 69451776,
+          "estimated_gb": "0.06 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 69795840,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 70615040,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 71761920,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 74448896,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 79167488,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 91226112,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 106954752,
+          "estimated_gb": "0.10 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-atari7800",
+      "title": "Atari 7800 Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-atari7800/db/db.json.zip",
+      "file_count": 61,
+      "sized_file_count": 61,
+      "unsized_file_count": 0,
+      "raw_bytes": 50768163,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 50892800,
+          "estimated_gb": "0.05 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 51027968,
+          "estimated_gb": "0.05 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 51298304,
+          "estimated_gb": "0.05 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 51838976,
+          "estimated_gb": "0.05 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 52953088,
+          "estimated_gb": "0.05 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 55181312,
+          "estimated_gb": "0.05 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 58982400,
+          "estimated_gb": "0.05 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 67633152,
+          "estimated_gb": "0.06 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 76546048,
+          "estimated_gb": "0.07 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-atarilynx",
+      "title": "Atari Lynx Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-atarilynx/db/db.json.zip",
+      "file_count": 75,
+      "sized_file_count": 75,
+      "unsized_file_count": 0,
+      "raw_bytes": 91314860,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 91475968,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 91619328,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 91897856,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 92602368,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 93782016,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 95813632,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 100401152,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 112197632,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 125829120,
+          "estimated_gb": "0.12 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-atarixegs",
+      "title": "Atari XEGS Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-atarixegs/db/db.json.zip",
+      "file_count": 31,
+      "sized_file_count": 31,
+      "unsized_file_count": 0,
+      "raw_bytes": 15889700,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 15958016,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 16031744,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 16121856,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 16449536,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 16908288,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 17825792,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 19136512,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 23068672,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 36700160,
+          "estimated_gb": "0.03 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-avision",
+      "title": "AVision Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-avision/db/db.json.zip",
+      "file_count": 5,
+      "sized_file_count": 5,
+      "unsized_file_count": 0,
+      "raw_bytes": 1924909,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1937408,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1949696,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1966080,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1998848,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 2031616,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 2097152,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 2621440,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 2621440,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 5242880,
+          "estimated_gb": "0.00 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-ballyastrocade",
+      "title": "Bally Astrocade Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-ballyastrocade/db/db.json.zip",
+      "file_count": 41,
+      "sized_file_count": 41,
+      "unsized_file_count": 0,
+      "raw_bytes": 22181354,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 22265856,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 22355968,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 22511616,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 22806528,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 23527424,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 25296896,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 28573696,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 34603008,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 48234496,
+          "estimated_gb": "0.04 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-bbcbridge",
+      "title": "BBC Bridge Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-bbcbridge/db/db.json.zip",
+      "file_count": 3,
+      "sized_file_count": 3,
+      "unsized_file_count": 0,
+      "raw_bytes": 15074623,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 15077376,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 15081472,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 15089664,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 15138816,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 15138816,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 15335424,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 15466496,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 16252928,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 17825792,
+          "estimated_gb": "0.02 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-cdi",
+      "title": "CD-i Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-cdi/db/db.json.zip",
+      "file_count": 65,
+      "sized_file_count": 65,
+      "unsized_file_count": 0,
+      "raw_bytes": 73969608,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 74121216,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 74260480,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 74530816,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 75104256,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 75956224,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 78643200,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 83886080,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 92274688,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 110100480,
+          "estimated_gb": "0.10 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-channelf",
+      "title": "Channel F Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-channelf/db/db.json.zip",
+      "file_count": 30,
+      "sized_file_count": 30,
+      "unsized_file_count": 0,
+      "raw_bytes": 24284784,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 24342528,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 24412160,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 24494080,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 24739840,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 25165824,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 26083328,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 28573696,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 32505856,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 37748736,
+          "estimated_gb": "0.04 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-colecovision",
+      "title": "ColecoVision Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-colecovision/db/db.json.zip",
+      "file_count": 138,
+      "sized_file_count": 138,
+      "unsized_file_count": 0,
+      "raw_bytes": 83163525,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 83451904,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 83763200,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 84361216,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 85426176,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 87687168,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 92143616,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 99876864,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 115343360,
+          "estimated_gb": "0.11 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 162529280,
+          "estimated_gb": "0.15 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-creativision",
+      "title": "CreatiVision Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-creativision/db/db.json.zip",
+      "file_count": 19,
+      "sized_file_count": 19,
+      "unsized_file_count": 0,
+      "raw_bytes": 14677530,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 14716928,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 14770176,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 14827520,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 14942208,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 15335424,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 16121856,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 17301504,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 19398656,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 24117248,
+          "estimated_gb": "0.02 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-fds",
+      "title": "FDS Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-fds/db/db.json.zip",
+      "file_count": 3,
+      "sized_file_count": 3,
+      "unsized_file_count": 0,
+      "raw_bytes": 8484740,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 8491008,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 8495104,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 8503296,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 8519680,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 8519680,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 8519680,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 8650752,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 9437184,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 10485760,
+          "estimated_gb": "0.01 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-gameandwatch",
+      "title": "Game & Watch Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-gameandwatch/db/db.json.zip",
+      "file_count": 48,
+      "sized_file_count": 48,
+      "unsized_file_count": 0,
+      "raw_bytes": 30498680,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 30593024,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 30703616,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 30883840,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 31260672,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 31916032,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 33554432,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 38010880,
+          "estimated_gb": "0.04 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 42467328,
+          "estimated_gb": "0.04 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 50331648,
+          "estimated_gb": "0.05 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-gameboy",
+      "title": "Game Boy Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-gameboy/db/db.json.zip",
+      "file_count": 441,
+      "sized_file_count": 441,
+      "unsized_file_count": 0,
+      "raw_bytes": 1303603535,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1304473600,
+          "estimated_gb": "1.21 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1305427968,
+          "estimated_gb": "1.22 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1307099136,
+          "estimated_gb": "1.22 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1310392320,
+          "estimated_gb": "1.22 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1316749312,
+          "estimated_gb": "1.23 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1330249728,
+          "estimated_gb": "1.24 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1360265216,
+          "estimated_gb": "1.27 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1416626176,
+          "estimated_gb": "1.32 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1529872384,
+          "estimated_gb": "1.42 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-gamegear",
+      "title": "Game Gear Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-gamegear/db/db.json.zip",
+      "file_count": 202,
+      "sized_file_count": 202,
+      "unsized_file_count": 0,
+      "raw_bytes": 616316926,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 616730624,
+          "estimated_gb": "0.57 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 617152512,
+          "estimated_gb": "0.57 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 618037248,
+          "estimated_gb": "0.58 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 619675648,
+          "estimated_gb": "0.58 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 623050752,
+          "estimated_gb": "0.58 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 629669888,
+          "estimated_gb": "0.59 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 643301376,
+          "estimated_gb": "0.60 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 670564352,
+          "estimated_gb": "0.62 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 717225984,
+          "estimated_gb": "0.67 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-gba",
+      "title": "GBA Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-gba/db/db.json.zip",
+      "file_count": 742,
+      "sized_file_count": 742,
+      "unsized_file_count": 0,
+      "raw_bytes": 3210605598,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 3212156928,
+          "estimated_gb": "2.99 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 3213770752,
+          "estimated_gb": "2.99 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 3216621568,
+          "estimated_gb": "3.00 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 3222831104,
+          "estimated_gb": "3.00 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 3235119104,
+          "estimated_gb": "3.01 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 3258187776,
+          "estimated_gb": "3.03 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 3306422272,
+          "estimated_gb": "3.08 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 3405774848,
+          "estimated_gb": "3.17 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 3576692736,
+          "estimated_gb": "3.33 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-gbc",
+      "title": "Game Boy Color Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-gbc/db/db.json.zip",
+      "file_count": 308,
+      "sized_file_count": 308,
+      "unsized_file_count": 0,
+      "raw_bytes": 1170888807,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1171505152,
+          "estimated_gb": "1.09 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1172152320,
+          "estimated_gb": "1.09 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1173389312,
+          "estimated_gb": "1.09 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1175945216,
+          "estimated_gb": "1.10 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1181089792,
+          "estimated_gb": "1.10 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1190395904,
+          "estimated_gb": "1.11 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1210580992,
+          "estimated_gb": "1.13 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1250426880,
+          "estimated_gb": "1.16 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1334837248,
+          "estimated_gb": "1.24 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-intellivision",
+      "title": "Intellivision Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-intellivision/db/db.json.zip",
+      "file_count": 148,
+      "sized_file_count": 148,
+      "unsized_file_count": 0,
+      "raw_bytes": 188240996,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 188534784,
+          "estimated_gb": "0.18 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 188841984,
+          "estimated_gb": "0.18 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 189480960,
+          "estimated_gb": "0.18 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 190513152,
+          "estimated_gb": "0.18 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 192937984,
+          "estimated_gb": "0.18 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 198311936,
+          "estimated_gb": "0.18 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 209715200,
+          "estimated_gb": "0.20 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 234356736,
+          "estimated_gb": "0.22 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 278921216,
+          "estimated_gb": "0.26 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-jaguar",
+      "title": "Jaguar Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-jaguar/db/db.json.zip",
+      "file_count": 60,
+      "sized_file_count": 60,
+      "unsized_file_count": 0,
+      "raw_bytes": 104315310,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 104431616,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 104538112,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 104775680,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 105218048,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 106168320,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 108265472,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 112197632,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 120586240,
+          "estimated_gb": "0.11 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 136314880,
+          "estimated_gb": "0.13 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-jaguarcd",
+      "title": "Jaguar CD Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-jaguarcd/db/db.json.zip",
+      "file_count": 18,
+      "sized_file_count": 18,
+      "unsized_file_count": 0,
+      "raw_bytes": 21162788,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 21204992,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 21250048,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 21315584,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 21495808,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 21889024,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 22544384,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 23592960,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 25690112,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 28311552,
+          "estimated_gb": "0.03 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-lcdhandhelds",
+      "title": "LCD Handhelds Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-lcdhandhelds/db/db.json.zip",
+      "file_count": 3,
+      "sized_file_count": 3,
+      "unsized_file_count": 0,
+      "raw_bytes": 1797780,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1802240,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1810432,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1818624,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1835008,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1835008,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1966080,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 2359296,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 2621440,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 3145728,
+          "estimated_gb": "0.00 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-megadrive",
+      "title": "Mega Drive Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-megadrive/db/db.json.zip",
+      "file_count": 635,
+      "sized_file_count": 635,
+      "unsized_file_count": 0,
+      "raw_bytes": 1746237778,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1747546112,
+          "estimated_gb": "1.63 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1748901888,
+          "estimated_gb": "1.63 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1751531520,
+          "estimated_gb": "1.63 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1756725248,
+          "estimated_gb": "1.64 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1767178240,
+          "estimated_gb": "1.65 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1787428864,
+          "estimated_gb": "1.66 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1827930112,
+          "estimated_gb": "1.70 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1909981184,
+          "estimated_gb": "1.78 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 2075131904,
+          "estimated_gb": "1.93 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-n64",
+      "title": "N64 Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-n64/db/db.json.zip",
+      "file_count": 304,
+      "sized_file_count": 304,
+      "unsized_file_count": 0,
+      "raw_bytes": 763138861,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 763772928,
+          "estimated_gb": "0.71 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 764379136,
+          "estimated_gb": "0.71 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 765575168,
+          "estimated_gb": "0.71 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 767852544,
+          "estimated_gb": "0.72 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 772800512,
+          "estimated_gb": "0.72 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 783024128,
+          "estimated_gb": "0.73 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 801898496,
+          "estimated_gb": "0.75 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 840957952,
+          "estimated_gb": "0.78 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 918552576,
+          "estimated_gb": "0.86 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-neogeoaes",
+      "title": "Neo Geo AES Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-neogeoaes/db/db.json.zip",
+      "file_count": 45,
+      "sized_file_count": 45,
+      "unsized_file_count": 0,
+      "raw_bytes": 100286184,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 100384768,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 100450304,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 100630528,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 100990976,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 101646336,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 103022592,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 105644032,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 110624768,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 123731968,
+          "estimated_gb": "0.12 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-neogeocd",
+      "title": "Neo Geo CD Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-neogeocd/db/db.json.zip",
+      "file_count": 35,
+      "sized_file_count": 35,
+      "unsized_file_count": 0,
+      "raw_bytes": 154421658,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 154497024,
+          "estimated_gb": "0.14 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 154558464,
+          "estimated_gb": "0.14 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 154730496,
+          "estimated_gb": "0.14 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 155058176,
+          "estimated_gb": "0.14 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 155582464,
+          "estimated_gb": "0.14 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 156893184,
+          "estimated_gb": "0.15 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 159383552,
+          "estimated_gb": "0.15 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 163053568,
+          "estimated_gb": "0.15 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 170917888,
+          "estimated_gb": "0.16 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-nes",
+      "title": "NES Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-nes/db/db.json.zip",
+      "file_count": 759,
+      "sized_file_count": 759,
+      "unsized_file_count": 0,
+      "raw_bytes": 956521797,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 958095360,
+          "estimated_gb": "0.89 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 959700992,
+          "estimated_gb": "0.89 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 962789376,
+          "estimated_gb": "0.90 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 969277440,
+          "estimated_gb": "0.90 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 982253568,
+          "estimated_gb": "0.91 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1007157248,
+          "estimated_gb": "0.94 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1059323904,
+          "estimated_gb": "0.99 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1158152192,
+          "estimated_gb": "1.08 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1324351488,
+          "estimated_gb": "1.23 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-ngp",
+      "title": "Neo Geo Pocket Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-ngp/db/db.json.zip",
+      "file_count": 3,
+      "sized_file_count": 3,
+      "unsized_file_count": 0,
+      "raw_bytes": 6156387,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6164480,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6168576,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6176768,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6225920,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6291456,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6422528,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6815744,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 7340032,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 8388608,
+          "estimated_gb": "0.01 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-ngpc",
+      "title": "Neo Geo Pocket Color Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-ngpc/db/db.json.zip",
+      "file_count": 28,
+      "sized_file_count": 28,
+      "unsized_file_count": 0,
+      "raw_bytes": 67531966,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 67600384,
+          "estimated_gb": "0.06 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 67690496,
+          "estimated_gb": "0.06 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 67829760,
+          "estimated_gb": "0.06 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 67960832,
+          "estimated_gb": "0.06 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 68419584,
+          "estimated_gb": "0.06 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 69468160,
+          "estimated_gb": "0.06 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 71303168,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 74448896,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 80740352,
+          "estimated_gb": "0.08 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-odyssey2",
+      "title": "Odyssey 2 Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-odyssey2/db/db.json.zip",
+      "file_count": 79,
+      "sized_file_count": 79,
+      "unsized_file_count": 0,
+      "raw_bytes": 78049832,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 78229504,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 78389248,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 78675968,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 79233024,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 80609280,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 83361792,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 89128960,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 96993280,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 120586240,
+          "estimated_gb": "0.11 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-pokemonmini",
+      "title": "Pokemon Mini Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-pokemonmini/db/db.json.zip",
+      "file_count": 7,
+      "sized_file_count": 7,
+      "unsized_file_count": 0,
+      "raw_bytes": 10474960,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 10489856,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 10502144,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 10518528,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 10584064,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 10813440,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 11141120,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 11534336,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 12582912,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 14680064,
+          "estimated_gb": "0.01 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-psx",
+      "title": "PSX Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-psx/db/db.json.zip",
+      "file_count": 1295,
+      "sized_file_count": 1295,
+      "unsized_file_count": 0,
+      "raw_bytes": 6451632900,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6454321152,
+          "estimated_gb": "6.01 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6457049088,
+          "estimated_gb": "6.01 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6462439424,
+          "estimated_gb": "6.02 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6472794112,
+          "estimated_gb": "6.03 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6494420992,
+          "estimated_gb": "6.05 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6535380992,
+          "estimated_gb": "6.09 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6619398144,
+          "estimated_gb": "6.16 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6789529600,
+          "estimated_gb": "6.32 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 7120879616,
+          "estimated_gb": "6.63 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-pyuutajr",
+      "title": "Pyuuta Jr Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-pyuutajr/db/db.json.zip",
+      "file_count": 9,
+      "sized_file_count": 9,
+      "unsized_file_count": 0,
+      "raw_bytes": 4932867,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 4952064,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 4964352,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 5013504,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 5079040,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 5242880,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 5505024,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6029312,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 7340032,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 9437184,
+          "estimated_gb": "0.01 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-sega32x",
+      "title": "Sega 32X Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-sega32x/db/db.json.zip",
+      "file_count": 32,
+      "sized_file_count": 32,
+      "unsized_file_count": 0,
+      "raw_bytes": 73214013,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 73273344,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 73351168,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 73482240,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 73793536,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 74317824,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 75366400,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 77856768,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 81788928,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 91226112,
+          "estimated_gb": "0.08 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-segacd",
+      "title": "Sega CD Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-segacd/db/db.json.zip",
+      "file_count": 154,
+      "sized_file_count": 154,
+      "unsized_file_count": 0,
+      "raw_bytes": 363683267,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 363999232,
+          "estimated_gb": "0.34 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 364371968,
+          "estimated_gb": "0.34 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 364986368,
+          "estimated_gb": "0.34 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 366313472,
+          "estimated_gb": "0.34 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 369229824,
+          "estimated_gb": "0.34 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 374603776,
+          "estimated_gb": "0.35 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 384040960,
+          "estimated_gb": "0.36 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 402128896,
+          "estimated_gb": "0.37 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 447741952,
+          "estimated_gb": "0.42 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-segasaturn",
+      "title": "Sega Saturn Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-segasaturn/db/db.json.zip",
+      "file_count": 265,
+      "sized_file_count": 265,
+      "unsized_file_count": 0,
+      "raw_bytes": 614347013,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 614895616,
+          "estimated_gb": "0.57 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 615407616,
+          "estimated_gb": "0.57 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 616529920,
+          "estimated_gb": "0.57 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 618692608,
+          "estimated_gb": "0.58 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 623116288,
+          "estimated_gb": "0.58 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 631635968,
+          "estimated_gb": "0.59 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 649854976,
+          "estimated_gb": "0.61 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 683147264,
+          "estimated_gb": "0.64 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 751828992,
+          "estimated_gb": "0.70 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-segasg1000",
+      "title": "Sega SG-1000 Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-segasg1000/db/db.json.zip",
+      "file_count": 12,
+      "sized_file_count": 12,
+      "unsized_file_count": 0,
+      "raw_bytes": 4923898,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 4952064,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 4980736,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 5046272,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 5111808,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 5308416,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 5767168,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 6553600,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 8388608,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 12582912,
+          "estimated_gb": "0.01 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-sms",
+      "title": "SMS Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-sms/db/db.json.zip",
+      "file_count": 202,
+      "sized_file_count": 202,
+      "unsized_file_count": 0,
+      "raw_bytes": 552539092,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 552935424,
+          "estimated_gb": "0.51 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 553287680,
+          "estimated_gb": "0.52 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 554074112,
+          "estimated_gb": "0.52 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 555712512,
+          "estimated_gb": "0.52 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 558694400,
+          "estimated_gb": "0.52 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 566099968,
+          "estimated_gb": "0.53 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 579076096,
+          "estimated_gb": "0.54 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 603455488,
+          "estimated_gb": "0.56 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 658505728,
+          "estimated_gb": "0.61 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-snes",
+      "title": "SNES Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-snes/db/db.json.zip",
+      "file_count": 797,
+      "sized_file_count": 797,
+      "unsized_file_count": 0,
+      "raw_bytes": 1606224208,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1607835648,
+          "estimated_gb": "1.50 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1609433088,
+          "estimated_gb": "1.50 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1612791808,
+          "estimated_gb": "1.50 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1619263488,
+          "estimated_gb": "1.51 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1633288192,
+          "estimated_gb": "1.52 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1659764736,
+          "estimated_gb": "1.55 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1708392448,
+          "estimated_gb": "1.59 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1810366464,
+          "estimated_gb": "1.69 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 2015363072,
+          "estimated_gb": "1.88 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-supervision",
+      "title": "Supervision Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-supervision/db/db.json.zip",
+      "file_count": 53,
+      "sized_file_count": 53,
+      "unsized_file_count": 0,
+      "raw_bytes": 26620823,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 26734592,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 26820608,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 27082752,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 27525120,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 28246016,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 30408704,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 34078720,
+          "estimated_gb": "0.03 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 41418752,
+          "estimated_gb": "0.04 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 55574528,
+          "estimated_gb": "0.05 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-turbografx16",
+      "title": "TurboGrafx-16 Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-turbografx16/db/db.json.zip",
+      "file_count": 77,
+      "sized_file_count": 77,
+      "unsized_file_count": 0,
+      "raw_bytes": 88881881,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 89051136,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 89202688,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 89538560,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 90210304,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 91750400,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 94240768,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 98566144,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 110100480,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 127926272,
+          "estimated_gb": "0.12 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-turbografxcd",
+      "title": "TurboGrafx CD Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-turbografxcd/db/db.json.zip",
+      "file_count": 44,
+      "sized_file_count": 44,
+      "unsized_file_count": 0,
+      "raw_bytes": 91983855,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 92078080,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 92151808,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 92389376,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 92766208,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 93454336,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 94502912,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 97255424,
+          "estimated_gb": "0.09 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 103284736,
+          "estimated_gb": "0.10 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 115343360,
+          "estimated_gb": "0.11 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-vc4000",
+      "title": "VC 4000 Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-vc4000/db/db.json.zip",
+      "file_count": 47,
+      "sized_file_count": 47,
+      "unsized_file_count": 0,
+      "raw_bytes": 73099165,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 73195520,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 73285632,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 73482240,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 73859072,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 74579968,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 76283904,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 78905344,
+          "estimated_gb": "0.07 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 86507520,
+          "estimated_gb": "0.08 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 99614720,
+          "estimated_gb": "0.09 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-vectrex",
+      "title": "Vectrex Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-vectrex/db/db.json.zip",
+      "file_count": 31,
+      "sized_file_count": 31,
+      "unsized_file_count": 0,
+      "raw_bytes": 10221652,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 10289152,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 10346496,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 10436608,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 10616832,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 11075584,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 11796480,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 12582912,
+          "estimated_gb": "0.01 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 19398656,
+          "estimated_gb": "0.02 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 34603008,
+          "estimated_gb": "0.03 GB"
+        }
+      ]
+    },
+    {
+      "db_id": "ajgowans/manualsdb-wonderswanc",
+      "title": "WonderSwan Color Manuals",
+      "url": "https://raw.githubusercontent.com/ajgowans/manualsdb-wonderswanc/db/db.json.zip",
+      "file_count": 1,
+      "sized_file_count": 1,
+      "unsized_file_count": 0,
+      "raw_bytes": 369535,
+      "cluster_estimates": [
+        {
+          "cluster_size_bytes": 4096,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 372736,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 8192,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 376832,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 16384,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 376832,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 32768,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 393216,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 65536,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 393216,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 131072,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 393216,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 262144,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 524288,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 524288,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 524288,
+          "estimated_gb": "0.00 GB"
+        },
+        {
+          "cluster_size_bytes": 1048576,
+          "cluster_size_gb": "0.00 GB",
+          "estimated_bytes": 1048576,
+          "estimated_gb": "0.00 GB"
+        }
+      ]
+    }
+  ],
+  "total": {
+    "file_count": 8102,
+    "sized_file_count": 8102,
+    "unsized_file_count": 0,
+    "raw_bytes": 21735449632,
+    "cluster_estimates": [
+      {
+        "cluster_size_bytes": 4096,
+        "cluster_size_gb": "0.00 GB",
+        "estimated_bytes": 21752098816,
+        "estimated_gb": "20.26 GB"
+      },
+      {
+        "cluster_size_bytes": 8192,
+        "cluster_size_gb": "0.00 GB",
+        "estimated_bytes": 21768912896,
+        "estimated_gb": "20.27 GB"
+      },
+      {
+        "cluster_size_bytes": 16384,
+        "cluster_size_gb": "0.00 GB",
+        "estimated_bytes": 21802090496,
+        "estimated_gb": "20.30 GB"
+      },
+      {
+        "cluster_size_bytes": 32768,
+        "cluster_size_gb": "0.00 GB",
+        "estimated_bytes": 21868052480,
+        "estimated_gb": "20.37 GB"
+      },
+      {
+        "cluster_size_bytes": 65536,
+        "cluster_size_gb": "0.00 GB",
+        "estimated_bytes": 22002008064,
+        "estimated_gb": "20.49 GB"
+      },
+      {
+        "cluster_size_bytes": 131072,
+        "cluster_size_gb": "0.00 GB",
+        "estimated_bytes": 22265593856,
+        "estimated_gb": "20.74 GB"
+      },
+      {
+        "cluster_size_bytes": 262144,
+        "cluster_size_gb": "0.00 GB",
+        "estimated_bytes": 22792896512,
+        "estimated_gb": "21.23 GB"
+      },
+      {
+        "cluster_size_bytes": 524288,
+        "cluster_size_gb": "0.00 GB",
+        "estimated_bytes": 23852482560,
+        "estimated_gb": "22.21 GB"
+      },
+      {
+        "cluster_size_bytes": 1048576,
+        "cluster_size_gb": "0.00 GB",
+        "estimated_bytes": 25900875776,
+        "estimated_gb": "24.12 GB"
+      }
+    ]
+  }
+}

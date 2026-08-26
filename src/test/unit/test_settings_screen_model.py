@@ -51,6 +51,7 @@ _ARM_APP_TITLES = {
     '# MiSTer Hi-Fi',
     '# MiSTerFin',
     '# Disc Tools',
+    '# MiSTer Monitor',
 }
 
 _SOFTWARE_DATABASE_TITLES = _HYBRID_CORE_TITLES | _ARM_APP_TITLES
@@ -75,6 +76,10 @@ _FILE_DEPENDENT_CORE_PATHS = {
     # Disc Tools needs an optical drive and blank discs rather than files on the card,
     # so its confirmation states hardware instead of a path.
     '# Disc Tools': ('MultiDatabases/disc-tools', ()),
+    # MiSTer Monitor needs an external flashed display rather than files on the card,
+    # and its launcher performs its own setup on the first run, so its confirmation
+    # states the screen requirement and the first-run instruction instead of a path.
+    '# MiSTer Monitor': ('chipster6502/MiSTer_monitor_DB', ()),
 }
 
 # Maldita Castilla ships its complete game, so it is not file dependent: its enable
@@ -95,13 +100,16 @@ _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
     '# MiSTer Frontier': "MiSTer Frontier's PICO-8 emulator and OpenBOR engine ports run in software rather than in the FPGA.",
 }
 
-_ARM_APP_OUTSIDE_FPGA_DESCRIPTIONS = {
-    '# MiSTer Hi-Fi': 'MiSTer Hi-Fi is a controller-first music player that runs as ARM software, without an FPGA core.',
-    '# MiSTerFin': 'MiSTerFin is a Jellyfin media client that runs as ARM software, without an FPGA core.',
-    '# Disc Tools': 'Disc Tools is a disc ripping and burning utility that runs as ARM software, without an FPGA core.',
+# Tools & Scripts entries skip the outside-FPGA framing of the Hybrid Cores menu;
+# their authoritative first line just states what the tool is.
+_ARM_APP_DESCRIPTIONS = {
+    '# MiSTer Hi-Fi': 'MiSTer Hi-Fi is a controller-first music player.',
+    '# MiSTerFin': 'MiSTerFin is a Jellyfin media client.',
+    '# Disc Tools': 'Disc Tools is a disc ripping and burning utility.',
+    '# MiSTer Monitor': "MiSTer Monitor shows your MiSTer's live status on a separate screen.",
 }
 
-_OUTSIDE_FPGA_DESCRIPTIONS = {**_HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS, **_ARM_APP_OUTSIDE_FPGA_DESCRIPTIONS}
+_SOFTWARE_DATABASE_DESCRIPTIONS = {**_HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS, **_ARM_APP_DESCRIPTIONS}
 
 # Every database entry that explains itself must credit whoever maintains it, both in
 # its info message and in its enable confirmation when it has one.
@@ -130,6 +138,7 @@ _DATABASE_MAINTAINERS = {
     '# MiSTer Hi-Fi': 'Anime0t4ku',
     '# MiSTerFin': 'puddingstudio',
     '# Disc Tools': 'Anime0t4ku',
+    '# MiSTer Monitor': 'chipster6502',
 }
 
 _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
@@ -145,6 +154,7 @@ _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
     '# MiSTer Hi-Fi': 'play MP3, FLAC and WAV files',
     '# MiSTerFin': 'browse and play your Jellyfin library',
     '# Disc Tools': 'rip physical CDs to BIN/CUE or CHD',
+    '# MiSTer Monitor': "artwork, RetroAchievements progress, and live system stats",
 }
 
 _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
@@ -160,6 +170,7 @@ _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
     '# MiSTer Hi-Fi': 'manually add the music you want to play',
     '# MiSTerFin': 'manually supply your own jellyfin.conf',
     '# Disc Tools': 'manually supply an optical drive and blank writable discs',
+    '# MiSTer Monitor': 'get a compatible screen',
 }
 
 
@@ -589,6 +600,8 @@ class TestSettingsScreenModel(unittest.TestCase):
              'MultiDatabases/misterfin', 'MiSTerFin'),
             ('tools_and_scripts_menu', '# Disc Tools', 'MultiDatabases/disc-tools',
              'MultiDatabases/disc-tools', 'Disc Tools'),
+            ('tools_and_scripts_menu', '# MiSTer Monitor', 'chipster6502/MiSTer_monitor_DB',
+             'chipster6502/MiSTer_monitor_DB', 'MiSTer Monitor'),
             ('tools_and_scripts_menu', '# tty2oled Add-on script', 'tty2oled_files_downloader',
              'tty2oled_files', 'tty2oled Add-on script'),
             ('tools_and_scripts_menu', '# i2c2oled Add-on script', 'i2c2oled_files_downloader',
@@ -834,8 +847,8 @@ class TestSettingsScreenModel(unittest.TestCase):
                 for path in paths:
                     self.assertIn(path, prompt)
 
-    def test_software_database_enable_confirmations___identify_what_runs_outside_the_fpga(self):
-        for title, expected_description in _OUTSIDE_FPGA_DESCRIPTIONS.items():
+    def test_software_database_enable_confirmations___contain_the_authoritative_description(self):
+        for title, expected_description in _SOFTWARE_DATABASE_DESCRIPTIONS.items():
             with self.subTest(title=title):
                 variable = _SOFTWARE_DATABASE_VARIABLES[title]
                 app = self._execute_multidatabase_action(title, variable, 'false')
@@ -843,7 +856,7 @@ class TestSettingsScreenModel(unittest.TestCase):
                 self.assertIn(expected_description, app.confirms[0]['text'])
 
     def test_software_database_info___starts_with_the_authoritative_confirmation_description(self):
-        for title, expected_description in _OUTSIDE_FPGA_DESCRIPTIONS.items():
+        for title, expected_description in _SOFTWARE_DATABASE_DESCRIPTIONS.items():
             with self.subTest(title=title):
                 info = self._execute_core_info(title)
 
@@ -919,6 +932,11 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# Disc Tools',
             'MultiDatabases/disc-tools',
             "You can launch Disc Tools from MiSTer's Scripts folder.",
+        )
+        self._assert_core_menu_location(
+            '# MiSTer Monitor',
+            'chipster6502/MiSTer_monitor_DB',
+            "If you're installing MiSTer Monitor for the first time, run MiSTer_Monitor from the Scripts menu once after Update All finishes.",
         )
 
     def test_database_entries___credit_their_maintainer_in_info_and_enable_confirmation(self):
@@ -1194,6 +1212,28 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('false', app.ui.get_value('MultiDatabases/disc-tools'))
         self.assertIn('Disc Tools requires an optical drive connected to your MiSTer.', app.confirms[0]['text'])
         self.assertIn('Burning also requires blank writable discs.', app.confirms[0]['text'])
+
+    def test_mister_monitor_entry___enable_confirmation___leads_with_the_screen_guidance(self):
+        app = self._execute_multidatabase_action('# MiSTer Monitor', 'chipster6502/MiSTer_monitor_DB', 'false')
+
+        self.assertEqual('false', app.ui.get_value('chipster6502/MiSTer_monitor_DB'))
+        self.assertEqual('Check the chipster6502/MiSTer_monitor repository at GitHub to learn which screen to get and how to set it up.', app.confirms[0]['text'][1])
+
+    def test_mister_monitor_entry___when_yes_is_selected___enables_and_points_to_the_upstream_repository_in_info(self):
+        entry = self._entry('tools_and_scripts_menu', '# MiSTer Monitor')
+        app = self._execute_multidatabase_action(
+            '# MiSTer Monitor',
+            'chipster6502/MiSTer_monitor_DB',
+            'false',
+            confirm_action_title='Yes',
+        )
+
+        self.assertEqual('true', app.ui.get_value('chipster6502/MiSTer_monitor_DB'))
+        self.assertEqual([], app.messages)
+        self.assertEqual([], app.mister_ini_effects)
+        self.assertEqual('{chipster6502/MiSTer_monitor_DB:enabled} Live game art on a separate screen', entry['description'])
+        text = ' '.join(self._execute_core_info('# MiSTer Monitor').messages[0]['text'])
+        self.assertIn('the chipster6502/MiSTer_monitor repository at GitHub explains which one to get and how to set it up', text)
 
     def test_physical_disc_entry___when_enabling___arms_cd_section_without_message_and_exposes_info(self):
         app = self._execute_multidatabase_action('# Physical CD Support', 'MultiDatabases/physical-disc', 'false')
@@ -1599,7 +1639,9 @@ class TestSettingsScreenModel(unittest.TestCase):
 
 
 def _lines_naming(maintainer, text):
-    return [line for line in text if maintainer in line]
+    # A repository path like "chipster6502/MiSTer_monitor" is a pointer, not a credit,
+    # so the owner prefix there does not count as naming the maintainer.
+    return [line for line in text if maintainer in line.replace(f'{maintainer}/', '')]
 
 
 def _entry_confirms(entry):

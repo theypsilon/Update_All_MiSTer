@@ -157,7 +157,7 @@ def _try_toggle_big_manual_db(target, title, count, size): return [
 ]
 
 
-def _try_toggle_file_dependent_core(variable, title, file_instructions, enable_effects=()): return [
+def _try_toggle_with_user_dependency(variable, title, dependency_instructions, enable_effects=()): return [
     {
         "type": "condition",
         "variable": variable,
@@ -166,7 +166,7 @@ def _try_toggle_file_dependent_core(variable, title, file_instructions, enable_e
             "ui": "confirm",
             "header": f"Enable {title}?",
             "preselected_action": "No",
-            "text": file_instructions,
+            "text": dependency_instructions,
             "actions": [
                 {"title": "Yes", "type": "fixed", "fixed": [
                     {"type": "rotate_variable", "target": variable},
@@ -1189,7 +1189,7 @@ def settings_screen_model():
                     "title": "# Paprium MegaDrive",
                     "description": "{MultiDatabases/paprium:enabled} MD fork that runs Paprium",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/paprium", "Paprium MegaDrive"),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/paprium",
                             "Paprium MegaDrive",
                             [
@@ -1218,7 +1218,7 @@ def settings_screen_model():
                     "title": "# MMS2 GB Core",
                     "description": "{MultiDatabases/mms2-gb:enabled} Physical Game Boy cartridges",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/mms2-gb", "MMS2 GB Core"),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/mms2-gb",
                             "MMS2 GB Core",
                             [
@@ -1300,7 +1300,7 @@ def settings_screen_model():
                     "title": "# MegaVGMDrive",
                     "description": "{MultiDatabases/megavgmdrive:enabled} MD VGM music player core",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/megavgmdrive", "MegaVGMDrive"),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/megavgmdrive",
                             "MegaVGMDrive",
                             [
@@ -1360,7 +1360,7 @@ def settings_screen_model():
                     "title": "# DreamSTer",
                     "description": "{MultiDatabases/dreamster:enabled} Experimental Dreamcast emulator",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/dreamster", "DreamSTer"),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/dreamster",
                             "DreamSTer",
                             [
@@ -1397,7 +1397,7 @@ def settings_screen_model():
                              "Sonic Mania (4:3)": {"main": "MiSTer_SonicMania"},
                          }},
                     ]),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/sonic-mania",
                             "Sonic Mania MiSTer",
                             [
@@ -1441,7 +1441,7 @@ def settings_screen_model():
                              "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"},
                          }},
                     ]),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/duke3d",
                             "MiSTer Duke3D",
                             [
@@ -1485,7 +1485,7 @@ def settings_screen_model():
                              "MiSTer_Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
                          }},
                     ]),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/mister-quake",
                             "MiSTer Quake",
                             [
@@ -1564,7 +1564,7 @@ def settings_screen_model():
                     "title": "# Solarus MiSTer",
                     "description": "{MultiDatabases/solarus:enabled} Solarus 2D action-RPG engine",
                     "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/solarus", "Solarus MiSTer"),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/solarus",
                             "Solarus MiSTer",
                             [
@@ -1602,7 +1602,7 @@ def settings_screen_model():
                              "3S-ARM": {"main": "MiSTer_3S-ARM"},
                          }},
                     ]),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/3s-arm",
                             "3S-ARM",
                             [
@@ -1639,7 +1639,7 @@ def settings_screen_model():
                     "title": "# MiSTer Frontier",
                     "description": "{MiSTerOrganize/MiSTer_Frontier:enabled} PICO-8 and OpenBOR engine ports",
                     "actions": {"uninstall": uninstall_db_action_for_id("MiSTerOrganize/MiSTer_Frontier", "MiSTer Frontier"),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MiSTerOrganize/MiSTer_Frontier",
                             "MiSTer Frontier",
                             [
@@ -1682,6 +1682,7 @@ def settings_screen_model():
                 "MultiDatabases/mister-hifi": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/misterfin": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/disc-tools": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "chipster6502/MiSTer_monitor_DB": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "tty2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "i2c2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "retrospy/retrospy-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -1765,11 +1766,11 @@ def settings_screen_model():
                     "actions": {
                         "uninstall": uninstall_db_action_for_id(
                             "MultiDatabases/mister-hifi", "MiSTer Hi-Fi"),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/mister-hifi",
                             "MiSTer Hi-Fi",
                             [
-                                "MiSTer Hi-Fi is a controller-first music player that runs as ARM software, without an FPGA core.",
+                                "MiSTer Hi-Fi is a controller-first music player.",
                                 "You can launch MiSTer Hi-Fi from MiSTer's Scripts folder.",
                                 " ",
                                 "MiSTer Hi-Fi requires your own music files, on the SD card or a USB drive.",
@@ -1782,7 +1783,7 @@ def settings_screen_model():
                             "ui": "message",
                             "header": "MiSTer Hi-Fi",
                             "text": [
-                                "MiSTer Hi-Fi is a controller-first music player that runs as ARM software, without an FPGA core.",
+                                "MiSTer Hi-Fi is a controller-first music player.",
                                 "Enabling this database installs the MiSTer Hi-Fi player, its launcher, and a network share configuration template.",
                                 "You can play MP3, FLAC and WAV files, M3U playlists and Audio CDs, with album artwork, a spectrum visualizer, a 5-band equalizer and OLED mode.",
                                 "Audio CD playback requires an optical drive connected to your MiSTer.",
@@ -1799,11 +1800,11 @@ def settings_screen_model():
                     "actions": {
                         "uninstall": uninstall_db_action_for_id(
                             "MultiDatabases/misterfin", "MiSTerFin"),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/misterfin",
                             "MiSTerFin",
                             [
-                                "MiSTerFin is a Jellyfin media client that runs as ARM software, without an FPGA core.",
+                                "MiSTerFin is a Jellyfin media client.",
                                 "You can launch MiSTerFin from MiSTer's Scripts folder.",
                                 " ",
                                 "MiSTerFin requires your own Jellyfin server.",
@@ -1817,7 +1818,7 @@ def settings_screen_model():
                             "ui": "message",
                             "header": "MiSTerFin",
                             "text": [
-                                "MiSTerFin is a Jellyfin media client that runs as ARM software, without an FPGA core.",
+                                "MiSTerFin is a Jellyfin media client.",
                                 "Enabling this database installs the MiSTerFin client, its bundled media player, launcher, fonts and assets.",
                                 "You can browse and play your Jellyfin library on MiSTer, with the video transcoded by your own server.",
                                 "You can launch MiSTerFin from MiSTer's Scripts folder.",
@@ -1834,11 +1835,11 @@ def settings_screen_model():
                     "actions": {
                         "uninstall": uninstall_db_action_for_id(
                             "MultiDatabases/disc-tools", "Disc Tools"),
-                        "ok": _try_toggle_file_dependent_core(
+                        "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/disc-tools",
                             "Disc Tools",
                             [
-                                "Disc Tools is a disc ripping and burning utility that runs as ARM software, without an FPGA core.",
+                                "Disc Tools is a disc ripping and burning utility.",
                                 "You can launch Disc Tools from MiSTer's Scripts folder.",
                                 " ",
                                 "Disc Tools requires an optical drive connected to your MiSTer.",
@@ -1850,7 +1851,7 @@ def settings_screen_model():
                             "ui": "message",
                             "header": "Disc Tools",
                             "text": [
-                                "Disc Tools is a disc ripping and burning utility that runs as ARM software, without an FPGA core.",
+                                "Disc Tools is a disc ripping and burning utility.",
                                 "Enabling this database installs the Disc Tools application, its launcher, and the cdrdao, cue2toc, toc2cue, chdman and xorriso helper binaries.",
                                 "You can rip physical CDs to BIN/CUE or CHD, burn BIN/CUE and CHD images, and build and burn ISO9660/Joliet data discs for MSU1 and MD+ sets.",
                                 "Rips are read in raw DAO mode, so mixed-mode discs and CD audio tracks are preserved.",
@@ -1858,6 +1859,37 @@ def settings_screen_model():
                                 "You must manually supply an optical drive and blank writable discs for burning.",
                                 "CHD conversion runs on MiSTer's ARM CPU, where it can take longer than the rip or burn itself.",
                                 "Maintainer: Anime0t4ku",
+                            ],
+                        }],
+                    }
+                },
+                {
+                    "title": "# MiSTer Monitor",
+                    "description": "{chipster6502/MiSTer_monitor_DB:enabled} Live game art on a separate screen",
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "chipster6502/MiSTer_monitor_DB", "MiSTer Monitor"),
+                        "ok": _try_toggle_with_user_dependency(
+                            "chipster6502/MiSTer_monitor_DB",
+                            "MiSTer Monitor",
+                            [
+                                "MiSTer Monitor shows your MiSTer's live status on a separate screen.",
+                                "Check the chipster6502/MiSTer_monitor repository at GitHub to learn which screen to get and how to set it up.",
+                                " ",
+                                "If you're installing MiSTer Monitor for the first time, run MiSTer_Monitor from the Scripts menu once after Update All finishes.",
+                                "Maintainer: chipster6502",
+                            ],
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "MiSTer Monitor",
+                            "text": [
+                                "MiSTer Monitor shows your MiSTer's live status on a separate screen.",
+                                "You must get a compatible screen; the chipster6502/MiSTer_monitor repository at GitHub explains which one to get and how to set it up.",
+                                "Enabling this database installs the monitor server, its launcher and uninstall scripts, and RetroAchievements helpers.",
+                                "You can watch the loaded game's artwork, RetroAchievements progress, and live system stats in real time.",
+                                "If you're installing MiSTer Monitor for the first time, run MiSTer_Monitor from the Scripts menu once after Update All finishes.",
+                                "Maintainer: chipster6502",
                             ],
                         }],
                     }
