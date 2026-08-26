@@ -163,6 +163,7 @@ class AllDBs:
         self.MANUALSDB_POKEMONMINI = Database(db_id='ajgowans/manualsdb-pokemonmini', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-pokemonmini/db/db.json.zip', title='Pokemon Mini Manuals')
         self.MANUALSDB_PSX = Database(db_id='ajgowans/manualsdb-psx', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-psx/db/db.json.zip', title='PSX Manuals')
         self.MANUALSDB_PYUUTAJR = Database(db_id='ajgowans/manualsdb-pyuutajr', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-pyuutajr/db/db.json.zip', title='Pyuuta Jr Manuals')
+        self.MANUALSDB_RCASTUDIO = Database(db_id='ajgowans/manualsdb-rcastudio', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-rcastudio/db/db.json.zip', title='RCA Studio II Manuals')
         self.MANUALSDB_SEGA32X = Database(db_id='ajgowans/manualsdb-sega32x', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-sega32x/db/db.json.zip', title='Sega 32X Manuals')
         self.MANUALSDB_SEGACD = Database(db_id='ajgowans/manualsdb-segacd', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-segacd/db/db.json.zip', title='Sega CD Manuals')
         self.MANUALSDB_SEGASATURN = Database(db_id='ajgowans/manualsdb-segasaturn', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-segasaturn/db/db.json.zip', title='Sega Saturn Manuals')

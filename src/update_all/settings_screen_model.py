@@ -60,14 +60,14 @@ def _crt_direct_video_warning(target): return {
 }
 
 
-_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22312648704  # ~20.8 GB at 128KB cluster, see estimate_manuals_db_space.json
+_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22298755072  # ~20.8 GB at 128KB cluster, see estimate_manuals_db_space.json
 
 def _enable_all_manuals_confirm(): return {
     "ui": "confirm",
     "header": "Enable All Manuals DBs?",
     "text": [
         "This will activate all manuals databases.",
-        "That is a large download, 8123 files and around 20.8 GB.",
+        "That is a large download, 8145 files and around 20.8 GB.",
         "It will take hours!",
         "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
         "Are you sure you want to continue?",
@@ -87,7 +87,7 @@ def _not_enough_space_for_manuals_warning(): return {
     "header": "Not Enough Free Space!",
     "alert_level": "black",
     "text": [
-        "Enabling all manuals DBs requires 8123 files and around 20.8 GB.",
+        "Enabling all manuals DBs requires 8145 files and around 20.8 GB.",
         "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
         "Installing all manuals will likely fill up your storage and cause problems.",
         "Free up space or enable only individual manuals instead.",
@@ -476,6 +476,7 @@ def _manual_db_variables(): return {
     "ajgowans/manualsdb-pokemonmini": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-psx": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-pyuutajr": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-rcastudio": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-sega32x": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-segacd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-segasaturn": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
@@ -2053,7 +2054,7 @@ def settings_screen_model():
             "entries": [
                 {
                     "title": " {ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_title}",
-                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8123 files | 20.8GB total",
+                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8145 files | 20.8GB total",
                     "actions": {
                         "uninstall_all": uninstall_db_action_manuals(
                             "ajgowans_manuals_dbs_installed",
@@ -2214,17 +2215,17 @@ def settings_screen_model():
                 },
                 {
                     "title": "# N64",
-                    "description": "{ajgowans/manualsdb-n64:enabled} 304 | 747MB",
+                    "description": "{ajgowans/manualsdb-n64:enabled} 304 | 746MB",
                     "actions": _manual_db_actions("ajgowans/manualsdb-n64", "N64 Manuals"),
                 },
                 {
                     "title": "# Neo Geo AES",
-                    "description": "{ajgowans/manualsdb-neogeoaes:enabled} 45",
+                    "description": "{ajgowans/manualsdb-neogeoaes:enabled} 46",
                     "actions": _manual_db_actions("ajgowans/manualsdb-neogeoaes", "Neo Geo AES Manuals"),
                 },
                 {
                     "title": "# Neo Geo CD",
-                    "description": "{ajgowans/manualsdb-neogeocd:enabled} 35",
+                    "description": "{ajgowans/manualsdb-neogeocd:enabled} 40",
                     "actions": _manual_db_actions("ajgowans/manualsdb-neogeocd", "Neo Geo CD Manuals"),
                 },
                 {
@@ -2266,6 +2267,11 @@ def settings_screen_model():
                     "title": "# Pyuuta Jr",
                     "description": "{ajgowans/manualsdb-pyuutajr:enabled} 9",
                     "actions": _manual_db_actions("ajgowans/manualsdb-pyuutajr", "Pyuuta Jr Manuals"),
+                },
+                {
+                    "title": "# RCA Studio II",
+                    "description": "{ajgowans/manualsdb-rcastudio:enabled} 16",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-rcastudio", "RCA Studio II Manuals"),
                 },
                 {
                     "title": "# Sega 32X",
