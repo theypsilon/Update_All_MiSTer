@@ -99,7 +99,6 @@ class TestIniRepository(unittest.TestCase):
 
     def test_write_downloader_ini___over_bug_names_txt_updater_disabled_downloader_ini_after_changing_some_options___writes_changed_downloader(self):
         config = Config(download_beta_cores=True, databases=default_databases(sub=[DB_ID_NAMES_TXT], add=[
-            all_dbs('').AGG23_DB.db_id,
             all_dbs('').THEYPSILON_UNOFFICIAL_DISTRIBUTION.db_id,
             all_dbs('').LLAPI_FOLDER.db_id,
             all_dbs('').UBERYOJI_BOOT_ROMS.db_id,

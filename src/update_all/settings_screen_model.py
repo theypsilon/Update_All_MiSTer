@@ -1022,7 +1022,6 @@ def settings_screen_model():
                 "arcade_offset_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "llapi_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "unofficial_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
-                "agg23_db": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MikeS11/YC_Builds-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "ajgowans/alt-cores": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "TheJesusFish/Dual-Ram-Console-Cores": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -1167,21 +1166,6 @@ def settings_screen_model():
                                 "Forks with Y/C outputs for cores that don't",
                                 "support these outputs yet officially.",
                                 "Maintainer: MikeS11"
-                            ],
-                        }]
-                    }
-                },
-                {
-                    "title": "# agg23's MiSTer Cores",
-                    "description": "{agg23_db:enabled} Game & Watch and Tamagotchi",
-                    "actions": {"uninstall": uninstall_db_action_for_id("agg23_db", "agg23's MiSTer Cores"),
-                        "ok": [{"type": "rotate_variable", "target": "agg23_db"}],
-                        "info": [{
-                            "ui": "message",
-                            "header": "agg23's MiSTer Cores",
-                            "text": [
-                                "Cores including Tamagotchi and Game & Watch.",
-                                "Maintainer: agg23",
                             ],
                         }]
                     }

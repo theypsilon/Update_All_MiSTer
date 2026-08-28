@@ -305,13 +305,13 @@ class TestSettingsScreenSaving(unittest.TestCase):
         self.assertEqual('  - downloader_arcade_roms_db.ini', ui.get_value('needs_save_file_list'))
         self.assertEqual('true', ui.get_value('needs_save'))
 
-    def test_calculate_needs_save___with_bug_names_txt_updater_disabled_downloader_and_matching_options___returns_no_changes(self):
+    def test_calculate_needs_save___with_removed_database_in_downloader___returns_downloader_ini_changes(self):
         sut, ui, _ = tester(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/bug_names_txt_updater_disabled_downloader.ini').read_text()}
         })
         sut.calculate_needs_save(ui)
-        self.assertEqual('', ui.get_value('needs_save_file_list'))
-        self.assertEqual('false', ui.get_value('needs_save'))
+        self.assertEqual('  - downloader.ini', ui.get_value('needs_save_file_list'))
+        self.assertEqual('true', ui.get_value('needs_save'))
 
     def test_calculate_needs_save___with_arcade_organized_toggled___returns_arcade_organizer_ini_changes(self):
         sut, ui, state = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})

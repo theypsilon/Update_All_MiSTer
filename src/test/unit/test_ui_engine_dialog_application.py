@@ -257,7 +257,7 @@ class TestUiEngineDialogApplication(unittest.TestCase):
 
         self.assertIsInstance(result, EffectChain)
         self.assertEqual(
-            [{'type': 'rotate_variable', 'target': 'agg23_db'}],
+            [{'type': 'rotate_variable', 'target': 'example_db'}],
             result.chain,
         )
 
@@ -272,7 +272,7 @@ class TestUiEngineDialogApplication(unittest.TestCase):
                 {'title': 'New', 'type': 'symbol', 'symbol': 'new'},
             ],
         }
-        data['entries'][0]['actions']['new'] = {'type': 'rotate_variable', 'target': 'agg23_db'}
+        data['entries'][0]['actions']['new'] = {'type': 'rotate_variable', 'target': 'example_db'}
         section = DialogSectionFactory(_DrawerFactory(drawer)).create_ui_section('menu', data, _IdentityInterpolator())
 
         with self.assertRaises(ValueError) as ctx:
@@ -362,11 +362,11 @@ def _conditional_menu_section(drawer, installed):
         'ui': 'menu',
         'header': 'Menu',
         'entries': [{
-            'title': "# agg23's MiSTer Cores",
+            'title': '# Example Database',
             'description': '',
             'actions': {
-                'ok': [{'type': 'rotate_variable', 'target': 'agg23_db'}],
-                'new': {'if': 'agg23_db_installed', 'chain': [{'type': 'rotate_variable', 'target': 'agg23_db'}]},
+                'ok': [{'type': 'rotate_variable', 'target': 'example_db'}],
+                'new': {'if': 'example_db_installed', 'chain': [{'type': 'rotate_variable', 'target': 'example_db'}]},
             },
         }],
         'actions': [
@@ -376,7 +376,7 @@ def _conditional_menu_section(drawer, installed):
         ],
     }
     return DialogSectionFactory(_DrawerFactory(drawer)).create_ui_section(
-        'menu', data, _ValuesInterpolator({'agg23_db_installed': installed}))
+        'menu', data, _ValuesInterpolator({'example_db_installed': installed}))
 
 
 def _menu_section(drawer, entries):

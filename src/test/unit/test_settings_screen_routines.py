@@ -68,7 +68,7 @@ class TestSettingsScreenRoutines(unittest.TestCase):
     def test_initialize_ui___seeds_installed_variables_from_downloader_fingerprints(self):
         file_system = FileSystemFactory.from_state(files={
             FILE_downloader_fingerprints_json: {'content': json.dumps({
-                'agg23_db': {'hash': 'abc'},
+                'legacy_db': {'hash': 'abc'},
                 'distribution_mister': {'hash': 'def'},
                 'multidatabases/duke3d': {'hash': 'jkl'},
                 'ajgowans/manualsdb-3do': {'hash': 'mno'},
@@ -78,7 +78,6 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         _, ui = tester(file_system=file_system)
 
-        self.assertEqual('true', ui.get_value('agg23_db_installed'))
         self.assertEqual('true', ui.get_value('distribution_mister_installed'))
         # Fingerprint keys are lowercase; db ids are matched case-insensitively.
         self.assertEqual('true', ui.get_value('MultiDatabases/duke3d_installed'))
@@ -91,7 +90,6 @@ class TestSettingsScreenRoutines(unittest.TestCase):
     def test_initialize_ui___without_fingerprints_file___seeds_all_installed_variables_to_false(self):
         _, ui = tester()
 
-        self.assertEqual('false', ui.get_value('agg23_db_installed'))
         self.assertEqual('false', ui.get_value('distribution_mister_installed'))
         self.assertEqual('false', ui.get_value('MultiDatabases/duke3d_installed'))
         self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_installed'))
@@ -99,7 +97,7 @@ class TestSettingsScreenRoutines(unittest.TestCase):
     def test_initialize_ui___without_manual_fingerprints___sets_manuals_installed_to_false(self):
         file_system = FileSystemFactory.from_state(files={
             FILE_downloader_fingerprints_json: {'content': json.dumps({
-                'agg23_db': {'hash': 'abc'},
+                'legacy_db': {'hash': 'abc'},
             })},
         }).create_for_system_scope()
 
@@ -114,7 +112,6 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         _, ui = tester(file_system=file_system)
 
-        self.assertEqual('false', ui.get_value('agg23_db_installed'))
         self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_installed'))
 
     def test_reconcile_failed_bulk_uninstall___updates_only_removed_database_state(self):
