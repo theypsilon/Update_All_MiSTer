@@ -1663,6 +1663,7 @@ def settings_screen_model():
                 "mistersam_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "ajgowans/240p": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "mrext/all": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/mister-dvd": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "anime0t4ku_mister_scripts": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-hifi": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/misterfin": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -1732,6 +1733,45 @@ def settings_screen_model():
                                 "Neo Geo CD, NES, Playstation, Sega 32X, Saturn, SNES, TurboGrafx16,",
                                 "TurboGrafx16 CD",
                                 "Maintainer: Moondandy",
+                            ],
+                        }],
+                    }
+                },
+                {
+                    "title": "# MiSTer DVD",
+                    "description": "{MultiDatabases/mister-dvd:enabled} DVD-Video, VCD and SVCD player",
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id("MultiDatabases/mister-dvd", "MiSTer DVD", on_success=[
+                            {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/mister-dvd",
+                             "target": {"DVD": {"main": "MiSTer_DVDcss"}}},
+                        ]),
+                        "ok": _try_toggle_with_user_dependency(
+                            "MultiDatabases/mister-dvd",
+                            "MiSTer DVD",
+                            [
+                                "MiSTer DVD is an FPGA DVD-Video player.",
+                                "You can launch the DVD core from MiSTer's Other folder.",
+                                " ",
+                                "MiSTer DVD requires your own DVD, VCD, SVCD or ISO media.",
+                                "Physical discs require a USB DVD drive connected to your MiSTer.",
+                                "Maintainer: owenb321",
+                            ],
+                            [
+                                {"type": "mister_ini_add", "variable": "MultiDatabases/mister-dvd",
+                                 "target": {"DVD": {"main": "MiSTer_DVDcss"}}},
+                            ],
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "MiSTer DVD",
+                            "text": [
+                                "MiSTer DVD is an FPGA DVD-Video player.",
+                                "Enabling this database installs the DVD core and custom MiSTer Main.",
+                                "You can play decrypted DVD ISOs, VCDs and SVCDs.",
+                                "You can launch the DVD core from MiSTer's Other folder.",
+                                "Physical DVDs and encrypted ISOs use the custom MiSTer Main selected in MiSTer.ini.",
+                                "You must manually supply your own DVD, VCD, SVCD or ISO media, and a USB DVD drive for physical discs.",
+                                "Maintainer: owenb321",
                             ],
                         }],
                     }

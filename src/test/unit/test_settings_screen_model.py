@@ -45,16 +45,17 @@ _HYBRID_CORE_TITLES = {
     '# 3S-ARM',
 }
 
-# ARM apps ship no FPGA core at all, so they live in Tools & Scripts instead of
-# Hybrid Cores, but they follow the same info + enable confirmation conventions.
-_ARM_APP_TITLES = {
+# These databases live in Tools & Scripts and follow the same info + enable
+# confirmation conventions, whether they install ARM apps or a utility core.
+_TOOLS_DATABASE_TITLES = {
     '# MiSTer Hi-Fi',
     '# MiSTerFin',
+    '# MiSTer DVD',
     '# Disc Tools',
     '# MiSTer Monitor',
 }
 
-_SOFTWARE_DATABASE_TITLES = _HYBRID_CORE_TITLES | _ARM_APP_TITLES
+_SOFTWARE_DATABASE_TITLES = _HYBRID_CORE_TITLES | _TOOLS_DATABASE_TITLES
 
 _FILE_DEPENDENT_CORE_PATHS = {
     '# Paprium MegaDrive': ('MultiDatabases/paprium', ('games/PapriumMD/',)),
@@ -73,6 +74,8 @@ _FILE_DEPENDENT_CORE_PATHS = {
     # has no path to show. Its network share config is optional and left to the tool.
     '# MiSTer Hi-Fi': ('MultiDatabases/mister-hifi', ()),
     '# MiSTerFin': ('MultiDatabases/misterfin', ('misterfin/jellyfin.conf',)),
+    # MiSTer DVD needs user-supplied media and, for physical discs, a USB DVD drive.
+    '# MiSTer DVD': ('MultiDatabases/mister-dvd', ()),
     # Disc Tools needs an optical drive and blank discs rather than files on the card,
     # so its confirmation states hardware instead of a path.
     '# Disc Tools': ('MultiDatabases/disc-tools', ()),
@@ -102,14 +105,15 @@ _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
 
 # Tools & Scripts entries skip the outside-FPGA framing of the Hybrid Cores menu;
 # their authoritative first line just states what the tool is.
-_ARM_APP_DESCRIPTIONS = {
+_TOOLS_DATABASE_DESCRIPTIONS = {
     '# MiSTer Hi-Fi': 'MiSTer Hi-Fi is a controller-first music player.',
     '# MiSTerFin': 'MiSTerFin is a Jellyfin media client.',
+    '# MiSTer DVD': 'MiSTer DVD is an FPGA DVD-Video player.',
     '# Disc Tools': 'Disc Tools is a disc ripping and burning utility.',
     '# MiSTer Monitor': "MiSTer Monitor shows your MiSTer's live status on a separate screen.",
 }
 
-_SOFTWARE_DATABASE_DESCRIPTIONS = {**_HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS, **_ARM_APP_DESCRIPTIONS}
+_SOFTWARE_DATABASE_DESCRIPTIONS = {**_HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS, **_TOOLS_DATABASE_DESCRIPTIONS}
 
 # Every database entry that explains itself must credit whoever maintains it, both in
 # its info message and in its enable confirmation when it has one.
@@ -136,6 +140,7 @@ _DATABASE_MAINTAINERS = {
     '# 240p Test Suites': 'Moondandy',
     '# MiSTer Hi-Fi': 'Anime0t4ku',
     '# MiSTerFin': 'puddingstudio',
+    '# MiSTer DVD': 'owenb321',
     '# Disc Tools': 'Anime0t4ku',
     '# MiSTer Monitor': 'chipster6502',
 }
@@ -152,6 +157,7 @@ _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
     '# MiSTer Frontier': 'launch PICO-8 carts and legacy or modern OpenBOR games',
     '# MiSTer Hi-Fi': 'play MP3, FLAC and WAV files',
     '# MiSTerFin': 'browse and play your Jellyfin library',
+    '# MiSTer DVD': 'play decrypted DVD ISOs, VCDs and SVCDs',
     '# Disc Tools': 'rip physical CDs to BIN/CUE or CHD',
     '# MiSTer Monitor': "artwork, RetroAchievements progress, and live system stats",
 }
@@ -168,6 +174,7 @@ _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
     '# MiSTer Frontier': 'manually add the PICO-8 carts and OpenBOR game modules',
     '# MiSTer Hi-Fi': 'manually add the music you want to play',
     '# MiSTerFin': 'manually supply your own jellyfin.conf',
+    '# MiSTer DVD': 'manually supply your own DVD, VCD, SVCD or ISO media',
     '# Disc Tools': 'manually supply an optical drive and blank writable discs',
     '# MiSTer Monitor': 'get a compatible screen',
 }
@@ -596,6 +603,8 @@ class TestSettingsScreenModel(unittest.TestCase):
              'MultiDatabases/mister-hifi', 'MiSTer Hi-Fi'),
             ('tools_and_scripts_menu', '# MiSTerFin', 'MultiDatabases/misterfin',
              'MultiDatabases/misterfin', 'MiSTerFin'),
+            ('tools_and_scripts_menu', '# MiSTer DVD', 'MultiDatabases/mister-dvd',
+             'MultiDatabases/mister-dvd', 'MiSTer DVD'),
             ('tools_and_scripts_menu', '# Disc Tools', 'MultiDatabases/disc-tools',
              'MultiDatabases/disc-tools', 'Disc Tools'),
             ('tools_and_scripts_menu', '# MiSTer Monitor', 'chipster6502/MiSTer_monitor_DB',
@@ -926,6 +935,11 @@ class TestSettingsScreenModel(unittest.TestCase):
             "You can launch MiSTerFin from MiSTer's Scripts folder.",
         )
         self._assert_core_menu_location(
+            '# MiSTer DVD',
+            'MultiDatabases/mister-dvd',
+            "You can launch the DVD core from MiSTer's Other folder.",
+        )
+        self._assert_core_menu_location(
             '# Disc Tools',
             'MultiDatabases/disc-tools',
             "You can launch Disc Tools from MiSTer's Scripts folder.",
@@ -1185,6 +1199,54 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.mister_ini_effects)
         info = self._execute_core_info('# Paprium MegaDrive')
         self.assertIn("FPGA core fork of MiSTer's Mega Drive core", ' '.join(info.messages[0]['text']))
+
+    def test_mister_dvd_entry___is_immediately_above_anime0t4ku_mister_scripts(self):
+        titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
+
+        self.assertEqual(titles.index('# MiSTer DVD') + 1, titles.index('# Anime0t4ku MiSTer Scripts'))
+
+    def test_mister_dvd_entry___when_yes_is_selected___enables_and_selects_its_custom_main(self):
+        entry = self._entry('tools_and_scripts_menu', '# MiSTer DVD')
+        app = self._execute_multidatabase_action(
+            '# MiSTer DVD',
+            'MultiDatabases/mister-dvd',
+            'false',
+            confirm_action_title='Yes',
+        )
+
+        self.assertEqual('true', app.ui.get_value('MultiDatabases/mister-dvd'))
+        self.assertEqual([], app.messages)
+        self.assertEqual([
+            {'type': 'mister_ini_add', 'variable': 'MultiDatabases/mister-dvd',
+             'target': {'DVD': {'main': 'MiSTer_DVDcss'}}},
+        ], app.mister_ini_effects)
+        self.assertEqual(
+            '{MultiDatabases/mister-dvd:enabled} DVD-Video, VCD and SVCD player',
+            entry['description'],
+        )
+        text = ' '.join(self._execute_core_info('# MiSTer DVD').messages[0]['text'])
+        self.assertIn('DVD core and custom MiSTer Main', text)
+        self.assertNotIn('libdvdcss', text)
+        self.assertNotIn('install_dvdcss', text)
+
+    def test_mister_dvd_entry___enable_confirmation___states_media_and_drive_requirements(self):
+        app = self._execute_multidatabase_action('# MiSTer DVD', 'MultiDatabases/mister-dvd', 'false')
+
+        self.assertEqual('false', app.ui.get_value('MultiDatabases/mister-dvd'))
+        self.assertIn('MiSTer DVD requires your own DVD, VCD, SVCD or ISO media.', app.confirms[0]['text'])
+        self.assertIn('Physical discs require a USB DVD drive connected to your MiSTer.', app.confirms[0]['text'])
+        self.assertNotIn('libdvdcss', ' '.join(app.confirms[0]['text']))
+        self.assertNotIn('install_dvdcss', ' '.join(app.confirms[0]['text']))
+
+    def test_mister_dvd_entry___uninstall_removes_its_custom_main_selection(self):
+        entry = self._entry('tools_and_scripts_menu', '# MiSTer DVD')
+        uninstall_ui = entry['actions']['uninstall']['chain'][0]['actions'][0]['fixed'][0]
+
+        self.assertIn(
+            {'type': 'mister_ini_del', 'immediate': True, 'variable': 'MultiDatabases/mister-dvd',
+             'target': {'DVD': {'main': 'MiSTer_DVDcss'}}},
+            uninstall_ui['on_success'],
+        )
 
     def test_disc_tools_entry___when_yes_is_selected___enables_and_identifies_its_helper_binaries_in_info(self):
         entry = self._entry('tools_and_scripts_menu', '# Disc Tools')
@@ -1575,6 +1637,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         multidb_ini_variables = {
             'MultiDatabases/3s-arm',
             'MultiDatabases/duke3d',
+            'MultiDatabases/mister-dvd',
             'MultiDatabases/mister-quake',
             'MultiDatabases/physical-disc',
             'MultiDatabases/sonic-mania',

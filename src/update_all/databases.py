@@ -109,6 +109,7 @@ class AllDBs:
         self.MALDITA_CASTILLA = Database(db_id='MultiDatabases/maldita-castilla', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/maldita-castilla/db.json', title='Maldita Castilla MiSTer')
         self.MEGAVGMDRIVE = Database(db_id='MultiDatabases/megavgmdrive', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/megavgmdrive/db.json', title='MegaVGMDrive')
         self.MISTERFIN = Database(db_id='MultiDatabases/misterfin', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/misterfin/db.json.zip', title='MiSTerFin')
+        self.MISTER_DVD = Database(db_id='MultiDatabases/mister-dvd', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-dvd/db.json', title='MiSTer DVD')
         self.MISTER_HIFI = Database(db_id='MultiDatabases/mister-hifi', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-hifi/db.json', title='MiSTer Hi-Fi')
         self.MISTER_QUAKE = Database(db_id='MultiDatabases/mister-quake', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-quake/db.json', title='MiSTer Quake')
         self.MMS2_GB = Database(db_id='MultiDatabases/mms2-gb', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mms2-gb/db.json', title='MMS2 GB Core')
