@@ -60,14 +60,14 @@ def _crt_direct_video_warning(target): return {
 }
 
 
-_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22298755072  # ~20.8 GB at 128KB cluster, see estimate_manuals_db_space.json
+_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22346727424  # ~20.8 GB at 128KB cluster, see estimate_manuals_db_space.json
 
 def _enable_all_manuals_confirm(): return {
     "ui": "confirm",
     "header": "Enable All Manuals DBs?",
     "text": [
         "This will activate all manuals databases.",
-        "That is a large download, 8145 files and around 20.8 GB.",
+        "That is a large download, 8168 files and around 20.8 GB.",
         "It will take hours!",
         "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
         "Are you sure you want to continue?",
@@ -87,7 +87,7 @@ def _not_enough_space_for_manuals_warning(): return {
     "header": "Not Enough Free Space!",
     "alert_level": "black",
     "text": [
-        "Enabling all manuals DBs requires 8145 files and around 20.8 GB.",
+        "Enabling all manuals DBs requires 8168 files and around 20.8 GB.",
         "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
         "Installing all manuals will likely fill up your storage and cause problems.",
         "Free up space or enable only individual manuals instead.",
@@ -459,6 +459,7 @@ def _manual_db_variables(): return {
     "ajgowans/manualsdb-gameandwatch": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-gameboy": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-gamegear": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-gamedotcom": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-gba": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-gbc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-intellivision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
@@ -473,6 +474,7 @@ def _manual_db_variables(): return {
     "ajgowans/manualsdb-ngp": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-ngpc": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-odyssey2": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-pocketstation": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-pokemonmini": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-psx": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-pyuutajr": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
@@ -2078,7 +2080,7 @@ def settings_screen_model():
             "entries": [
                 {
                     "title": " {ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_title}",
-                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8145 files | 20.8GB total",
+                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8168 files | 20.8GB total",
                     "actions": {
                         "uninstall_all": uninstall_db_action_manuals(
                             "ajgowans_manuals_dbs_installed",
@@ -2188,6 +2190,11 @@ def settings_screen_model():
                     "actions": _manual_db_actions("ajgowans/manualsdb-gamegear", "Game Gear Manuals"),
                 },
                 {
+                    "title": "# Game.com",
+                    "description": "{ajgowans/manualsdb-gamedotcom:enabled} 22",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-gamedotcom", "Game.com Manuals"),
+                },
+                {
                     "title": "# GBA",
                     "description": "{ajgowans/manualsdb-gba:enabled} 742 | 3.0GB",
                     "actions": _manual_db_actions(
@@ -2271,6 +2278,11 @@ def settings_screen_model():
                     "title": "# Odyssey 2",
                     "description": "{ajgowans/manualsdb-odyssey2:enabled} 79",
                     "actions": _manual_db_actions("ajgowans/manualsdb-odyssey2", "Odyssey 2 Manuals"),
+                },
+                {
+                    "title": "# PocketStation",
+                    "description": "{ajgowans/manualsdb-pocketstation:enabled} 1",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-pocketstation", "PocketStation Manuals"),
                 },
                 {
                     "title": "# Pokemon Mini",
