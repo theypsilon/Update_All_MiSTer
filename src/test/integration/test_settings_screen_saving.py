@@ -137,6 +137,21 @@ class TestSettingsScreenSaving(unittest.TestCase):
             sut._file_system.read_file_contents(FILE_MiSTer_ini),
         )
 
+    def test_save__when_enabling_maldita_castilla___writes_its_ini_section_on_save(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('MultiDatabases/maldita-castilla', 'true')
+        sut.mister_ini_add(ui, maldita_castilla_add_effect())
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('MiSTer.ini ([Maldita Castilla])', ui.get_value('needs_save_file_list'))
+        self.assertEqual(
+            '[Maldita Castilla]\nmain=games/gmloader/MiSTer_Maldita\n',
+            sut._file_system.read_file_contents(FILE_MiSTer_ini),
+        )
+
     def test_save__when_duke3d_is_toggled_on_and_back_off___cancels_the_ini_addition(self):
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
 
@@ -824,6 +839,14 @@ def nblood_add_effect():
     return {"type": "mister_ini_add", "variable": "MultiDatabases/nblood",
             "target": {"NBlood": {"main": "Mister_NBlood"},
                        "Mister_NBlood": {"main": "Mister_NBlood"}}}
+
+
+def maldita_castilla_add_effect():
+    # Declared exactly as in the settings screen model.
+    return {"type": "mister_ini_add", "variable": "MultiDatabases/maldita-castilla",
+            "target": {"Maldita Castilla": {
+                "main": "games/gmloader/MiSTer_Maldita",
+            }}}
 
 
 def retroachievements_add_effect():

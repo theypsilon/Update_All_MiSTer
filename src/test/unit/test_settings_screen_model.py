@@ -541,6 +541,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# Alt Cores': ('ajgowans/alt-cores', 'ajgowans/alt-cores'),
             '# Dual RAM Console Cores': ('TheJesusFish/Dual-Ram-Console-Cores', 'TheJesusFish/Dual-Ram-Console-Cores'),
             '# MiSTer Frontier': ('MiSTerOrganize/MiSTer_Frontier', 'MiSTerOrganize/MiSTer_Frontier'),
+            '# Maldita Castilla MiSTer': ('MultiDatabases/maldita-castilla', 'MultiDatabases/maldita-castilla'),
             '# DreamSTer': ('MultiDatabases/dreamster', 'MultiDatabases/dreamster'),
             '# Sonic Mania MiSTer': ('MultiDatabases/sonic-mania', 'MultiDatabases/sonic-mania'),
             '# MiSTer Duke3D': ('MultiDatabases/duke3d', 'MultiDatabases/duke3d'),
@@ -553,6 +554,9 @@ class TestSettingsScreenModel(unittest.TestCase):
         ini_del_targets = {
             '# RetroAchievements Cores': {'RA_*': {'main': 'MiSTer_RA'}},
             '# Physical CD Support': {'A0CD-*': {'main': 'MiSTer_Physical-CD'}},
+            '# Maldita Castilla MiSTer': {
+                'Maldita Castilla': {'main': 'games/gmloader/MiSTer_Maldita'},
+            },
             '# Sonic Mania MiSTer': {
                 'Sonic Mania': {'main': 'MiSTer_SonicMania'},
                 'Sonic Mania (4:3)': {'main': 'MiSTer_SonicMania'},
@@ -1159,7 +1163,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self._assert_core_menu_location(
             '# Maldita Castilla MiSTer',
             'MultiDatabases/maldita-castilla',
-            "You can launch Maldita Castilla MiSTer from MiSTer's Scripts folder.",
+            "You can launch Maldita Castilla MiSTer from MiSTer's Other folder.",
         )
         self._assert_core_menu_location(
             '# Solarus MiSTer',
@@ -1423,7 +1427,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertIn(license_text, confirm['text'])
         self.assertEqual(confirm['text'].index(license_text) + 1, confirm['text'].index(ex_text))
 
-    def test_maldita_castilla_entry___when_yes_is_selected___enables_without_further_effects(self):
+    def test_maldita_castilla_entry___when_yes_is_selected___enables_and_arms_ini_section(self):
         app = self._execute_multidatabase_action(
             '# Maldita Castilla MiSTer',
             'MultiDatabases/maldita-castilla',
@@ -1433,12 +1437,18 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertEqual('true', app.ui.get_value('MultiDatabases/maldita-castilla'))
         self.assertEqual([], app.messages)
-        self.assertEqual([], app.mister_ini_effects)
+        self.assertEqual([
+            {'type': 'mister_ini_add', 'variable': 'MultiDatabases/maldita-castilla',
+             'target': {'Maldita Castilla': {
+                 'main': 'games/gmloader/MiSTer_Maldita',
+             }}},
+        ], app.mister_ini_effects)
         info = self._execute_core_info('# Maldita Castilla MiSTer')
         text = info.messages[0]['text']
         license_text = "Locomalito publishes the included original game under the CC BY-NC-ND 4.0 license, so it is ready to play right after updating."
         ex_text = 'For more content, you can get the commercial Maldita Castilla EX separately.'
         self.assertIn('installs the complete game', ' '.join(text))
+        self.assertIn("You can launch Maldita Castilla MiSTer from MiSTer's Other folder.", text)
         self.assertIn(license_text, text)
         self.assertEqual(text.index(license_text) + 1, text.index(ex_text))
 
@@ -1968,6 +1978,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         multidb_ini_variables = {
             'MultiDatabases/3s-arm',
             'MultiDatabases/duke3d',
+            'MultiDatabases/maldita-castilla',
             'MultiDatabases/mister-dvd',
             'MultiDatabases/mister-quake',
             'MultiDatabases/nblood',

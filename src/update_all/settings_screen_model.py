@@ -1662,7 +1662,12 @@ def settings_screen_model():
                 {
                     "title": "# Maldita Castilla MiSTer",
                     "description": "{MultiDatabases/maldita-castilla:enabled} Ready-to-play arcade action game",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/maldita-castilla", "Maldita Castilla MiSTer"),
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/maldita-castilla", "Maldita Castilla MiSTer", on_success=[
+                        {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/maldita-castilla",
+                         "target": {
+                             "Maldita Castilla": {"main": "games/gmloader/MiSTer_Maldita"},
+                         }},
+                    ]),
                         "ok": [{
                             "type": "condition",
                             "variable": "MultiDatabases/maldita-castilla",
@@ -1676,12 +1681,16 @@ def settings_screen_model():
                                     "Locomalito publishes the included original game under the CC BY-NC-ND 4.0 license, so it is ready to play right after updating.",
                                     "For more content, you can get the commercial Maldita Castilla EX separately.",
                                     " ",
-                                    "You can launch Maldita Castilla MiSTer from MiSTer's Scripts folder.",
+                                    "You can launch Maldita Castilla MiSTer from MiSTer's Other folder.",
                                     "Maintainer: gmcnaught",
                                 ],
                                 "actions": [
                                     {"title": "Yes", "type": "fixed", "fixed": [
                                         {"type": "rotate_variable", "target": "MultiDatabases/maldita-castilla"},
+                                        {"type": "mister_ini_add", "variable": "MultiDatabases/maldita-castilla",
+                                         "target": {
+                                             "Maldita Castilla": {"main": "games/gmloader/MiSTer_Maldita"},
+                                         }},
                                         {"type": "navigate", "target": "back"},
                                     ]},
                                     {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
@@ -1696,7 +1705,7 @@ def settings_screen_model():
                                 "Enabling this database installs the complete game, along with its ARM engine, FPGA core, and launcher scripts.",
                                 "Locomalito publishes the included original game under the CC BY-NC-ND 4.0 license, so it is ready to play right after updating.",
                                 "For more content, you can get the commercial Maldita Castilla EX separately.",
-                                "You can launch Maldita Castilla MiSTer from MiSTer's Scripts folder.",
+                                "You can launch Maldita Castilla MiSTer from MiSTer's Other folder.",
                                 "Maintainer: gmcnaught",
                             ],
                         }],
