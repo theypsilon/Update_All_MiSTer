@@ -24,7 +24,8 @@ from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.ini_assertions import assertEqualIni, testableIni
 from test.testing_objects import downloader_ini, update_all_ini, update_arcade_organizer_ini, update_names_txt_ini, \
-    update_jtcores_ini, downloader_store, manuals_ini, ini_with_db_ids as downloader_ini_with_db_ids, all_manuals_db_ids
+    update_jtcores_ini, downloader_store, manuals_ini, artwork_ini, ini_with_db_ids as downloader_ini_with_db_ids, \
+    all_manuals_db_ids, all_artwork_db_ids
 from test.update_all_service_tester import TransitionServiceTester, local_store, IniRepositoryTester, \
     ConfigReaderTester, default_env
 from test.update_output_tester import UpdateOutputTester
@@ -86,6 +87,20 @@ def run_manuals_transition(files: Dict[str, str], store=None, update_output=None
     return fs_state
 
 
+def run_artwork_transition(files: Dict[str, str], store=None, update_output=None, os_utils=None, env=None):
+    config = Config()
+    fs_state = FileSystemState(config=config, files={filename: {'content': content} for filename, content in files.items()})
+    fs = FileSystemFactory(state=fs_state).create_for_system_scope()
+    os_utils = os_utils or SpyOsUtils()
+    ini_repos = IniRepositoryTester(file_system=fs, os_utils=os_utils)
+    config_reader = ConfigReaderTester(downloader_ini_repository=ini_repos, file_system=fs, env=None if env is None else {**default_env(), **env})
+    sut = TransitionServiceTester(file_system=fs, os_utils=os_utils, ini_repository=ini_repos)
+    config_reader.fill_config_with_environment(config)
+    config_reader.fill_config_with_database_sections(config, config_reader.read_downloader_ini())
+    sut.from_select_all_artwork_to_adding_new_artwork_dbs(config, store or local_store(), update_output or NoopUpdateOutput())
+    return fs_state
+
+
 mister_ini_path = f'{MEDIA_FAT}/{FILE_MiSTer_ini}'
 
 
@@ -103,6 +118,14 @@ def run_physical_disc_transition(mister_ini: str = None, update_output=None, db_
 
 def manuals_db_ids_in(fs_state: FileSystemState) -> List[str]:
     path = manuals_ini.lower()
+    if path not in fs_state.files:
+        return []
+
+    return read_ini_contents(fs_state.files[path]['content']).sections()
+
+
+def artwork_db_ids_in(fs_state: FileSystemState) -> List[str]:
+    path = artwork_ini.lower()
     if path not in fs_state.files:
         return []
 
@@ -380,6 +403,61 @@ class TestTransitionService(unittest.TestCase):
 
         self.assertEqual([(
             'from_select_all_manuals_to_adding_new_manuals_dbs',
+            {'db_ids': missing},
+        )], output.transition_calls)
+        self.assertEqual([], os_utils.calls_to_sleep)
+
+    def test_artwork_select_all_active_and_one_artwork_db_missing___activates_the_missing_one(self):
+        already_active = all_artwork_db_ids()
+        missing = already_active.pop()
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+
+        fs = run_artwork_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+            artwork_ini: downloader_ini_with_db_ids(*already_active),
+        }, store=store)
+
+        self.assertEqual(sorted(all_artwork_db_ids()), sorted(artwork_db_ids_in(fs)))
+        self.assertIn(missing, artwork_db_ids_in(fs))
+
+    def test_artwork_select_all_inactive_and_one_artwork_db_missing___does_not_activate_it(self):
+        already_active = all_artwork_db_ids()
+        missing = already_active.pop()
+
+        fs = run_artwork_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+            artwork_ini: downloader_ini_with_db_ids(*already_active),
+        }, store=local_store())
+
+        self.assertEqual(sorted(already_active), sorted(artwork_db_ids_in(fs)))
+        self.assertNotIn(missing, artwork_db_ids_in(fs))
+
+    def test_artwork_select_all_active_and_skipping_downloader___does_not_activate_anything(self):
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+
+        fs = run_artwork_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+        }, store=store, env={KENV_SKIP_DOWNLOADER: 'true'})
+
+        self.assertEqual([], artwork_db_ids_in(fs))
+
+    def test_artwork_transition_event___is_emitted_with_added_db_ids_and_does_not_wait(self):
+        already_active = all_artwork_db_ids()
+        missing = already_active.pop()
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+        os_utils = SpyOsUtils()
+        output = UpdateOutputTester(os_utils)
+
+        run_artwork_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+            artwork_ini: downloader_ini_with_db_ids(*already_active),
+        }, store=store, update_output=output, os_utils=os_utils)
+
+        self.assertEqual([(
+            'from_select_all_artwork_to_adding_new_artwork_dbs',
             {'db_ids': missing},
         )], output.transition_calls)
         self.assertEqual([], os_utils.calls_to_sleep)

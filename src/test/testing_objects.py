@@ -20,11 +20,12 @@ from pathlib import Path
 from update_all.constants import MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, FILE_update_all_ini, \
     FILE_update_names_txt_ini, FILE_update_jtcores_ini, ARCADE_ORGANIZER_INI, FILE_update_all_zipped_storage, \
     DOWNLOADER_STORE_STANDARD_PATH, FILE_update_all_storage, FILE_pocket_firmware_details_json, \
-    DOWNLOADER_AJGOWANS_MANUALSDB_INI
-from update_all.databases import all_dbs, ajgowans_manualsdbs
+    DOWNLOADER_AJGOWANS_MANUALSDB_INI, DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI
+from update_all.databases import all_dbs, ajgowans_manualsdbs, chipster6502_artworkdbs
 
 downloader_ini = f'{MEDIA_FAT}/{DOWNLOADER_INI_STANDARD_PATH}'
 manuals_ini = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'
+artwork_ini = f'{MEDIA_FAT}/{DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI}'
 downloader_store = f'{MEDIA_FAT}/{DOWNLOADER_STORE_STANDARD_PATH}'
 update_all_ini = f'{MEDIA_FAT}/{FILE_update_all_ini}'
 update_names_txt_ini = f'{MEDIA_FAT}/{FILE_update_names_txt_ini}'
@@ -48,6 +49,10 @@ def db_url_for(db_id: str, dbs_by_id) -> str:
 
 def all_manuals_db_ids() -> list[str]:
     return [db.db_id for db in ajgowans_manualsdbs()]
+
+
+def all_artwork_db_ids() -> list[str]:
+    return [db.db_id for db in chipster6502_artworkdbs()]
 
 
 def default_downloader_ini_content():

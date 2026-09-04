@@ -71,6 +71,9 @@ def make_new_local_store(store_migrator):
         'overscan': default_config.overscan,
         'monochrome_ui': default_config.monochrome_ui,
         'ajgowans_manuals_dbs_general_selector': False,
+        'chipster6502_artwork_dbs_general_selector': False,
+        'chipster6502_artwork_default_style': default_config.artwork_default_style,
+        'chipster6502_artwork_db_styles': {},
         'introduced_related_database_ids': [],
     }
 

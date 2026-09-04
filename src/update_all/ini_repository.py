@@ -24,8 +24,10 @@ from typing import Optional, Dict, List, Tuple, Any
 
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, DOWNLOADER_STORE_STANDARD_PATH, \
-    DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI
-from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, ajgowans_manualsdbs
+    DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, \
+    DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI
+from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, ajgowans_manualsdbs, \
+    chipster6502_artworkdbs, chipster6502_artwork_db_with_style
 from update_all.file_system import FileSystem
 from update_all.ini_parser import IniParser
 from update_all.logger import Logger
@@ -34,6 +36,7 @@ from update_all.os_utils import OsUtils
 SEPARATE_DB_INI_FILES: Dict[str, str] = {
     ALL_DB_IDS['BIOS'].lower(): DOWNLOADER_BIOS_DB_INI,
     ALL_DB_IDS['ARCADE_ROMS'].lower(): DOWNLOADER_ARCADE_ROMS_DB_INI,
+    **{db.db_id.lower(): DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI for db in chipster6502_artworkdbs()},
     **{db.db_id.lower(): DOWNLOADER_AJGOWANS_MANUALSDB_INI for db in ajgowans_manualsdbs()},
 }
 
@@ -746,7 +749,10 @@ def candidate_databases(config: Config) -> List[Tuple[str, Database]]:
         if len(dbs) != 1:
             raise ValueError(f"Needs to be length 1, but is '{len(dbs)}', or must be contained in configurable_dbs.")
 
-        result.append((variable, dbs[0]))
+        db = dbs[0]
+        if db.db_id.lower().startswith('chipster6502/artworkdb-'):
+            db = chipster6502_artwork_db_with_style(db, config.artwork_style_for(db.db_id))
+        result.append((variable, db))
     return result
 
 

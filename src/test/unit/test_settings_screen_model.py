@@ -26,7 +26,7 @@ from update_all.config_reader import Config
 from update_all.databases import model_variables_by_db_id, db_ids_by_model_variables, AllDBs, all_dbs, \
     MIRROR_ANDI_BR, MIRROR_MYSTICAL_REALM_ORG
 from update_all.settings_screen_model import settings_screen_model, uninstall_db_action, uninstall_db_action_for_id, \
-    uninstall_db_action_manuals
+    uninstall_db_action_manuals, uninstall_db_action_artwork, _ARTWORK_DATABASES
 from update_all.ui_engine import EffectChain, Interpolator, UiApplication, UiContext, UiRuntime, UiSection, \
     UiSectionFactory, execute_ui_engine
 from update_all.mister_ini_edits import parse_mister_ini_add, parse_mister_ini_del
@@ -40,6 +40,7 @@ _HYBRID_CORE_TITLES = {
     '# Sonic Mania MiSTer',
     '# MiSTer Duke3D',
     '# MiSTer Quake',
+    '# NBlood',
     '# Maldita Castilla MiSTer',
     '# Solarus MiSTer',
     '# 3S-ARM',
@@ -64,6 +65,7 @@ _FILE_DEPENDENT_CORE_PATHS = {
     '# Sonic Mania MiSTer': ('MultiDatabases/sonic-mania', ('games/sonic-mania/Data.rsdk',)),
     '# MiSTer Duke3D': ('MultiDatabases/duke3d', ('games/DUKE3D/duke3d.grp',)),
     '# MiSTer Quake': ('MultiDatabases/mister-quake', ('games/quake/id1/',)),
+    '# NBlood': ('MultiDatabases/nblood', ('games/NBlood/',)),
     '# Solarus MiSTer': ('MultiDatabases/solarus', ('games/Solarus/quests/', 'Scripts/Solarus.sh')),
     '# 3S-ARM': ('MultiDatabases/3s-arm', ('games/3s-arm/resources/SF33RD.AFS',)),
     '# MiSTer Frontier': (
@@ -97,6 +99,7 @@ _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
     '# Sonic Mania MiSTer': 'Sonic Mania runs as a native recompilation of its reverse-engineered engine, in software rather than in the FPGA.',
     '# MiSTer Duke3D': 'MiSTer Duke3D is a native engine port that runs in software rather than in the FPGA.',
     '# MiSTer Quake': 'MiSTer Quake is a native engine port that runs in software rather than in the FPGA.',
+    '# NBlood': 'NBlood is a Blood source port that runs in software rather than in the FPGA.',
     '# Maldita Castilla MiSTer': "Maldita Castilla MiSTer runs Locomalito's arcade action game on MiSTer's ARM processor, while a custom FPGA core accelerates its graphics.",
     '# Solarus MiSTer': 'Solarus MiSTer runs the Solarus 2D action-RPG engine in software rather than in the FPGA.',
     '# 3S-ARM': '3S-ARM is a native port of the PlayStation 2 version of Street Fighter III: 3rd Strike that runs in software rather than in the FPGA.',
@@ -118,6 +121,10 @@ _SOFTWARE_DATABASE_DESCRIPTIONS = {**_HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS, **_
 # Every database entry that explains itself must credit whoever maintains it, both in
 # its info message and in its enable confirmation when it has one.
 _DATABASE_MAINTAINERS = {
+    '# Game Artwork DBs': 'chipster6502',
+    '# Game Manuals (EN) DBs': 'Moondandy',
+    '# Dinierto GBA Borders': 'Dinierto',
+    '# Uberyoji Boot ROMs': 'uberyoji',
     '# RetroAchievements Cores': 'odelot',
     '# Physical CD Support': 'Anime0t4ku',
     '# Unofficial Distribution': 'theypsilon',
@@ -133,6 +140,7 @@ _DATABASE_MAINTAINERS = {
     '# Sonic Mania MiSTer': 'kimchiman52',
     '# MiSTer Duke3D': 'neofreno',
     '# MiSTer Quake': 'neofreno',
+    '# NBlood': 'Meathax',
     '# Maldita Castilla MiSTer': 'gmcnaught',
     '# Solarus MiSTer': 'gmcnaught',
     '# 3S-ARM': 'kimchiman52',
@@ -152,6 +160,7 @@ _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
     '# Sonic Mania MiSTer': 'launch and play Sonic Mania',
     '# MiSTer Duke3D': 'launch and play Duke Nukem 3D',
     '# MiSTer Quake': 'launch and play Quake',
+    '# NBlood': 'launch and play Blood',
     '# Solarus MiSTer': 'play Solarus quests',
     '# 3S-ARM': 'launch and play Street Fighter III: 3rd Strike',
     '# MiSTer Frontier': 'launch PICO-8 carts and legacy or modern OpenBOR games',
@@ -169,6 +178,7 @@ _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
     '# Sonic Mania MiSTer': 'manually add game data from your own Sonic Mania installation',
     '# MiSTer Duke3D': 'manually add game data from your own Duke Nukem 3D installation',
     '# MiSTer Quake': 'manually add game data from your own Quake installation',
+    '# NBlood': 'manually add game data from your own Blood: Fresh Supply installation',
     '# Solarus MiSTer': 'manually add the quests you want to play',
     '# 3S-ARM': 'manually add game data from your own PlayStation 2 copy',
     '# MiSTer Frontier': 'manually add the PICO-8 carts and OpenBOR game modules',
@@ -535,6 +545,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# Sonic Mania MiSTer': ('MultiDatabases/sonic-mania', 'MultiDatabases/sonic-mania'),
             '# MiSTer Duke3D': ('MultiDatabases/duke3d', 'MultiDatabases/duke3d'),
             '# MiSTer Quake': ('MultiDatabases/mister-quake', 'MultiDatabases/mister-quake'),
+            '# NBlood': ('MultiDatabases/nblood', 'MultiDatabases/nblood'),
             '# MegaVGMDrive': ('MultiDatabases/megavgmdrive', 'MultiDatabases/megavgmdrive'),
         }
 
@@ -553,6 +564,10 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# MiSTer Quake': {
                 'Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'},
                 'MiSTer_Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'},
+            },
+            '# NBlood': {
+                'NBlood': {'main': 'Mister_NBlood'},
+                'Mister_NBlood': {'main': 'Mister_NBlood'},
             },
         }
 
@@ -659,6 +674,203 @@ class TestSettingsScreenModel(unittest.TestCase):
             ui['on_success'][-2],
         )
 
+    def test_game_artwork_entry___is_immediately_above_game_manuals(self):
+        titles = [entry.get('title') for entry in self.model['items']['extra_content_menu']['entries']]
+
+        artwork_index = titles.index('# Game Artwork DBs')
+
+        self.assertEqual('# Game Manuals (EN) DBs', titles[artwork_index + 1])
+        self.assertEqual(
+            [{'type': 'navigate', 'target': 'game_artwork_db_menu'}],
+            self._entry('extra_content_menu', '# Game Artwork DBs')['actions']['ok'],
+        )
+
+    def test_game_artwork_entry___info_explains_the_curated_scraping_free_images(self):
+        extra_content_menu = dict(self.model['items']['extra_content_menu'])
+        expand_type(extra_content_menu, self.model['base_types'])
+        info = self._entry('extra_content_menu', '# Game Artwork DBs')['actions']['info'][0]
+
+        self.assertEqual('ui', extra_content_menu['type'])
+        self.assertEqual(
+            ['Select', 'Toggle', 'Info', 'Back'],
+            [action['title'] for action in extra_content_menu['actions']],
+        )
+        self.assertEqual('message', info['ui'])
+        self.assertEqual('About Game Artwork DBs', info['header'])
+        text = ' '.join(info['text'])
+        self.assertIn('box art and screenshots', text)
+        self.assertIn('MiSTer Monitor and compatible frontends', text)
+        self.assertIn('avoid the need to scrape artwork', text)
+        self.assertIn('The collection is curated and optimized for MiSTer.', text)
+        self.assertIn('Maintainer: chipster6502', text)
+
+    def test_game_manuals_entry___info_explains_how_to_open_installed_manuals(self):
+        info = self._entry('extra_content_menu', '# Game Manuals (EN) DBs')['actions']['info'][0]
+
+        self.assertEqual('message', info['ui'])
+        self.assertEqual('About Game Manuals (EN) DBs', info['header'])
+        text = ' '.join(info['text'])
+        self.assertIn('English-language game manuals', text)
+        self.assertIn('open the in-game OSD to view its installed manual', text)
+        self.assertIn('Maintainer: Moondandy', text)
+
+    def test_dinierto_gba_borders_entry___info_explains_where_to_install_and_enable_borders(self):
+        info = self._entry('extra_content_menu', '# Dinierto GBA Borders')['actions']['info'][0]
+
+        self.assertEqual('message', info['ui'])
+        self.assertEqual('Dinierto GBA Borders', info['header'])
+        text = ' '.join(info['text'])
+        self.assertIn('community-made borders', text)
+        self.assertIn('Game Boy Player', text)
+        self.assertIn('games/GBA/Borders/', text)
+        self.assertIn('Video & Audio', text)
+        self.assertIn('set Borders to On', text)
+        self.assertIn('Maintainer: Dinierto', text)
+
+    def test_uberyoji_boot_roms_entry___info_explains_mgl_launchers_are_not_bios_replacements(self):
+        info = self._entry('extra_content_menu', '# Uberyoji Boot ROMs')['actions']['info'][0]
+
+        self.assertEqual('message', info['ui'])
+        self.assertEqual('Uberyoji Boot ROMs', info['header'])
+        text = ' '.join(info['text'])
+        self.assertIn('custom boot ROMs', text)
+        self.assertIn("MiSTer's _Console (autoboot) folder", text)
+        self.assertIn('MGL launchers', text)
+        self.assertIn('not BIOS replacements', text)
+        self.assertIn('Maintainer: uberyoji', text)
+
+    def test_artwork_and_manuals_entries___describe_the_content_instead_of_repeating_the_maintainer(self):
+        artwork = self._entry('extra_content_menu', '# Game Artwork DBs')
+        manuals = self._entry('extra_content_menu', '# Game Manuals (EN) DBs')
+
+        self.assertEqual(
+            '{chipster6502_artwork_dbs_general_selector:multi_db_status}Box Art & Screenshots',
+            artwork['description'],
+        )
+        self.assertEqual(
+            '{ajgowans_manuals_dbs_general_selector:multi_db_status}In-Game PDFs',
+            manuals['description'],
+        )
+        self.assertEqual(
+            {'false': '', 'true': 'All On. '},
+            self.model['items']['extra_content_menu']['formatters']['multi_db_status'],
+        )
+
+    def test_artwork_catalog___contains_documented_image_count(self):
+        self.assertEqual(39, len(_ARTWORK_DATABASES))
+        self.assertEqual(23658, sum(images for _db_id, _title, images in _ARTWORK_DATABASES))
+
+    def test_artwork_styles___offer_only_published_identifiers_and_keep_friendly_formatter_labels(self):
+        menu = self.model['items']['game_artwork_db_menu']
+        style_variables = gather_variable_declarations(self.model, 'artwork_style')
+
+        self.assertEqual(39, len(style_variables))
+        for description in style_variables.values():
+            self.assertEqual('box2d', description['default'])
+            self.assertEqual(['box2d', 'box3d', 'mixrbv2'], description['values'])
+        self.assertEqual(
+            {'box2d': '2D Boxes', 'box3d': '3D Boxes', 'mixrbv2': 'Box + Screenshot'},
+            menu['formatters']['artwork_style'],
+        )
+
+    def test_artwork_database_entries___toggle_enablement_and_select_opens_individual_style_picker(self):
+        entry = self._entry('game_artwork_db_menu', '# NES')
+
+        self.assertEqual(
+            [
+                {'type': 'rotate_variable', 'target': 'chipster6502/artworkdb-nes'},
+                {'type': 'select_all_chipster6502_artwork_dbs', 'action': 'unapply'},
+            ],
+            entry['actions']['toggle'],
+        )
+        picker = entry['actions']['ok'][0]
+        self.assertEqual('NES Artwork Style', picker['header'])
+        enabled_entry = picker['entries'][0]
+        self.assertEqual('# Enabled', enabled_entry['title'])
+        self.assertEqual(
+            [
+                {'type': 'rotate_variable', 'target': 'chipster6502/artworkdb-nes'},
+                {'type': 'select_all_chipster6502_artwork_dbs', 'action': 'unapply'},
+            ],
+            enabled_entry['actions']['ok'],
+        )
+        choices = [choice for choice in picker['entries'] if choice and choice['title'] != '# Enabled']
+        self.assertEqual(
+            ['# 2D Boxes', '# 3D Boxes', '# Box + Screenshot'],
+            [choice['title'] for choice in choices],
+        )
+        self.assertEqual(
+            'chipster6502/artworkdb-nes_style',
+            choices[1]['actions']['ok'][0]['target'],
+        )
+        self.assertEqual('box3d', choices[1]['actions']['ok'][0]['style'])
+        self.assertEqual('mixrbv2', choices[2]['actions']['ok'][0]['style'])
+
+    def test_artwork_bulk_style_entry___offers_all_identifiers_for_enabled_databases(self):
+        entry = self._entry('game_artwork_db_menu', '# Style for Selected DBs')
+        picker = entry['actions']['ok'][0]
+
+        self.assertEqual(
+            ['# 2D Boxes', '# 3D Boxes', '# Box + Screenshot'],
+            [choice['title'] for choice in picker['entries']],
+        )
+        effects = [
+            choice['actions']['ok'][0]['true'][0]['actions'][0]['fixed'][0]
+            for choice in picker['entries']
+        ]
+        self.assertEqual(['box2d', 'box3d', 'mixrbv2'], [effect['style'] for effect in effects])
+        self.assertTrue(all(effect['type'] == 'apply_chipster6502_artwork_style_to_selected' for effect in effects))
+
+    def test_artwork_select_all_entry___has_uninstall_all_for_every_artwork_database(self):
+        artwork_db_ids = list(gather_variable_declarations(self.model, 'artwork'))
+        entry = self.model['items']['game_artwork_db_menu']['entries'][0]
+        action = entry['actions']['uninstall_all']
+
+        self.assertEqual('chipster6502_artwork_dbs_installed', action['if'])
+        ui = action['chain'][0]['actions'][0]['fixed'][0]
+        self.assertEqual(artwork_db_ids, ui['db_ids'])
+        self.assertEqual('All Artwork Databases', ui['title'])
+        self.assertEqual(
+            {'type': 'select_all_chipster6502_artwork_dbs', 'action': 'unapply'},
+            ui['on_success'][-2],
+        )
+
+    def test_each_artwork_database_entry___has_its_own_uninstall_action(self):
+        artwork_variables = gather_variable_declarations(self.model, 'artwork')
+        entries = self.model['items']['game_artwork_db_menu']['entries']
+        matched_variables = set()
+
+        for entry in entries:
+            if not entry:
+                continue
+
+            variables = [
+                variable for variable in artwork_variables
+                if f'{{{variable}:' in entry.get('description', '')
+            ]
+            if not variables:
+                continue
+
+            self.assertEqual(1, len(variables), entry['title'])
+            variable = variables[0]
+            matched_variables.add(variable)
+            self._assert_uninstall_action(
+                'game_artwork_db_menu',
+                entry['title'],
+                variable,
+                variable,
+                f"{entry['title'].lstrip('# ')} Artwork",
+            )
+
+            ui = entry['actions']['uninstall']['chain'][0]['actions'][0]['fixed'][0]
+            self.assertIn(
+                {'type': 'select_all_chipster6502_artwork_dbs', 'action': 'unapply'},
+                ui['on_success'],
+                entry['title'],
+            )
+
+        self.assertEqual(set(artwork_variables), matched_variables)
+
     def test_each_manual_database_entry___has_its_own_uninstall_action(self):
         manual_variables = gather_variable_declarations(self.model, 'manuals')
         entries = self.model['items']['game_manuals_en_db_menu']['entries']
@@ -703,6 +915,11 @@ class TestSettingsScreenModel(unittest.TestCase):
                     continue
                 targets = _navigate_targets(entry.get('actions', {}).get('ok', []))
                 if targets & submenu_targets:
+                    # MiSTer Monitor is an installable database whose enable flow
+                    # optionally leads to artwork selection; it is not a submenu launcher.
+                    if (menu, entry.get('title')) == ('tools_and_scripts_menu', '# MiSTer Monitor'):
+                        self.assertEqual({'game_artwork_db_menu'}, targets & submenu_targets)
+                        continue
                     self.assertNotIn(
                         'uninstall',
                         entry['actions'],
@@ -785,6 +1002,33 @@ class TestSettingsScreenModel(unittest.TestCase):
             {'type': 'navigate', 'target': 'back'},
         ], ui['on_success'])
 
+    def test_uninstall_db_action_artwork___resets_each_database_and_aggregate_state(self):
+        db_ids = ['artwork/one', 'artwork/two']
+        extra = [{'type': 'set_variable', 'target': 'some_flag', 'value': 'true'}]
+
+        action = uninstall_db_action_artwork('all_artwork', db_ids, 'Game Artwork', on_success=extra)
+
+        self.assertEqual('all_artwork', action['if'])
+        confirm = action['chain'][0]
+        self.assertEqual([
+            'This will uninstall 2 artwork databases.',
+            ' ',
+            'All their contents will be deleted from your system.',
+            'Do you really want to uninstall them?',
+        ], confirm['text'])
+
+        ui = confirm['actions'][0]['fixed'][0]
+        self.assertEqual(db_ids, ui['db_ids'])
+        self.assertEqual([
+            {'type': 'set_variable', 'target': 'artwork/one', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'artwork/two', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'artwork/one_installed', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'artwork/two_installed', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'all_artwork', 'value': 'false'},
+            {'type': 'set_variable', 'target': 'some_flag', 'value': 'true'},
+            {'type': 'navigate', 'target': 'back'},
+        ], ui['on_success'])
+
     def test_other_cores_entries___are_in_expected_order(self):
         entries = self.model['items']['other_cores_menu']['entries']
 
@@ -809,31 +1053,34 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertEqual('Hybrid Cores', menu['header'])
         self.assertEqual([
-            'MultiDatabases/dreamster',
+            'MultiDatabases/maldita-castilla',
             'MultiDatabases/sonic-mania',
+            'MultiDatabases/dreamster',
             'MultiDatabases/duke3d',
             'MultiDatabases/mister-quake',
-            'MultiDatabases/maldita-castilla',
+            'MultiDatabases/nblood',
             'MultiDatabases/solarus',
             'MultiDatabases/3s-arm',
             'MiSTerOrganize/MiSTer_Frontier',
         ], list(menu['variables']))
         self.assertEqual([
-            '# DreamSTer',
+            '# Maldita Castilla MiSTer',
             '# Sonic Mania MiSTer',
+            '# DreamSTer',
             '# MiSTer Duke3D',
             '# MiSTer Quake',
-            '# Maldita Castilla MiSTer',
+            '# NBlood',
             '# Solarus MiSTer',
             '# 3S-ARM',
             '# MiSTer Frontier',
         ], [entry.get('title') for entry in menu['entries']])
         self.assertEqual([
-            '{MultiDatabases/dreamster:enabled} Experimental Dreamcast emulator',
+            '{MultiDatabases/maldita-castilla:enabled} Ready-to-play arcade action game',
             '{MultiDatabases/sonic-mania:enabled} Sonic Mania native port',
+            '{MultiDatabases/dreamster:enabled} Experimental Dreamcast emulator',
             '{MultiDatabases/duke3d:enabled} Duke Nukem 3D engine port',
             '{MultiDatabases/mister-quake:enabled} Quake engine port',
-            "{MultiDatabases/maldita-castilla:enabled} Locomalito's arcade action game",
+            '{MultiDatabases/nblood:enabled} Blood engine port',
             '{MultiDatabases/solarus:enabled} Solarus 2D action-RPG engine',
             '{MultiDatabases/3s-arm:enabled} Street Fighter III: 3rd Strike port',
             '{MiSTerOrganize/MiSTer_Frontier:enabled} PICO-8 and OpenBOR engine ports',
@@ -903,6 +1150,11 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# MiSTer Quake',
             'MultiDatabases/mister-quake',
             "You can launch MiSTer Quake from MiSTer's Other folder.",
+        )
+        self._assert_core_menu_location(
+            '# NBlood',
+            'MultiDatabases/nblood',
+            "You can launch NBlood from MiSTer's Other folder.",
         )
         self._assert_core_menu_location(
             '# Maldita Castilla MiSTer',
@@ -1127,6 +1379,37 @@ class TestSettingsScreenModel(unittest.TestCase):
         info = self._execute_core_info('# MiSTer Quake')
         self.assertIn('Quake engine runtime', ' '.join(info.messages[0]['text']))
 
+    def test_nblood_entry___when_yes_is_selected___arms_ini_sections_and_identifies_source_port_in_info(self):
+        app = self._execute_multidatabase_action(
+            '# NBlood',
+            'MultiDatabases/nblood',
+            'false',
+            confirm_action_title='Yes',
+        )
+
+        self.assertEqual('true', app.ui.get_value('MultiDatabases/nblood'))
+        self.assertEqual([], app.messages)
+        confirmation = ' '.join(app.confirms[0]['text'])
+        self.assertIn('movie/ for cutscenes', confirmation)
+        self.assertIn('BLOOD000.DEM through BLOOD003.DEM for demos', confirmation)
+        self.assertIn('addons/Cryptic Passage/', confirmation)
+        self.assertIn('BLOOD.INI', confirmation)
+        self.assertIn('BLOOD.RFF', confirmation)
+        self.assertIn('GUI.RFF', confirmation)
+        self.assertIn('SOUNDS.RFF', confirmation)
+        self.assertIn('SURFACE.DAT', confirmation)
+        self.assertIn('VOXEL.DAT', confirmation)
+        self.assertIn('TILES000.ART through TILES017.ART', confirmation)
+        self.assertIn('games/NBlood/', confirmation)
+        self.assertNotIn('games/NBlood/movie/', confirmation)
+        self.assertEqual([
+            {'type': 'mister_ini_add', 'variable': 'MultiDatabases/nblood',
+             'target': {'NBlood': {'main': 'Mister_NBlood'},
+                        'Mister_NBlood': {'main': 'Mister_NBlood'}}},
+        ], app.mister_ini_effects)
+        info = self._execute_core_info('# NBlood')
+        self.assertIn('Blood engine runtime', ' '.join(info.messages[0]['text']))
+
     def test_maldita_castilla_entry___when_enabling___welcomes_with_included_game_and_preselects_yes(self):
         app = self._execute_multidatabase_action('# Maldita Castilla MiSTer', 'MultiDatabases/maldita-castilla', 'false')
 
@@ -1135,7 +1418,10 @@ class TestSettingsScreenModel(unittest.TestCase):
         confirm = app.confirms[0]
         self.assertEqual('Enable Maldita Castilla MiSTer?', confirm['header'])
         self.assertEqual('Yes', confirm['preselected_action'])
-        self.assertIn('The complete game is included, so it is ready to play right after updating.', confirm['text'])
+        license_text = "Locomalito publishes the included original game under the CC BY-NC-ND 4.0 license, so it is ready to play right after updating."
+        ex_text = 'For more content, you can get the commercial Maldita Castilla EX separately.'
+        self.assertIn(license_text, confirm['text'])
+        self.assertEqual(confirm['text'].index(license_text) + 1, confirm['text'].index(ex_text))
 
     def test_maldita_castilla_entry___when_yes_is_selected___enables_without_further_effects(self):
         app = self._execute_multidatabase_action(
@@ -1149,9 +1435,12 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([], app.messages)
         self.assertEqual([], app.mister_ini_effects)
         info = self._execute_core_info('# Maldita Castilla MiSTer')
-        text = ' '.join(info.messages[0]['text'])
-        self.assertIn('installs the complete game', text)
-        self.assertIn('Locomalito publishes the game under a Creative Commons license', text)
+        text = info.messages[0]['text']
+        license_text = "Locomalito publishes the included original game under the CC BY-NC-ND 4.0 license, so it is ready to play right after updating."
+        ex_text = 'For more content, you can get the commercial Maldita Castilla EX separately.'
+        self.assertIn('installs the complete game', ' '.join(text))
+        self.assertIn(license_text, text)
+        self.assertEqual(text.index(license_text) + 1, text.index(ex_text))
 
     def test_maldita_castilla_entry___when_no_is_selected___remains_disabled(self):
         app = self._execute_multidatabase_action(
@@ -1204,6 +1493,11 @@ class TestSettingsScreenModel(unittest.TestCase):
         titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
 
         self.assertEqual(titles.index('# MiSTer DVD') + 1, titles.index('# Anime0t4ku MiSTer Scripts'))
+
+    def test_mister_monitor_entry___is_immediately_above_mister_hi_fi(self):
+        titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
+
+        self.assertEqual(titles.index('# MiSTer Monitor') + 1, titles.index('# MiSTer Hi-Fi'))
 
     def test_mister_dvd_entry___when_yes_is_selected___enables_and_selects_its_custom_main(self):
         entry = self._entry('tools_and_scripts_menu', '# MiSTer DVD')
@@ -1293,6 +1587,43 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('{chipster6502/MiSTer_monitor_DB:enabled} Live game art on a separate screen', entry['description'])
         text = ' '.join(self._execute_core_info('# MiSTer Monitor').messages[0]['text'])
         self.assertIn('the chipster6502/MiSTer_monitor repository at GitHub explains which one to get and how to set it up', text)
+
+    def test_mister_monitor_entry___when_enabled_without_select_all_artwork___offers_artwork_selection(self):
+        app = self._execute_multidatabase_action(
+            '# MiSTer Monitor',
+            'chipster6502/MiSTer_monitor_DB',
+            'false',
+            confirm_action_title='Yes',
+        )
+
+        self.assertEqual('true', app.ui.get_value('chipster6502/MiSTer_monitor_DB'))
+        self.assertEqual(2, len(app.confirms))
+        prompt = app.confirms[1]
+        self.assertEqual('Enable Game Artwork DBs?', prompt['header'])
+        self.assertEqual('Yes', prompt['preselected_action'])
+        self.assertIn('MiSTer Monitor uses Game Artwork DBs', prompt['text'][0])
+        self.assertEqual(
+            [{'type': 'navigate', 'target': 'game_artwork_db_menu'}],
+            next(action for action in prompt['actions'] if action['title'] == 'Yes')['fixed'],
+        )
+        self.assertEqual(
+            [{'type': 'navigate', 'target': 'back'}],
+            next(action for action in prompt['actions'] if action['title'] == 'No')['fixed'],
+        )
+
+    def test_mister_monitor_entry___when_enabled_with_select_all_artwork___skips_artwork_selection_offer(self):
+        entry = self._entry('tools_and_scripts_menu', '# MiSTer Monitor')
+        app = self._execute_tools_action(
+            entry['actions']['ok'],
+            {
+                'chipster6502/MiSTer_monitor_DB': 'false',
+                'chipster6502_artwork_dbs_general_selector': 'true',
+            },
+            confirm_action_title='Yes',
+        )
+
+        self.assertEqual('true', app.ui.get_value('chipster6502/MiSTer_monitor_DB'))
+        self.assertEqual(1, len(app.confirms))
 
     def test_physical_disc_entry___when_enabling___arms_cd_section_without_message_and_exposes_info(self):
         app = self._execute_multidatabase_action('# Physical CD Support', 'MultiDatabases/physical-disc', 'false')
@@ -1639,6 +1970,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             'MultiDatabases/duke3d',
             'MultiDatabases/mister-dvd',
             'MultiDatabases/mister-quake',
+            'MultiDatabases/nblood',
             'MultiDatabases/physical-disc',
             'MultiDatabases/sonic-mania',
         }

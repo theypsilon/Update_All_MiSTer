@@ -20,7 +20,7 @@ from update_all.store_migrator import Migration
 
 
 def migrations() -> list[Migration]:
-    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6, migration_v7, migration_v8, migration_v9, migration_v10, migration_v11]
+    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6, migration_v7, migration_v8, migration_v9, migration_v10, migration_v11, migration_v12, migration_v13]
 
 def migration_v1(local_store) -> None:
     """create arcade_names_txt field"""
@@ -81,3 +81,12 @@ def migration_v10(local_store) -> None:
 def migration_v11(local_store) -> None:
     """create RetroAccount JT beta auto-enable state"""
     local_store['allow_retroaccount_jt_beta_auto_enable'] = True
+
+def migration_v12(local_store) -> None:
+    """create artwork selector state"""
+    local_store['chipster6502_artwork_dbs_general_selector'] = False
+
+def migration_v13(local_store) -> None:
+    """create artwork style state"""
+    local_store['chipster6502_artwork_default_style'] = 'box2d'
+    local_store['chipster6502_artwork_db_styles'] = {}

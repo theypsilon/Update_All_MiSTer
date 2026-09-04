@@ -22,7 +22,7 @@ from update_all.constants import FILE_MiSTer_ini, FILE_update_all_ini, FILE_upda
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
 from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, \
     DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ajgowans_manualsdbs, ALL_DB_IDS, DB_ID_MREXT_ALL, \
-    DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER
+    DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER, chipster6502_artworkdbs, chipster6502_artwork_db_with_style
 from update_all.ini_parser import IniParser
 from update_all.ini_repository import IniRepository, SEPARATE_DB_INI_FILES_BY_FILENAME
 from update_all.file_system import FileSystem
@@ -296,6 +296,8 @@ class TransitionService:
         db_counts = Counter(db.db_id for db in db_defs.all_dbs_list())
         unique_dbs = [db for db in db_defs.all_dbs_list() if db_counts[db.db_id] == 1]
         for db in unique_dbs:
+            if db.db_id.lower().startswith('chipster6502/artworkdb-'):
+                db = chipster6502_artwork_db_with_style(db, config.artwork_style_for(db.db_id))
             db_id = db.db_id.lower()
             if db_id in downloader_ini:
                 if downloader_ini[db_id].get_string('db_url', '').lower() != db.db_url.lower():
@@ -432,6 +434,31 @@ class TransitionService:
         self._logger.print()
         update_output.transition(
             'from_select_all_manuals_to_adding_new_manuals_dbs',
+            db_ids=','.join(activated)
+        )
+
+    def from_select_all_artwork_to_adding_new_artwork_dbs(self, config: Config, store: LocalStore, update_output: UpdateOutput):
+        if config.skip_downloader:
+            return
+
+        if not store.get_chipster6502_artwork_dbs_general_selector():
+            return
+
+        activated = [db.db_id for db in chipster6502_artworkdbs() if not config.is_database_enabled(db.db_id)]
+        if len(activated) == 0:
+            return
+
+        for db_id in activated:
+            config.set_database_enabled(db_id, True)
+
+        self._ini_repository.write_database_configuration(config)
+        self._logger.print('Activating new artwork databases:')
+        for db_id in activated:
+            self._logger.print(f'  - Added DB with id [{db_id}]')
+        self._logger.print('You may remove them from the Settings Screen.')
+        self._logger.print()
+        update_output.transition(
+            'from_select_all_artwork_to_adding_new_artwork_dbs',
             db_ids=','.join(activated)
         )
 

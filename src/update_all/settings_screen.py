@@ -32,7 +32,8 @@ from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
     ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_MiSTer_delme, \
-    MEDIA_FAT, FILE_update_all_chip_id_linker_log, FILE_update_all_chip_id_rbf, FILE_update_all_launcher, FILE_update_all_pyz
+    MEDIA_FAT, FILE_update_all_chip_id_linker_log, FILE_update_all_chip_id_rbf, FILE_update_all_launcher, \
+    FILE_update_all_pyz, CHIPSTER6502_ARTWORK_DEFAULT_STYLE, CHIPSTER6502_ARTWORK_STYLES
 from update_all.databases import db_ids_by_model_variables, model_variables_by_db_id, DB_ID_NAMES_TXT, ALL_DB_IDS
 from update_all.downloader_fingerprints import read_installed_db_ids, try_read_installed_db_ids
 from update_all.ini_repository import SEPARATE_DB_INI_FILES
@@ -120,6 +121,7 @@ class SettingsScreen(UiApplication):
         self._mister_ini_adds = {}
         self._mister_ini_add_hooks = {}
         self._mister_ini_del_hooks = {}
+        self._artwork_style_explicit_db_ids = set()
 
     def load_main_menu(self) -> None:
         if self._retroaccount.get_login_state():
@@ -203,6 +205,11 @@ class SettingsScreen(UiApplication):
         for variable in gather_variable_declarations(settings_screen_model(), "separate_db"):
             ui.set_value(variable, 'true' if db_ids[variable] in config.databases else 'false')
 
+        ui.set_value('chipster6502_artwork_default_style', config.artwork_default_style)
+        self._artwork_style_explicit_db_ids = set(config.artwork_db_styles)
+        for db_id in self._chipster6502_artwork_db_variables:
+            ui.set_value(self._artwork_style_variable(db_id), config.artwork_style_for(db_id))
+
         installed_db_ids = self._read_installed_db_ids()
         for db_id, installed in installed_db_ids.items():
             ui.set_value(f'{db_id}_installed', 'true' if installed else 'false')
@@ -212,6 +219,12 @@ class SettingsScreen(UiApplication):
             if db_id.lower().startswith('ajgowans/manualsdb-')
         )
         ui.set_value('ajgowans_manuals_dbs_installed', 'true' if manuals_installed else 'false')
+        artwork_installed = any(
+            installed
+            for db_id, installed in installed_db_ids.items()
+            if db_id.lower().startswith('chipster6502/artworkdb-')
+        )
+        ui.set_value('chipster6502_artwork_dbs_installed', 'true' if artwork_installed else 'false')
 
         local_store = self._store_provider.get()
         ui.set_value('ui_theme', local_store.get_theme())
@@ -236,6 +249,13 @@ class SettingsScreen(UiApplication):
             if local_store.has_field('ajgowans_manuals_dbs_general_selector')
             else 'false'
         )
+        ui.set_value(
+            'chipster6502_artwork_dbs_general_selector',
+            str(local_store.get_chipster6502_artwork_dbs_general_selector()).lower()
+            if local_store.has_field('chipster6502_artwork_dbs_general_selector')
+            else 'false'
+        )
+        self._refresh_chipster6502_artwork_style_summary(ui)
 
         if ALL_DB_IDS['JTCORES'] not in config.databases and not local_store.get_allow_retroaccount_jt_beta_auto_enable():
             # With JTCORES off there is no downloader.ini section for this. The flag guards against
@@ -288,6 +308,9 @@ class SettingsScreen(UiApplication):
             'pocket_backup': lambda effect: self.pocket_backup(ui),
             'apply_overscan': lambda effect: self.apply_overscan(ui),
             'select_all_ajgowans_manuals_dbs': lambda effect: self.select_all_ajgowans_manuals_dbs(ui, effect),
+            'select_all_chipster6502_artwork_dbs': lambda effect: self.select_all_chipster6502_artwork_dbs(ui, effect),
+            'set_chipster6502_artwork_db_style': lambda effect: self.set_chipster6502_artwork_db_style(ui, effect),
+            'apply_chipster6502_artwork_style_to_selected': lambda effect: self.apply_chipster6502_artwork_style_to_selected(ui, effect),
             'retroaccount_check_state': lambda effect: self.retroaccount_check_state(ui),
             'retroaccount_device_logout': lambda effect: self.retroaccount_device_logout(ui),
             'extract_chip_id': lambda effect: self.extract_chip_id(ui),
@@ -856,6 +879,12 @@ class SettingsScreen(UiApplication):
                 ini_filename = SEPARATE_DB_INI_FILES.get(db_id.lower())
                 if ini_filename is not None:
                     needs_save_file_set.add(ini_filename)
+            elif (
+                    was_active
+                    and db_id.lower().startswith('chipster6502/artworkdb-')
+                    and current_config.artwork_style_for(db_id) != temp_config.artwork_style_for(db_id)
+            ):
+                needs_save_file_set.add(SEPARATE_DB_INI_FILES[db_id.lower()])
 
         now_active = {db_id.lower() for db_id in temp_config.databases}
         for db_id in {db_id.lower() for db_id in current_config.databases} - now_active:
@@ -956,6 +985,7 @@ class SettingsScreen(UiApplication):
         config = self._config_provider.get()
         variables_by_db_id = model_variables_by_db_id()
         manuals_changed = False
+        artwork_changed = False
         for db_id in db_ids:
             if (
                     ui.get_value(f'{db_id}_installed') != 'true'
@@ -967,16 +997,24 @@ class SettingsScreen(UiApplication):
             ui.set_value(variables_by_db_id[db_id], 'false')
             ui.set_value(f'{db_id}_installed', 'false')
             manuals_changed = manuals_changed or db_id.startswith('ajgowans/manualsdb-')
+            artwork_changed = artwork_changed or db_id.startswith('chipster6502/artworkdb-')
 
-        if not manuals_changed:
-            return
+        if manuals_changed:
+            self._set_ajgowans_manuals_dbs_general_selector(ui, 'false')
+            manuals_installed = any(
+                ui.get_value(f'{db_id}_installed') == 'true'
+                for db_id in self._ajgowans_manuals_db_variables
+            )
+            ui.set_value('ajgowans_manuals_dbs_installed', 'true' if manuals_installed else 'false')
 
-        self._set_ajgowans_manuals_dbs_general_selector(ui, 'false')
-        manuals_installed = any(
-            ui.get_value(f'{db_id}_installed') == 'true'
-            for db_id in self._ajgowans_manuals_db_variables
-        )
-        ui.set_value('ajgowans_manuals_dbs_installed', 'true' if manuals_installed else 'false')
+        if artwork_changed:
+            self._set_chipster6502_artwork_dbs_general_selector(ui, 'false')
+            artwork_installed = any(
+                ui.get_value(f'{db_id}_installed') == 'true'
+                for db_id in self._chipster6502_artwork_db_variables
+            )
+            ui.set_value('chipster6502_artwork_dbs_installed', 'true' if artwork_installed else 'false')
+            self._refresh_chipster6502_artwork_style_summary(ui)
 
     def _fill_store(self, store: LocalStore, ui: UiContext, config: Config):
         store.set_theme(ui.get_value('ui_theme'))
@@ -995,6 +1033,9 @@ class SettingsScreen(UiApplication):
             store.set_download_beta_cores(config.download_beta_cores)
             store.set_allow_retroaccount_jt_beta_auto_enable(False)
         store.set_ajgowans_manuals_dbs_general_selector(ui.get_value('ajgowans_manuals_dbs_general_selector') != 'false')
+        store.set_chipster6502_artwork_dbs_general_selector(ui.get_value('chipster6502_artwork_dbs_general_selector') != 'false')
+        store.set_chipster6502_artwork_default_style(config.artwork_default_style)
+        store.set_chipster6502_artwork_db_styles(dict(config.artwork_db_styles))
         store.set_mirror(ui.get_value('mirror'))
 
     def _does_arcade_oganizer_need_save(self, ui: UiContext):
@@ -1037,6 +1078,23 @@ class SettingsScreen(UiApplication):
 
         enabled_db_ids.add(ALL_DB_IDS['UPDATE_ALL_MISTER'])
 
+        artwork_default_style = ui.get_value('chipster6502_artwork_default_style')
+        config.artwork_default_style = (
+            artwork_default_style
+            if artwork_default_style in CHIPSTER6502_ARTWORK_STYLES
+            else CHIPSTER6502_ARTWORK_DEFAULT_STYLE
+        )
+        config.artwork_db_styles = {}
+        for db_id in self._chipster6502_artwork_db_variables:
+            style = ui.get_value(self._artwork_style_variable(db_id))
+            if style not in CHIPSTER6502_ARTWORK_STYLES:
+                style = config.artwork_default_style
+            if (
+                    style != config.artwork_default_style
+                    or (db_id.lower() in self._artwork_style_explicit_db_ids and db_id not in enabled_db_ids)
+            ):
+                config.set_artwork_db_style(db_id, style)
+
         # Copy source metadata so save comparisons do not mutate it before the repository refreshes
         # the metadata from disk.
         config.database_sources = {
@@ -1061,6 +1119,14 @@ class SettingsScreen(UiApplication):
     @cached_property
     def _ajgowans_manuals_db_variables(self):
         return list(gather_variable_declarations(settings_screen_model(), "manuals"))
+
+    @cached_property
+    def _chipster6502_artwork_db_variables(self):
+        return list(gather_variable_declarations(settings_screen_model(), "artwork"))
+
+    @staticmethod
+    def _artwork_style_variable(db_id: str) -> str:
+        return f'{db_id}_style'
 
     def calculate_names_char_code_warning(self, ui: UiContext) -> None:
 
@@ -1158,6 +1224,120 @@ class SettingsScreen(UiApplication):
     def _set_all_ajgowans_manuals_dbs(self, ui: UiContext, value: str) -> bool:
         changed = False
         for variable in self._ajgowans_manuals_db_variables:
+            if ui.get_value(variable) != value:
+                ui.set_value(variable, value)
+                changed = True
+        return changed
+
+    def select_all_chipster6502_artwork_dbs(self, ui: UiContext, effect) -> Optional[str]:
+        changed = False
+        action = effect['action']
+        current_selector = ui.get_value('chipster6502_artwork_dbs_general_selector')
+        all_active = all(
+            ui.get_value(variable) == 'true'
+            for variable in self._chipster6502_artwork_db_variables
+        )
+
+        if action == 'toggle':
+            if current_selector == 'false':
+                changed = self._set_all_chipster6502_artwork_dbs(ui, 'true') or changed
+                changed = self._set_chipster6502_artwork_dbs_general_selector(ui, 'true') or changed
+            else:
+                if all_active:
+                    changed = self._set_all_chipster6502_artwork_dbs(ui, 'false') or changed
+                changed = self._set_chipster6502_artwork_dbs_general_selector(ui, 'false') or changed
+        elif action == 'unapply':
+            changed = self._set_chipster6502_artwork_dbs_general_selector(ui, 'false') or changed
+        else:
+            raise ValueError(f'Unknown chipster6502 artwork selector action value: {action}')
+
+        changed = self._refresh_chipster6502_artwork_style_summary(ui) or changed
+
+        return 'clear_window' if changed else None
+
+    def set_chipster6502_artwork_db_style(self, ui: UiContext, effect) -> Optional[str]:
+        target = effect['target']
+        style = effect['style']
+        if target not in gather_variable_declarations(settings_screen_model(), 'artwork_style'):
+            raise ValueError(f'Unknown artwork style variable: {target}')
+        if style not in CHIPSTER6502_ARTWORK_STYLES:
+            raise ValueError(f'Unknown artwork style: {style}')
+
+        self._artwork_style_explicit_db_ids.add(target[:-len('_style')].lower())
+        changed = False
+        if ui.get_value(target) != style:
+            ui.set_value(target, style)
+            changed = True
+        changed = self._refresh_chipster6502_artwork_style_summary(ui) or changed
+        return 'clear_window' if changed else None
+
+    def apply_chipster6502_artwork_style_to_selected(self, ui: UiContext, effect) -> Optional[str]:
+        style = effect['style']
+        if style not in CHIPSTER6502_ARTWORK_STYLES:
+            raise ValueError(f'Unknown artwork style: {style}')
+        if not any(ui.get_value(db_id) == 'true' for db_id in self._chipster6502_artwork_db_variables):
+            return None
+
+        old_default = ui.get_value('chipster6502_artwork_default_style')
+        enabled_db_ids = {
+            db_id.lower()
+            for db_id in self._chipster6502_artwork_db_variables
+            if ui.get_value(db_id) == 'true'
+        }
+        changed = False
+        for db_id in self._chipster6502_artwork_db_variables:
+            style_variable = self._artwork_style_variable(db_id)
+            if ui.get_value(db_id) == 'true':
+                if ui.get_value(style_variable) != style:
+                    ui.set_value(style_variable, style)
+                    changed = True
+            elif db_id.lower() not in self._artwork_style_explicit_db_ids and ui.get_value(style_variable) == old_default:
+                # Untouched disabled DBs follow the most recently bulk-applied style.
+                if old_default != style:
+                    ui.set_value(style_variable, style)
+                    changed = True
+
+        self._artwork_style_explicit_db_ids.update(enabled_db_ids)
+
+        if old_default != style:
+            ui.set_value('chipster6502_artwork_default_style', style)
+            changed = True
+        changed = self._refresh_chipster6502_artwork_style_summary(ui) or changed
+        return 'clear_window' if changed else None
+
+    def _refresh_chipster6502_artwork_style_summary(self, ui: UiContext) -> bool:
+        enabled_db_ids = [
+            db_id
+            for db_id in self._chipster6502_artwork_db_variables
+            if ui.get_value(db_id) == 'true'
+        ]
+        styles = {
+            ui.get_value(self._artwork_style_variable(db_id))
+            for db_id in enabled_db_ids
+        }
+        selected_style = 'none' if not styles else next(iter(styles)) if len(styles) == 1 else 'mixed'
+        values = {
+            'chipster6502_artwork_selected_style': selected_style,
+            'chipster6502_artwork_selected_count': str(len(enabled_db_ids)),
+            'chipster6502_artwork_has_selected_dbs': 'true' if enabled_db_ids else 'false',
+        }
+        changed = False
+        for variable, value in values.items():
+            if ui.get_value(variable) != value:
+                ui.set_value(variable, value)
+                changed = True
+        return changed
+
+    def _set_chipster6502_artwork_dbs_general_selector(self, ui: UiContext, value: str) -> bool:
+        if ui.get_value('chipster6502_artwork_dbs_general_selector') == value:
+            return False
+
+        ui.set_value('chipster6502_artwork_dbs_general_selector', value)
+        return True
+
+    def _set_all_chipster6502_artwork_dbs(self, ui: UiContext, value: str) -> bool:
+        changed = False
+        for variable in self._chipster6502_artwork_db_variables:
             if ui.get_value(variable) != value:
                 ui.set_value(variable, value)
                 changed = True

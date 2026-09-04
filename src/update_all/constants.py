@@ -197,7 +197,7 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION: Final[str] = "2.9"
+UPDATE_ALL_VERSION: Final[str] = "2.10"
 MISTER_DOWNLOADER_VERSION: Final[str] = "2.4"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"
@@ -205,7 +205,10 @@ DOWNLOADER_URL: Final[str] = "https://raw.githubusercontent.com/MiSTer-devel/Dis
 DOWNLOADER_INI_STANDARD_PATH: Final[str] = "downloader.ini"
 DOWNLOADER_BIOS_DB_INI: Final[str] = "downloader_bios_db.ini"
 DOWNLOADER_ARCADE_ROMS_DB_INI: Final[str] = "downloader_arcade_roms_db.ini"
+DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI: Final[str] = "downloader_chipster6502_artworkdb.ini"
 DOWNLOADER_AJGOWANS_MANUALSDB_INI: Final[str] = "downloader_ajgowans_manualsdb.ini"
+CHIPSTER6502_ARTWORK_STYLES: Final[tuple[str, ...]] = ('box2d', 'box3d', 'mixrbv2')
+CHIPSTER6502_ARTWORK_DEFAULT_STYLE: Final[str] = 'box2d'
 DOWNLOADER_STORE_STANDARD_PATH: Final[str] = "Scripts/.config/downloader/downloader.json"
 DOWNLOADER_LATEST_ZIP_PATH: Final[str] = "Scripts/.config/downloader/downloader_latest.zip"
 DOWNLOADER_LATEST_BIN_PATH: Final[str] = "Scripts/.config/downloader/downloader_bin"

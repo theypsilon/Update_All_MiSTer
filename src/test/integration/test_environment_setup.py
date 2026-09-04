@@ -20,7 +20,7 @@ from typing import Dict, Any, List
 
 from test.ini_assertions import testableIni
 from test.testing_objects import downloader_ini, update_all_ini, update_jtcores_ini, update_names_txt_ini, \
-    manuals_ini, store_json, ini_with_db_ids, all_manuals_db_ids
+    manuals_ini, artwork_ini, store_json, ini_with_db_ids, all_manuals_db_ids, all_artwork_db_ids
 from update_all.config import Config
 from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, FILE_update_all_storage, KENV_TRANSITION_SERVICE_ONLY, \
     MEDIA_FAT, KENV_UPDATE_ALL_MISTER_DB_URL, \
@@ -289,11 +289,48 @@ class TestEnvironmentSetup(unittest.TestCase):
         self.assertEqual(sorted(already_active), sorted(db_ids_in_ini(state, manuals_ini)))
         self.assertNotIn(new_db_id, db_ids_in_ini(state, manuals_ini))
 
+    def test_setup___with_select_all_artwork_active_and_a_new_artwork_db___adds_it_without_opening_the_settings_screen(self):
+        already_active = all_artwork_db_ids()
+        new_db_id = already_active.pop()
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+        store.set_chipster6502_artwork_default_style('box3d')
+        state = self.artwork_state(already_active, store)
+
+        EnvironmentSetupTester(
+            file_system=FileSystemFactory(state=state).create_for_system_scope()
+        ).setup_environment(TerminalSize(columns=80, lines=40), NoopUpdateOutput())
+
+        self.assertEqual(sorted(all_artwork_db_ids()), sorted(db_ids_in_ini(state, artwork_ini)))
+        self.assertNotIn(new_db_id, state.files[downloader_ini.lower()]['content'])
+        parsed = read_ini_contents(state.files[artwork_ini.lower()]['content'])
+        self.assertTrue(parsed[new_db_id]['db_url'].endswith('_box3d.json.zip'))
+
+    def test_setup___with_select_all_artwork_inactive_and_a_new_artwork_db___does_not_add_it(self):
+        already_active = all_artwork_db_ids()
+        new_db_id = already_active.pop()
+        state = self.artwork_state(already_active, local_store())
+
+        EnvironmentSetupTester(
+            file_system=FileSystemFactory(state=state).create_for_system_scope()
+        ).setup_environment(TerminalSize(columns=80, lines=40), NoopUpdateOutput())
+
+        self.assertEqual(sorted(already_active), sorted(db_ids_in_ini(state, artwork_ini)))
+        self.assertNotIn(new_db_id, db_ids_in_ini(state, artwork_ini))
+
     @staticmethod
     def manuals_state(active_manuals_db_ids: List[str], store) -> FileSystemState:
         return FileSystemState(files={
             downloader_ini: {'content': ini_with_db_ids(ALL_DB_IDS['JTCORES'], ALL_DB_IDS['UPDATE_ALL_MISTER'])},
             manuals_ini: {'content': ini_with_db_ids(*active_manuals_db_ids)},
+            store_json: {'content': json.dumps(store.unwrap_props())},
+        })
+
+    @staticmethod
+    def artwork_state(active_artwork_db_ids: List[str], store) -> FileSystemState:
+        return FileSystemState(files={
+            downloader_ini: {'content': ini_with_db_ids(ALL_DB_IDS['JTCORES'], ALL_DB_IDS['UPDATE_ALL_MISTER'])},
+            artwork_ini: {'content': ini_with_db_ids(*active_artwork_db_ids)},
             store_json: {'content': json.dumps(store.unwrap_props())},
         })
 

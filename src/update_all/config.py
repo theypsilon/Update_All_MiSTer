@@ -22,7 +22,8 @@ from typing import Dict, List, Set, Optional, TypedDict
 
 from update_all.analogue_pocket.http_gateway import HttpConfig
 from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, MEDIA_FAT, FILE_patreon_key, \
-    FILE_timeline_short, FILE_timeline_plus, COMMAND_STANDARD, DOMAIN_default_retroaccount
+    FILE_timeline_short, FILE_timeline_plus, COMMAND_STANDARD, DOMAIN_default_retroaccount, \
+    CHIPSTER6502_ARTWORK_DEFAULT_STYLE, CHIPSTER6502_ARTWORK_STYLES
 from update_all.other import OverscanDim, TerminalSize, calculate_overscan
 
 
@@ -85,6 +86,8 @@ class Config:
     # Global Updating Toggles
     mirror: str = ''
     databases: Set[str] = field(default_factory=lambda: set())
+    artwork_default_style: str = CHIPSTER6502_ARTWORK_DEFAULT_STYLE
+    artwork_db_styles: Dict[str, str] = field(default_factory=dict)
     # db_id (lower case) -> extra ini file paths (relative to base_path) where the db was found on disk.
     # Only records files Update All does NOT own (i.e. not downloader.ini nor the canonical separate db ini files).
     database_sources: Dict[str, List[str]] = field(default_factory=dict)
@@ -133,6 +136,15 @@ class Config:
 
         for db_id in desired_by_lower_id.values():
             self.set_database_enabled(db_id, True)
+
+    def artwork_style_for(self, db_id: str) -> str:
+        return self.artwork_db_styles.get(db_id.lower(), self.artwork_default_style)
+
+    def set_artwork_db_style(self, db_id: str, style: str) -> None:
+        if style not in CHIPSTER6502_ARTWORK_STYLES:
+            raise ValueError(f'Unknown artwork style: {style}')
+        self.artwork_db_styles[db_id.lower()] = style
+
 
 class AllowDelete(IntEnum):
     NONE = 0

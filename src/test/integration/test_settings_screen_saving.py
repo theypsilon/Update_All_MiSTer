@@ -22,7 +22,8 @@ from typing import Tuple
 from unittest.mock import patch
 
 from update_all.config import Config
-from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, MEDIA_FAT, FILE_MiSTer_ini
+from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, \
+    DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI, MEDIA_FAT, FILE_MiSTer_ini
 from update_all.ini_repository import read_ini_contents, SEPARATE_DB_INI_FILES
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, TerminalSize
@@ -118,6 +119,21 @@ class TestSettingsScreenSaving(unittest.TestCase):
         self.assertIn('MiSTer.ini ([DUKE3D], [Mister_duke3d])', ui.get_value('needs_save_file_list'))
         self.assertEqual(
             '[DUKE3D]\nmain=Mister_duke3d\nvga_scaler=0\n\n[Mister_duke3d]\nmain=Mister_duke3d\nvga_scaler=0\n',
+            sut._file_system.read_file_contents(FILE_MiSTer_ini),
+        )
+
+    def test_save__when_enabling_nblood___writes_both_ini_sections_on_save(self):
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('MultiDatabases/nblood', 'true')
+        sut.mister_ini_add(ui, nblood_add_effect())
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('MiSTer.ini ([NBlood], [Mister_NBlood])', ui.get_value('needs_save_file_list'))
+        self.assertEqual(
+            '[NBlood]\nmain=Mister_NBlood\n\n[Mister_NBlood]\nmain=Mister_NBlood\n',
             sut._file_system.read_file_contents(FILE_MiSTer_ini),
         )
 
@@ -290,6 +306,94 @@ class TestSettingsScreenSaving(unittest.TestCase):
         self.assertEqual(
             {'ajgowans/manualsdb-3do', 'ajgowans/manualsdb-nes', 'ajgowans/manualsdb-snes'},
             set(parsed.sections())
+        )
+
+    def test_calculate_needs_save___when_toggling_an_artworkdb___returns_artworkdb_ini_in_needs_save_list(self) -> None:
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('chipster6502/artworkdb-nes', 'true')
+
+        sut.calculate_needs_save(ui)
+
+        self.assertEqual(f'  - {DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI}', ui.get_value('needs_save_file_list'))
+        self.assertEqual('true', ui.get_value('needs_save'))
+
+    def test_save___with_multiple_artworkdbs_toggled_on___writes_expected_artworkdb_ini(self) -> None:
+        sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        ui.set_value('chipster6502/artworkdb-3do', 'true')
+        ui.set_value('chipster6502/artworkdb-nes', 'true')
+        ui.set_value('chipster6502/artworkdb-snes', 'true')
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        matching = [p for p in fs.files if p.endswith(DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI.lower())]
+        self.assertEqual(1, len(matching), f'Expected one artworkdb ini, got: {matching}')
+        parsed = read_ini_contents(fs.files[matching[0]]['content'])
+        self.assertEqual(
+            {
+                'chipster6502/artworkdb-3do',
+                'chipster6502/artworkdb-nes',
+                'chipster6502/artworkdb-snes',
+            },
+            set(parsed.sections()),
+        )
+        self.assertEqual(
+            'https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/nes_box2d.json.zip',
+            parsed['chipster6502/artworkdb-nes']['db_url'],
+        )
+
+    def test_save___with_individual_artwork_styles___writes_each_style_identifier_into_its_db_url(self) -> None:
+        sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        ui.set_value('chipster6502/artworkdb-nes', 'true')
+        ui.set_value('chipster6502/artworkdb-nes_style', 'box3d')
+        ui.set_value('chipster6502/artworkdb-snes', 'true')
+        ui.set_value('chipster6502/artworkdb-snes_style', 'mixrbv2')
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        matching = [p for p in fs.files if p.endswith(DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI.lower())]
+        parsed = read_ini_contents(fs.files[matching[0]]['content'])
+        self.assertTrue(parsed['chipster6502/artworkdb-nes']['db_url'].endswith('/nes_box3d.json.zip'))
+        self.assertTrue(parsed['chipster6502/artworkdb-snes']['db_url'].endswith('/snes_mixrbv2.json.zip'))
+        saved_store = json.loads(fs.files[store_json.lower()]['content'])
+        self.assertEqual('box3d', saved_store['chipster6502_artwork_db_styles']['chipster6502/artworkdb-nes'])
+        self.assertEqual('mixrbv2', saved_store['chipster6502_artwork_db_styles']['chipster6502/artworkdb-snes'])
+
+    def test_calculate_needs_save___when_active_artwork_style_changes___includes_artwork_ini(self) -> None:
+        artwork_contents = (
+            '[chipster6502/artworkdb-nes]\n'
+            'db_url = https://raw.githubusercontent.com/chipster6502/'
+            'artworkdb-nintendo-consoles/db/nes_box3d.json.zip\n'
+        )
+        sut, ui, _ = tester(files={
+            downloader_ini: {'content': default_downloader_ini_content()},
+            f'{MEDIA_FAT}/{DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI}': {'content': artwork_contents},
+        })
+        self.assertEqual('box3d', ui.get_value('chipster6502/artworkdb-nes_style'))
+        ui.set_value('chipster6502/artworkdb-nes_style', 'mixrbv2')
+
+        sut.calculate_needs_save(ui)
+
+        self.assertIn(DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI, ui.get_value('needs_save_file_list'))
+        self.assertEqual('true', ui.get_value('needs_save'))
+
+    def test_save___remembers_an_individual_style_for_a_disabled_artwork_database(self) -> None:
+        sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        sut.set_chipster6502_artwork_db_style(ui, {
+            'target': 'chipster6502/artworkdb-nes_style',
+            'style': 'box2d',
+        })
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        saved_store = json.loads(fs.files[store_json.lower()]['content'])
+        self.assertEqual(
+            'box2d',
+            saved_store['chipster6502_artwork_db_styles']['chipster6502/artworkdb-nes'],
         )
 
     def test_calculate_needs_save___with_hbmame_filter_changed_on_separate_arcade_roms_db___returns_separate_ini_changes(self) -> None:
@@ -713,6 +817,13 @@ def duke3d_immediate_del_effect():
     return {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/duke3d",
             "target": {"DUKE3D": {"main": "Mister_duke3d", "vga_scaler": "0"},
                        "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"}}}
+
+
+def nblood_add_effect():
+    # Declared exactly as in the settings screen model.
+    return {"type": "mister_ini_add", "variable": "MultiDatabases/nblood",
+            "target": {"NBlood": {"main": "Mister_NBlood"},
+                       "Mister_NBlood": {"main": "Mister_NBlood"}}}
 
 
 def retroachievements_add_effect():

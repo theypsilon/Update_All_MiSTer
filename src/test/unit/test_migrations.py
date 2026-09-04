@@ -19,7 +19,8 @@ import unittest
 
 from test.logger_tester import NoLogger
 from update_all.local_store import LocalStore
-from update_all.migrations import migration_v7, migration_v8, migration_v9, migration_v10, migration_v11
+from update_all.migrations import migration_v7, migration_v8, migration_v9, migration_v10, migration_v11, migration_v12, \
+    migration_v13
 from update_all.store_migrator import StoreMigrator
 
 
@@ -86,6 +87,21 @@ class TestMigrations(unittest.TestCase):
         migration_v11(local_store)
 
         self.assertEqual(True, local_store['allow_retroaccount_jt_beta_auto_enable'])
+
+    def test_migration_v12___adds_artwork_selector(self):
+        local_store = {}
+
+        migration_v12(local_store)
+
+        self.assertEqual(False, local_store['chipster6502_artwork_dbs_general_selector'])
+
+    def test_migration_v13___adds_artwork_style_state(self):
+        local_store = {}
+
+        migration_v13(local_store)
+
+        self.assertEqual('box2d', local_store['chipster6502_artwork_default_style'])
+        self.assertEqual({}, local_store['chipster6502_artwork_db_styles'])
 
     def test_store_migrator___after_running_migrations___marks_store_for_persistence(self):
         props = {'migration_version': 0}

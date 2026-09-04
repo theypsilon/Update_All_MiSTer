@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 from urllib.parse import urlparse
 
+from update_all.constants import CHIPSTER6502_ARTWORK_DEFAULT_STYLE, CHIPSTER6502_ARTWORK_STYLES
+
 
 @dataclass
 class Database:
@@ -112,6 +114,7 @@ class AllDBs:
         self.MISTER_DVD = Database(db_id='MultiDatabases/mister-dvd', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-dvd/db.json', title='MiSTer DVD')
         self.MISTER_HIFI = Database(db_id='MultiDatabases/mister-hifi', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-hifi/db.json', title='MiSTer Hi-Fi')
         self.MISTER_QUAKE = Database(db_id='MultiDatabases/mister-quake', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-quake/db.json', title='MiSTer Quake')
+        self.NBLOOD = Database(db_id='MultiDatabases/nblood', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/nblood/db.json', title='NBlood')
         self.MMS2_GB = Database(db_id='MultiDatabases/mms2-gb', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mms2-gb/db.json', title='MMS2 GB Core')
         self.PAPRIUM = Database(db_id='MultiDatabases/paprium', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/paprium/db.json', title='Paprium MegaDrive')
         self.PHYSICAL_DISC = Database(db_id='MultiDatabases/physical-disc', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/physical-disc/db.json', title='Physical CD Support')
@@ -126,6 +129,47 @@ class AllDBs:
         self.RANNYSNICE_WALLPAPERS = Database(db_id='Ranny-Snice/Ranny-Snice-Wallpapers', db_url='https://raw.githubusercontent.com/Ranny-Snice/Ranny-Snice-Wallpapers/db/db.json.zip', title='Ranny Snice Wallpapers')
         self.ANIME0T4KU_WALLPAPERS = Database(db_id='anime0t4ku_wallpapers', db_url='https://raw.githubusercontent.com/Anime0t4ku/MiSTerWallpapers/db/db/0t4kuwallpapers.json.zip', title='Anime0t4ku Wallpapers')
         self.PCN_CHALLENGE_WALLPAPERS = Database(db_id='pcn_challenge_wallpapers', db_url='https://raw.githubusercontent.com/Anime0t4ku/MiSTerWallpapers/db/db/pcnchallenge.json.zip', title='PCN Challenge Wallpapers')
+
+        # ARTWORK (box2d databases from MiSTer_artwork_pack/PACK_FORMAT.md)
+        self.ARTWORKDB_3DO = Database(db_id='chipster6502/artworkdb-3do', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/3do_box2d.json.zip', title='3DO Artwork')
+        self.ARTWORKDB_ATARI5200 = Database(db_id='chipster6502/artworkdb-atari5200', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atari5200_box2d.json.zip', title='Atari 5200 Artwork')
+        self.ARTWORKDB_ATARI7800 = Database(db_id='chipster6502/artworkdb-atari7800', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atari7800_box2d.json.zip', title='Atari 7800 Artwork')
+        self.ARTWORKDB_AMIGACD32 = Database(db_id='chipster6502/artworkdb-amigacd32', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/amigacd32_box2d.json.zip', title='Amiga CD32 Artwork')
+        self.ARTWORKDB_ARCADE = Database(db_id='chipster6502/artworkdb-arcade', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-arcade/db/arcade_box2d.json.zip', title='Arcade Artwork')
+        self.ARTWORKDB_ATARI2600 = Database(db_id='chipster6502/artworkdb-atari2600', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atari2600_box2d.json.zip', title='Atari 2600 Artwork')
+        self.ARTWORKDB_ATARILYNX = Database(db_id='chipster6502/artworkdb-atarilynx', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atarilynx_box2d.json.zip', title='Atari Lynx Artwork')
+        self.ARTWORKDB_CD_I = Database(db_id='chipster6502/artworkdb-cd-i', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/cd-i_box2d.json.zip', title='CD-i Artwork')
+        self.ARTWORKDB_COLECO = Database(db_id='chipster6502/artworkdb-coleco', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/coleco_box2d.json.zip', title='Coleco Artwork')
+        self.ARTWORKDB_FDS = Database(db_id='chipster6502/artworkdb-fds', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/fds_box2d.json.zip', title='FDS Artwork')
+        self.ARTWORKDB_GAMEBOY = Database(db_id='chipster6502/artworkdb-gameboy', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-handhelds/db/gameboy_box2d.json.zip', title='Game Boy Artwork')
+        self.ARTWORKDB_GBA = Database(db_id='chipster6502/artworkdb-gba', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-handhelds/db/gba_box2d.json.zip', title='GBA Artwork')
+        self.ARTWORKDB_GBC = Database(db_id='chipster6502/artworkdb-gbc', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-handhelds/db/gbc_box2d.json.zip', title='Game Boy Color Artwork')
+        self.ARTWORKDB_GAMEGEAR = Database(db_id='chipster6502/artworkdb-gamegear', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/gamegear_box2d.json.zip', title='Game Gear Artwork')
+        self.ARTWORKDB_GENESIS = Database(db_id='chipster6502/artworkdb-genesis', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/genesis_box2d.json.zip', title='Genesis Artwork')
+        self.ARTWORKDB_INTELLIVISION = Database(db_id='chipster6502/artworkdb-intellivision', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/intellivision_box2d.json.zip', title='Intellivision Artwork')
+        self.ARTWORKDB_JAGUAR = Database(db_id='chipster6502/artworkdb-jaguar', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/jaguar_box2d.json.zip', title='Jaguar Artwork')
+        self.ARTWORKDB_MEGACD = Database(db_id='chipster6502/artworkdb-megacd', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/megacd_box2d.json.zip', title='Mega CD Artwork')
+        self.ARTWORKDB_N64 = Database(db_id='chipster6502/artworkdb-n64', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/n64_box2d.json.zip', title='N64 Artwork')
+        self.ARTWORKDB_NEOGEO = Database(db_id='chipster6502/artworkdb-neogeo', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeo_box2d.json.zip', title='Neo Geo Artwork')
+        self.ARTWORKDB_NES = Database(db_id='chipster6502/artworkdb-nes', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/nes_box2d.json.zip', title='NES Artwork')
+        self.ARTWORKDB_NEOGEO_CD = Database(db_id='chipster6502/artworkdb-neogeo-cd', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeo-cd_box2d.json.zip', title='Neo Geo CD Artwork')
+        self.ARTWORKDB_NEOGEOPOCKET = Database(db_id='chipster6502/artworkdb-neogeopocket', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeopocket_box2d.json.zip', title='Neo Geo Pocket Artwork')
+        self.ARTWORKDB_NEOGEOPOCKET_COLOR = Database(db_id='chipster6502/artworkdb-neogeopocket-color', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeopocket-color_box2d.json.zip', title='Neo Geo Pocket Color Artwork')
+        self.ARTWORKDB_ODYSSEY2 = Database(db_id='chipster6502/artworkdb-odyssey2', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/odyssey2_box2d.json.zip', title='Odyssey 2 Artwork')
+        self.ARTWORKDB_PSX = Database(db_id='chipster6502/artworkdb-psx', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sony/db/psx_box2d.json.zip', title='PSX Artwork')
+        self.ARTWORKDB_S32X = Database(db_id='chipster6502/artworkdb-s32x', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/s32x_box2d.json.zip', title='Sega 32X Artwork')
+        self.ARTWORKDB_SG_1000 = Database(db_id='chipster6502/artworkdb-sg-1000', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/sg-1000_box2d.json.zip', title='SG-1000 Artwork')
+        self.ARTWORKDB_SMS = Database(db_id='chipster6502/artworkdb-sms', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/sms_box2d.json.zip', title='SMS Artwork')
+        self.ARTWORKDB_SNES = Database(db_id='chipster6502/artworkdb-snes', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/snes_box2d.json.zip', title='SNES Artwork')
+        self.ARTWORKDB_SATELLAVIEW = Database(db_id='chipster6502/artworkdb-satellaview', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/satellaview_box2d.json.zip', title='Satellaview Artwork')
+        self.ARTWORKDB_SATURN = Database(db_id='chipster6502/artworkdb-saturn', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/saturn_box2d.json.zip', title='Saturn Artwork')
+        self.ARTWORKDB_SUPERGRAFX = Database(db_id='chipster6502/artworkdb-supergrafx', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nec/db/supergrafx_box2d.json.zip', title='SuperGrafx Artwork')
+        self.ARTWORKDB_TGFX16 = Database(db_id='chipster6502/artworkdb-tgfx16', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nec/db/tgfx16_box2d.json.zip', title='TurboGrafx-16 Artwork')
+        self.ARTWORKDB_TGFX16_CD = Database(db_id='chipster6502/artworkdb-tgfx16-cd', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nec/db/tgfx16-cd_box2d.json.zip', title='TurboGrafx-CD Artwork')
+        self.ARTWORKDB_VECTREX = Database(db_id='chipster6502/artworkdb-vectrex', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/vectrex_box2d.json.zip', title='Vectrex Artwork')
+        self.ARTWORKDB_VIRTUALBOY = Database(db_id='chipster6502/artworkdb-virtualboy', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/virtualboy_box2d.json.zip', title='Virtual Boy Artwork')
+        self.ARTWORKDB_WONDERSWAN = Database(db_id='chipster6502/artworkdb-wonderswan', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/wonderswan_box2d.json.zip', title='WonderSwan Artwork')
+        self.ARTWORKDB_WONDERSWANCOLOR = Database(db_id='chipster6502/artworkdb-wonderswancolor', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/wonderswancolor_box2d.json.zip', title='WonderSwan Color Artwork')
 
         # MANUALS
         self.MANUALSDB_3DO = Database(db_id='ajgowans/manualsdb-3do', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-3do/db/db.json.zip', title='3DO Manuals')
@@ -348,6 +392,31 @@ def changed_db_ids() -> Dict[str, str]:
 def ajgowans_manualsdbs() -> List[Database]:
     dbs = AllDBs()
     return [getattr(dbs, name) for name, db_id in ALL_DB_IDS.items() if db_id.startswith('ajgowans/manualsdb-')]
+
+def chipster6502_artworkdbs() -> List[Database]:
+    dbs = AllDBs()
+    return [getattr(dbs, name) for name, db_id in ALL_DB_IDS.items() if db_id.startswith('chipster6502/artworkdb-')]
+
+def chipster6502_artwork_db_with_style(db: Database, style: str) -> Database:
+    if style not in CHIPSTER6502_ARTWORK_STYLES:
+        raise ValueError(f'Unknown artwork style: {style}')
+
+    expected_suffix = f'_{CHIPSTER6502_ARTWORK_DEFAULT_STYLE}.json.zip'
+    if not db.db_url.lower().endswith(expected_suffix):
+        raise ValueError(f'Artwork database URL does not end in {expected_suffix}: {db.db_url}')
+
+    return Database(
+        db_id=db.db_id,
+        db_url=db.db_url[:-len(expected_suffix)] + f'_{style}.json.zip',
+        title=db.title,
+    )
+
+def chipster6502_artwork_style_from_db_url(db_url: Optional[str]) -> str:
+    normalized = (db_url or '').lower().split('?', 1)[0]
+    for style in CHIPSTER6502_ARTWORK_STYLES:
+        if normalized.endswith(f'_{style}.json.zip'):
+            return style
+    return CHIPSTER6502_ARTWORK_DEFAULT_STYLE
 
 def removed_db_ids() -> dict[str, str]:
     return {

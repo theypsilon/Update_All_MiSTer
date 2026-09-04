@@ -26,8 +26,10 @@ from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOC
     KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, \
     FILE_retroaccount_cfg, K_RETROACCOUNT_DOMAIN, KENV_UPDATE_ALL_MISTER_DB_URL, \
     KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, KENV_UPDATE_ALL_NON_INTERACTIVE, \
-    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
-from update_all.databases import DB_ID_NAMES_TXT, model_variables_by_db_id, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, DB_ID_MREXT_TAPTO
+    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH, CHIPSTER6502_ARTWORK_DEFAULT_STYLE, \
+    CHIPSTER6502_ARTWORK_STYLES
+from update_all.databases import DB_ID_NAMES_TXT, model_variables_by_db_id, DB_ID_DISTRIBUTION_MISTER, all_dbs, \
+    ALL_DB_IDS, DB_ID_MREXT_TAPTO, chipster6502_artworkdbs, chipster6502_artwork_style_from_db_url
 from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
 from update_all.local_store import LocalStore
@@ -129,6 +131,14 @@ class ConfigReader:
             rannysnice_wallpapers_filter = parser.get_string('filter', '').replace('-', '').replace('_', '').lower()
             config.rannysnice_wallpapers_filter = 'ar16-9' if 'ar169' in rannysnice_wallpapers_filter else 'ar4-3' if 'ar43' in rannysnice_wallpapers_filter else 'all'
 
+        for artwork_db in chipster6502_artworkdbs():
+            parser = all_ini.get(artwork_db.db_id.lower())
+            if parser is not None:
+                config.set_artwork_db_style(
+                    artwork_db.db_id,
+                    chipster6502_artwork_style_from_db_url(parser.get_string('db_url', None)),
+                )
+
         config.arcade_organizer = self._ini_repository.get_arcade_organizer_ini().get_bool('arcade_organizer', config.arcade_organizer)
 
     def fill_config_with_local_store(self, config: Config, store: LocalStore):
@@ -143,6 +153,15 @@ class ConfigReader:
         config.timeline_after_logs = store.get_timeline_after_logs()
         config.overscan = store.get_overscan()
         config.monochrome_ui = store.get_monochrome_ui()
+        artwork_default_style = store.get_chipster6502_artwork_default_style()
+        config.artwork_default_style = (
+            artwork_default_style
+            if artwork_default_style in CHIPSTER6502_ARTWORK_STYLES
+            else CHIPSTER6502_ARTWORK_DEFAULT_STYLE
+        )
+        for db_id, style in store.get_chipster6502_artwork_db_styles().items():
+            if style in CHIPSTER6502_ARTWORK_STYLES:
+                config.set_artwork_db_style(db_id, style)
 
     def fill_config_with_terminal_size(self, config: Config, size: TerminalSize):
         config.term_size = size

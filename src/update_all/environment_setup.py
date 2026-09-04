@@ -82,6 +82,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._transition_service.from_no_update_all_mister_db_to_adding_it(config, downloader_ini, update_output)
         self._transition_service.from_downloader_ini_to_separate_db_ini_files(downloader_ini, update_output)
         self._transition_service.from_select_all_manuals_to_adding_new_manuals_dbs(config, local_store, update_output)
+        self._transition_service.from_select_all_artwork_to_adding_new_artwork_dbs(config, local_store, update_output)
         # @TODO: Remove after 2026-11. See the note on the transition itself.
         self._transition_service.from_physical_disc_cd_section_to_a0cd_section(config, update_output)
         if local_store.needs_save():

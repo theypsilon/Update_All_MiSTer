@@ -61,6 +61,72 @@ def _crt_direct_video_warning(target): return {
 
 
 _ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22346727424  # ~20.8 GB at 128KB cluster, see estimate_manuals_db_space.json
+_ALL_CHIPSTER6502_ARTWORK_ESTIMATED_BYTES = 2_386_300_000  # Largest published full set: box2d, 2386.3 MB
+
+
+def _enable_all_artwork_confirm(): return {
+    "ui": "confirm",
+    "header": "Enable All Artwork DBs?",
+    "text": [
+        "This will activate all artwork databases.",
+        "That is a large download, 23,658 images and 2.04-2.39 GB, depending on style.",
+        "It will take a while!",
+        "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
+        "Are you sure you want to continue?",
+    ],
+    "actions": [
+        {"title": "Continue", "type": "fixed", "fixed": [
+            {"type": "select_all_chipster6502_artwork_dbs", "action": "toggle"},
+            {"type": "navigate", "target": "back"},
+        ]},
+        {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+    ],
+}
+
+
+def _not_enough_space_for_artwork_warning(): return {
+    "ui": "confirm",
+    "header": "Not Enough Free Space!",
+    "alert_level": "black",
+    "text": [
+        "Enabling all artwork DBs requires 23,658 images and 2.04-2.39 GB, depending on style.",
+        "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
+        "Installing all artwork will likely fill up your storage and cause problems.",
+        "Free up space or enable only individual artwork databases instead.",
+    ],
+    "preselected_action": "Back",
+    "actions": [
+        {"title": "Continue", "type": "fixed", "fixed": [
+            {"type": "select_all_chipster6502_artwork_dbs", "action": "toggle"},
+            {"type": "navigate", "target": "back"},
+        ]},
+        {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+    ],
+}
+
+
+def _try_select_all_chipster6502_artwork_dbs(): return [
+    {
+        "type": "condition",
+        "variable": "chipster6502_artwork_dbs_general_selector",
+        "true": [{"type": "select_all_chipster6502_artwork_dbs", "action": "toggle"}],
+        "false": [
+            {
+                "type": "compare_bigger",
+                "left": _ALL_CHIPSTER6502_ARTWORK_ESTIMATED_BYTES,
+                "right": "media_fat_available_space",
+                "target": "artwork_space_fits"
+            },
+            {
+                "type": "condition",
+                "variable": "artwork_space_fits",
+                "left": [_not_enough_space_for_artwork_warning()],
+                "right": [_enable_all_artwork_confirm()],
+                "equal": [_not_enough_space_for_artwork_warning()],
+            }
+        ]
+    }
+]
 
 def _enable_all_manuals_confirm(): return {
     "ui": "confirm",
@@ -157,27 +223,58 @@ def _try_toggle_big_manual_db(target, title, count, size): return [
 ]
 
 
-def _try_toggle_with_user_dependency(variable, title, dependency_instructions, enable_effects=()): return [
-    {
-        "type": "condition",
-        "variable": variable,
-        "true": [{"type": "rotate_variable", "target": variable}],
-        "false": [{
-            "ui": "confirm",
-            "header": f"Enable {title}?",
-            "preselected_action": "No",
-            "text": dependency_instructions,
-            "actions": [
-                {"title": "Yes", "type": "fixed", "fixed": [
-                    {"type": "rotate_variable", "target": variable},
-                    *enable_effects,
-                    {"type": "navigate", "target": "back"},
-                ]},
-                {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
-            ],
-        }],
-    },
-]
+def _try_toggle_with_user_dependency(
+        variable, title, dependency_instructions, enable_effects=(), when_enabled=None):
+    if when_enabled is None:
+        when_enabled = [{"type": "navigate", "target": "back"}]
+
+    return [
+        {
+            "type": "condition",
+            "variable": variable,
+            "true": [{"type": "rotate_variable", "target": variable}],
+            "false": [{
+                "ui": "confirm",
+                "header": f"Enable {title}?",
+                "preselected_action": "No",
+                "text": dependency_instructions,
+                "actions": [
+                    {"title": "Yes", "type": "fixed", "fixed": [
+                        {"type": "rotate_variable", "target": variable},
+                        *enable_effects,
+                        *when_enabled,
+                    ]},
+                    {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                ],
+            }],
+        },
+    ]
+
+
+def _offer_mister_monitor_artwork_dbs(): return [{
+    "type": "condition",
+    "variable": "chipster6502_artwork_dbs_general_selector",
+    "true": [{"type": "navigate", "target": "back"}],
+    "false": [{
+        "ui": "confirm",
+        "header": "Enable Game Artwork DBs?",
+        "preselected_action": "Yes",
+        "text": [
+            "MiSTer Monitor uses Game Artwork DBs to display box art and screenshots.",
+            " ",
+            "Do you want to choose which artwork databases to enable?",
+            "Maintainer: chipster6502",
+        ],
+        "actions": [
+            {"title": "Yes", "type": "fixed", "fixed": [
+                {"type": "navigate", "target": "game_artwork_db_menu"},
+            ]},
+            {"title": "No", "type": "fixed", "fixed": [
+                {"type": "navigate", "target": "back"},
+            ]},
+        ],
+    }],
+}]
 
 
 def _try_toggle_mrext_with_zaparoo_prompt(): return [
@@ -423,6 +520,26 @@ def uninstall_db_action_manuals(variable, db_ids, title, on_success=None):
     )
 
 
+def uninstall_db_action_artwork(variable, db_ids, title, on_success=None):
+    return _uninstall_db_action(
+        variable,
+        db_ids,
+        title,
+        [
+            f"This will uninstall {len(db_ids)} artwork databases.",
+            " ",
+            "All their contents will be deleted from your system.",
+            "Do you really want to uninstall them?",
+        ],
+        [
+            *[{"type": "set_variable", "target": db_id, "value": "false"} for db_id in db_ids],
+            *[{"type": "set_variable", "target": f'{db_id}_installed', "value": "false"} for db_id in db_ids],
+            {"type": "set_variable", "target": variable, "value": "false"},
+            *(on_success or []),
+        ],
+    )
+
+
 def _manual_db_actions(db_id, title, ok=None):
     if ok is None:
         ok = [
@@ -495,6 +612,193 @@ def _manual_db_variables(): return {
 }
 
 
+# Published image counts from MiSTer_artwork_pack/PACK_FORMAT.md on 2026-09-04.
+# The IDs and URL derivation are stable; these display-only counts are a snapshot.
+_ARTWORK_DATABASES = (
+    ("chipster6502/artworkdb-3do", "3DO", 316),
+    ("chipster6502/artworkdb-atari5200", "Atari 5200", 95),
+    ("chipster6502/artworkdb-atari7800", "Atari 7800", 66),
+    ("chipster6502/artworkdb-amigacd32", "Amiga CD32", 149),
+    ("chipster6502/artworkdb-arcade", "Arcade", 4619),
+    ("chipster6502/artworkdb-atari2600", "Atari 2600", 595),
+    ("chipster6502/artworkdb-atarilynx", "Atari Lynx", 88),
+    ("chipster6502/artworkdb-cd-i", "CD-i", 160),
+    ("chipster6502/artworkdb-coleco", "Coleco", 165),
+    ("chipster6502/artworkdb-fds", "FDS", 202),
+    ("chipster6502/artworkdb-gameboy", "Game Boy", 1035),
+    ("chipster6502/artworkdb-gba", "GBA", 1634),
+    ("chipster6502/artworkdb-gbc", "Game Boy Color", 958),
+    ("chipster6502/artworkdb-gamegear", "Game Gear", 382),
+    ("chipster6502/artworkdb-genesis", "Genesis", 1012),
+    ("chipster6502/artworkdb-intellivision", "Intellivision", 153),
+    ("chipster6502/artworkdb-jaguar", "Jaguar", 56),
+    ("chipster6502/artworkdb-megacd", "Mega CD", 246),
+    ("chipster6502/artworkdb-n64", "N64", 409),
+    ("chipster6502/artworkdb-neogeo", "Neo Geo", 171),
+    ("chipster6502/artworkdb-nes", "NES", 1424),
+    ("chipster6502/artworkdb-neogeo-cd", "Neo Geo CD", 97),
+    ("chipster6502/artworkdb-neogeopocket", "Neo Geo Pocket", 10),
+    ("chipster6502/artworkdb-neogeopocket-color", "Neo Geo Pocket Color", 75),
+    ("chipster6502/artworkdb-odyssey2", "Odyssey 2", 83),
+    ("chipster6502/artworkdb-psx", "PSX", 4867),
+    ("chipster6502/artworkdb-s32x", "Sega 32X", 40),
+    ("chipster6502/artworkdb-sg-1000", "SG-1000", 73),
+    ("chipster6502/artworkdb-sms", "SMS", 343),
+    ("chipster6502/artworkdb-snes", "SNES", 1802),
+    ("chipster6502/artworkdb-satellaview", "Satellaview", 149),
+    ("chipster6502/artworkdb-saturn", "Saturn", 1219),
+    ("chipster6502/artworkdb-supergrafx", "SuperGrafx", 5),
+    ("chipster6502/artworkdb-tgfx16", "TurboGrafx-16", 301),
+    ("chipster6502/artworkdb-tgfx16-cd", "TurboGrafx-CD", 396),
+    ("chipster6502/artworkdb-vectrex", "Vectrex", 34),
+    ("chipster6502/artworkdb-virtualboy", "Virtual Boy", 27),
+    ("chipster6502/artworkdb-wonderswan", "WonderSwan", 111),
+    ("chipster6502/artworkdb-wonderswancolor", "WonderSwan Color", 91),
+)
+
+_ARTWORK_STYLES = (
+    ('box2d', '2D Boxes'),
+    ('box3d', '3D Boxes'),
+    ('mixrbv2', 'Box + Screenshot'),
+)
+
+
+def _artwork_style_variable(db_id):
+    return f'{db_id}_style'
+
+
+def _artwork_db_variables(): return {
+    db_id: {"group": ["separate_db", "artwork"], "default": "false", "values": ["false", "true"]}
+    for db_id, _title, _images in _ARTWORK_DATABASES
+}
+
+
+def _artwork_style_variables(): return {
+    _artwork_style_variable(db_id): {
+        "group": "artwork_style",
+        "default": "box2d",
+        "values": [style for style, _label in _ARTWORK_STYLES],
+    }
+    for db_id, _title, _images in _ARTWORK_DATABASES
+}
+
+
+def _artwork_style_picker(db_id, title):
+    style_variable = _artwork_style_variable(db_id)
+    return {
+        "ui": "menu",
+        "header": f"{title} Artwork Style",
+        "text": [f"Current: {{{style_variable}:artwork_style}}", "Choose the artwork used for this database."],
+        "hotkeys": [{"keys": [27], "action": [{"type": "navigate", "target": "back"}]}],
+        "actions": [
+            {"title": "Select", "type": "symbol", "symbol": "ok"},
+            {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+        ],
+        "entries": [
+            {
+                "title": "# Enabled",
+                "description": f"{{{db_id}:enabled}} Include {title} artwork",
+                "actions": {"ok": [
+                    {"type": "rotate_variable", "target": db_id},
+                    {"type": "select_all_chipster6502_artwork_dbs", "action": "unapply"},
+                ]},
+            },
+            {},
+            *[
+                {
+                    "title": f"# {label}",
+                    "description": f"Use {label} for {title}",
+                    "actions": {"ok": [
+                        {
+                            "type": "set_chipster6502_artwork_db_style",
+                            "target": style_variable,
+                            "style": style,
+                        },
+                        {"type": "navigate", "target": "back"},
+                    ]},
+                }
+                for style, label in _ARTWORK_STYLES
+            ],
+        ],
+    }
+
+
+def _apply_artwork_style_confirm(style, label): return {
+    "type": "condition",
+    "variable": "chipster6502_artwork_has_selected_dbs",
+    "true": [{
+        "ui": "confirm",
+        "header": f"Apply {label}?",
+        "text": [
+            f"This will use {label} for all enabled artwork databases.",
+            "Changing artwork style may replace existing images and require a large download.",
+            "Disabled databases keep their individual style.",
+            "Do you want to continue?",
+        ],
+        "actions": [
+            {"title": "Continue", "type": "fixed", "fixed": [
+                {"type": "apply_chipster6502_artwork_style_to_selected", "style": style},
+                {"type": "navigate", "target": "back"},
+            ]},
+            {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+        ],
+    }],
+    "false": [{
+        "ui": "message",
+        "header": "No Artwork DBs Selected",
+        "text": ["Enable at least one artwork database before applying a style."],
+    }],
+}
+
+
+def _artwork_bulk_style_picker(): return {
+    "ui": "menu",
+    "header": "Style for Selected Artwork DBs",
+    "text": [
+        "Apply one style to every enabled artwork database.",
+        "You can still override individual databases afterward.",
+        "Default for untouched databases: {chipster6502_artwork_default_style:artwork_style}.",
+    ],
+    "hotkeys": [{"keys": [27], "action": [{"type": "navigate", "target": "back"}]}],
+    "actions": [
+        {"title": "Select", "type": "symbol", "symbol": "ok"},
+        {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+    ],
+    "entries": [
+        {
+            "title": f"# {label}",
+            "description": f"Apply {label} to all enabled artwork DBs",
+            "actions": {"ok": [_apply_artwork_style_confirm(style, label)]},
+        }
+        for style, label in _ARTWORK_STYLES
+    ],
+}
+
+
+def _artwork_db_actions(db_id, title): return {
+    "uninstall": uninstall_db_action_for_id(
+        db_id,
+        f"{title} Artwork",
+        on_success=[{"type": "select_all_chipster6502_artwork_dbs", "action": "unapply"}],
+    ),
+    "ok": [_artwork_style_picker(db_id, title)],
+    "toggle": [
+        {"type": "rotate_variable", "target": db_id},
+        {"type": "select_all_chipster6502_artwork_dbs", "action": "unapply"},
+    ],
+}
+
+
+def _artwork_db_entries(): return [
+    {
+        "title": f"# {title}",
+        "description": f"{{{db_id}:enabled}} {{{_artwork_style_variable(db_id)}:artwork_style}} | {images} images",
+        "actions": _artwork_db_actions(db_id, title),
+    }
+    for db_id, title, images in _ARTWORK_DATABASES
+]
+
+
 def _retroachievements_cfg_installed_message(): return {
     "ui": "message",
     "header": "RetroAchievements Setup",
@@ -565,7 +869,7 @@ def settings_screen_model():
     },
     "variables": {
         # Global variables
-        "update_all_version": {"default": "2.9"},
+        "update_all_version": {"default": "2.10"},
         "device_label": {"default": ""},
         "zaparoo_frontend_active": {"default": "false", "values": ["false", "true"]},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -584,6 +888,7 @@ def settings_screen_model():
         "needs_save_file_list": {"default": ""},
         "mister_video_direct_video_warning": {"default": "false", "values": ["false", "true"]},
         "media_fat_available_space": {"default": "-1"},
+        "artwork_space_fits": {"default": ""},
         "manuals_space_fits": {"default": ""},
         "has_arcade_organizer_folders": {"default": "false", "values": ["false", "true"]},
         "has_right_available_code": {"default": "false", "values": ["false", "true"]},
@@ -621,6 +926,16 @@ def settings_screen_model():
             "actions": [
                 'replace',
                 {"title": "Select", "type": "symbol", "symbol": "ok"},
+                {"title": "Info", "type": "symbol", "symbol": "info"},
+                {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+            ]
+        },
+        "dialog_sub_menu_toggle_info": {
+            "type": "dialog_sub_menu",
+            "actions": [
+                'replace',
+                {"title": "Select", "type": "symbol", "symbol": "ok"},
+                {"title": "Toggle", "type": "symbol", "symbol": "toggle"},
                 {"title": "Info", "type": "symbol", "symbol": "info"},
                 {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
             ]
@@ -1333,43 +1648,56 @@ def settings_screen_model():
             "type": "dialog_sub_menu_info",
             "header": "Hybrid Cores",
             "variables": {
-                "MultiDatabases/dreamster": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/maldita-castilla": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/sonic-mania": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/dreamster": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/duke3d": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-quake": {"group": "db", "default": "false", "values": ["false", "true"]},
-                "MultiDatabases/maldita-castilla": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/nblood": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/solarus": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/3s-arm": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MiSTerOrganize/MiSTer_Frontier": {"group": "db", "default": "false", "values": ["false", "true"]},
             },
             "entries": [
                 {
-                    "title": "# DreamSTer",
-                    "description": "{MultiDatabases/dreamster:enabled} Experimental Dreamcast emulator",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/dreamster", "DreamSTer"),
-                        "ok": _try_toggle_with_user_dependency(
-                            "MultiDatabases/dreamster",
-                            "DreamSTer",
-                            [
-                                "DreamSTer is an experimental Dreamcast emulator that runs in software rather than in the FPGA.",
-                                "You can launch DreamSTer from MiSTer's Scripts folder.",
-                                " ",
-                                "DreamSTer requires Dreamcast BIOS files.",
-                                "Copy dc_boot.bin and dc_flash.bin to:",
-                                "games/Dreamcast/",
-                                "Maintainer: skmp",
-                            ],
-                        ),
+                    "title": "# Maldita Castilla MiSTer",
+                    "description": "{MultiDatabases/maldita-castilla:enabled} Ready-to-play arcade action game",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/maldita-castilla", "Maldita Castilla MiSTer"),
+                        "ok": [{
+                            "type": "condition",
+                            "variable": "MultiDatabases/maldita-castilla",
+                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/maldita-castilla"}],
+                            "false": [{
+                                "ui": "confirm",
+                                "header": "Enable Maldita Castilla MiSTer?",
+                                "preselected_action": "Yes",
+                                "text": [
+                                    "Maldita Castilla MiSTer runs Locomalito's arcade action game on MiSTer's ARM processor, while a custom FPGA core accelerates its graphics.",
+                                    "Locomalito publishes the included original game under the CC BY-NC-ND 4.0 license, so it is ready to play right after updating.",
+                                    "For more content, you can get the commercial Maldita Castilla EX separately.",
+                                    " ",
+                                    "You can launch Maldita Castilla MiSTer from MiSTer's Scripts folder.",
+                                    "Maintainer: gmcnaught",
+                                ],
+                                "actions": [
+                                    {"title": "Yes", "type": "fixed", "fixed": [
+                                        {"type": "rotate_variable", "target": "MultiDatabases/maldita-castilla"},
+                                        {"type": "navigate", "target": "back"},
+                                    ]},
+                                    {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+                                ],
+                            }],
+                        }],
                         "info": [{
                             "ui": "message",
-                            "header": "DreamSTer",
+                            "header": "Maldita Castilla MiSTer",
                             "text": [
-                                "DreamSTer is an experimental Dreamcast emulator that runs in software rather than in the FPGA.",
-                                "Enabling this database installs the DreamSTer emulator, including its launcher, TUI, and minicast runtime.",
-                                "Its game browser lets you browse and launch supported Dreamcast games directly on MiSTer, with experimental compatibility.",
-                                "You can launch DreamSTer from MiSTer's Scripts folder.",
-                                "You must add Dreamcast BIOS and game files manually before playing.",
-                                "Maintainer: skmp",
+                                "Maldita Castilla MiSTer runs Locomalito's arcade action game on MiSTer's ARM processor, while a custom FPGA core accelerates its graphics.",
+                                "Enabling this database installs the complete game, along with its ARM engine, FPGA core, and launcher scripts.",
+                                "Locomalito publishes the included original game under the CC BY-NC-ND 4.0 license, so it is ready to play right after updating.",
+                                "For more content, you can get the commercial Maldita Castilla EX separately.",
+                                "You can launch Maldita Castilla MiSTer from MiSTer's Scripts folder.",
+                                "Maintainer: gmcnaught",
                             ],
                         }],
                     }
@@ -1414,6 +1742,37 @@ def settings_screen_model():
                                 "You can launch Sonic Mania MiSTer from MiSTer's Other folder.",
                                 "You must manually add game data from your own Sonic Mania installation before playing.",
                                 "Maintainer: kimchiman52",
+                            ],
+                        }],
+                    }
+                },
+                {
+                    "title": "# DreamSTer",
+                    "description": "{MultiDatabases/dreamster:enabled} Experimental Dreamcast emulator",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/dreamster", "DreamSTer"),
+                        "ok": _try_toggle_with_user_dependency(
+                            "MultiDatabases/dreamster",
+                            "DreamSTer",
+                            [
+                                "DreamSTer is an experimental Dreamcast emulator that runs in software rather than in the FPGA.",
+                                "You can launch DreamSTer from MiSTer's Scripts folder.",
+                                " ",
+                                "DreamSTer requires Dreamcast BIOS files.",
+                                "Copy dc_boot.bin and dc_flash.bin to:",
+                                "games/Dreamcast/",
+                                "Maintainer: skmp",
+                            ],
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "DreamSTer",
+                            "text": [
+                                "DreamSTer is an experimental Dreamcast emulator that runs in software rather than in the FPGA.",
+                                "Enabling this database installs the DreamSTer emulator, including its launcher, TUI, and minicast runtime.",
+                                "Its game browser lets you browse and launch supported Dreamcast games directly on MiSTer, with experimental compatibility.",
+                                "You can launch DreamSTer from MiSTer's Scripts folder.",
+                                "You must add Dreamcast BIOS and game files manually before playing.",
+                                "Maintainer: skmp",
                             ],
                         }],
                     }
@@ -1507,42 +1866,47 @@ def settings_screen_model():
                     }
                 },
                 {
-                    "title": "# Maldita Castilla MiSTer",
-                    "description": "{MultiDatabases/maldita-castilla:enabled} Locomalito's arcade action game",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/maldita-castilla", "Maldita Castilla MiSTer"),
-                        "ok": [{
-                            "type": "condition",
-                            "variable": "MultiDatabases/maldita-castilla",
-                            "true": [{"type": "rotate_variable", "target": "MultiDatabases/maldita-castilla"}],
-                            "false": [{
-                                "ui": "confirm",
-                                "header": "Enable Maldita Castilla MiSTer?",
-                                "preselected_action": "Yes",
-                                "text": [
-                                    "Maldita Castilla MiSTer runs Locomalito's arcade action game on MiSTer's ARM processor, while a custom FPGA core accelerates its graphics.",
-                                    "The complete game is included, so it is ready to play right after updating.",
-                                    " ",
-                                    "You can launch Maldita Castilla MiSTer from MiSTer's Scripts folder.",
-                                    "Maintainer: gmcnaught",
-                                ],
-                                "actions": [
-                                    {"title": "Yes", "type": "fixed", "fixed": [
-                                        {"type": "rotate_variable", "target": "MultiDatabases/maldita-castilla"},
-                                        {"type": "navigate", "target": "back"},
-                                    ]},
-                                    {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
-                                ],
-                            }],
-                        }],
+                    "title": "# NBlood",
+                    "description": "{MultiDatabases/nblood:enabled} Blood engine port",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/nblood", "NBlood", on_success=[
+                        {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/nblood",
+                         "target": {
+                             "NBlood": {"main": "Mister_NBlood"},
+                             "Mister_NBlood": {"main": "Mister_NBlood"},
+                         }},
+                    ]),
+                        "ok": _try_toggle_with_user_dependency(
+                            "MultiDatabases/nblood",
+                            "NBlood",
+                            [
+                                "NBlood is a Blood source port that runs in software rather than in the FPGA.",
+                                "You can launch NBlood from MiSTer's Other folder.",
+                                " ",
+                                "NBlood requires data from your own Blood: Fresh Supply installation.",
+                                "Copy these files from that installation to:",
+                                "games/NBlood/",
+                                "BLOOD.INI, BLOOD.RFF, GUI.RFF, SOUNDS.RFF, SURFACE.DAT, VOXEL.DAT, and TILES000.ART through TILES017.ART.",
+                                "Optional game data: movie/ for cutscenes; BLOOD000.DEM through BLOOD003.DEM for demos; and the contents of addons/Cryptic Passage/ for that expansion.",
+                                "Maintainer: Meathax",
+                            ],
+                            [
+                                {"type": "mister_ini_add", "variable": "MultiDatabases/nblood",
+                                 "target": {
+                                     "NBlood": {"main": "Mister_NBlood"},
+                                     "Mister_NBlood": {"main": "Mister_NBlood"},
+                                 }},
+                            ],
+                        ),
                         "info": [{
                             "ui": "message",
-                            "header": "Maldita Castilla MiSTer",
+                            "header": "NBlood",
                             "text": [
-                                "Maldita Castilla MiSTer runs Locomalito's arcade action game on MiSTer's ARM processor, while a custom FPGA core accelerates its graphics.",
-                                "Enabling this database installs the complete game, along with its ARM engine, FPGA core, and launcher scripts.",
-                                "Locomalito publishes the game under a Creative Commons license, so it comes included and is ready to play right after updating.",
-                                "You can launch Maldita Castilla MiSTer from MiSTer's Scripts folder.",
-                                "Maintainer: gmcnaught",
+                                "NBlood is a Blood source port that runs in software rather than in the FPGA.",
+                                "Enabling this database installs the Blood engine runtime, MiSTer launcher, and display core.",
+                                "You can launch and play Blood directly from MiSTer's main menu with its original software-rendered look.",
+                                "You can launch NBlood from MiSTer's Other folder.",
+                                "You must manually add game data from your own Blood: Fresh Supply installation before playing.",
+                                "Maintainer: Meathax",
                             ],
                         }],
                     }
@@ -1667,10 +2031,10 @@ def settings_screen_model():
                 "mrext/all": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-dvd": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "anime0t4ku_mister_scripts": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "chipster6502/MiSTer_monitor_DB": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-hifi": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/misterfin": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/disc-tools": {"group": "db", "default": "false", "values": ["false", "true"]},
-                "chipster6502/MiSTer_monitor_DB": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "tty2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "i2c2oled_files_downloader": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
                 "retrospy/retrospy-MiSTer": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -1788,6 +2152,38 @@ def settings_screen_model():
                     }
                 },
                 {
+                    "title": "# MiSTer Monitor",
+                    "description": "{chipster6502/MiSTer_monitor_DB:enabled} Live game art on a separate screen",
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "chipster6502/MiSTer_monitor_DB", "MiSTer Monitor"),
+                        "ok": _try_toggle_with_user_dependency(
+                            "chipster6502/MiSTer_monitor_DB",
+                            "MiSTer Monitor",
+                            [
+                                "MiSTer Monitor shows your MiSTer's live status on a separate screen.",
+                                "Check the chipster6502/MiSTer_monitor repository at GitHub to learn which screen to get and how to set it up.",
+                                " ",
+                                "If you're installing MiSTer Monitor for the first time, run MiSTer_Monitor from the Scripts menu once after Update All finishes.",
+                                "Maintainer: chipster6502",
+                            ],
+                            when_enabled=_offer_mister_monitor_artwork_dbs(),
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "MiSTer Monitor",
+                            "text": [
+                                "MiSTer Monitor shows your MiSTer's live status on a separate screen.",
+                                "You must get a compatible screen; the chipster6502/MiSTer_monitor repository at GitHub explains which one to get and how to set it up.",
+                                "Enabling this database installs the monitor server, its launcher and uninstall scripts, and RetroAchievements helpers.",
+                                "You can watch the loaded game's artwork, RetroAchievements progress, and live system stats in real time.",
+                                "If you're installing MiSTer Monitor for the first time, run MiSTer_Monitor from the Scripts menu once after Update All finishes.",
+                                "Maintainer: chipster6502",
+                            ],
+                        }],
+                    }
+                },
+                {
                     "title": "# MiSTer Hi-Fi",
                     "description": "{MultiDatabases/mister-hifi:enabled} MP3, FLAC and Audio CD player",
                     "actions": {
@@ -1891,37 +2287,6 @@ def settings_screen_model():
                     }
                 },
                 {
-                    "title": "# MiSTer Monitor",
-                    "description": "{chipster6502/MiSTer_monitor_DB:enabled} Live game art on a separate screen",
-                    "actions": {
-                        "uninstall": uninstall_db_action_for_id(
-                            "chipster6502/MiSTer_monitor_DB", "MiSTer Monitor"),
-                        "ok": _try_toggle_with_user_dependency(
-                            "chipster6502/MiSTer_monitor_DB",
-                            "MiSTer Monitor",
-                            [
-                                "MiSTer Monitor shows your MiSTer's live status on a separate screen.",
-                                "Check the chipster6502/MiSTer_monitor repository at GitHub to learn which screen to get and how to set it up.",
-                                " ",
-                                "If you're installing MiSTer Monitor for the first time, run MiSTer_Monitor from the Scripts menu once after Update All finishes.",
-                                "Maintainer: chipster6502",
-                            ],
-                        ),
-                        "info": [{
-                            "ui": "message",
-                            "header": "MiSTer Monitor",
-                            "text": [
-                                "MiSTer Monitor shows your MiSTer's live status on a separate screen.",
-                                "You must get a compatible screen; the chipster6502/MiSTer_monitor repository at GitHub explains which one to get and how to set it up.",
-                                "Enabling this database installs the monitor server, its launcher and uninstall scripts, and RetroAchievements helpers.",
-                                "You can watch the loaded game's artwork, RetroAchievements progress, and live system stats in real time.",
-                                "If you're installing MiSTer Monitor for the first time, run MiSTer_Monitor from the Scripts menu once after Update All finishes.",
-                                "Maintainer: chipster6502",
-                            ],
-                        }],
-                    }
-                },
-                {
                     "title": "# tty2oled Add-on script",
                     "description": "{tty2oled_files_downloader:enabled} Core art on an Arduino display",
                     "actions": {
@@ -1985,11 +2350,11 @@ def settings_screen_model():
             ]
         },
         "extra_content_menu": {
-            "type": "dialog_sub_menu_toggle",
+            "type": "dialog_sub_menu_toggle_info",
             "header": "Extra Content",
             "formatters": {
                 "rannysnice_wallpapers_filter": {"ar16-9": "16x9", "ar4-3": "4x3", "all": "all"},
-                "ajgowans_manuals_dbs_general_selector_description": {"false": "Many DBs. ", "true": "All DBs enabled. "},
+                "multi_db_status": {"false": "", "true": "All On. "},
             },
             "variables": {
                 "Ranny-Snice/Ranny-Snice-Wallpapers": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -2016,10 +2381,40 @@ def settings_screen_model():
                     }
                 },
                 {
+                    "title": "# Game Artwork DBs",
+                    "description": "{chipster6502_artwork_dbs_general_selector:multi_db_status}Box Art & Screenshots",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "game_artwork_db_menu"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "About Game Artwork DBs",
+                            "text": [
+                                "These databases install box art and screenshots for use by MiSTer Monitor and compatible frontends.",
+                                " ",
+                                "They avoid the need to scrape artwork by installing ready-to-use images directly on your MiSTer.",
+                                " ",
+                                "The collection is curated and optimized for MiSTer.",
+                                "Maintainer: chipster6502",
+                            ],
+                        }],
+                    }
+                },
+                {
                     "title": "# Game Manuals (EN) DBs",
-                    "description": "{ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_description}By Moondandy",
+                    "description": "{ajgowans_manuals_dbs_general_selector:multi_db_status}In-Game PDFs",
                     "actions": {
                         "ok": [_manuals_early_access_notice("game_manuals_en_db_menu")],
+                        "info": [{
+                            "ui": "message",
+                            "header": "About Game Manuals (EN) DBs",
+                            "text": [
+                                "These databases install English-language game manuals for supported systems.",
+                                " ",
+                                "While playing a game, open the in-game OSD to view its installed manual.",
+                                " ",
+                                "Maintainer: Moondandy",
+                            ],
+                        }],
                     }
                 },
                 {
@@ -2030,6 +2425,16 @@ def settings_screen_model():
                             "Dinierto/MiSTer-GBA-Borders", "Dinierto GBA Borders"),
                         "ok": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
                         "toggle": [{"type": "rotate_variable", "target": "Dinierto/MiSTer-GBA-Borders"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Dinierto GBA Borders",
+                            "text": [
+                                "This database installs community-made borders and borders extracted from the Game Boy Player for MiSTer's GBA core.",
+                                "The border files are installed in games/GBA/Borders/.",
+                                "In the GBA core's OSD, open Video & Audio and set Borders to On to display them.",
+                                "Maintainer: Dinierto",
+                            ],
+                        }],
                     }
                 },
                 {
@@ -2055,8 +2460,79 @@ def settings_screen_model():
                             "uberyoji_mister_boot_roms_mgl", "Uberyoji Boot ROMs"),
                         "ok": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
                         "toggle": [{"type": "rotate_variable", "target": "uberyoji_mister_boot_roms_mgl"}],
+                        "info": [{
+                            "ui": "message",
+                            "header": "Uberyoji Boot ROMs",
+                            "text": [
+                                "This database installs custom boot ROMs for supported console cores and matching MGL launchers in MiSTer's _Console (autoboot) folder.",
+                                "Open a launcher from that folder to start its core with the custom boot ROM.",
+                                "These are not BIOS replacements; they are regular ROMs launched automatically through the MGL files.",
+                                "Maintainer: uberyoji",
+                            ],
+                        }],
                     }
                 },
+            ]
+        },
+        "game_artwork_db_menu": {
+            "type": "dialog_sub_menu_toggle",
+            "header": "Game Artwork DBs",
+            "text": ["Game Artwork DBs"],
+            "formatters": {
+                "chipster6502_artwork_dbs_general_selector_title": {
+                    "false": "Select All",
+                    "true": "Select None",
+                },
+                "select_all_artwork_toggle": {
+                    "false": "",
+                    "true": "All Selected. ",
+                },
+                "artwork_style": {
+                    "box2d": "2D Boxes",
+                    "box3d": "3D Boxes",
+                    "mixrbv2": "Box + Screenshot",
+                },
+                "artwork_selected_style": {
+                    "none": "No DBs selected",
+                    "mixed": "Mixed",
+                    "box2d": "2D Boxes",
+                    "box3d": "3D Boxes",
+                    "mixrbv2": "Box + Screenshot",
+                },
+            },
+            "variables": {
+                "chipster6502_artwork_dbs_general_selector": {"group": "store", "default": "false", "values": ["false", "true"]},
+                "chipster6502_artwork_default_style": {"default": "box2d", "values": ["box2d", "box3d", "mixrbv2"]},
+                "chipster6502_artwork_selected_style": {"default": "none", "values": ["none", "mixed", "box2d", "box3d", "mixrbv2"]},
+                "chipster6502_artwork_selected_count": {"default": "0"},
+                "chipster6502_artwork_has_selected_dbs": {"default": "false", "values": ["false", "true"]},
+                **_artwork_db_variables(),
+                **_artwork_style_variables(),
+            },
+            "entries": [
+                {
+                    "title": " {chipster6502_artwork_dbs_general_selector:chipster6502_artwork_dbs_general_selector_title}",
+                    "description": "{chipster6502_artwork_dbs_general_selector:select_all_artwork_toggle}23658 images | 2.04-2.39GB total",
+                    "actions": {
+                        "uninstall_all": uninstall_db_action_artwork(
+                            "chipster6502_artwork_dbs_installed",
+                            list(_artwork_db_variables()),
+                            "All Artwork Databases",
+                            on_success=[
+                                {"type": "select_all_chipster6502_artwork_dbs", "action": "unapply"},
+                            ],
+                        ),
+                        "ok": _try_select_all_chipster6502_artwork_dbs(),
+                    }
+                },
+                {},
+                {
+                    "title": "# Style for Selected DBs",
+                    "description": "{chipster6502_artwork_selected_style:artwork_selected_style} | {chipster6502_artwork_selected_count} selected",
+                    "actions": {"ok": [_artwork_bulk_style_picker()]},
+                },
+                {},
+                *_artwork_db_entries(),
             ]
         },
         "game_manuals_en_db_menu": {

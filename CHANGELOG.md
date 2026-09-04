@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.10 - 2026-09-04
+
+### Added
+- New Game Artwork DBs section in Extra Content with 39 curated databases from the [MiSTer Artwork Pack](https://github.com/chipster6502/MiSTer_artwork_pack), providing optimized 2D Box, 3D Box, and Box + Screenshot artwork for MiSTer Monitor and frontends (Zaparoo Frontend support coming soon). With this scraping will no longer be needed for users using common rom sets (chipster6502).
+- New Hybrid Cores submenu inside Other Cores, gathering all hybrid FPGA/ARM cores behind an introductory explanation, with enable confirmations and Info messages for every entry. It also premieres four new MultiDatabases entries: [Maldita Castilla MiSTer](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/maldita-castilla) (gmcnaught), bundling Locomalito's complete game so it is ready to play right after updating; [Solarus MiSTer](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/solarus) (gmcnaught); [3S-ARM](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/3s-arm) (kimchiman52); and [NBlood](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/nblood) (meathax).
+- New Tools & Scripts databases: the [MiSTer Hi-Fi](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/mister-hifi) music player and the [Disc Tools](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/disc-tools) CD ripping and burning utility (Anime0t4ku), the [MiSTerFin](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/misterfin) Jellyfin client (puddingstudio), the [MiSTer Monitor](https://github.com/chipster6502/MiSTer_monitor) status display server (chipster6502), the [MiSTer DVD](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/mister-dvd) DVD-Video player (owenb321), and the [240p Test Suites](https://github.com/ajgowans/240p) (Moondandy).
+- New experimental Mirror option in the System Options menu, with the AndiBr mirror as its first selectable mirror, plus new [documentation](docs/mirrors.md) for using and hosting mirrors.
+- New Game.com, PocketStation, RCA Studio II, and Virtual Boy Manuals databases in the Game Manuals (EN) section.
+
+### Changed
+- Refreshed Game Manuals database file counts and storage estimates.
+- Update All now checks for new versions of itself in the background while the countdown runs and installs them immediately with clearer on-screen feedback, then restarts and continues automatically where it left off, instead of discovering updates at the end of a full downloader run.
+- Improved the FPGA ID linking process: the extracted result now reaches the relaunched Update All session reliably, or the next run you start manually if the relaunch fails.
+- Improved Settings Screen texts across database entries: info popups and enable confirmations now state what each database installs, where to launch it from, its requirements, and its maintainer.
+- Arcade Organizer decade folders are now created even when year folders are disabled.
+- Fixed the JTCORES Install Private Releases setting appearing stuck on "Yes" and not saving its changes (#186).
+- Fixed jtbeta.zip not being copied to prioritized MAME folders on external drives.
+- Fixed leftover Analogue Pocket firmware files not being cleaned up during firmware updates, among other fixes partially taken from PR #174.
+- Physical CD Support's old `[CD-*]` MiSTer.ini section now transitions automatically to `[A0CD-*]`, matching its renamed cores.
+- Fixed a spurious startup debug error when the optional `downloader/` drop-in folder does not exist, and a local store migration issue.
+- A few other tweaks, fixes and optimizations.
+
+### Removed
+- agg23's MiSTer Cores database, as its Game & Watch and Tamagotchi cores are now provided by MiSTer-devel.
+
 ## Version 2.9 - 2026-07-24
 
 ### Added

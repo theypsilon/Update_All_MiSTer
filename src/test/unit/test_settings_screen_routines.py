@@ -72,6 +72,7 @@ class TestSettingsScreenRoutines(unittest.TestCase):
                 'distribution_mister': {'hash': 'def'},
                 'multidatabases/duke3d': {'hash': 'jkl'},
                 'ajgowans/manualsdb-3do': {'hash': 'mno'},
+                'chipster6502/artworkdb-nes': {'hash': 'pqr'},
                 'not/a_model_db': {'hash': 'ghi'},
             })},
         }).create_for_system_scope()
@@ -83,6 +84,8 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('true', ui.get_value('MultiDatabases/duke3d_installed'))
         self.assertEqual('true', ui.get_value('ajgowans/manualsdb-3do_installed'))
         self.assertEqual('true', ui.get_value('ajgowans_manuals_dbs_installed'))
+        self.assertEqual('true', ui.get_value('chipster6502/artworkdb-nes_installed'))
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_dbs_installed'))
         self.assertEqual('false', ui.get_value('MultiDatabases/dreamster_installed'))
         self.assertEqual('false', ui.get_value('Coin-OpCollection/Distribution-MiSTerFPGA_installed'))
         self.assertNotIn('not/a_model_db_installed', ui.variables)
@@ -93,6 +96,7 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('false', ui.get_value('distribution_mister_installed'))
         self.assertEqual('false', ui.get_value('MultiDatabases/duke3d_installed'))
         self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_installed'))
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_dbs_installed'))
 
     def test_initialize_ui___without_manual_fingerprints___sets_manuals_installed_to_false(self):
         file_system = FileSystemFactory.from_state(files={
@@ -185,6 +189,34 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('true', ui.get_value(db_id))
         self.assertEqual('true', ui.get_value(f'{db_id}_installed'))
         self.assertTrue(config.is_database_enabled(db_id))
+
+    def test_reconcile_failed_bulk_uninstall___keeps_artwork_aggregate_until_last_artwork_database_is_removed(self):
+        first = 'chipster6502/artworkdb-3do'
+        second = 'chipster6502/artworkdb-nes'
+        file_system = FileSystemFactory.from_state(files={
+            FILE_downloader_fingerprints_json: {'content': json.dumps({
+                second: {'hash': 'abc'},
+            })},
+        }).create_for_system_scope()
+        config = Config(databases={first, second})
+        sut, ui = tester(config=config, file_system=file_system)
+        for db_id in (first, second):
+            ui.set_value(f'{db_id}_installed', 'true')
+        ui.set_value('chipster6502_artwork_dbs_installed', 'true')
+        ui.set_value('chipster6502_artwork_dbs_general_selector', 'true')
+
+        sut.reconcile_failed_bulk_uninstall(ui, (first, second))
+
+        self.assertEqual('false', ui.get_value(first))
+        self.assertEqual('false', ui.get_value(f'{first}_installed'))
+        self.assertEqual('true', ui.get_value(f'{second}_installed'))
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_dbs_installed'))
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_dbs_general_selector'))
+
+        file_system.write_file_contents(FILE_downloader_fingerprints_json, '{}')
+        sut.reconcile_failed_bulk_uninstall(ui, (second,))
+
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_dbs_installed'))
 
     def test_initialize_ui___with_missing_zaparoo_frontend_store_field___defaults_it_to_false(self):
         store = local_store()
@@ -307,6 +339,16 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_general_selector'))
 
+    def test_initialize_ui___keeps_chipster6502_artwork_general_selector_from_store_even_when_all_artwork_dbs_are_enabled(self):
+        artwork_db_ids = set(gather_variable_declarations(settings_screen_model(), "artwork"))
+        config = Config(databases={*artwork_db_ids, all_dbs('').UPDATE_ALL_MISTER.db_id})
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(False)
+
+        _sut, ui = tester(config=config, store=store)
+
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_dbs_general_selector'))
+
     def test_initialize_ui___with_mirror_in_store___loads_it_into_the_mirror_variable(self):
         store = local_store()
         store.set_mirror(MIRROR_ANDI_BR)
@@ -399,6 +441,142 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('clear_window', result)
         self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_general_selector'))
         self.assertEqual('true', ui.get_value('ajgowans/manualsdb-3do'))
+
+    def test_select_all_chipster6502_artwork_dbs___toggle_all_enables_every_artwork_db_and_selector(self):
+        sut, ui = tester()
+
+        result = sut.select_all_chipster6502_artwork_dbs(ui, {'action': 'toggle'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_dbs_general_selector'))
+        for variable in gather_variable_declarations(settings_screen_model(), "artwork"):
+            self.assertEqual('true', ui.get_value(variable))
+
+    def test_select_all_chipster6502_artwork_dbs___toggle_with_selector_true_and_all_active_disables_all(self):
+        artwork_db_ids = set(gather_variable_declarations(settings_screen_model(), "artwork"))
+        config = Config(databases={*artwork_db_ids, all_dbs('').UPDATE_ALL_MISTER.db_id})
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+        sut, ui = tester(config=config, store=store)
+
+        result = sut.select_all_chipster6502_artwork_dbs(ui, {'action': 'toggle'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_dbs_general_selector'))
+        for variable in gather_variable_declarations(settings_screen_model(), "artwork"):
+            self.assertEqual('false', ui.get_value(variable))
+
+    def test_select_all_chipster6502_artwork_dbs___toggle_with_any_inactive_only_unapplies_selector(self):
+        artwork_db_ids = set(gather_variable_declarations(settings_screen_model(), "artwork"))
+        config = Config(databases={*artwork_db_ids, all_dbs('').UPDATE_ALL_MISTER.db_id})
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+        sut, ui = tester(config=config, store=store)
+        ui.set_value('chipster6502/artworkdb-3do', 'false')
+
+        result = sut.select_all_chipster6502_artwork_dbs(ui, {'action': 'toggle'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_dbs_general_selector'))
+        self.assertEqual('false', ui.get_value('chipster6502/artworkdb-3do'))
+        for variable in gather_variable_declarations(settings_screen_model(), "artwork"):
+            if variable != 'chipster6502/artworkdb-3do':
+                self.assertEqual('true', ui.get_value(variable))
+
+    def test_select_all_chipster6502_artwork_dbs___unapply_only_unapplies_selector(self):
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+        sut, ui = tester(store=store)
+        ui.set_value('chipster6502/artworkdb-3do', 'true')
+
+        result = sut.select_all_chipster6502_artwork_dbs(ui, {'action': 'unapply'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_dbs_general_selector'))
+        self.assertEqual('true', ui.get_value('chipster6502/artworkdb-3do'))
+
+    def test_initialize_ui___restores_default_and_individual_artwork_style_identifiers(self):
+        config = Config(
+            databases=default_databases(),
+            artwork_default_style='mixrbv2',
+            artwork_db_styles={'chipster6502/artworkdb-nes': 'box3d'},
+        )
+
+        _, ui = tester(config=config)
+
+        self.assertEqual('mixrbv2', ui.get_value('chipster6502_artwork_default_style'))
+        self.assertEqual('box3d', ui.get_value('chipster6502/artworkdb-nes_style'))
+        self.assertEqual('mixrbv2', ui.get_value('chipster6502/artworkdb-snes_style'))
+
+    def test_apply_chipster6502_artwork_style_to_selected___changes_enabled_dbs_and_preserves_disabled_override(self):
+        enabled = {'chipster6502/artworkdb-nes', 'chipster6502/artworkdb-snes'}
+        config = Config(
+            databases={*default_databases(), *enabled},
+            artwork_db_styles={'chipster6502/artworkdb-3do': 'box3d'},
+        )
+        sut, ui = tester(config=config)
+        ui.set_value('chipster6502/artworkdb-snes_style', 'box3d')
+
+        result = sut.apply_chipster6502_artwork_style_to_selected(ui, {'style': 'mixrbv2'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('mixrbv2', ui.get_value('chipster6502/artworkdb-nes_style'))
+        self.assertEqual('mixrbv2', ui.get_value('chipster6502/artworkdb-snes_style'))
+        self.assertEqual('box3d', ui.get_value('chipster6502/artworkdb-3do_style'))
+        self.assertEqual('mixrbv2', ui.get_value('chipster6502/artworkdb-atari5200_style'))
+        self.assertEqual('mixrbv2', ui.get_value('chipster6502_artwork_default_style'))
+        self.assertEqual('mixrbv2', ui.get_value('chipster6502_artwork_selected_style'))
+        self.assertEqual('2', ui.get_value('chipster6502_artwork_selected_count'))
+
+    def test_apply_chipster6502_artwork_style_to_selected___with_no_enabled_dbs_does_nothing(self):
+        sut, ui = tester()
+
+        result = sut.apply_chipster6502_artwork_style_to_selected(ui, {'style': 'box3d'})
+
+        self.assertIsNone(result)
+        self.assertEqual('box2d', ui.get_value('chipster6502_artwork_default_style'))
+        self.assertEqual('box2d', ui.get_value('chipster6502/artworkdb-nes_style'))
+
+    def test_apply_chipster6502_artwork_style_to_selected___preserves_disabled_explicit_default_style(self):
+        sut, ui = tester()
+        sut.set_chipster6502_artwork_db_style(ui, {
+            'target': 'chipster6502/artworkdb-nes_style',
+            'style': 'box2d',
+        })
+        ui.set_value('chipster6502/artworkdb-snes', 'true')
+
+        sut.apply_chipster6502_artwork_style_to_selected(ui, {'style': 'box3d'})
+
+        self.assertEqual('box2d', ui.get_value('chipster6502/artworkdb-nes_style'))
+        self.assertEqual('box3d', ui.get_value('chipster6502/artworkdb-snes_style'))
+
+    def test_set_chipster6502_artwork_db_style___creates_mixed_summary_without_unapplying_select_all(self):
+        artwork_db_ids = set(gather_variable_declarations(settings_screen_model(), 'artwork'))
+        config = Config(databases={*default_databases(), *artwork_db_ids})
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+        sut, ui = tester(config=config, store=store)
+
+        result = sut.set_chipster6502_artwork_db_style(ui, {
+            'target': 'chipster6502/artworkdb-nes_style',
+            'style': 'box3d',
+        })
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('box3d', ui.get_value('chipster6502/artworkdb-nes_style'))
+        self.assertEqual('mixed', ui.get_value('chipster6502_artwork_selected_style'))
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_dbs_general_selector'))
+
+    def test_select_all_chipster6502_artwork_dbs___deselecting_preserves_individual_styles(self):
+        sut, ui = tester()
+        ui.set_value('chipster6502/artworkdb-nes_style', 'box3d')
+
+        sut.select_all_chipster6502_artwork_dbs(ui, {'action': 'toggle'})
+        sut.select_all_chipster6502_artwork_dbs(ui, {'action': 'toggle'})
+
+        self.assertEqual('box3d', ui.get_value('chipster6502/artworkdb-nes_style'))
+        self.assertEqual('none', ui.get_value('chipster6502_artwork_selected_style'))
+        self.assertEqual('0', ui.get_value('chipster6502_artwork_selected_count'))
 
     def test_extract_chip_id___when_not_mister___stores_failure_and_does_not_start_extraction(self):
         sut, ui = tester(config=Config(databases=default_databases(), not_mister=True))
