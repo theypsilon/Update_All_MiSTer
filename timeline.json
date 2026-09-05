@@ -1,0 +1,210 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Psikyo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Psikyo MRAs: Battle K-Road, Gunbird, Samurai Aces, Strikers 1945, Tengai",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "GameCom",
+              "type": "standalone"
+            },
+            {
+              "name": "GameKing",
+              "type": "standalone"
+            },
+            {
+              "name": "PocketStation",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-09-05",
+      "timestamps": [
+        1788568746,
+        1788651349
+      ],
+      "title": "Updated TODAY (2026-09-05)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Arabian Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Blue Print Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Champion Baseball Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Escape Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Kangaroo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Laserdisc Games Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Night Slashers Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Ring King Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Salamander Core",
+              "type": "standalone"
+            },
+            {
+              "name": "UPLFramebuffer Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Vastar Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Arabian MRA: Arabian",
+              "type": "standalone"
+            },
+            {
+              "name": "Champion Baseball MRAs: Exciting Soccer II, Exciting Soccer, Talbot",
+              "type": "standalone"
+            },
+            {
+              "name": "Escape MRA: Escape from the Planet of the Robot Monsters",
+              "type": "standalone"
+            },
+            {
+              "name": "Kangaroo MRA: Funky Fish",
+              "type": "standalone"
+            },
+            {
+              "name": "Laserdisc Games MRAs: Dragon's Lair, Space Ace",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix MRAs: Complex X, Kram, Qix, Qix II, Slither, Space Dungeon, The Electric Yo-Yo, Zoo Keeper",
+              "type": "standalone"
+            },
+            {
+              "name": "Ring King MRA: Ring King",
+              "type": "standalone"
+            },
+            {
+              "name": "SNK6502 MRAs: Fantasy, Nibbler, Pioneer Balloon, Sasuke, Satan Of Saturn",
+              "type": "standalone"
+            },
+            {
+              "name": "UPLFramebuffer MRAs: Ark Area, Atomic Robo-Kid, Mutant Night, Ninja-Kid II, Omega Fighter",
+              "type": "standalone"
+            },
+            {
+              "name": "atarisys 2 MRA: APB - All Points Bulletin",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "C128",
+              "type": "standalone"
+            },
+            {
+              "name": "MacLC",
+              "type": "standalone"
+            },
+            {
+              "name": "PCXT-EGA",
+              "type": "standalone"
+            },
+            {
+              "name": "PCXT",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Studio-II",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1788072620,
+        1788093479,
+        1788109156,
+        1788118921,
+        1788156788,
+        1788185016,
+        1788271066,
+        1788293444,
+        1788302422,
+        1788309234,
+        1788325449,
+        1788413567,
+        1788429984,
+        1788458732,
+        1788501672,
+        1788534102,
+        1788545940
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1892,
+    "total_file_updates": 1925,
+    "unique_files": 999
+  }
+}
