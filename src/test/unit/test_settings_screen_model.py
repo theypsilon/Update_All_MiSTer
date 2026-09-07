@@ -154,6 +154,7 @@ _DATABASE_MAINTAINERS = {
     '# MiSTer DVD': 'owenb321',
     '# Disc Tools': 'Anime0t4ku',
     '# MiSTer Monitor': 'chipster6502',
+    '# Stock MiSTer UI': 'Sorgelig',
     '# Zaparoo': 'wizzo',
     '# Zaparoo Frontend': 'wizzo',
     '# Degauss': 'giancarloerra',
@@ -1749,6 +1750,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('{zaparoo_frontend_active:enabled} Customizable hub to browse your games', entries[1]['description'])
         self.assertEqual('{degauss_frontend_active:enabled} Enrich your setup with themes and views', entries[2]['description'])
         self.assertNotIn('uninstall', entries[0]['actions'])
+        self.assertIn('info', entries[0]['actions'])
         self.assertNotIn('uninstall', entries[1]['actions'])
         self.assertIn('info', entries[1]['actions'])
         self.assertIn('info', entries[2]['actions'])

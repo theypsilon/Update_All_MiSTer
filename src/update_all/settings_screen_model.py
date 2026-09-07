@@ -2448,7 +2448,20 @@ def settings_screen_model():
                 {
                     "title": "# Stock MiSTer UI",
                     "description": "{stock_mister_ui_active:enabled} The standard MiSTer menu",
-                    "actions": {"ok": _select_stock_mister_ui()},
+                    "actions": {
+                        "ok": _select_stock_mister_ui(),
+                        "info": [{
+                            "ui": "message",
+                            "header": "Stock MiSTer UI",
+                            "text": [
+                                "The official MiSTer menu, and the only one maintained",
+                                "at the MiSTer-devel organization.",
+                                "Frontends replace it with their own builds of MiSTer Main,",
+                                "maintained by their authors. Turning this On switches them Off.",
+                                "Maintainer: Sorgelig",
+                            ],
+                        }],
+                    },
                 },
                 {
                     "title": "# Zaparoo Frontend",
