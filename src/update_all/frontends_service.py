@@ -23,7 +23,19 @@ from update_all.file_system import FileSystem
 from update_all.logger import Logger
 
 
-class ZaparooService:
+class FrontendsService:
+    """Frontend behavior that cannot be expressed as a MiSTer.ini edit.
+
+    Today that is one thing: dropping a stale lastcore.dat when a frontend with its own
+    menu core is switched off. With bootcore=lastcore, Main records the name of every
+    core it starts and boots it next time, excluding only the literal menu.rbf. A
+    frontend whose Main build starts the menu from a differently named core file
+    (Zaparoo's zaparoo/menu_zaparoo.rbf) therefore gets that menu core recorded, and
+    stock Main would boot it instead of its own menu while the files are still
+    installed. Frontends running on the stock menu.rbf, like Degauss, never hit this
+    and do not need this cleanup.
+    """
+
     def __init__(
             self,
             file_system: FileSystem,
@@ -31,31 +43,12 @@ class ZaparooService:
     ):
         self._file_system = file_system
         self._logger = logger
-        self._frontend_activation_applied = False
-
-    def frontend_activation_applied(self) -> bool:
-        return self._frontend_activation_applied
-
-    def on_frontend_added(self, changed: bool, contents: str) -> None:
-        """Post-apply hook for the Zaparoo frontend mister_ini_add edit.
-
-        The MiSTer.ini write is handled by the generic mister_ini_add mechanism;
-        this only tracks the "frontend enabled" signal shown in the outro.
-        """
-        if changed:
-            self._frontend_activation_applied = True
 
     def on_frontend_deleted(self, changed: bool, contents: str) -> None:
-        """Post-apply hook for the Zaparoo frontend mister_ini_del edit.
-
-        Carries the residual behavior that cannot be expressed as an INI key: clearing
-        the "frontend enabled" signal and dropping a stale lastcore.dat when the
-        frontend is deactivated.
-        """
+        """Post-apply hook for such a frontend's mister_ini_del edit."""
         if not changed:
             return
 
-        self._frontend_activation_applied = False
         if _has_lastcore_bootcore(contents):
             self._file_system.unlink(FILE_lastcore_dat, verbose=False)
 

@@ -44,7 +44,7 @@ from test.update_all_service_tester import UpdateAllServiceFactoryTester, Update
 
 
 def tester(files=None, folders=None, config: Config = None, store: LocalStore = None, env_stub: EnvironmentSetupStub = None,
-           settings_screen=None, zaparoo_service=None, retroaccount=None, service_type=UpdateAllServiceTester,
+           settings_screen=None, frontends_service=None, retroaccount=None, service_type=UpdateAllServiceTester,
            countdown=None, downloader_service=None, fetcher=None, logger=None):
     state = FileSystemState(files=files, folders=folders)
     config_provider = GenericProvider[Config]()
@@ -59,7 +59,7 @@ def tester(files=None, folders=None, config: Config = None, store: LocalStore = 
         config_provider=config_provider,
         store_provider=store_provider,
         settings_screen=settings_screen,
-        zaparoo_service=zaparoo_service,
+        frontends_service=frontends_service,
         retroaccount=retroaccount,
         countdown=countdown,
         downloader_service=downloader_service,

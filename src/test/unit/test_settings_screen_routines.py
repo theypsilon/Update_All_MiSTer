@@ -235,6 +235,26 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual('true', ui.get_value('zaparoo_frontend_active'))
 
+    def test_initialize_ui___with_degauss_frontend_main_in_mister_ini___sets_degauss_frontend_active_true(self):
+        file_system = FileSystemFactory.from_state(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nmain=degauss/MiSTer_Degauss\n'},
+        }).create_for_system_scope()
+
+        _, ui = tester(file_system=file_system)
+
+        self.assertEqual('true', ui.get_value('degauss_frontend_active'))
+        self.assertEqual('false', ui.get_value('zaparoo_frontend_active'))
+
+    def test_initialize_ui___without_any_frontend_main_in_mister_ini___sets_frontends_inactive(self):
+        file_system = FileSystemFactory.from_state(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nfoo=bar\n'},
+        }).create_for_system_scope()
+
+        _, ui = tester(file_system=file_system)
+
+        self.assertEqual('false', ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual('false', ui.get_value('degauss_frontend_active'))
+
     def test_initialize_ui___with_legacy_pending_zaparoo_store_true___ignores_store_field(self):
         store = local_store()
         store.unwrap_props()['zaparoo_frontend_active'] = True

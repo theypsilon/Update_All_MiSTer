@@ -38,6 +38,7 @@ DB_ID_ARCADE_NAMES_TXT = 'arcade_names_txt'
 DB_ID_MREXT_ALL = 'mrext/all'
 DB_ID_MREXT_TAPTO = 'mrext/tapto'
 DB_ID_ZAPAROO_MISTER = 'ZaparooProject/Zaparoo_MiSTer'
+DB_ID_DEGAUSS = 'degauss'
 DB_URL_JTPREMIUM_DEPRECATED = 'https://raw.githubusercontent.com/jotego/jtpremium/main/jtbindb.json.zip'
 DB_URL_MISTERSAM_FILES_DEPRECATED = 'https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/main/MiSTer_SAMdb.json'
 DB_ID_COIN_OP_COLLECTION_DEPRECATED = 'atrac17/Coin-Op_Collection'
@@ -100,6 +101,7 @@ class AllDBs:
         self.RETROSPY = Database(db_id='retrospy/retrospy-MiSTer', db_url='https://raw.githubusercontent.com/retrospy/retrospy-MiSTer/db/db.json.zip', title='RetroSpy')
         self.ANIME0T4KU_MISTER_SCRIPTS = Database(db_id='anime0t4ku_mister_scripts', db_url='https://raw.githubusercontent.com/Anime0t4ku/0t4ku-mister-scripts/db/db/scripts.json.zip', title='Anime0t4ku MiSTer Scripts')
         self.ZAPAROO_MISTER = Database(db_id=DB_ID_ZAPAROO_MISTER, db_url='https://raw.githubusercontent.com/ZaparooProject/Zaparoo_MiSTer/db/db.json.zip', title='Zaparoo')
+        self.DEGAUSS = Database(db_id=DB_ID_DEGAUSS, db_url='https://github.com/giancarloerra/Degauss/releases/latest/download/degauss.json.zip', title='Degauss')
 
         # HYBRID CORES
         self.MISTER_FRONTIER = Database(db_id='MiSTerOrganize/MiSTer_Frontier', db_url='https://raw.githubusercontent.com/MiSTerOrganize/MiSTer_Frontier/db/db.json.zip', title='MiSTer Frontier')

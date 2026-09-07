@@ -17,44 +17,13 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 import unittest
 
-from test.zaparoo_service_tester import ZaparooServiceTester
+from test.frontends_service_tester import FrontendsServiceTester
 from update_all.constants import FILE_lastcore_dat
 
 
-ENABLED_MISTER_INI = '[mister]\nmain=zaparoo/MiSTer_Zaparoo\n'
-DISABLED_MISTER_INI = '[mister]\nfoo=bar\n'
-
-
-class TestZaparooService(unittest.TestCase):
-    def test_frontend_activation_applied___by_default___is_false(self):
-        sut = ZaparooServiceTester()
-
-        self.assertFalse(sut.frontend_activation_applied())
-
-    def test_on_frontend_added___when_changed___marks_frontend_activation_applied(self):
-        sut = ZaparooServiceTester()
-
-        sut.on_frontend_added(changed=True, contents=ENABLED_MISTER_INI)
-
-        self.assertTrue(sut.frontend_activation_applied())
-
-    def test_on_frontend_added___when_unchanged___does_not_mark_frontend_activation_applied(self):
-        sut = ZaparooServiceTester()
-
-        sut.on_frontend_added(changed=False, contents='')
-
-        self.assertFalse(sut.frontend_activation_applied())
-
-    def test_on_frontend_deleted___when_changed___clears_frontend_activation_applied(self):
-        sut = ZaparooServiceTester()
-        sut.on_frontend_added(changed=True, contents=ENABLED_MISTER_INI)
-
-        sut.on_frontend_deleted(changed=True, contents=DISABLED_MISTER_INI)
-
-        self.assertFalse(sut.frontend_activation_applied())
-
+class TestFrontendsService(unittest.TestCase):
     def test_on_frontend_deleted___when_bootcore_is_lastcore___removes_lastcore_dat(self):
-        sut = ZaparooServiceTester(files={
+        sut = FrontendsServiceTester(files={
             FILE_lastcore_dat: {'content': 'zaparoo/MiSTer_Zaparoo'},
         })
 
@@ -66,7 +35,7 @@ class TestZaparooService(unittest.TestCase):
         self.assertFalse(sut.file_system.is_file(FILE_lastcore_dat))
 
     def test_on_frontend_deleted___when_bootcore_is_not_lastcore___keeps_lastcore_dat(self):
-        sut = ZaparooServiceTester(files={
+        sut = FrontendsServiceTester(files={
             FILE_lastcore_dat: {'content': 'zaparoo/MiSTer_Zaparoo'},
         })
 
@@ -78,7 +47,7 @@ class TestZaparooService(unittest.TestCase):
         self.assertTrue(sut.file_system.is_file(FILE_lastcore_dat))
 
     def test_on_frontend_deleted___when_unchanged___never_touches_lastcore_dat(self):
-        sut = ZaparooServiceTester(files={
+        sut = FrontendsServiceTester(files={
             FILE_lastcore_dat: {'content': 'zaparoo/MiSTer_Zaparoo'},
         })
 

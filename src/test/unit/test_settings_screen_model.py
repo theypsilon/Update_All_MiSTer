@@ -16,22 +16,25 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 import unittest
+from copy import deepcopy
+from unittest.mock import Mock
 
 from test.ui_model_test_utils import special_navigate_targets, gather_target_variables, \
     gather_formatter_declarations, gather_target_formatters, \
     gather_navigate_targets, gather_section_names, gather_all_nodes, ensure_node_is_correct, \
     gather_effect_chains, is_terminal_effect
-from test.update_all_service_tester import default_databases
+from test.update_all_service_tester import default_databases, UiContextStub
 from update_all.config_reader import Config
 from update_all.databases import model_variables_by_db_id, db_ids_by_model_variables, AllDBs, all_dbs, \
     MIRROR_ANDI_BR, MIRROR_MYSTICAL_REALM_ORG
 from update_all.settings_screen_model import settings_screen_model, uninstall_db_action, uninstall_db_action_for_id, \
     uninstall_db_action_manuals, uninstall_db_action_artwork, _ARTWORK_DATABASES
 from update_all.ui_engine import EffectChain, Interpolator, UiApplication, UiContext, UiRuntime, UiSection, \
-    UiSectionFactory, execute_ui_engine
+    UiSectionFactory, execute_ui_engine, _EffectResolver, _Interpolator
+from update_all.ui_engine_dialog_application import DialogSectionFactory, UiDialogDrawer
 from update_all.mister_ini_edits import parse_mister_ini_add, parse_mister_ini_del
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string, expand_type, \
-    gather_effects_by_type
+    gather_effects_by_type, Key
 
 
 _HYBRID_CORE_TITLES = {
@@ -151,6 +154,9 @@ _DATABASE_MAINTAINERS = {
     '# MiSTer DVD': 'owenb321',
     '# Disc Tools': 'Anime0t4ku',
     '# MiSTer Monitor': 'chipster6502',
+    '# Zaparoo': 'wizzo',
+    '# Zaparoo Frontend': 'wizzo',
+    '# Degauss': 'giancarloerra',
 }
 
 _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
@@ -417,47 +423,14 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('Activate Zaparoo?', app.last_confirm['header'])
         self.assertEqual('Yes', app.last_confirm['preselected_action'])
 
-    def test_mrext_zaparoo_confirmation_yes___enables_zaparoo_and_asks_about_active_frontend(self):
+    def test_mrext_zaparoo_confirmation_yes___enables_zaparoo_without_touching_the_frontend(self):
         app = self._execute_tools_mrext_action('false', 'false', confirm_action_title='Yes')
 
         self.assertEqual('true', app.ui.get_value('mrext/all'))
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('confirm', app.last_confirm['ui'])
-        self.assertEqual('Zaparoo Frontend', app.last_confirm['header'])
-        self.assertEqual([
-            'Do you want the Zaparoo frontend',
-            'to be active after being installed?',
-        ], app.last_confirm['text'])
-        self.assertEqual('Yes', app.last_confirm['preselected_action'])
-
-    def test_mrext_zaparoo_confirmation_yes_and_active_frontend_yes___sets_zaparoo_options(self):
-        app = self._execute_tools_mrext_action('false', 'false', confirm_action_title=['Yes', 'Yes'])
-
-        self.assertEqual('true', app.ui.get_value('mrext/all'))
-        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
-
-    def test_mrext_zaparoo_confirmation_yes_and_active_frontend_no___keeps_zaparoo_frontend_disabled(self):
-        app = self._execute_tools_mrext_action('false', 'false', confirm_action_title=['Yes', 'No'])
-
-        self.assertEqual('true', app.ui.get_value('mrext/all'))
-        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
-        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
-
-    def test_mrext_zaparoo_confirmation_yes___when_zaparoo_frontend_is_active___does_not_ask_about_it(self):
-        app = self._execute_tools_mrext_action(
-            'false',
-            'false',
-            confirm_action_title='Yes',
-            zaparoo_frontend_active='true',
-        )
-
-        self.assertEqual('true', app.ui.get_value('mrext/all'))
-        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
         self.assertEqual(1, len(app.confirms))
-        self.assertEqual('Activate Zaparoo?', app.last_confirm['header'])
+        self.assertEqual([], app.mister_ini_effects)
 
     def test_mrext_entry___when_disabling_mrext___does_not_ask_to_enable_zaparoo(self):
         app = self._execute_tools_mrext_action('true', 'false')
@@ -473,11 +446,30 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('mrext/all'))
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
 
-    def test_zaparoo_tools_entry___opens_zaparoo_submenu(self):
-        entry = next(entry for entry in self.model['items']['tools_and_scripts_menu']['entries'] if entry['title'] == '# Zaparoo')
+    def test_zaparoo_tools_entry___toggles_the_zaparoo_database_without_prompting(self):
+        entry = self._entry('tools_and_scripts_menu', '# Zaparoo')
+        self.assertEqual('{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher (Zaparoo Core)', entry['description'])
+        self.assertIn('info', entry['actions'])
 
-        self.assertEqual('{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher & Zaparoo Frontend', entry['description'])
-        self.assertEqual([{'type': 'navigate', 'target': 'zaparoo_menu'}], entry['actions']['ok'])
+        app = self._execute_zaparoo_database_action('false', 'false')
+
+        self.assertIsNone(app.last_confirm)
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual([], app.mister_ini_effects)
+
+    def test_zaparoo_tools_entry___when_disabling_with_frontend_on___switches_the_frontend_off(self):
+        app = self._execute_zaparoo_database_action('true', 'true')
+
+        self.assertEqual('false', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual([zaparoo_frontend_del_effect()], app.mister_ini_effects)
+
+    def test_zaparoo_tools_entry___when_disabling_with_frontend_off___only_disables_the_database(self):
+        app = self._execute_zaparoo_database_action('true', 'false')
+
+        self.assertEqual('false', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual([], app.mister_ini_effects)
 
     def test_retroachievements_other_cores_entry___is_second_and_uses_setup_effect(self):
         other_cores = self.model['items']['other_cores_menu']
@@ -634,8 +626,9 @@ class TestSettingsScreenModel(unittest.TestCase):
              'i2c2oled_files', 'i2c2oled Add-on script'),
             ('tools_and_scripts_menu', '# RetroSpy utility', 'retrospy/retrospy-MiSTer',
              'retrospy/retrospy-MiSTer', 'RetroSpy utility'),
-            ('zaparoo_menu', '# Zaparoo Database', 'ZaparooProject/Zaparoo_MiSTer',
+            ('tools_and_scripts_menu', '# Zaparoo', 'ZaparooProject/Zaparoo_MiSTer',
              'ZaparooProject/Zaparoo_MiSTer', 'Zaparoo'),
+            ('frontends_menu', '# Degauss', 'degauss', 'degauss', 'Degauss'),
             ('extra_content_menu', '# BIOS Database', 'bios_getter', 'bios_db', 'BIOS Database'),
             ('extra_content_menu', '# Dinierto GBA Borders', 'Dinierto/MiSTer-GBA-Borders',
              'Dinierto/MiSTer-GBA-Borders', 'Dinierto GBA Borders'),
@@ -919,9 +912,12 @@ class TestSettingsScreenModel(unittest.TestCase):
                     continue
                 targets = _navigate_targets(entry.get('actions', {}).get('ok', []))
                 if targets & submenu_targets:
-                    # MiSTer Monitor is an installable database whose enable flow
-                    # optionally leads to artwork selection; it is not a submenu launcher.
-                    if (menu, entry.get('title')) == ('tools_and_scripts_menu', '# MiSTer Monitor'):
+                    # MiSTer Monitor and Degauss are installable databases whose enable
+                    # flow optionally leads to artwork selection; they are not submenu launchers.
+                    if (menu, entry.get('title')) in (
+                            ('tools_and_scripts_menu', '# MiSTer Monitor'),
+                            ('frontends_menu', '# Degauss'),
+                    ):
                         self.assertEqual({'game_artwork_db_menu'}, targets & submenu_targets)
                         continue
                     self.assertNotIn(
@@ -931,27 +927,13 @@ class TestSettingsScreenModel(unittest.TestCase):
                     )
 
     def test_zaparoo_database_toggle_uninstall___disables_frontend_and_immediately_removes_its_ini_sections(self):
-        expected_cleanup = [
-            {'type': 'set_variable', 'target': 'zaparoo_frontend_active', 'value': 'false'},
-            {
-                'type': 'mister_ini_del',
-                'immediate': True,
-                'variable': 'zaparoo_frontend_active',
-                'target': {
-                    'mister': {'main': 'zaparoo/MiSTer_Zaparoo'},
-                    'menu': {'main': 'zaparoo/MiSTer_Zaparoo'},
-                },
-            },
-        ]
-
-        action = self._entry('zaparoo_menu', '# Zaparoo Database')['actions']['uninstall']
-        ui = action['chain'][0]['actions'][0]['fixed'][0]
-        self.assertEqual(expected_cleanup, ui['on_success'][2:-1])
+        self._assert_frontend_uninstall('tools_and_scripts_menu', '# Zaparoo',
+                                        'ZaparooProject/Zaparoo_MiSTer', zaparoo_frontend_del_effect())
 
     def test_uninstall_db_action___with_on_success_effects___inserts_them_right_before_navigate_back(self):
         extra = [{'type': 'set_variable', 'target': 'some_flag', 'value': 'true'}]
 
-        action = uninstall_db_action('some_var', 'some/db', 'Some DB', on_success=extra)
+        action = uninstall_db_action('some_var', 'some/db', 'Some DB', on_success=lambda then: [*extra, *then])
 
         ui = action['chain'][0]['actions'][0]['fixed'][0]
         self.assertEqual([
@@ -975,15 +957,15 @@ class TestSettingsScreenModel(unittest.TestCase):
         extra = [{'type': 'set_variable', 'target': 'some_flag', 'value': 'true'}]
 
         self.assertEqual(
-            uninstall_db_action('some/db', 'some/db', 'Some DB', on_success=extra),
-            uninstall_db_action_for_id('some/db', 'Some DB', on_success=extra),
+            uninstall_db_action('some/db', 'some/db', 'Some DB', on_success=lambda then: [*extra, *then]),
+            uninstall_db_action_for_id('some/db', 'Some DB', on_success=lambda then: [*extra, *then]),
         )
 
     def test_uninstall_db_action_manuals___resets_each_database_and_aggregate_state(self):
         db_ids = ['manuals/one', 'manuals/two']
         extra = [{'type': 'set_variable', 'target': 'some_flag', 'value': 'true'}]
 
-        action = uninstall_db_action_manuals('all_manuals', db_ids, 'Game Manuals', on_success=extra)
+        action = uninstall_db_action_manuals('all_manuals', db_ids, 'Game Manuals', on_success=lambda then: [*extra, *then])
 
         self.assertEqual('all_manuals', action['if'])
         confirm = action['chain'][0]
@@ -1010,7 +992,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         db_ids = ['artwork/one', 'artwork/two']
         extra = [{'type': 'set_variable', 'target': 'some_flag', 'value': 'true'}]
 
-        action = uninstall_db_action_artwork('all_artwork', db_ids, 'Game Artwork', on_success=extra)
+        action = uninstall_db_action_artwork('all_artwork', db_ids, 'Game Artwork', on_success=lambda then: [*extra, *then])
 
         self.assertEqual('all_artwork', action['if'])
         confirm = action['chain'][0]
@@ -1499,10 +1481,10 @@ class TestSettingsScreenModel(unittest.TestCase):
         info = self._execute_core_info('# Paprium MegaDrive')
         self.assertIn("FPGA core fork of MiSTer's Mega Drive core", ' '.join(info.messages[0]['text']))
 
-    def test_mister_dvd_entry___is_immediately_above_anime0t4ku_mister_scripts(self):
+    def test_mister_dvd_entry___is_immediately_below_anime0t4ku_mister_scripts(self):
         titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
 
-        self.assertEqual(titles.index('# MiSTer DVD') + 1, titles.index('# Anime0t4ku MiSTer Scripts'))
+        self.assertEqual(titles.index('# Anime0t4ku MiSTer Scripts') + 1, titles.index('# MiSTer DVD'))
 
     def test_mister_monitor_entry___is_immediately_above_mister_hi_fi(self):
         titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
@@ -1733,121 +1715,294 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('false', app.ui.get_value('download_beta_cores'))
         self.assertEqual('true', app.ui.get_value('download_beta_cores_chosen'))
 
-    def test_zaparoo_submenu___has_enabled_and_frontend_options(self):
-        entries = self.model['items']['zaparoo_menu']['entries']
+    def test_main_menu___has_frontends_entry_right_above_tools_and_scripts_and_no_analogue_pocket(self):
+        for menu in ('main_menu_login', 'main_menu_account'):
+            titles = [entry.get('title') for entry in self.model['items'][menu]['entries']]
 
-        self.assertEqual('# Zaparoo Database', entries[0]['title'])
-        self.assertEqual('{ZaparooProject/Zaparoo_MiSTer:enabled}', entries[0]['description'])
-        self.assertEqual('{zaparoo_frontend_active:yesno}', entries[1]['description'])
-        self.assertEqual(2, len(entries))
+            self.assertNotIn('# Analogue Pocket', titles, menu)
+            self.assertEqual(titles.index('# Other Cores') + 1, titles.index('# Frontends'), menu)
+            self.assertEqual(titles.index('# Frontends') + 1, titles.index('# Tools & Scripts'), menu)
+            entry = self._entry(menu, '# Frontends')
+            self.assertEqual('Turn the MiSTer menu into a console UI', entry['description'], menu)
+            self.assertEqual([{'type': 'navigate', 'target': 'frontends_menu'}], entry['actions']['ok'], menu)
 
-    def test_zaparoo_database_entry___when_enabling___asks_about_active_frontend(self):
-        app = self._execute_tools_zaparoo_action('false', 'false')
+    def test_analogue_pocket_entry___is_immediately_below_240p_test_suites_in_tools_and_scripts(self):
+        titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
 
-        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
-        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('confirm', app.last_confirm['ui'])
-        self.assertEqual('Zaparoo Frontend', app.last_confirm['header'])
+        self.assertEqual(titles.index('# 240p Test Suites') + 1, titles.index('# Analogue Pocket'))
+        entry = self._entry('tools_and_scripts_menu', '# Analogue Pocket')
+        self.assertEqual([{'type': 'navigate', 'target': 'analogue_pocket_menu'}], entry['actions']['ok'])
+
+    def test_frontends_menu___explains_the_artwork_selling_point_and_exclusivity_in_its_text(self):
+        text = self.model['items']['frontends_menu']['text']
+
         self.assertEqual([
-            'Do you want the Zaparoo frontend',
-            'to be active after being installed?',
-        ], app.last_confirm['text'])
-        self.assertEqual('Yes', app.last_confirm['preselected_action'])
+            'Frontends replace the whole MiSTer menu with a console-like UI: graphical views to browse your systems and games, with artwork and boxart instead of plain file lists.',
+        ], text)
 
-    def test_zaparoo_frontend_confirmation_yes___sets_zaparoo_frontend_active(self):
-        app = self._execute_tools_zaparoo_action('false', 'false', confirm_action_title='Yes')
+    def test_frontends_menu___lists_stock_ui_zaparoo_frontend_and_degauss_as_on_off_entries(self):
+        entries = self.model['items']['frontends_menu']['entries']
+        tools_titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
 
-        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual(['# Stock MiSTer UI', '# Zaparoo Frontend', '# Degauss'], [entry['title'] for entry in entries])
+        self.assertEqual('{stock_mister_ui_active:enabled} The standard MiSTer menu', entries[0]['description'])
+        self.assertEqual('{zaparoo_frontend_active:enabled} Customizable hub to browse your games', entries[1]['description'])
+        self.assertEqual('{degauss_frontend_active:enabled} Enrich your setup with themes and views', entries[2]['description'])
+        self.assertNotIn('uninstall', entries[0]['actions'])
+        self.assertNotIn('uninstall', entries[1]['actions'])
+        self.assertIn('info', entries[1]['actions'])
+        self.assertIn('info', entries[2]['actions'])
+        self.assertNotIn('# Degauss', tools_titles)
 
-    def test_zaparoo_frontend_confirmation_no___keeps_zaparoo_frontend_disabled(self):
-        app = self._execute_tools_zaparoo_action('false', 'false', confirm_action_title='No')
+    def test_frontends_menu___before_first_render___derives_stock_indicator_from_active_frontends(self):
+        for zaparoo, degauss, expected_stock in (
+                ('false', 'false', 'true'),
+                ('true', 'false', 'false'),
+                ('false', 'true', 'false'),
+                ('true', 'true', 'false'),
+        ):
+            with self.subTest(zaparoo=zaparoo, degauss=degauss):
+                resolver, ui, _ = self._effect_resolver({
+                    'zaparoo_frontend_active': zaparoo,
+                    'degauss_frontend_active': degauss,
+                    'degauss_installed': 'false',
+                    'stock_mister_ui_active': 'false' if expected_stock == 'true' else 'true',
+                })
+                drawer = Mock(spec=UiDialogDrawer)
+                drawer.paint.return_value = Key.NONE
+                factory = Mock()
+                factory.create_ui_dialog_drawer.return_value = drawer
+                data = deepcopy(self.model['items']['frontends_menu'])
+                expand_type(data, self.model['base_types'])
+                section = DialogSectionFactory(factory).create_ui_section(
+                    'menu', data, _Interpolator(self.model['formatters'], ui))
 
-        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+                initial_effects = section.process_key()
+
+                drawer.start.assert_not_called()
+                self.assertIsInstance(initial_effects, EffectChain)
+                resolver.resolve_effect_chain(initial_effects.chain)
+                self.assertEqual(expected_stock, ui.get_value('stock_mister_ui_active'))
+                section.process_key()
+                drawer.paint.assert_called_once()
+
+    def test_stock_mister_ui_entry___when_zaparoo_frontend_is_on___switches_it_off_and_keeps_zaparoo_installed(self):
+        app = self._execute_frontend_action('# Stock MiSTer UI', zaparoo_db='true', zaparoo='true')
+
+        self.assertEqual('true', app.ui.get_value('stock_mister_ui_active'))
         self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual([zaparoo_frontend_del_effect()], app.mister_ini_effects)
 
-    def test_zaparoo_database_entry___when_enabling_with_frontend_active___does_not_prompt(self):
-        app = self._execute_tools_zaparoo_action('false', 'true')
+    def test_stock_mister_ui_entry___when_degauss_is_on___switches_it_off_and_disables_its_database(self):
+        app = self._execute_frontend_action('# Stock MiSTer UI', degauss='true', degauss_db='true')
+
+        self.assertEqual('true', app.ui.get_value('stock_mister_ui_active'))
+        self.assertEqual('false', app.ui.get_value('degauss_frontend_active'))
+        self.assertEqual('false', app.ui.get_value('degauss'))
+        self.assertEqual([degauss_frontend_del_effect()], app.mister_ini_effects)
+
+    def test_stock_mister_ui_entry___when_already_on___changes_nothing(self):
+        app = self._execute_frontend_action('# Stock MiSTer UI')
 
         self.assertIsNone(app.last_confirm)
-        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
-        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual('true', app.ui.get_value('stock_mister_ui_active'))
+        self.assertEqual([], app.mister_ini_effects)
 
-    def test_zaparoo_database_entry___when_disabling___keeps_active_frontend_without_prompting(self):
-        app = self._execute_tools_zaparoo_action('true', 'true')
+    def test_zaparoo_frontend_entry___when_off_with_zaparoo_installed_and_all_artwork_selected___turns_on_without_prompting(self):
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='false')
 
         self.assertIsNone(app.last_confirm)
-        self.assertEqual('false', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual('false', app.ui.get_value('stock_mister_ui_active'))
+        self.assertEqual([zaparoo_frontend_add_effect()], app.mister_ini_effects)
 
-    def test_zaparoo_frontend_entry___rotates_frontend_active_preference(self):
-        app = self._execute_tools_action(
-            self._zaparoo_frontend_action_chain(),
-            {
-                'ZaparooProject/Zaparoo_MiSTer': 'true',
-                'zaparoo_frontend_active': 'false',
-            },
-            entrypoint='zaparoo_menu',
-            initial_history=['tools_and_scripts_menu'],
-        )
+    def test_zaparoo_frontend_entry___when_turned_on_without_all_artwork_selected___offers_artwork_selection(self):
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='false', artwork_all='false')
 
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
-        self.assertEqual([
-            {'type': 'mister_ini_add', 'variable': 'zaparoo_frontend_active',
-             'target': {'mister': {'main': 'zaparoo/MiSTer_Zaparoo'}}},
-        ], app.mister_ini_effects)
+        self.assertEqual([zaparoo_frontend_add_effect()], app.mister_ini_effects)
+        self.assertEqual(1, len(app.confirms))
+        self._assert_artwork_offer(app.confirms[0], 'Zaparoo Frontend')
 
-    def test_zaparoo_frontend_entry___when_active___rotates_frontend_inactive(self):
-        app = self._execute_tools_zaparoo_frontend_action('true', 'true')
+    def test_zaparoo_frontend_entry___when_zaparoo_core_gets_installed_without_all_artwork_selected___offers_artwork_selection_after_the_message(self):
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='false', zaparoo='false', artwork_all='false')
 
-        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
-        self.assertEqual([
-            {'type': 'mister_ini_del', 'variable': 'zaparoo_frontend_active',
-             'target': {'mister': {'main': 'zaparoo/MiSTer_Zaparoo'},
-                        'menu': {'main': 'zaparoo/MiSTer_Zaparoo'}}},
-        ], app.mister_ini_effects)
-
-    def test_zaparoo_frontend_entry___when_enabling_with_zaparoo_database_disabled___asks_to_enable_database(self):
-        app = self._execute_tools_zaparoo_frontend_action('false', 'false')
-
-        self.assertEqual('false', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
-        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual('confirm', app.last_confirm['ui'])
-        self.assertEqual('Enable Zaparoo DB?', app.last_confirm['header'])
-        self.assertEqual([
-            'To enable Zaparoo Frontend,',
-            'you also need to enable the Zaparoo DB.',
-            'Do you want to enable it?',
-        ], app.last_confirm['text'])
-        self.assertEqual('Yes', app.last_confirm['preselected_action'])
-
-    def test_zaparoo_frontend_entry___database_confirmation_yes___enables_database_and_frontend(self):
-        app = self._execute_tools_zaparoo_frontend_action('false', 'false', confirm_action_title='Yes')
-
+        self.assertEqual(1, len(app.messages))
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual([
-            {'type': 'mister_ini_add', 'variable': 'zaparoo_frontend_active',
-             'target': {'mister': {'main': 'zaparoo/MiSTer_Zaparoo'}}},
-        ], app.mister_ini_effects)
+        self.assertEqual(1, len(app.confirms))
+        self._assert_artwork_offer(app.confirms[0], 'Zaparoo Frontend')
 
-    def test_zaparoo_frontend_entry___database_confirmation_no___keeps_database_and_frontend_disabled(self):
-        app = self._execute_tools_zaparoo_frontend_action('false', 'false', confirm_action_title='No')
+    def test_zaparoo_frontend_entry___when_turned_off___does_not_offer_artwork_selection(self):
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='true', artwork_all='false')
 
-        self.assertEqual('false', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual([], app.confirms)
+
+    def test_zaparoo_frontend_entry___when_off_without_zaparoo___tells_zaparoo_core_gets_installed_and_turns_on(self):
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='false', zaparoo='false')
+
+        self.assertEqual([], app.confirms)
+        self.assertEqual(1, len(app.messages))
+        self.assertEqual('Zaparoo Frontend', app.messages[0]['header'])
+        self.assertEqual([
+            'Zaparoo Frontend requires Zaparoo Core,',
+            'it will be installed too.',
+        ], app.messages[0]['text'])
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual('false', app.ui.get_value('stock_mister_ui_active'))
+        self.assertEqual([zaparoo_frontend_add_effect()], app.mister_ini_effects)
+
+    def test_zaparoo_frontend_entry___when_on___turns_off_and_keeps_zaparoo_installed(self):
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='true')
+
+        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual('true', app.ui.get_value('stock_mister_ui_active'))
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual([zaparoo_frontend_del_effect()], app.mister_ini_effects)
+
+    def test_zaparoo_frontend_entry___when_degauss_is_on___switches_degauss_off(self):
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='false', degauss='true', degauss_db='true')
+
+        self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual('false', app.ui.get_value('degauss_frontend_active'))
+        self.assertEqual('false', app.ui.get_value('degauss'))
+        self.assertEqual([degauss_frontend_del_effect(), zaparoo_frontend_add_effect()], app.mister_ini_effects)
+
+    def test_degauss_entry___when_off_with_all_artwork_selected___turns_on_and_enables_its_database_without_prompting(self):
+        app = self._execute_frontend_action('# Degauss', degauss='false', degauss_db='false')
+
+        self.assertIsNone(app.last_confirm)
+        self.assertEqual('true', app.ui.get_value('degauss_frontend_active'))
+        self.assertEqual('true', app.ui.get_value('degauss'))
+        self.assertEqual('false', app.ui.get_value('stock_mister_ui_active'))
+        self.assertEqual([degauss_frontend_add_effect()], app.mister_ini_effects)
+
+    def test_degauss_entry___when_turned_on_without_all_artwork_selected___offers_artwork_selection(self):
+        app = self._execute_frontend_action('# Degauss', degauss='false', degauss_db='false', artwork_all='false')
+
+        self.assertEqual('true', app.ui.get_value('degauss_frontend_active'))
+        self.assertEqual([degauss_frontend_add_effect()], app.mister_ini_effects)
+        self.assertEqual(1, len(app.confirms))
+        self._assert_artwork_offer(app.confirms[0], 'Degauss')
+
+    def test_degauss_entry___when_turned_off___does_not_offer_artwork_selection(self):
+        app = self._execute_frontend_action('# Degauss', degauss='true', degauss_db='true', artwork_all='false')
+
+        self.assertEqual('false', app.ui.get_value('degauss_frontend_active'))
+        self.assertEqual([], app.confirms)
+
+    def test_degauss_entry___when_on___turns_off_and_disables_its_database(self):
+        app = self._execute_frontend_action('# Degauss', degauss='true', degauss_db='true')
+
+        self.assertEqual('false', app.ui.get_value('degauss_frontend_active'))
+        self.assertEqual('false', app.ui.get_value('degauss'))
+        self.assertEqual('true', app.ui.get_value('stock_mister_ui_active'))
+        self.assertEqual([degauss_frontend_del_effect()], app.mister_ini_effects)
+
+    def test_degauss_entry___when_zaparoo_frontend_is_on___switches_it_off_but_keeps_zaparoo_installed(self):
+        app = self._execute_frontend_action('# Degauss', degauss='false', degauss_db='false', zaparoo_db='true', zaparoo='true')
+
+        self.assertEqual('true', app.ui.get_value('degauss_frontend_active'))
+        self.assertEqual('true', app.ui.get_value('degauss'))
+        self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+        self.assertEqual([zaparoo_frontend_del_effect(), degauss_frontend_add_effect()], app.mister_ini_effects)
+
+    def test_degauss_entry___uninstall___turns_off_and_immediately_removes_its_ini_entries(self):
+        self._assert_frontend_uninstall('frontends_menu', '# Degauss', 'degauss', degauss_frontend_del_effect())
+
+    def test_switching_frontends___without_all_artwork_selected___offers_artwork_and_returns_to_frontends(self):
+        for title, zaparoo, degauss in (
+                ('# Zaparoo Frontend', 'false', 'true'),
+                ('# Degauss', 'true', 'false'),
+        ):
+            with self.subTest(frontend=title):
+                app = self._execute_frontend_action(
+                    title, zaparoo_db='true', zaparoo=zaparoo, degauss_db='true', degauss=degauss,
+                    artwork_all='false', confirm_action_title='No',
+                )
+
+                self.assertEqual('true' if title == '# Zaparoo Frontend' else 'false', app.ui.get_value('zaparoo_frontend_active'))
+                self.assertEqual('true' if title == '# Degauss' else 'false', app.ui.get_value('degauss_frontend_active'))
+                self.assertEqual('false', app.ui.get_value('stock_mister_ui_active'))
+                self.assertEqual(1, len(app.confirms))
+                self._assert_artwork_offer(app.confirms[0], title.removeprefix('# '))
+
+    def _assert_frontend_uninstall(self, menu, title, db_id, del_effect):
+        action = self._entry(menu, title)['actions']['uninstall']
+        success = action['chain'][0]['actions'][0]['fixed'][0]['on_success']
+        other_variable = 'degauss_frontend_active' if del_effect['variable'] == 'zaparoo_frontend_active' else 'zaparoo_frontend_active'
+        other_db = 'degauss' if db_id == 'ZaparooProject/Zaparoo_MiSTer' else 'ZaparooProject/Zaparoo_MiSTer'
+        for frontend_active in ('false', 'true'):
+            for other_active in ('false', 'true'):
+                with self.subTest(frontend=frontend_active, other=other_active):
+                    resolver, ui, ini_effects = self._effect_resolver({
+                        db_id: 'true',
+                        f'{db_id}_installed': 'true',
+                        other_db: 'true',
+                        del_effect['variable']: frontend_active,
+                        other_variable: other_active,
+                        'stock_mister_ui_active': 'true' if frontend_active == other_active == 'false' else 'false',
+                    })
+
+                    navigation = resolver.resolve_effect_chain(success)
+
+                    self.assertEqual('back', navigation)
+                    self.assertEqual('false', ui.get_value(db_id))
+                    self.assertEqual('false', ui.get_value(f'{db_id}_installed'))
+                    self.assertEqual('false', ui.get_value(del_effect['variable']))
+                    self.assertEqual(other_active, ui.get_value(other_variable))
+                    self.assertEqual('true', ui.get_value(other_db))
+                    self.assertEqual('true' if other_active == 'false' else 'false', ui.get_value('stock_mister_ui_active'))
+                    self.assertEqual([{**del_effect, 'immediate': True}], ini_effects)
+
+    def _effect_resolver(self, initial_values):
+        ui = UiContextStub()
+        for key, value in initial_values.items():
+            ui.set_value(key, value)
+        ini_effects = []
+        resolver = _EffectResolver(ui, {'variables': gather_variable_declarations(self.model)}, {
+            'mister_ini_add': ini_effects.append,
+            'mister_ini_del': ini_effects.append,
+        })
+        return resolver, ui, ini_effects
 
     def _mrext_action_chain(self):
         entry = next(entry for entry in self.model['items']['tools_and_scripts_menu']['entries'] if 'MiSTer Extensions' in entry['title'])
         return entry['actions']['ok']
 
-    def _zaparoo_action_chain(self):
-        return self.model['items']['zaparoo_menu']['entries'][0]['actions']['ok']
+    def _execute_zaparoo_database_action(self, zaparoo_db, zaparoo_frontend_active):
+        return self._execute_tools_action(self._entry('tools_and_scripts_menu', '# Zaparoo')['actions']['ok'], {
+            'ZaparooProject/Zaparoo_MiSTer': zaparoo_db,
+            'zaparoo_frontend_active': zaparoo_frontend_active,
+        })
 
-    def _zaparoo_frontend_action_chain(self):
-        return self.model['items']['zaparoo_menu']['entries'][1]['actions']['ok']
+    def _execute_frontend_action(self, title, zaparoo_db='false', zaparoo='false', degauss_db='false', degauss='false',
+                                 artwork_all='true', confirm_action_title=None):
+        return self._execute_tools_action(self._entry('frontends_menu', title)['actions']['ok'], {
+            'ZaparooProject/Zaparoo_MiSTer': zaparoo_db,
+            'zaparoo_frontend_active': zaparoo,
+            'degauss': degauss_db,
+            'degauss_frontend_active': degauss,
+            'stock_mister_ui_active': 'false' if 'true' in (zaparoo, degauss) else 'true',
+            'chipster6502_artwork_dbs_general_selector': artwork_all,
+        }, confirm_action_title, entrypoint='frontends_menu', initial_history=['main_menu_login'])
+
+    def _assert_artwork_offer(self, prompt, tool_name):
+        self.assertEqual('Enable Game Artwork DBs?', prompt['header'])
+        self.assertEqual('Yes', prompt['preselected_action'])
+        self.assertEqual(f'{tool_name} uses Game Artwork DBs to display box art and screenshots.', prompt['text'][0])
+        self.assertEqual(
+            [{'type': 'navigate', 'target': 'game_artwork_db_menu'}],
+            next(action for action in prompt['actions'] if action['title'] == 'Yes')['fixed'],
+        )
+        self.assertEqual(
+            [{'type': 'navigate', 'target': 'back'}],
+            next(action for action in prompt['actions'] if action['title'] == 'No')['fixed'],
+        )
 
     def _jt_private_releases_action_chain(self):
         return self.model['items']['jtcores_menu']['entries'][1]['actions']['ok']
@@ -1870,18 +2025,6 @@ class TestSettingsScreenModel(unittest.TestCase):
             'ZaparooProject/Zaparoo_MiSTer': zaparoo_value,
             'zaparoo_frontend_active': zaparoo_frontend_active,
         }, confirm_action_title)
-
-    def _execute_tools_zaparoo_action(self, zaparoo_value, zaparoo_frontend_active, confirm_action_title=None):
-        return self._execute_tools_action(self._zaparoo_action_chain(), {
-            'ZaparooProject/Zaparoo_MiSTer': zaparoo_value,
-            'zaparoo_frontend_active': zaparoo_frontend_active,
-        }, confirm_action_title, entrypoint='zaparoo_menu', initial_history=['tools_and_scripts_menu'])
-
-    def _execute_tools_zaparoo_frontend_action(self, zaparoo_value, zaparoo_frontend_active, confirm_action_title=None):
-        return self._execute_tools_action(self._zaparoo_frontend_action_chain(), {
-            'ZaparooProject/Zaparoo_MiSTer': zaparoo_value,
-            'zaparoo_frontend_active': zaparoo_frontend_active,
-        }, confirm_action_title, entrypoint='zaparoo_menu', initial_history=['tools_and_scripts_menu'])
 
     def _execute_tools_action(self, action_chain, initial_values, confirm_action_title=None, entrypoint='tools_and_scripts_menu', initial_history=None):
         app = ToolsMenuActionApplication(
@@ -1973,8 +2116,9 @@ class TestSettingsScreenModel(unittest.TestCase):
             self.assertIn(spec.variable, declared_variables, spec.variable)
             dels.append(spec)
 
-        # RetroAchievements is add-only (no del); Zaparoo and the MultiDatabases that
-        # document MiSTer.ini sections have adds, only Zaparoo has a del.
+        # RetroAchievements is add-only (no del); the frontends and the MultiDatabases
+        # that document MiSTer.ini sections have adds, only the frontends have dels.
+        frontend_variables = {'zaparoo_frontend_active', 'degauss_frontend_active'}
         multidb_ini_variables = {
             'MultiDatabases/3s-arm',
             'MultiDatabases/duke3d',
@@ -1986,29 +2130,45 @@ class TestSettingsScreenModel(unittest.TestCase):
             'MultiDatabases/sonic-mania',
         }
         self.assertEqual(
-            {'theypsilon/RetroAchievementsDB_MiSTer', 'zaparoo_frontend_active'} | multidb_ini_variables,
+            {'theypsilon/RetroAchievementsDB_MiSTer'} | frontend_variables | multidb_ini_variables,
             {spec.variable for spec in adds},
         )
-        self.assertEqual({'zaparoo_frontend_active'}, {spec.variable for spec in dels})
+        self.assertEqual(frontend_variables, {spec.variable for spec in dels})
 
         # Every site that activates a feature fires its add; every site that
-        # deactivates the Zaparoo frontend fires the del. RA fires from its "ok" and
-        # "toggle" chains; the Zaparoo frontend prompt is embedded in both the mrext
-        # and the zaparoo database flows; each MultiDatabase fires its add from its
-        # enable message only (pruning at save time covers the disable path).
+        # deactivates a frontend fires its del. RA fires from its "ok" and "toggle"
+        # chains. Activating a frontend first switches the other one off, so its add
+        # sits in both branches of that condition and is collected twice per site:
+        # Zaparoo Frontend activates from its toggle and from the "requires Zaparoo
+        # Core" message, Degauss from its toggle only. Each frontend's del fires from its own
+        # toggle-off plus once per activation site of the other frontend; Zaparoo's
+        # also fires when its DB is switched off in Tools & Scripts. The Stock MiSTer UI
+        # entry switches both off through nested conditions, so Zaparoo's del sits in
+        # the outer one once and Degauss's in the inner one, collected twice. Each
+        # MultiDatabase fires its add from its enable message only (pruning at save
+        # time covers the disable path).
         self.assertEqual(2, len([s for s in adds if s.variable == 'theypsilon/RetroAchievementsDB_MiSTer']))
-        self.assertEqual(5, len([s for s in adds if s.variable == 'zaparoo_frontend_active']))
+        self.assertEqual(2 * 2, len([s for s in adds if s.variable == 'zaparoo_frontend_active']))
+        self.assertEqual(1 * 2, len([s for s in adds if s.variable == 'degauss_frontend_active']))
         for variable in multidb_ini_variables:
             self.assertEqual(1, len([s for s in adds if s.variable == variable]), variable)
-        self.assertEqual(3, len(dels))
+        self.assertEqual(1 + 1 + 1 + 1, len([s for s in dels if s.variable == 'zaparoo_frontend_active']))
+        self.assertEqual(1 + 2 + 2, len([s for s in dels if s.variable == 'degauss_frontend_active']))
 
         for spec in [s for s in adds if s.variable == 'theypsilon/RetroAchievementsDB_MiSTer']:
             self.assertEqual({'RA_*': {'main': 'MiSTer_RA'}}, spec.target)
         for spec in [s for s in adds if s.variable == 'zaparoo_frontend_active']:
             self.assertEqual({'mister': {'main': 'zaparoo/MiSTer_Zaparoo'}}, spec.target)
-        for spec in dels:
+        for spec in [s for s in adds if s.variable == 'degauss_frontend_active']:
+            self.assertEqual({'mister': {'main': 'degauss/MiSTer_Degauss'}}, spec.target)
+        for spec in [s for s in dels if s.variable == 'zaparoo_frontend_active']:
             self.assertEqual(
                 {'mister': {'main': 'zaparoo/MiSTer_Zaparoo'}, 'menu': {'main': 'zaparoo/MiSTer_Zaparoo'}},
+                spec.target,
+            )
+        for spec in [s for s in dels if s.variable == 'degauss_frontend_active']:
+            self.assertEqual(
+                {'mister': {'main': 'degauss/MiSTer_Degauss'}, 'menu': {'main': 'degauss/MiSTer_Degauss'}},
                 spec.target,
             )
 
@@ -2052,7 +2212,8 @@ def _entry_confirms(entry):
 
     def walk(node):
         if isinstance(node, dict):
-            if node.get('ui') == 'confirm':
+            # The Game Artwork DBs offer credits the artwork maintainer, not the entry's.
+            if node.get('ui') == 'confirm' and node.get('header') != 'Enable Game Artwork DBs?':
                 confirms.append(node)
             for value in node.values():
                 walk(value)
@@ -2298,3 +2459,29 @@ class MessageActionSection(UiSection):
 
     def clear(self) -> None:
         pass
+
+
+def zaparoo_frontend_add_effect():
+    # Declared exactly as in the settings screen model.
+    return {'type': 'mister_ini_add', 'variable': 'zaparoo_frontend_active',
+            'target': {'mister': {'main': 'zaparoo/MiSTer_Zaparoo'}}}
+
+
+def zaparoo_frontend_del_effect():
+    # Declared exactly as in the settings screen model.
+    return {'type': 'mister_ini_del', 'variable': 'zaparoo_frontend_active',
+            'target': {'mister': {'main': 'zaparoo/MiSTer_Zaparoo'},
+                       'menu': {'main': 'zaparoo/MiSTer_Zaparoo'}}}
+
+
+def degauss_frontend_add_effect():
+    # Declared exactly as in the settings screen model.
+    return {'type': 'mister_ini_add', 'variable': 'degauss_frontend_active',
+            'target': {'mister': {'main': 'degauss/MiSTer_Degauss'}}}
+
+
+def degauss_frontend_del_effect():
+    # Declared exactly as in the settings screen model.
+    return {'type': 'mister_ini_del', 'variable': 'degauss_frontend_active',
+            'target': {'mister': {'main': 'degauss/MiSTer_Degauss'},
+                       'menu': {'main': 'degauss/MiSTer_Degauss'}}}

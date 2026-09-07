@@ -65,7 +65,7 @@ from update_all.update_output import LtsvUpdateOutput, NoopUpdateOutput
 from update_all.update_all_background_jobs_service import UpdateAllBackgroundJobsService, UpdateAllSelfUpdateCheck
 from update_all.update_all_self_update_service import UpdateAllSelfUpdateService, UpdateAllResumePoint
 from update_all.uninstall_db_service import UninstallDbService
-from update_all.zaparoo_service import ZaparooService
+from update_all.frontends_service import FrontendsService
 
 
 @enum.unique
@@ -126,7 +126,7 @@ class UpdateAllServiceFactory:
             os_utils,
             self._logger,
         )
-        zaparoo_service = ZaparooService(file_system, self._logger)
+        frontends_service = FrontendsService(file_system, self._logger)
         uninstall_db_service = UninstallDbService(
             ini_repository,
             config_provider,
@@ -157,7 +157,7 @@ class UpdateAllServiceFactory:
             retroaccount=retroaccount,
             retroachievements_service=retroachievements_service,
             mister_ini_repository=mister_ini_repository,
-            zaparoo_service=zaparoo_service,
+            frontends_service=frontends_service,
             uninstall_db_service=uninstall_db_service,
         )
         environment_setup = EnvironmentSetupImpl(
@@ -185,7 +185,6 @@ class UpdateAllServiceFactory:
             log_viewer=LogViewer(file_system, config_provider, store_provider, retroaccount),
             timeline=timeline,
             retroaccount=retroaccount,
-            zaparoo_service=zaparoo_service,
             downloader_service=downloader_service,
             background_jobs_service=background_jobs_service,
             self_update_service=self_update_service,
@@ -281,7 +280,6 @@ class UpdateAllService:
                  local_repository: LocalRepository,
                  timeline: Timeline,
                  retroaccount: RetroAccountService,
-                 zaparoo_service: ZaparooService,
                  downloader_service: DownloaderService,
                  background_jobs_service: UpdateAllBackgroundJobsService,
                  self_update_service: UpdateAllSelfUpdateService):
@@ -299,7 +297,6 @@ class UpdateAllService:
         self._log_viewer = log_viewer
         self._timeline = timeline
         self._retroaccount = retroaccount
-        self._zaparoo_service = zaparoo_service
         self._downloader_service = downloader_service
         self._background_jobs_service = background_jobs_service
         self._self_update_service = self_update_service
@@ -694,8 +691,6 @@ class UpdateAllService:
         self._logger.print(calculate_outro_summary(config, run_time, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         self._logger.debug(f"Commit: {config.commit}")
         self._logger.debug(f"Boot time: {config.boot_time}")
-        if self._zaparoo_service.frontend_activation_applied():
-            self._logger.print('Zaparoo Frontend enabled!')
         for kind, debug_msg in self._retroaccount.consume_important_messages():
             if kind == 'debug': self._logger.debug(debug_msg)
             elif kind == 'print': self._logger.print(debug_msg)

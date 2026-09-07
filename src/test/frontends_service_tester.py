@@ -20,10 +20,10 @@ from test.fake_filesystem import FileSystemFactory
 from test.logger_tester import NoLogger
 from update_all.file_system import FileSystem
 from update_all.logger import Logger
-from update_all.zaparoo_service import ZaparooService
+from update_all.frontends_service import FrontendsService
 
 
-class ZaparooServiceTester(ZaparooService):
+class FrontendsServiceTester(FrontendsService):
     def __init__(
             self,
             file_system: FileSystem = None,

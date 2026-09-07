@@ -27,7 +27,7 @@ from test.retroaccount_gateway_tester import RetroAccountGatewayTester
 from test.spy_os_utils import SpyOsUtils
 from test.update_all_background_jobs_service_tester import UpdateAllBackgroundJobsServiceTester
 from test.update_all_self_update_service_tester import UpdateAllSelfUpdateServiceTester
-from test.zaparoo_service_tester import ZaparooServiceTester
+from test.frontends_service_tester import FrontendsServiceTester
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService
 from update_all.config import Config
 from update_all.config_reader import ConfigReader
@@ -72,7 +72,7 @@ from update_all.update_all_background_jobs_service import UpdateAllBackgroundJob
 from update_all.update_all_self_update_service import UpdateAllSelfUpdateService
 from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllService
 from update_all.uninstall_db_service import UninstallDbService
-from update_all.zaparoo_service import ZaparooService
+from update_all.frontends_service import FrontendsService
 
 
 def default_env():
@@ -201,7 +201,7 @@ class SettingsScreenTester(SettingsScreen):
                  mister_video_mode_service: MisterVideoModeService = None,
                  mister_ini_repository: MisterIniRepository = None,
                  retroachievements_service: RetroAchievementsService = None,
-                 zaparoo_service: ZaparooService = None,
+                 frontends_service: FrontendsService = None,
                  uninstall_db_service: UninstallDbService = None):
 
         config_provider = config_provider or GenericProvider[Config]()
@@ -241,9 +241,9 @@ class SettingsScreenTester(SettingsScreen):
                 )
             ),
             mister_ini_repository=mister_ini_repository,
-            zaparoo_service=(
-                zaparoo_service
-                or ZaparooServiceTester(
+            frontends_service=(
+                frontends_service
+                or FrontendsServiceTester(
                     file_system=file_system,
                 )
             ),
@@ -377,7 +377,7 @@ class UpdateAllServiceTester(UpdateAllService):
                  store_provider: GenericProvider[LocalStore] = None,
                  ini_repository: IniRepository = None,
                  local_repository: LocalRepository = None,
-                 zaparoo_service: ZaparooService = None,
+                 frontends_service: FrontendsService = None,
                  retroaccount: RetroAccountService = None,
                  downloader_service: DownloaderService = None,
                  fetcher: FetcherStub = None,
@@ -393,14 +393,14 @@ class UpdateAllServiceTester(UpdateAllService):
         ao_service = ArcadeOrganizerServiceStub()
         retroaccount = retroaccount or RetroAccountServiceTester(file_system=file_system, config_provider=config_provider)
         environment_setup = environment_setup or EnvironmentSetupTester(file_system=file_system, os_utils=os_utils, config_provider=config_provider)
-        zaparoo_service = zaparoo_service or ZaparooServiceTester(file_system=file_system)
+        frontends_service = frontends_service or FrontendsServiceTester(file_system=file_system)
         settings_screen = settings_screen or SettingsScreenTester(
             config_provider=config_provider,
             file_system=file_system,
             os_utils=os_utils,
             ao_service=ao_service,
             retroaccount=retroaccount,
-            zaparoo_service=zaparoo_service,
+            frontends_service=frontends_service,
         )
         self.ini_repository = ini_repository or IniRepositoryTester(file_system=file_system, os_utils=os_utils)
         downloader_service = downloader_service or DownloaderService(
@@ -439,7 +439,6 @@ class UpdateAllServiceTester(UpdateAllService):
             log_viewer=LogViewerTester(file_system, config_provider, store_provider, retroaccount),
             timeline=TimelineTester(file_system=file_system, config_provider=config_provider, retroaccount=retroaccount),
             retroaccount=retroaccount,
-            zaparoo_service=zaparoo_service,
             downloader_service=downloader_service,
             background_jobs_service=background_jobs_service,
             self_update_service=self_update_service,

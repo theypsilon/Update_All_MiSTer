@@ -47,6 +47,7 @@ from update_all.logger import Logger, CollectorLoggerDecorator
 from update_all.mister_ini_repository import MisterIniRepository
 from update_all.mister_ini_edits import (
     MisterIniAdd,
+    MisterIniDel,
     apply,
     needs_save_label,
     parse_mister_ini_add,
@@ -59,8 +60,8 @@ from update_all.os_utils import OsUtils
 from update_all.retroaccount import RetroAccountService, BenefitState
 from update_all.retroachievements_service import RetroAchievementsService
 from update_all.update_output import NoopUpdateOutput
-from update_all.zaparoo_service import ZaparooService
-from update_all.settings_screen_model import settings_screen_model
+from update_all.frontends_service import FrontendsService
+from update_all.settings_screen_model import settings_screen_model, frontends, frontend_needs_lastcore_cleanup
 from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
 from update_all.ui_engine_dialog_application import DialogSectionFactory
@@ -96,10 +97,10 @@ class SettingsScreen(UiApplication):
                  ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService, encryption: Encryption,
                  retroaccount: RetroAccountService, retroachievements_service: RetroAchievementsService,
                  mister_ini_repository: MisterIniRepository,
-                 zaparoo_service: ZaparooService, uninstall_db_service: UninstallDbService):
+                 frontends_service: FrontendsService, uninstall_db_service: UninstallDbService):
         self._logger = logger
         self._retroachievements_service = retroachievements_service
-        self._zaparoo_service = zaparoo_service
+        self._frontends_service = frontends_service
         self._uninstall_db_service = uninstall_db_service
         self._mister_ini_repository = mister_ini_repository
         self._config_provider = config_provider
@@ -119,8 +120,6 @@ class SettingsScreen(UiApplication):
         self._pending_chip_id_extraction: Optional[_PendingChipIdExtraction] = None
         self._pending_mister_ini_edits = {}
         self._mister_ini_adds = {}
-        self._mister_ini_add_hooks = {}
-        self._mister_ini_del_hooks = {}
         self._artwork_style_explicit_db_ids = set()
 
     def load_main_menu(self) -> None:
@@ -162,7 +161,7 @@ class SettingsScreen(UiApplication):
         self._pending_mister_ini_edits = {}
         # mister_ini_add declarations bound to database variables apply whenever the
         # db stays toggled in at save time, whether or not they were fired this
-        # session. Everything else (zaparoo frontend add, all mister_ini_del) only
+        # session. Everything else (frontend adds, all mister_ini_del) only
         # applies when fired.
         db_variables = set(db_ids_by_model_variables())
         self._mister_ini_adds = {}
@@ -170,15 +169,11 @@ class SettingsScreen(UiApplication):
             spec = parse_mister_ini_add(effect)
             if spec.variable in db_variables:
                 self._mister_ini_adds[spec.variable] = spec
-        self._mister_ini_add_hooks = {
-            'zaparoo_frontend_active': self._zaparoo_service.on_frontend_added,
-        }
-        self._mister_ini_del_hooks = {
-            'zaparoo_frontend_active': self._zaparoo_service.on_frontend_deleted,
-        }
-        zaparoo_frontend_active = self._mister_ini_repository.has_mister_ini_key(('mister', 'menu'), 'main', 'zaparoo/MiSTer_Zaparoo')
-        ui.set_value('zaparoo_frontend_active', 'true' if zaparoo_frontend_active else 'false')
-        self._logger.debug(f"zaparoo_frontend_active seeded '{ui.get_value('zaparoo_frontend_active')}' from MiSTer.ini")
+        for frontend in frontends():
+            variable = frontend['variable']
+            value = 'true' if self._mister_ini_repository.has_mister_ini_key(('mister', 'menu'), 'main', frontend['main']) else 'false'
+            ui.set_value(variable, value)
+            self._logger.debug(f"{variable} seeded '{value}' from MiSTer.ini")
 
         arcade_organizer_ini = self._ini_repository.get_arcade_organizer_ini()
 
@@ -374,16 +369,17 @@ class SettingsScreen(UiApplication):
         self._pending_mister_ini_edits[spec.variable] = spec
         self._logger.debug(f"mister_ini_del: armed '{spec.variable}' -> {spec.target}")
 
+    def _apply_mister_ini_edit(self, spec) -> None:
+        changed, contents = apply(self._mister_ini_repository, spec, self._logger)
+        if isinstance(spec, MisterIniDel) and frontend_needs_lastcore_cleanup(spec.variable):
+            self._frontends_service.on_frontend_deleted(changed=changed, contents=contents)
+
     def _apply_mister_ini_edit_now(self, spec) -> None:
         # Executed directly instead of being scheduled to save time. Used by the
         # uninstall_db on_success chain, where the DB has already been removed from
         # disk so its MiSTer.ini edit must be undone right now, not on a later save.
-        changed, contents = apply(self._mister_ini_repository, spec, self._logger)
+        self._apply_mister_ini_edit(spec)
         self._pending_mister_ini_edits.pop(spec.variable, None)
-        hooks = self._mister_ini_add_hooks if isinstance(spec, MisterIniAdd) else self._mister_ini_del_hooks
-        hook = hooks.get(spec.variable)
-        if hook is not None:
-            hook(changed=changed, contents=contents)
         self._logger.debug(f"mister_ini edits: applied immediately '{spec.variable}' -> {spec.target}")
 
     def _active_mister_ini_edits(self, ui: UiContext):
@@ -908,7 +904,7 @@ class SettingsScreen(UiApplication):
         mister_ini_reasons = []
         for spec in self._active_mister_ini_edits(ui):
             if would_change(self._mister_ini_repository, spec, self._logger):
-                mister_ini_reasons.append(needs_save_label(spec))
+                mister_ini_reasons.extend(needs_save_label(spec).split(', '))
 
         seen_reasons = set()
         mister_ini_reasons = [r for r in mister_ini_reasons if not (r in seen_reasons or seen_reasons.add(r))]
@@ -949,11 +945,7 @@ class SettingsScreen(UiApplication):
         self._fill_store(local_store, ui, config)
 
         for spec in self._active_mister_ini_edits(ui):
-            changed, contents = apply(self._mister_ini_repository, spec, self._logger)
-            hooks = self._mister_ini_add_hooks if isinstance(spec, MisterIniAdd) else self._mister_ini_del_hooks
-            hook = hooks.get(spec.variable)
-            if hook is not None:
-                hook(changed=changed, contents=contents)
+            self._apply_mister_ini_edit(spec)
 
         self._mister_video_mode_service.save_unsaved_kept_mode_to_active_ini()
 

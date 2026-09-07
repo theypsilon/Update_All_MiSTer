@@ -251,16 +251,21 @@ def _try_toggle_with_user_dependency(
     ]
 
 
-def _offer_mister_monitor_artwork_dbs(): return [{
+def _offer_mister_monitor_artwork_dbs(): return _offer_artwork_dbs("MiSTer Monitor", _navigate_back_effects())
+
+
+def _offer_artwork_dbs(tool_name, when_already_enabled): return [{
+    # `when_already_enabled` closes the dialog this is reached from (navigate back), or
+    # is empty when reached straight from a menu entry, where back would leave the menu.
     "type": "condition",
     "variable": "chipster6502_artwork_dbs_general_selector",
-    "true": [{"type": "navigate", "target": "back"}],
+    "true": when_already_enabled,
     "false": [{
         "ui": "confirm",
         "header": "Enable Game Artwork DBs?",
         "preselected_action": "Yes",
         "text": [
-            "MiSTer Monitor uses Game Artwork DBs to display box art and screenshots.",
+            f"{tool_name} uses Game Artwork DBs to display box art and screenshots.",
             " ",
             "Do you want to choose which artwork databases to enable?",
             "Maintainer: chipster6502",
@@ -298,7 +303,8 @@ def _try_toggle_mrext_with_zaparoo_prompt(): return [
                         ],
                         "actions": [
                             {"title": "Yes", "type": "fixed", "fixed": [
-                                *_activate_zaparoo_and_ask_options(_navigate_back_effects()),
+                                {"type": "rotate_variable", "target": "ZaparooProject/Zaparoo_MiSTer"},
+                                {"type": "navigate", "target": "back"},
                             ]},
                             {"title": "No", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
                         ],
@@ -310,14 +316,191 @@ def _try_toggle_mrext_with_zaparoo_prompt(): return [
 ]
 
 
-def _try_toggle_zaparoo_database_with_install_prompts(): return [
+# Frontends replace the stock menu through `main=` in MiSTer.ini, so only one of them
+# can be active at a time: activating one switches the other off.
+_ZAPAROO_FRONTEND = {
+    "name": "Zaparoo Frontend",
+    "db": "ZaparooProject/Zaparoo_MiSTer",
+    "variable": "zaparoo_frontend_active",
+    "main": "zaparoo/MiSTer_Zaparoo",
+    # The Zaparoo DB also carries Zaparoo Core (the NFC launcher), so it is managed
+    # from Tools & Scripts: the frontend needs it on but never switches it off.
+    "db_follows_frontend": False,
+    # Its custom menu core can be recorded in lastcore.dat and booted by stock Main.
+    "clear_lastcore_on_disable": True,
+}
+_DEGAUSS_FRONTEND = {
+    "name": "Degauss",
+    "db": "degauss",
+    "variable": "degauss_frontend_active",
+    "main": "degauss/MiSTer_Degauss",
+    # Degauss is only a frontend, so its DB goes on and off with it.
+    "db_follows_frontend": True,
+    "clear_lastcore_on_disable": False,
+}
+_FRONTENDS = [_ZAPAROO_FRONTEND, _DEGAUSS_FRONTEND]
+
+
+def _try_toggle_zaparoo_frontend(): return [
     {
         "type": "condition",
-        "variable": "ZaparooProject/Zaparoo_MiSTer",
-        "true": [{"type": "rotate_variable", "target": "ZaparooProject/Zaparoo_MiSTer"}],
-        "false": _activate_zaparoo_and_ask_options(_no_zaparoo_follow_up_prompt_effects()),
+        "variable": _ZAPAROO_FRONTEND["variable"],
+        "true": _deactivate_frontend_effects(_ZAPAROO_FRONTEND, then=_calculate_stock_mister_ui_active_effects()),
+        "false": [
+            {
+                "type": "condition",
+                "variable": _ZAPAROO_FRONTEND["db"],
+                "true": _activate_frontend_effects(_ZAPAROO_FRONTEND, then=_offer_artwork_dbs(_ZAPAROO_FRONTEND["name"], [])),
+                "false": [_zaparoo_frontend_requires_zaparoo_core_message()],
+            },
+        ],
     },
 ]
+
+
+def _try_toggle_degauss_frontend(): return [
+    {
+        "type": "condition",
+        "variable": _DEGAUSS_FRONTEND["variable"],
+        "true": _deactivate_frontend_effects(_DEGAUSS_FRONTEND, then=_calculate_stock_mister_ui_active_effects()),
+        "false": _activate_frontend_effects(_DEGAUSS_FRONTEND, then=_offer_artwork_dbs(_DEGAUSS_FRONTEND["name"], [])),
+    },
+]
+
+
+def _try_toggle_zaparoo_database(): return [
+    {
+        "type": "condition",
+        "variable": _ZAPAROO_FRONTEND["db"],
+        "true": [
+            # Zaparoo Frontend requires Zaparoo, so it goes off with it.
+            {
+                "type": "condition",
+                "variable": _ZAPAROO_FRONTEND["variable"],
+                "true": [
+                    {"type": "set_variable", "target": _ZAPAROO_FRONTEND["db"], "value": "false"},
+                    *_deactivate_frontend_effects(_ZAPAROO_FRONTEND, then=_calculate_stock_mister_ui_active_effects()),
+                ],
+                "false": [{"type": "set_variable", "target": _ZAPAROO_FRONTEND["db"], "value": "false"}],
+            },
+        ],
+        "false": [{"type": "set_variable", "target": _ZAPAROO_FRONTEND["db"], "value": "true"}],
+    },
+]
+
+
+def _zaparoo_frontend_requires_zaparoo_core_message(): return {
+    "ui": "message",
+    "header": "Zaparoo Frontend",
+    "text": [
+        "Zaparoo Frontend requires Zaparoo Core,",
+        "it will be installed too.",
+    ],
+    "effects": [
+        {"type": "set_variable", "target": _ZAPAROO_FRONTEND["db"], "value": "true"},
+        *_activate_frontend_effects(
+            _ZAPAROO_FRONTEND,
+            then=_offer_artwork_dbs(_ZAPAROO_FRONTEND["name"], _navigate_back_effects()),
+        ),
+    ],
+}
+
+
+def _frontend_add_effect(frontend): return {
+    "type": "mister_ini_add", "variable": frontend["variable"],
+    "target": {"mister": {"main": frontend["main"]}},
+}
+
+
+def _frontend_del_effect(frontend, immediate=False):
+    # Frontend off: strip the stale entry from both sections (it affects
+    # firmware/menu loading, so it must not linger).
+    effect = {
+        "type": "mister_ini_del", "variable": frontend["variable"],
+        "target": {
+            "mister": {"main": frontend["main"]},
+            "menu": {"main": frontend["main"]},
+        },
+    }
+    if immediate:
+        effect["immediate"] = True
+    return effect
+
+
+def _activate_frontend_effects(frontend, then=()): return _switching_off_other_frontends(frontend, [
+    *_frontend_db_effects(frontend, "true"),
+    {"type": "set_variable", "target": frontend["variable"], "value": "true"},
+    _frontend_add_effect(frontend),
+    {"type": "set_variable", "target": "stock_mister_ui_active", "value": "false"},
+    *then,
+])
+
+
+def _deactivate_frontend_effects(frontend, then): return [
+    {"type": "set_variable", "target": frontend["variable"], "value": "false"},
+    _frontend_del_effect(frontend),
+    *_frontend_db_effects(frontend, "false"),
+    *then,
+]
+
+
+def _uninstall_frontend_cleanup_effects(frontend, then): return [
+    {"type": "set_variable", "target": frontend["variable"], "value": "false"},
+    _frontend_del_effect(frontend, immediate=True),
+    *_calculate_stock_mister_ui_active_effects(then),
+]
+
+
+def _select_stock_mister_ui(): return _switching_off_frontends(_FRONTENDS, [
+    {"type": "set_variable", "target": "stock_mister_ui_active", "value": "true"},
+])
+
+
+def _calculate_stock_mister_ui_active_effects(then=()):
+    chain = [{"type": "set_variable", "target": "stock_mister_ui_active", "value": "true"}, *then]
+    for frontend in reversed(_FRONTENDS):
+        chain = [{
+            "type": "condition",
+            "variable": frontend["variable"],
+            "true": [{"type": "set_variable", "target": "stock_mister_ui_active", "value": "false"}, *then],
+            "false": chain,
+        }]
+    return chain
+
+
+def frontends():
+    """The frontends the settings screen seeds from MiSTer.ini and keeps mutually exclusive."""
+    return [dict(frontend) for frontend in _FRONTENDS]
+
+
+def frontend_needs_lastcore_cleanup(variable):
+    return any(frontend['variable'] == variable and frontend['clear_lastcore_on_disable'] for frontend in _FRONTENDS)
+
+
+def _frontend_db_effects(frontend, value): return (
+    [{"type": "set_variable", "target": frontend["db"], "value": value}] if frontend["db_follows_frontend"] else []
+)
+
+
+def _switching_off_frontends(frontends_to_switch_off, then):
+    # A condition ends its effect chain and continues with the chosen branch, so the
+    # continuation has to live inside both branches.
+    chain = then
+    for frontend in reversed(list(frontends_to_switch_off)):
+        chain = [{
+            "type": "condition",
+            "variable": frontend["variable"],
+            "true": _deactivate_frontend_effects(frontend, then=chain),
+            "false": chain,
+        }]
+    return chain
+
+
+def _switching_off_other_frontends(frontend, then):
+    return _switching_off_frontends([f for f in _FRONTENDS if f is not frontend], then)
+
+
+def _navigate_back_effects(): return [{"type": "navigate", "target": "back"}]
 
 
 def _toggle_jt_private_releases(): return [
@@ -325,114 +508,6 @@ def _toggle_jt_private_releases(): return [
     # Consumed by SettingsScreen._fill_store: persists the choice and stops the RetroAccount JTBeta benefit from deciding it.
     {"type": "set_variable", "target": "download_beta_cores_chosen", "value": "true"},
 ]
-
-
-def _try_toggle_zaparoo_frontend_active(): return [
-    {
-        "type": "condition",
-        "variable": "zaparoo_frontend_active",
-        "true": [
-            {"type": "rotate_variable", "target": "zaparoo_frontend_active"},
-            # Frontend off: strip the stale entry from both sections (it affects
-            # firmware/menu loading, so it must not linger).
-            {"type": "mister_ini_del", "variable": "zaparoo_frontend_active",
-             "target": {
-                 "mister": {"main": "zaparoo/MiSTer_Zaparoo"},
-                 "menu": {"main": "zaparoo/MiSTer_Zaparoo"},
-             }},
-        ],
-        "false": [
-            {
-                "type": "condition",
-                "variable": "ZaparooProject/Zaparoo_MiSTer",
-                "true": [
-                    {"type": "rotate_variable", "target": "zaparoo_frontend_active"},
-                    {"type": "mister_ini_add", "variable": "zaparoo_frontend_active",
-                     "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"}}},
-                ],
-                "false": [_zaparoo_frontend_requires_database_prompt()],
-            },
-        ],
-    },
-]
-
-
-def _zaparoo_frontend_requires_database_prompt(): return {
-    "ui": "confirm",
-    "header": "Enable Zaparoo DB?",
-    "preselected_action": "Yes",
-    "text": [
-        "To enable Zaparoo Frontend,",
-        "you also need to enable the Zaparoo DB.",
-        "Do you want to enable it?",
-    ],
-    "actions": [
-        {"title": "Yes", "type": "fixed", "fixed": [
-            {"type": "set_variable", "target": "ZaparooProject/Zaparoo_MiSTer", "value": "true"},
-            {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "true"},
-            {"type": "mister_ini_add", "variable": "zaparoo_frontend_active",
-             "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"}}},
-            {"type": "navigate", "target": "back"},
-        ]},
-        {"title": "No", "type": "fixed", "fixed": [
-            {"type": "navigate", "target": "back"},
-        ]},
-    ],
-}
-
-
-def _activate_zaparoo_and_ask_options(when_done): return [
-    {"type": "rotate_variable", "target": "ZaparooProject/Zaparoo_MiSTer"},
-    *_maybe_zaparoo_active_frontend_prompt(when_done),
-]
-
-
-def _maybe_zaparoo_active_frontend_prompt(when_done): return [
-    {
-        "type": "condition",
-        "variable": "zaparoo_frontend_active",
-        "true": when_done,
-        "false": [_zaparoo_active_frontend_prompt()],
-    },
-]
-
-
-def _navigate_back_effects(): return [{"type": "navigate", "target": "back"}]
-
-
-def _no_zaparoo_follow_up_prompt_effects(): return [
-    {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "true"},
-    {"type": "mister_ini_add", "variable": "zaparoo_frontend_active",
-     "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"}}},
-]
-
-
-def _zaparoo_active_frontend_prompt(): return {
-    "ui": "confirm",
-    "header": "Zaparoo Frontend",
-    "preselected_action": "Yes",
-    "text": [
-        "Do you want the Zaparoo frontend",
-        "to be active after being installed?",
-    ],
-    "actions": [
-        {"title": "Yes", "type": "fixed", "fixed": [
-            {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "true"},
-            {"type": "mister_ini_add", "variable": "zaparoo_frontend_active",
-             "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"}}},
-            {"type": "navigate", "target": "back"},
-        ]},
-        {"title": "No", "type": "fixed", "fixed": [
-            {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "false"},
-            {"type": "mister_ini_del", "variable": "zaparoo_frontend_active",
-             "target": {
-                 "mister": {"main": "zaparoo/MiSTer_Zaparoo"},
-                 "menu": {"main": "zaparoo/MiSTer_Zaparoo"},
-             }},
-            {"type": "navigate", "target": "back"},
-        ]},
-    ],
-}
 
 
 def _try_toggle_retroachievements_db(): return [
@@ -450,7 +525,7 @@ def _try_toggle_retroachievements_db(): return [
 ]
 
 
-def _uninstall_db_action(condition, db_ids, title, text, success_effects): return {
+def _uninstall_db_action(condition, db_ids, title, text, success_effects, on_success): return {
     "if": condition,
     "chain": [{
         "ui": "confirm",
@@ -465,7 +540,7 @@ def _uninstall_db_action(condition, db_ids, title, text, success_effects): retur
                     "title": title,
                     "on_success": [
                         *success_effects,
-                        {"type": "navigate", "target": "back"},
+                        *(on_success(_navigate_back_effects()) if on_success is not None else _navigate_back_effects()),
                     ],
                 },
             ]},
@@ -476,6 +551,8 @@ def _uninstall_db_action(condition, db_ids, title, text, success_effects): retur
 
 
 def uninstall_db_action(variable, db_id, title, on_success=None):
+    # on_success(then) builds a complete follow-up chain, placing then inside any
+    # conditions. It runs while building the model; the generated on_success is an effect list.
     return _uninstall_db_action(
         f'{db_id}_installed',
         [db_id],
@@ -490,8 +567,8 @@ def uninstall_db_action(variable, db_id, title, on_success=None):
         [
             {"type": "set_variable", "target": variable, "value": "false"},
             {"type": "set_variable", "target": f'{db_id}_installed', "value": "false"},
-            *(on_success or []),
         ],
+        on_success,
     )
 
 
@@ -515,8 +592,8 @@ def uninstall_db_action_manuals(variable, db_ids, title, on_success=None):
             *[{"type": "set_variable", "target": db_id, "value": "false"} for db_id in db_ids],
             *[{"type": "set_variable", "target": f'{db_id}_installed', "value": "false"} for db_id in db_ids],
             {"type": "set_variable", "target": variable, "value": "false"},
-            *(on_success or []),
         ],
+        on_success,
     )
 
 
@@ -535,8 +612,8 @@ def uninstall_db_action_artwork(variable, db_ids, title, on_success=None):
             *[{"type": "set_variable", "target": db_id, "value": "false"} for db_id in db_ids],
             *[{"type": "set_variable", "target": f'{db_id}_installed', "value": "false"} for db_id in db_ids],
             {"type": "set_variable", "target": variable, "value": "false"},
-            *(on_success or []),
         ],
+        on_success,
     )
 
 
@@ -551,7 +628,7 @@ def _manual_db_actions(db_id, title, ok=None):
         "uninstall": uninstall_db_action_for_id(
             db_id,
             title,
-            on_success=[{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}],
+            on_success=lambda then: [{"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"}, *then],
         ),
         "ok": ok,
     }
@@ -780,7 +857,7 @@ def _artwork_db_actions(db_id, title): return {
     "uninstall": uninstall_db_action_for_id(
         db_id,
         f"{title} Artwork",
-        on_success=[{"type": "select_all_chipster6502_artwork_dbs", "action": "unapply"}],
+        on_success=lambda then: [{"type": "select_all_chipster6502_artwork_dbs", "action": "unapply"}, *then],
     ),
     "ok": [_artwork_style_picker(db_id, title)],
     "toggle": [
@@ -872,7 +949,8 @@ def settings_screen_model():
         # Global variables
         "update_all_version": {"default": "2.10"},
         "device_label": {"default": ""},
-        "zaparoo_frontend_active": {"default": "false", "values": ["false", "true"]},
+        **{frontend["variable"]: {"default": "false", "values": ["false", "true"]} for frontend in _FRONTENDS},
+        "stock_mister_ui_active": {"default": "true", "values": ["false", "true"]},
         "main_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
         "encc_forks": {"group": "ua_ini", "default": "devel", "values": ["devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
@@ -1360,9 +1438,10 @@ def settings_screen_model():
                 {
                     "title": "# RetroAchievements Cores",
                     "description": "{theypsilon/RetroAchievementsDB_MiSTer:enabled} Cores with achievement support",
-                    "actions": {"uninstall": uninstall_db_action_for_id("theypsilon/RetroAchievementsDB_MiSTer", "RetroAchievements Cores", on_success=[
+                    "actions": {"uninstall": uninstall_db_action_for_id("theypsilon/RetroAchievementsDB_MiSTer", "RetroAchievements Cores", on_success=lambda then: [
                         {"type": "mister_ini_del", "immediate": True, "variable": "theypsilon/RetroAchievementsDB_MiSTer",
                          "target": {"RA_*": {"main": "MiSTer_RA"}}},
+                        *then,
                     ]),
                         "ok": _try_toggle_retroachievements_db(),
                         "toggle": _try_toggle_retroachievements_db(),
@@ -1379,9 +1458,10 @@ def settings_screen_model():
                 {
                     "title": "# Physical CD Support",
                     "description": "{MultiDatabases/physical-disc:enabled} Play games from a USB CD drive",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/physical-disc", "Physical CD Support", on_success=[
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/physical-disc", "Physical CD Support", on_success=lambda then: [
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/physical-disc",
                          "target": {"A0CD-*": {"main": "MiSTer_Physical-CD"}}},
+                        *then,
                     ]),
                         "ok": [{
                             "type": "condition",
@@ -1663,11 +1743,12 @@ def settings_screen_model():
                 {
                     "title": "# Maldita Castilla MiSTer",
                     "description": "{MultiDatabases/maldita-castilla:enabled} Ready-to-play arcade action game",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/maldita-castilla", "Maldita Castilla MiSTer", on_success=[
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/maldita-castilla", "Maldita Castilla MiSTer", on_success=lambda then: [
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/maldita-castilla",
                          "target": {
                              "Maldita Castilla": {"main": "games/gmloader/MiSTer_Maldita"},
                          }},
+                        *then,
                     ]),
                         "ok": [{
                             "type": "condition",
@@ -1715,12 +1796,13 @@ def settings_screen_model():
                 {
                     "title": "# Sonic Mania MiSTer",
                     "description": "{MultiDatabases/sonic-mania:enabled} Sonic Mania native port",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/sonic-mania", "Sonic Mania MiSTer", on_success=[
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/sonic-mania", "Sonic Mania MiSTer", on_success=lambda then: [
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/sonic-mania",
                          "target": {
                              "Sonic Mania": {"main": "MiSTer_SonicMania"},
                              "Sonic Mania (4:3)": {"main": "MiSTer_SonicMania"},
                          }},
+                        *then,
                     ]),
                         "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/sonic-mania",
@@ -1790,12 +1872,13 @@ def settings_screen_model():
                 {
                     "title": "# MiSTer Duke3D",
                     "description": "{MultiDatabases/duke3d:enabled} Duke Nukem 3D engine port",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/duke3d", "MiSTer Duke3D", on_success=[
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/duke3d", "MiSTer Duke3D", on_success=lambda then: [
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/duke3d",
                          "target": {
                              "DUKE3D": {"main": "Mister_duke3d", "vga_scaler": "0"},
                              "Mister_duke3d": {"main": "Mister_duke3d", "vga_scaler": "0"},
                          }},
+                        *then,
                     ]),
                         "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/duke3d",
@@ -1834,12 +1917,13 @@ def settings_screen_model():
                 {
                     "title": "# MiSTer Quake",
                     "description": "{MultiDatabases/mister-quake:enabled} Quake engine port",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/mister-quake", "MiSTer Quake", on_success=[
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/mister-quake", "MiSTer Quake", on_success=lambda then: [
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/mister-quake",
                          "target": {
                              "Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
                              "MiSTer_Quake": {"main": "MiSTer_Quake", "vga_scaler": "0"},
                          }},
+                        *then,
                     ]),
                         "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/mister-quake",
@@ -1878,12 +1962,13 @@ def settings_screen_model():
                 {
                     "title": "# NBlood",
                     "description": "{MultiDatabases/nblood:enabled} Blood engine port",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/nblood", "NBlood", on_success=[
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/nblood", "NBlood", on_success=lambda then: [
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/nblood",
                          "target": {
                              "NBlood": {"main": "Mister_NBlood"},
                              "Mister_NBlood": {"main": "Mister_NBlood"},
                          }},
+                        *then,
                     ]),
                         "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/nblood",
@@ -1957,11 +2042,12 @@ def settings_screen_model():
                 {
                     "title": "# 3S-ARM",
                     "description": "{MultiDatabases/3s-arm:enabled} Street Fighter III: 3rd Strike port",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/3s-arm", "3S-ARM", on_success=[
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/3s-arm", "3S-ARM", on_success=lambda then: [
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/3s-arm",
                          "target": {
                              "3S-ARM": {"main": "MiSTer_3S-ARM"},
                          }},
+                        *then,
                     ]),
                         "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/3s-arm",
@@ -2054,9 +2140,25 @@ def settings_screen_model():
                 {
                     "id": "zaparoo",
                     "title": "# Zaparoo",
-                    "description": "{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher & Zaparoo Frontend",
+                    "description": "{ZaparooProject/Zaparoo_MiSTer:enabled} NFC Launcher (Zaparoo Core)",
                     "actions": {
-                        "ok": [{"type": "navigate", "target": "zaparoo_menu"}],
+                        "uninstall": uninstall_db_action_for_id(
+                            "ZaparooProject/Zaparoo_MiSTer",
+                            "Zaparoo",
+                            on_success=lambda then: _uninstall_frontend_cleanup_effects(_ZAPAROO_FRONTEND, then),
+                        ),
+                        "ok": _try_toggle_zaparoo_database(),
+                        "info": [{
+                            "ui": "message",
+                            "header": "Zaparoo",
+                            "text": [
+                                "Installs Zaparoo Core, the NFC card launcher, as Scripts/zaparoo.sh,",
+                                "plus the Zaparoo Frontend files under zaparoo/.",
+                                "Run Scripts > zaparoo once to enable Core as a startup service.",
+                                "Turn the frontend On from the Frontends menu.",
+                                "Maintainer: wizzo",
+                            ],
+                        }],
                     }
                 },
                 {
@@ -2114,12 +2216,28 @@ def settings_screen_model():
                     }
                 },
                 {
+                    "id": "analogue_pocket",
+                    "title": "# Analogue Pocket",
+                    "description": "Firmware Update & Backups",
+                    "actions": {"ok": [{"type": "navigate", "target": "analogue_pocket_menu"}]}
+                },
+                {
+                    "title": "# Anime0t4ku MiSTer Scripts",
+                    "description": "{anime0t4ku_mister_scripts:enabled} Time, saves, wallpaper and more",
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "anime0t4ku_mister_scripts", "Anime0t4ku MiSTer Scripts"),
+                        "ok": [{"type": "rotate_variable", "target": "anime0t4ku_mister_scripts"}],
+                    }
+                },
+                {
                     "title": "# MiSTer DVD",
                     "description": "{MultiDatabases/mister-dvd:enabled} DVD-Video, VCD and SVCD player",
                     "actions": {
-                        "uninstall": uninstall_db_action_for_id("MultiDatabases/mister-dvd", "MiSTer DVD", on_success=[
+                        "uninstall": uninstall_db_action_for_id("MultiDatabases/mister-dvd", "MiSTer DVD", on_success=lambda then: [
                             {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/mister-dvd",
                              "target": {"DVD": {"main": "MiSTer_DVDcss"}}},
+                            *then,
                         ]),
                         "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/mister-dvd",
@@ -2150,15 +2268,6 @@ def settings_screen_model():
                                 "Maintainer: owenb321",
                             ],
                         }],
-                    }
-                },
-                {
-                    "title": "# Anime0t4ku MiSTer Scripts",
-                    "description": "{anime0t4ku_mister_scripts:enabled} Time, saves, wallpaper and more",
-                    "actions": {
-                        "uninstall": uninstall_db_action_for_id(
-                            "anime0t4ku_mister_scripts", "Anime0t4ku MiSTer Scripts"),
-                        "ok": [{"type": "rotate_variable", "target": "anime0t4ku_mister_scripts"}],
                     }
                 },
                 {
@@ -2325,37 +2434,65 @@ def settings_screen_model():
                 }
             ]
         },
-        "zaparoo_menu": {
-            "type": "dialog_sub_menu",
-            "header": "Zaparoo Settings",
+        "frontends_menu": {
+            "type": "dialog_sub_menu_info",
+            "header": "Frontends",
+            "on_idle": _calculate_stock_mister_ui_active_effects(),
+            "text": [
+                "Frontends replace the whole MiSTer menu with a console-like UI: graphical views to browse your systems and games, with artwork and boxart instead of plain file lists.",
+            ],
+            "variables": {
+                "degauss": {"group": "db", "default": "false", "values": ["false", "true"]},
+            },
             "entries": [
                 {
-                    "title": "# Zaparoo Database",
-                    "description": "{ZaparooProject/Zaparoo_MiSTer:enabled}",
+                    "title": "# Stock MiSTer UI",
+                    "description": "{stock_mister_ui_active:enabled} The standard MiSTer menu",
+                    "actions": {"ok": _select_stock_mister_ui()},
+                },
+                {
+                    "title": "# Zaparoo Frontend",
+                    "description": "{zaparoo_frontend_active:enabled} Customizable hub to browse your games",
                     "actions": {
-                        "uninstall": uninstall_db_action_for_id(
-                            "ZaparooProject/Zaparoo_MiSTer",
-                            "Zaparoo",
-                            on_success=[
-                                {"type": "set_variable", "target": "zaparoo_frontend_active", "value": "false"},
-                                {
-                                    "type": "mister_ini_del",
-                                    "immediate": True,
-                                    "variable": "zaparoo_frontend_active",
-                                    "target": {
-                                        "mister": {"main": "zaparoo/MiSTer_Zaparoo"},
-                                        "menu": {"main": "zaparoo/MiSTer_Zaparoo"},
-                                    },
-                                },
+                        "ok": _try_toggle_zaparoo_frontend(),
+                        "info": [{
+                            "ui": "message",
+                            "header": "Zaparoo Frontend",
+                            "text": [
+                                "Replaces the MiSTer menu with the Zaparoo Frontend, which runs",
+                                "on Zaparoo's own MiSTer Main build (zaparoo/MiSTer_Zaparoo).",
+                                "On: Update All sets main=zaparoo/MiSTer_Zaparoo in MiSTer.ini.",
+                                "Off: it removes that line and the stock menu returns.",
+                                "Requires Zaparoo from Tools & Scripts. Only one frontend can be On.",
+                                "Maintainer: wizzo",
                             ],
-                        ),
-                        "ok": _try_toggle_zaparoo_database_with_install_prompts(),
+                        }],
                     }
                 },
                 {
-                    "title": "# Zaparoo Frontend active",
-                    "description": "{zaparoo_frontend_active:yesno}",
-                    "actions": {"ok": _try_toggle_zaparoo_frontend_active()}
+                    "title": "# Degauss",
+                    "description": "{degauss_frontend_active:enabled} Enrich your setup with themes and views",
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id(
+                            "degauss",
+                            "Degauss",
+                            on_success=lambda then: _uninstall_frontend_cleanup_effects(_DEGAUSS_FRONTEND, then),
+                        ),
+                        "ok": _try_toggle_degauss_frontend(),
+                        "info": [{
+                            "ui": "message",
+                            "header": "Degauss",
+                            "text": [
+                                "Frontend that browses the games on your card with artwork and",
+                                "metadata. Installs degauss/MiSTer_Degauss, Scripts/degauss.sh",
+                                "and Scripts/.config/degauss.",
+                                "On: Update All sets main=degauss/MiSTer_Degauss in MiSTer.ini.",
+                                "Off: it removes that line and the stock menu returns.",
+                                "Only one frontend can be On.",
+                                "Maintainer: giancarloerra",
+                            ],
+                        }],
+                    }
                 },
             ]
         },
@@ -2528,8 +2665,9 @@ def settings_screen_model():
                             "chipster6502_artwork_dbs_installed",
                             list(_artwork_db_variables()),
                             "All Artwork Databases",
-                            on_success=[
+                            on_success=lambda then: [
                                 {"type": "select_all_chipster6502_artwork_dbs", "action": "unapply"},
+                                *then,
                             ],
                         ),
                         "ok": _try_select_all_chipster6502_artwork_dbs(),
@@ -2572,8 +2710,9 @@ def settings_screen_model():
                             "ajgowans_manuals_dbs_installed",
                             list(_manual_db_variables()),
                             "All Manuals Databases",
-                            on_success=[
+                            on_success=lambda then: [
                                 {"type": "select_all_ajgowans_manuals_dbs", "action": "unapply"},
+                                *then,
                             ],
                         ),
                         "ok": _try_select_all_ajgowans_manuals_dbs(),
@@ -3808,8 +3947,14 @@ def _main_menu(retroaccount_logged_in): return {
             }
         },
         {
+            "id": "frontends",
+            "title": "# Frontends",
+            "description": "Turn the MiSTer menu into a console UI",
+            "actions": {"ok": [{"type": "navigate", "target": "frontends_menu"}]}
+        },
+        {
             "title": "# Tools & Scripts",
-            "description": "Zaparoo, Names TXT, Scripts...",
+            "description": "Zaparoo, Names TXT, Pocket, Scripts...",
             "actions": {
                 "ok": [{"type": "navigate", "target": "tools_and_scripts_menu"}],
             }
@@ -3820,12 +3965,6 @@ def _main_menu(retroaccount_logged_in): return {
             "actions": {
                 "ok": [{"type": "navigate", "target": "extra_content_menu"}],
             }
-        },
-        {
-            "id": "analogue_pocket",
-            "title": "# Analogue Pocket",
-            "description": "Firmware Update & Backups",
-            "actions": {"ok": [{"type": "navigate", "target": "analogue_pocket_menu"}]}
         },
         {},  # separator
         _retroaccount_account_entry() if retroaccount_logged_in else _retroaccount_login_entry(),

@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, \
-    DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI, MEDIA_FAT, FILE_MiSTer_ini
+    DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI, MEDIA_FAT, FILE_MiSTer_ini, FILE_lastcore_dat
 from update_all.ini_repository import read_ini_contents, SEPARATE_DB_INI_FILES
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, TerminalSize
@@ -194,6 +194,82 @@ class TestSettingsScreenSaving(unittest.TestCase):
         # And it is not left pending, so it does not show up as an unsaved change.
         sut.calculate_needs_save(ui)
         self.assertNotIn('MiSTer.ini', ui.get_value('needs_save_file_list'))
+
+    def test_frontend_deletion___saved_or_immediate___clears_lastcore_only_for_zaparoo(self):
+        for variable, main, keep_lastcore in (
+                ('zaparoo_frontend_active', 'zaparoo/MiSTer_Zaparoo', False),
+                ('degauss_frontend_active', 'degauss/MiSTer_Degauss', True),
+        ):
+            for immediate in (False, True):
+                for section in ('mister', 'menu'):
+                    with self.subTest(frontend=variable, immediate=immediate, section=section):
+                        sut, ui, _ = tester(files={
+                            FILE_MiSTer_ini: {'content': f'bootcore=lastcore\n[{section}]\nmain={main}\n'},
+                            FILE_lastcore_dat: {'content': 'last played core'},
+                        })
+                        self.assertEqual('true', ui.get_value(variable))
+                        ui.set_value(variable, 'false')
+
+                        sut.mister_ini_del(ui, {
+                            'type': 'mister_ini_del', 'variable': variable, 'immediate': immediate,
+                            'target': {name: {'main': main} for name in ('mister', 'menu')},
+                        })
+                        if not immediate:
+                            self.assertTrue(sut._file_system.is_file(FILE_lastcore_dat))
+                            sut.save(ui)
+
+                        self.assertEqual('bootcore=lastcore\n', sut._file_system.read_file_contents(FILE_MiSTer_ini))
+                        self.assertEqual(keep_lastcore, sut._file_system.is_file(FILE_lastcore_dat))
+
+    def test_zaparoo_frontend_addition___saved_or_immediate___keeps_lastcore(self):
+        for immediate in (False, True):
+            with self.subTest(immediate=immediate):
+                sut, ui, _ = tester(files={
+                    FILE_MiSTer_ini: {'content': 'bootcore=lastcore\n'},
+                    FILE_lastcore_dat: {'content': 'last played core'},
+                })
+                ui.set_value('zaparoo_frontend_active', 'true')
+
+                sut.mister_ini_add(ui, {**zaparoo_frontend_add_effect(), 'immediate': immediate})
+                if not immediate:
+                    sut.save(ui)
+
+                self.assertIn('main=zaparoo/MiSTer_Zaparoo', sut._file_system.read_file_contents(FILE_MiSTer_ini))
+                self.assertTrue(sut._file_system.is_file(FILE_lastcore_dat))
+
+    def test_zaparoo_frontend_deletion___when_another_frontend_is_active___keeps_lastcore(self):
+        for immediate in (False, True):
+            with self.subTest(immediate=immediate):
+                contents = 'bootcore=lastcore\n[mister]\nmain=degauss/MiSTer_Degauss\n'
+                sut, ui, _ = tester(files={
+                    FILE_MiSTer_ini: {'content': contents},
+                    FILE_lastcore_dat: {'content': 'last played core'},
+                })
+
+                sut.mister_ini_del(ui, {**zaparoo_frontend_del_effect(), 'immediate': immediate})
+                if not immediate:
+                    sut.save(ui)
+
+                self.assertEqual(contents, sut._file_system.read_file_contents(FILE_MiSTer_ini))
+                self.assertTrue(sut._file_system.is_file(FILE_lastcore_dat))
+
+    def test_zaparoo_frontend_deletion___when_ini_write_fails___keeps_lastcore(self):
+        for immediate in (False, True):
+            with self.subTest(immediate=immediate):
+                contents = 'bootcore=lastcore\n[mister]\nmain=zaparoo/MiSTer_Zaparoo\n'
+                sut, ui, _ = tester(files={
+                    FILE_MiSTer_ini: {'content': contents},
+                    FILE_lastcore_dat: {'content': 'last played core'},
+                })
+                ui.set_value('zaparoo_frontend_active', 'false')
+
+                with patch.object(sut._mister_ini_repository, 'remove_mister_ini_key_from_sections', side_effect=OSError('SD card error')):
+                    sut.mister_ini_del(ui, {**zaparoo_frontend_del_effect(), 'immediate': immediate})
+                    if not immediate:
+                        sut.save(ui)
+
+                self.assertEqual(contents, sut._file_system.read_file_contents(FILE_MiSTer_ini))
+                self.assertTrue(sut._file_system.is_file(FILE_lastcore_dat))
 
     def test_save__when_enabling_retroachievements_db___writes_mister_ini_on_save(self):
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
@@ -636,6 +712,44 @@ class TestSettingsScreenSaving(unittest.TestCase):
             sut._file_system.read_file_contents(FILE_MiSTer_ini),
         )
 
+    def test_save__when_enabling_degauss_frontend_active___writes_mister_ini_without_store_field(self):
+        sut, ui, fs = tester()
+
+        ui.set_value('degauss_frontend_active', 'true')
+        sut.mister_ini_add(ui, degauss_frontend_add_effect())
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertEqual('true', ui.get_value('needs_save'))
+        self.assertIn('MiSTer.ini ([mister])', ui.get_value('needs_save_file_list'))
+        self.assertNotIn('degauss_frontend_active', fs.files[store_json.lower()]['json'])
+        self.assertEqual(
+            '[mister]\nmain=degauss/MiSTer_Degauss\n',
+            sut._file_system.read_file_contents(FILE_MiSTer_ini),
+        )
+
+    def test_save__when_switching_from_zaparoo_to_degauss_frontend___replaces_main_and_drops_stale_menu_entry(self):
+        sut, ui, _ = tester(files={
+            FILE_MiSTer_ini: {'content': '[mister]\nmain=zaparoo/MiSTer_Zaparoo\nfoo=bar\n[menu]\nmain=zaparoo/MiSTer_Zaparoo\n'},
+        })
+        self.assertEqual('true', ui.get_value('zaparoo_frontend_active'))
+        self.assertEqual('false', ui.get_value('degauss_frontend_active'))
+
+        ui.set_value('zaparoo_frontend_active', 'false')
+        sut.mister_ini_del(ui, zaparoo_frontend_del_effect())
+        ui.set_value('degauss_frontend_active', 'true')
+        sut.mister_ini_add(ui, degauss_frontend_add_effect())
+
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        self.assertIn('MiSTer.ini ([mister], [menu])', ui.get_value('needs_save_file_list'))
+        self.assertEqual(
+            '[mister]\nfoo=bar\nmain=degauss/MiSTer_Degauss\n',
+            sut._file_system.read_file_contents(FILE_MiSTer_ini),
+        )
+
     def test_save__when_zaparoo_frontend_active_was_stored_but_missing_from_mister_ini___ignores_store_field(self):
         local_store = make_new_local_store(StoreMigratorTester())
         local_store['zaparoo_frontend_active'] = True
@@ -866,6 +980,12 @@ def zaparoo_frontend_del_effect():
     return {"type": "mister_ini_del", "variable": "zaparoo_frontend_active",
             "target": {"mister": {"main": "zaparoo/MiSTer_Zaparoo"},
                        "menu": {"main": "zaparoo/MiSTer_Zaparoo"}}}
+
+
+def degauss_frontend_add_effect():
+    # Declared exactly as in the settings screen model.
+    return {"type": "mister_ini_add", "variable": "degauss_frontend_active",
+            "target": {"mister": {"main": "degauss/MiSTer_Degauss"}}}
 
 
 def toggle_jt_private_releases(ui: UiContextStub) -> None:
