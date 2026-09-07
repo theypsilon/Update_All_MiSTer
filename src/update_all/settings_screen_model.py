@@ -60,7 +60,7 @@ def _crt_direct_video_warning(target): return {
 }
 
 
-_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22346727424  # ~20.8 GB at 128KB cluster, see estimate_manuals_db_space.json
+_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22347907072  # ~20.8 GB at 128KB cluster, see estimate_manuals_db_space.json
 _ALL_CHIPSTER6502_ARTWORK_ESTIMATED_BYTES = 2_386_300_000  # Largest published full set: box2d, 2386.3 MB
 
 
@@ -133,7 +133,7 @@ def _enable_all_manuals_confirm(): return {
     "header": "Enable All Manuals DBs?",
     "text": [
         "This will activate all manuals databases.",
-        "That is a large download, 8168 files and around 20.8 GB.",
+        "That is a large download, 8169 files and around 20.8 GB.",
         "It will take hours!",
         "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
         "Are you sure you want to continue?",
@@ -153,7 +153,7 @@ def _not_enough_space_for_manuals_warning(): return {
     "header": "Not Enough Free Space!",
     "alert_level": "black",
     "text": [
-        "Enabling all manuals DBs requires 8168 files and around 20.8 GB.",
+        "Enabling all manuals DBs requires 8169 files and around 20.8 GB.",
         "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
         "Installing all manuals will likely fill up your storage and cause problems.",
         "Free up space or enable only individual manuals instead.",
@@ -583,6 +583,7 @@ def _manual_db_variables(): return {
     "ajgowans/manualsdb-jaguar": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-jaguarcd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-lcdhandhelds": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-loopy": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-megadrive": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-n64": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-neogeoaes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
@@ -2565,7 +2566,7 @@ def settings_screen_model():
             "entries": [
                 {
                     "title": " {ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_title}",
-                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8168 files | 20.8GB total",
+                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8169 files | 20.8GB total",
                     "actions": {
                         "uninstall_all": uninstall_db_action_manuals(
                             "ajgowans_manuals_dbs_installed",
@@ -2718,6 +2719,11 @@ def settings_screen_model():
                     "title": "# LCD Handhelds",
                     "description": "{ajgowans/manualsdb-lcdhandhelds:enabled} 3",
                     "actions": _manual_db_actions("ajgowans/manualsdb-lcdhandhelds", "LCD Handhelds Manuals"),
+                },
+                {
+                    "title": "# Loopy",
+                    "description": "{ajgowans/manualsdb-loopy:enabled} 1",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-loopy", "Loopy Manuals"),
                 },
                 {
                     "title": "# Mega Drive",

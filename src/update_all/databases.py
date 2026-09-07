@@ -197,6 +197,7 @@ class AllDBs:
         self.MANUALSDB_JAGUAR = Database(db_id='ajgowans/manualsdb-jaguar', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-jaguar/db/db.json.zip', title='Jaguar Manuals')
         self.MANUALSDB_JAGUARCD = Database(db_id='ajgowans/manualsdb-jaguarcd', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-jaguarcd/db/db.json.zip', title='Jaguar CD Manuals')
         self.MANUALSDB_LCDHANDHELDS = Database(db_id='ajgowans/manualsdb-lcdhandhelds', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-lcdhandhelds/db/db.json.zip', title='LCD Handhelds Manuals')
+        self.MANUALSDB_LOOPY = Database(db_id='ajgowans/manualsdb-loopy', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-loopy/db/db.json.zip', title='Loopy Manuals')
         self.MANUALSDB_MEGADRIVE = Database(db_id='ajgowans/manualsdb-megadrive', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-megadrive/db/db.json.zip', title='Mega Drive Manuals')
         self.MANUALSDB_N64 = Database(db_id='ajgowans/manualsdb-n64', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-n64/db/db.json.zip', title='N64 Manuals')
         self.MANUALSDB_NEOGEOAES = Database(db_id='ajgowans/manualsdb-neogeoaes', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-neogeoaes/db/db.json.zip', title='Neo Geo AES Manuals')
