@@ -79,6 +79,8 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._transition_service.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store, update_output)
         self._transition_service.from_active_databases_to_related_databases(config, local_store, update_output)
         self._transition_service.from_old_db_urls_to_actual_db_urls(config, downloader_ini, update_output)
+        # @TODO: Remove after 2026-11. See the note on the transition itself.
+        self._transition_service.from_default_distribution_mister_to_stale_distribution_mister(config, update_output)
         self._transition_service.from_no_update_all_mister_db_to_adding_it(config, downloader_ini, update_output)
         self._transition_service.from_downloader_ini_to_separate_db_ini_files(downloader_ini, update_output)
         self._transition_service.from_select_all_manuals_to_adding_new_manuals_dbs(config, local_store, update_output)

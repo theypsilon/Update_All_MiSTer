@@ -19,10 +19,11 @@ from collections import Counter
 from typing import Dict, Final, List, Tuple
 from update_all.config import Config
 from update_all.constants import FILE_MiSTer_ini, FILE_update_all_ini, FILE_update_jtcores_ini, \
-    FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
+    FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh, FILE_mister_version
 from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, \
     DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ajgowans_manualsdbs, ALL_DB_IDS, DB_ID_MREXT_ALL, \
-    DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER, chipster6502_artworkdbs, chipster6502_artwork_db_with_style
+    DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER, chipster6502_artworkdbs, chipster6502_artwork_db_with_style, \
+    DB_URL_MISTER_DEVEL_DISTRIBUTION_MISTER, DB_URL_STALE_DISTRIBUTION_MISTER
 from update_all.ini_parser import IniParser
 from update_all.ini_repository import IniRepository, SEPARATE_DB_INI_FILES_BY_FILENAME
 from update_all.file_system import FileSystem
@@ -44,6 +45,11 @@ PHYSICAL_DISC_OLD_INI_SECTION: Final[str] = 'CD-*'
 PHYSICAL_DISC_INI_SECTION: Final[str] = 'A0CD-*'
 PHYSICAL_DISC_INI_KEY: Final[str] = 'main'
 PHYSICAL_DISC_INI_VALUE: Final[str] = 'MiSTer_Physical-CD'
+
+# MiSTer Linux release_20250402.7z writes the last six digits of its name to /MiSTer.version,
+# which is how MiSTer Downloader identifies the installed Linux too.
+# @TODO: Remove after 2026-11 along with from_default_distribution_mister_to_stale_distribution_mister.
+STALE_DISTRIBUTION_MISTER_LINUX_VERSION: Final[str] = '250402'
 
 RELATED_DATABASE_ACTIVATION_RELATIONSHIPS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
     (
@@ -503,6 +509,43 @@ class TransitionService:
             'from_physical_disc_cd_section_to_a0cd_section',
             old_section=PHYSICAL_DISC_OLD_INI_SECTION,
             new_section=PHYSICAL_DISC_INI_SECTION,
+        )
+
+    # @TODO: Remove after 2026-11 (added 2026-09).
+    def from_default_distribution_mister_to_stale_distribution_mister(self, config: Config, update_output: UpdateOutput):
+        if not self._file_exists(FILE_mister_version):
+            return
+
+        try:
+            linux_version = self._file_system.read_file_contents(FILE_mister_version).strip()
+        except Exception as e:
+            self._logger.debug('Could not read ', FILE_mister_version)
+            self._logger.debug(e)
+            return
+
+        if linux_version != STALE_DISTRIBUTION_MISTER_LINUX_VERSION:
+            return
+
+        self._ini_repository.use_stale_distribution_mister()
+
+        current_ini = self._ini_repository.get_downloader_ini(cached=False)
+        if DB_ID_DISTRIBUTION_MISTER not in current_ini:
+            return
+
+        current_db_url = IniParser(current_ini[DB_ID_DISTRIBUTION_MISTER]).get_string('db_url', '')
+        if current_db_url.lower() != DB_URL_MISTER_DEVEL_DISTRIBUTION_MISTER.lower():
+            return
+
+        self._ini_repository.write_downloader_ini(config)
+        self._logger.print(f'MiSTer Linux {linux_version} detected, switching [{DB_ID_DISTRIBUTION_MISTER}] to the stale Distribution snapshot:')
+        self._logger.print(f'  - db_url = {DB_URL_STALE_DISTRIBUTION_MISTER}')
+        self._logger.print('Writing downloader.ini.')
+        self._logger.print()
+        update_output.transition(
+            'from_default_distribution_mister_to_stale_distribution_mister',
+            linux_version=linux_version,
+            db_id=DB_ID_DISTRIBUTION_MISTER,
+            db_url=DB_URL_STALE_DISTRIBUTION_MISTER,
         )
 
 #

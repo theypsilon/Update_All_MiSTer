@@ -27,6 +27,7 @@ from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_
     DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, \
     DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI
 from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, ajgowans_manualsdbs, \
+    DB_URL_MISTER_DEVEL_DISTRIBUTION_MISTER, DB_URL_STALE_DISTRIBUTION_MISTER, \
     chipster6502_artworkdbs, chipster6502_artwork_db_with_style
 from update_all.file_system import FileSystem
 from update_all.ini_parser import IniParser
@@ -73,6 +74,13 @@ class IniRepository:
         self._downloader_ini = None
         self._arcade_organizer_ini = None
         self._resolved_database_sections: Dict[str, IniParser] = {}
+        self._stale_distribution_mister = False
+
+    # @TODO: Remove after 2026-11 along with its only caller,
+    # TransitionService.from_default_distribution_mister_to_stale_distribution_mister.
+    def use_stale_distribution_mister(self) -> None:
+        """Makes the MiSTer-devel fork selection write the stale Distribution db_url for the rest of the run."""
+        self._stale_distribution_mister = True
 
     def initialize_downloader_ini_base_path(self, base_path: str) -> None:
         self._base_path = base_path
@@ -545,8 +553,7 @@ class IniRepository:
         current_ini_contents = self._file_system.read_file_contents(self.downloader_ini_standard_path()).strip().lower()
         return new_ini_contents != current_ini_contents
 
-    @staticmethod
-    def _add_new_downloader_ini_changes(ini, config: Config) -> None:
+    def _add_new_downloader_ini_changes(self, ini, config: Config) -> None:
         for _, db in candidate_databases(config):
             db_id = db.db_id.lower()
             if db_id in SEPARATE_DB_INI_FILES:
@@ -563,6 +570,9 @@ class IniRepository:
                 if db_id not in ini:
                     ini[db_id] = {}
                 ini[db_id]['db_url'] = db.db_url
+                # @TODO: Remove after 2026-11. See TransitionService.from_default_distribution_mister_to_stale_distribution_mister.
+                if self._stale_distribution_mister and db_id == DB_ID_DISTRIBUTION_MISTER and db.db_url.lower() == DB_URL_MISTER_DEVEL_DISTRIBUTION_MISTER.lower():
+                    ini[db_id]['db_url'] = DB_URL_STALE_DISTRIBUTION_MISTER
             elif db_id in ini:
                 del ini[db_id]
 

@@ -23,7 +23,8 @@ from test.spy_os_utils import SpyOsUtils
 from test.testing_objects import downloader_ini
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, DOWNLOADER_INI_STANDARD_PATH, MEDIA_FAT
-from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, all_dbs
+from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, all_dbs, \
+    DB_URL_STALE_DISTRIBUTION_MISTER, MIRROR_ANDI_BR
 from update_all.file_system import FileSystemFactory as ProductionFileSystemFactory
 from update_all.ini_parser import IniParser
 from update_all.ini_repository import IniRepository, read_ini_contents
@@ -41,7 +42,89 @@ def test_write_downloader_ini(files=None, folders=None, config: Config = None):
     return state
 
 
+def default_downloader_ini() -> str:
+    return Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()
+
+
+def stale_distribution_downloader_ini() -> str:
+    return default_downloader_ini().replace(all_dbs('').MISTER_DEVEL_DISTRIBUTION_MISTER.db_url, DB_URL_STALE_DISTRIBUTION_MISTER)
+
+
+def distribution_ini_repository(downloader_ini_content: str, stale_distribution_mister: bool):
+    state = FileSystemState(files={downloader_ini: {'content': downloader_ini_content}})
+    repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+    if stale_distribution_mister:
+        repository.use_stale_distribution_mister()
+    return state, repository
+
+
+def distribution_url_in(state: FileSystemState) -> str:
+    return read_ini_contents(state.files[downloader_ini]['content'])[DB_ID_DISTRIBUTION_MISTER]['db_url']
+
+
 class TestIniRepository(unittest.TestCase):
+
+    def test_does_downloader_ini_need_save___with_stale_distribution_and_devel_fork_over_stale_url___returns_false(self):
+        _, repository = distribution_ini_repository(stale_distribution_downloader_ini(), stale_distribution_mister=True)
+
+        self.assertFalse(repository.does_downloader_ini_need_save(Config(databases=default_databases(), encc_forks='devel')))
+
+    def test_does_downloader_ini_need_save___with_stale_distribution_and_devel_fork_over_default_url___returns_true(self):
+        _, repository = distribution_ini_repository(default_downloader_ini(), stale_distribution_mister=True)
+
+        self.assertTrue(repository.does_downloader_ini_need_save(Config(databases=default_databases(), encc_forks='devel')))
+
+    def test_does_downloader_ini_need_save___without_stale_distribution_and_devel_fork_over_stale_url___returns_true(self):
+        _, repository = distribution_ini_repository(stale_distribution_downloader_ini(), stale_distribution_mister=False)
+
+        self.assertTrue(repository.does_downloader_ini_need_save(Config(databases=default_databases(), encc_forks='devel')))
+
+    def test_does_downloader_ini_need_save___with_stale_distribution_and_db9_fork_over_stale_url___returns_true(self):
+        _, repository = distribution_ini_repository(stale_distribution_downloader_ini(), stale_distribution_mister=True)
+
+        self.assertTrue(repository.does_downloader_ini_need_save(Config(databases=default_databases(), encc_forks='db9')))
+
+    def test_write_downloader_ini___with_stale_distribution_and_devel_fork_over_default_url___writes_stale_url(self):
+        state, repository = distribution_ini_repository(default_downloader_ini(), stale_distribution_mister=True)
+
+        repository.write_downloader_ini(Config(databases=default_databases(), encc_forks='devel'))
+
+        self.assertEqual(DB_URL_STALE_DISTRIBUTION_MISTER, distribution_url_in(state))
+
+    def test_write_downloader_ini___with_stale_distribution_and_devel_fork_over_stale_url___keeps_file_untouched(self):
+        state, repository = distribution_ini_repository(stale_distribution_downloader_ini(), stale_distribution_mister=True)
+
+        repository.write_downloader_ini(Config(databases=default_databases(), encc_forks='devel'))
+
+        self.assertEqual(stale_distribution_downloader_ini(), state.files[downloader_ini]['content'])
+
+    def test_write_downloader_ini___without_stale_distribution_and_devel_fork_over_stale_url___restores_default_url(self):
+        state, repository = distribution_ini_repository(stale_distribution_downloader_ini(), stale_distribution_mister=False)
+
+        repository.write_downloader_ini(Config(databases=default_databases(), encc_forks='devel'))
+
+        self.assertEqual(all_dbs('').MISTER_DEVEL_DISTRIBUTION_MISTER.db_url, distribution_url_in(state))
+
+    def test_write_downloader_ini___with_stale_distribution_and_db9_fork_over_stale_url___writes_db9_url(self):
+        state, repository = distribution_ini_repository(stale_distribution_downloader_ini(), stale_distribution_mister=True)
+
+        repository.write_downloader_ini(Config(databases=default_databases(), encc_forks='db9'))
+
+        self.assertEqual(all_dbs('').MISTER_DB9_DISTRIBUTION_MISTER.db_url, distribution_url_in(state))
+
+    def test_write_downloader_ini___with_stale_distribution_and_devel_fork_on_mirror_over_stale_url___writes_mirror_url(self):
+        state, repository = distribution_ini_repository(stale_distribution_downloader_ini(), stale_distribution_mister=True)
+
+        repository.write_downloader_ini(Config(databases=default_databases(), encc_forks='devel', mirror=MIRROR_ANDI_BR))
+
+        self.assertEqual(all_dbs(MIRROR_ANDI_BR).MISTER_DEVEL_DISTRIBUTION_MISTER.db_url, distribution_url_in(state))
+
+    def test_write_downloader_ini___with_stale_distribution_and_distribution_disabled_over_stale_url___removes_it(self):
+        state, repository = distribution_ini_repository(stale_distribution_downloader_ini(), stale_distribution_mister=True)
+
+        repository.write_downloader_ini(Config(databases=default_databases(sub=[DB_ID_DISTRIBUTION_MISTER])))
+
+        self.assertNotIn(DB_ID_DISTRIBUTION_MISTER, read_ini_contents(state.files[downloader_ini]['content']))
 
     def test_write_database_configuration___resolves_winning_distribution_url_after_fork_change(self):
         config = Config(

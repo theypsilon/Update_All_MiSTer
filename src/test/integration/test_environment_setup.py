@@ -22,12 +22,14 @@ from test.ini_assertions import testableIni
 from test.testing_objects import downloader_ini, update_all_ini, update_jtcores_ini, update_names_txt_ini, \
     manuals_ini, artwork_ini, store_json, ini_with_db_ids, all_manuals_db_ids, all_artwork_db_ids
 from update_all.config import Config
-from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, FILE_update_all_storage, KENV_TRANSITION_SERVICE_ONLY, \
+from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, FILE_update_all_storage, KENV_TRANSITION_SERVICE_ONLY, FILE_mister_version, \
     MEDIA_FAT, KENV_UPDATE_ALL_MISTER_DB_URL, \
     KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, KENV_UPDATE_ALL_NON_INTERACTIVE, \
     KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
-from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT, all_dbs, ALL_DB_IDS
+from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT, all_dbs, ALL_DB_IDS, \
+    DB_URL_STALE_DISTRIBUTION_MISTER
 from update_all.environment_setup import EnvironmentSetupResult
+from update_all.transition_service import STALE_DISTRIBUTION_MISTER_LINUX_VERSION
 from update_all.ini_repository import read_ini_contents
 from update_all.local_store import LocalStore
 from update_all.other import GenericProvider, TerminalSize
@@ -72,6 +74,30 @@ class TestEnvironmentSetup(unittest.TestCase):
         self.assertSetup(
             files={},
             expected_files={downloader_ini: Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()},
+            expected_config=Config(databases=default_databases())
+        )
+
+    def test_setup___with_default_downloader_ini_and_stale_linux___writes_stale_distribution_url_and_keeps_devel_fork_config(self):
+        default_ini = Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()
+        self.assertSetup(
+            files={downloader_ini: default_ini, FILE_mister_version: STALE_DISTRIBUTION_MISTER_LINUX_VERSION},
+            expected_files={
+                downloader_ini: default_ini.replace(_DISTRIBUTION_MISTER_DB_URL, DB_URL_STALE_DISTRIBUTION_MISTER),
+                FILE_mister_version.lower(): STALE_DISTRIBUTION_MISTER_LINUX_VERSION,
+            },
+            expected_config=Config(databases=default_databases(), encc_forks='devel')
+        )
+
+    def test_setup___with_stale_distribution_url_and_stale_linux___keeps_downloader_ini_and_devel_fork_config(self):
+        stale_ini = Path('test/fixtures/downloader_ini/default_downloader.ini').read_text().replace(_DISTRIBUTION_MISTER_DB_URL, DB_URL_STALE_DISTRIBUTION_MISTER)
+        self.assertSetup(
+            files={downloader_ini: stale_ini, FILE_mister_version: STALE_DISTRIBUTION_MISTER_LINUX_VERSION},
+            expected_config=Config(databases=default_databases(), encc_forks='devel')
+        )
+
+    def test_setup___with_default_downloader_ini_and_newer_linux___keeps_default_distribution_url(self):
+        self.assertSetup(
+            files={downloader_ini: Path('test/fixtures/downloader_ini/default_downloader.ini').read_text(), FILE_mister_version: '250901'},
             expected_config=Config(databases=default_databases())
         )
 

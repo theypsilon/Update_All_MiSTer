@@ -43,13 +43,17 @@ DB_URL_JTPREMIUM_DEPRECATED = 'https://raw.githubusercontent.com/jotego/jtpremiu
 DB_URL_MISTERSAM_FILES_DEPRECATED = 'https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/main/MiSTer_SAMdb.json'
 DB_ID_COIN_OP_COLLECTION_DEPRECATED = 'atrac17/Coin-Op_Collection'
 DB_ID_UBERYOJI_BOOT_ROMS_DEPRECATED = 'uberyoji_mister_boot_roms'
+DB_URL_MISTER_DEVEL_DISTRIBUTION_MISTER = 'https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/db.json.zip'
+# @TODO: Remove after 2026-11 (added 2026-09) along with TransitionService.from_default_distribution_mister_to_stale_distribution_mister.
+DB_URL_STALE_DISTRIBUTION_MISTER = 'https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/stale-distribution-mister/db.json.zip'
+
 
 class AllDBs:
     def __init__(self):
         self.UPDATE_ALL_MISTER = Database(db_id='update_all_mister', db_url='https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/db/update_all_db.json', title='Update All files')
 
         # Distribution MiSTer
-        self.MISTER_DEVEL_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/db.json.zip', title='Main Distribution: MiSTer-devel')
+        self.MISTER_DEVEL_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url=DB_URL_MISTER_DEVEL_DISTRIBUTION_MISTER, title='Main Distribution: MiSTer-devel')
         self.MISTER_DB9_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://raw.githubusercontent.com/MiSTer-DB9/Distribution_MiSTer/main/dbencc.json.zip', title='Main Distribution: DB9 / SNAC8')
         self.MISTER_AITORGOMEZ_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://www.aitorgomez.net/static/mistermain/db.json.zip', title='Main Distribution: AitorGomez Fork')
 

@@ -27,15 +27,16 @@ from test.testing_objects import downloader_ini, update_all_ini, update_arcade_o
     update_jtcores_ini, downloader_store, manuals_ini, artwork_ini, ini_with_db_ids as downloader_ini_with_db_ids, \
     all_manuals_db_ids, all_artwork_db_ids
 from test.update_all_service_tester import TransitionServiceTester, local_store, IniRepositoryTester, \
-    ConfigReaderTester, default_env
+    ConfigReaderTester, default_env, default_databases
 from test.update_output_tester import UpdateOutputTester
 from test.spy_os_utils import SpyOsUtils
 from update_all.config import Config
-from update_all.constants import FILE_MiSTer_ini, KENV_SKIP_DOWNLOADER, MEDIA_FAT
+from update_all.constants import FILE_MiSTer_ini, KENV_SKIP_DOWNLOADER, MEDIA_FAT, FILE_mister_version
 from update_all.databases import ALL_DB_IDS, all_dbs, DB_ID_DISTRIBUTION_MISTER, DB_ID_MREXT_ALL, DB_ID_MREXT_TAPTO, \
-    DB_ID_ZAPAROO_MISTER
+    DB_ID_ZAPAROO_MISTER, DB_URL_MISTER_DEVEL_DISTRIBUTION_MISTER, DB_URL_STALE_DISTRIBUTION_MISTER
 from update_all.ini_repository import read_ini_contents
-from update_all.transition_service import RELATED_DATABASE_ACTIVATION_RELATIONSHIPS
+from update_all.transition_service import RELATED_DATABASE_ACTIVATION_RELATIONSHIPS, \
+    STALE_DISTRIBUTION_MISTER_LINUX_VERSION
 from update_all.update_output import NoopUpdateOutput
 
 
@@ -114,6 +115,34 @@ def run_physical_disc_transition(mister_ini: str = None, update_output=None, db_
     sut.from_physical_disc_cd_section_to_a0cd_section(config, update_output or NoopUpdateOutput())
     path = mister_ini_path.lower()
     return None if path not in fs_state.files else fs_state.files[path]['content']
+
+
+def distribution_ini(db_url: str) -> str:
+    dbs = all_dbs('')
+    return f'[distribution_mister]\ndb_url = {db_url}\n\n[jtcores]\ndb_url = {dbs.JTCORES.db_url}\n\n[update_all_mister]\ndb_url = {dbs.UPDATE_ALL_MISTER.db_url}\n'
+
+
+default_distribution_ini = distribution_ini(DB_URL_MISTER_DEVEL_DISTRIBUTION_MISTER)
+stale_distribution_ini = distribution_ini(DB_URL_STALE_DISTRIBUTION_MISTER)
+
+
+def run_stale_distribution_transition(downloader_ini_content: str = None, mister_version: str = None, update_output=None, os_utils=None):
+    config = Config()
+    files = {}
+    if downloader_ini_content is not None:
+        files[downloader_ini] = {'content': downloader_ini_content}
+    if mister_version is not None:
+        files[FILE_mister_version] = {'content': mister_version}
+    fs_state = FileSystemState(config=config, files=files)
+    fs = FileSystemFactory(state=fs_state).create_for_system_scope()
+    os_utils = os_utils or SpyOsUtils()
+    ini_repos = IniRepositoryTester(file_system=fs, os_utils=os_utils)
+    config_reader = ConfigReaderTester(downloader_ini_repository=ini_repos, file_system=fs)
+    sut = TransitionServiceTester(file_system=fs, os_utils=os_utils, ini_repository=ini_repos)
+    config_reader.fill_config_with_database_sections(config, config_reader.read_downloader_ini())
+    sut.from_default_distribution_mister_to_stale_distribution_mister(config, update_output or NoopUpdateOutput())
+    path = downloader_ini.lower()
+    return None if path not in fs_state.files else fs_state.files[path]['content'].strip(), ini_repos
 
 
 def manuals_db_ids_in(fs_state: FileSystemState) -> List[str]:
@@ -512,6 +541,86 @@ class TestTransitionService(unittest.TestCase):
         run_physical_disc_transition('[A0CD-*]\nmain=MiSTer_Physical-CD\n', update_output)
 
         self.assertEqual([], update_output.transition_calls)
+
+    def test_stale_distribution_with_default_url_and_stale_linux___writes_stale_url(self):
+        result, _ = run_stale_distribution_transition(default_distribution_ini, STALE_DISTRIBUTION_MISTER_LINUX_VERSION)
+
+        self.assertEqual(stale_distribution_ini.strip(), result)
+
+    def test_stale_distribution_with_default_url_and_stale_linux___keeps_comments_and_mister_section(self):
+        original = f'# my comment\n[mister]\nbase_path = /media/usb0\n\n[distribution_mister]\ndb_url = {DB_URL_MISTER_DEVEL_DISTRIBUTION_MISTER}\nfilter = arcade\n'
+
+        result, _ = run_stale_distribution_transition(original, STALE_DISTRIBUTION_MISTER_LINUX_VERSION)
+
+        self.assertEqual(f'# my comment\n\n[mister]\nbase_path = /media/usb0\n\n[distribution_mister]\ndb_url = {DB_URL_STALE_DISTRIBUTION_MISTER}\nfilter = arcade\n\n[update_all_mister]\ndb_url = {all_dbs("").UPDATE_ALL_MISTER.db_url}', result)
+
+    def test_stale_distribution_with_default_url_and_other_linux___leaves_downloader_ini_alone(self):
+        result, _ = run_stale_distribution_transition(default_distribution_ini, '250101')
+
+        self.assertEqual(default_distribution_ini.strip(), result)
+
+    def test_stale_distribution_with_default_url_and_no_mister_version___leaves_downloader_ini_alone(self):
+        result, _ = run_stale_distribution_transition(default_distribution_ini)
+
+        self.assertEqual(default_distribution_ini.strip(), result)
+
+    def test_stale_distribution_with_db9_url_and_stale_linux___leaves_downloader_ini_alone(self):
+        original = distribution_ini(all_dbs('').MISTER_DB9_DISTRIBUTION_MISTER.db_url)
+
+        result, _ = run_stale_distribution_transition(original, STALE_DISTRIBUTION_MISTER_LINUX_VERSION)
+
+        self.assertEqual(original.strip(), result)
+
+    def test_stale_distribution_with_stale_url_and_stale_linux___leaves_downloader_ini_alone_and_emits_nothing(self):
+        update_output = UpdateOutputTester()
+
+        result, _ = run_stale_distribution_transition(stale_distribution_ini, STALE_DISTRIBUTION_MISTER_LINUX_VERSION, update_output)
+
+        self.assertEqual(stale_distribution_ini.strip(), result)
+        self.assertEqual([], update_output.transition_calls)
+
+    def test_stale_distribution_with_stale_url_and_stale_linux___makes_devel_fork_need_no_save(self):
+        _, ini_repos = run_stale_distribution_transition(stale_distribution_ini, STALE_DISTRIBUTION_MISTER_LINUX_VERSION)
+
+        self.assertFalse(ini_repos.does_downloader_ini_need_save(Config(databases=default_databases(sub=[all_dbs('').COIN_OP_COLLECTION.db_id]), encc_forks='devel')))
+
+    def test_stale_distribution_with_db9_url_and_stale_linux___makes_switching_to_devel_fork_write_stale_url(self):
+        _, ini_repos = run_stale_distribution_transition(distribution_ini(all_dbs('').MISTER_DB9_DISTRIBUTION_MISTER.db_url), STALE_DISTRIBUTION_MISTER_LINUX_VERSION)
+
+        ini_repos.write_downloader_ini(Config(databases=default_databases(sub=[all_dbs('').COIN_OP_COLLECTION.db_id]), encc_forks='devel'))
+
+        self.assertEqual(DB_URL_STALE_DISTRIBUTION_MISTER, read_ini_contents(ini_repos._file_system.read_file_contents(downloader_ini))[DB_ID_DISTRIBUTION_MISTER]['db_url'])
+
+    def test_stale_distribution_with_stale_url_and_other_linux___makes_devel_fork_restore_default_url(self):
+        _, ini_repos = run_stale_distribution_transition(stale_distribution_ini, '250101')
+
+        ini_repos.write_downloader_ini(Config(databases=default_databases(sub=[all_dbs('').COIN_OP_COLLECTION.db_id]), encc_forks='devel'))
+
+        self.assertEqual(DB_URL_MISTER_DEVEL_DISTRIBUTION_MISTER, read_ini_contents(ini_repos._file_system.read_file_contents(downloader_ini))[DB_ID_DISTRIBUTION_MISTER]['db_url'])
+
+    def test_stale_distribution_without_distribution_section___leaves_downloader_ini_alone(self):
+        original = downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES'])
+
+        result, _ = run_stale_distribution_transition(original, STALE_DISTRIBUTION_MISTER_LINUX_VERSION)
+
+        self.assertEqual(original.strip(), result)
+
+    def test_stale_distribution_without_downloader_ini___does_not_create_it(self):
+        result, _ = run_stale_distribution_transition(mister_version=STALE_DISTRIBUTION_MISTER_LINUX_VERSION)
+
+        self.assertIsNone(result)
+
+    def test_stale_distribution_with_default_url_and_stale_linux___emits_the_transition_without_waiting(self):
+        update_output = UpdateOutputTester()
+        os_utils = SpyOsUtils()
+
+        run_stale_distribution_transition(default_distribution_ini, f'{STALE_DISTRIBUTION_MISTER_LINUX_VERSION}\n', update_output, os_utils)
+
+        self.assertEqual([(
+            'from_default_distribution_mister_to_stale_distribution_mister',
+            {'linux_version': STALE_DISTRIBUTION_MISTER_LINUX_VERSION, 'db_id': DB_ID_DISTRIBUTION_MISTER, 'db_url': DB_URL_STALE_DISTRIBUTION_MISTER},
+        )], update_output.transition_calls)
+        self.assertEqual([], os_utils.calls_to_sleep)
 
     def test_related_database_relationships___has_only_zaparoo_relationship(self):
         self.assertEqual(1, len(RELATED_DATABASE_ACTIVATION_RELATIONSHIPS))
