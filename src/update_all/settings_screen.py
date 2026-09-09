@@ -33,7 +33,7 @@ from update_all.config import Config
 from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABLE_SPINNER_FIRMWARE_MD5, FILE_MiSTer_ini, \
     ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_MiSTer_delme, \
     MEDIA_FAT, FILE_update_all_chip_id_linker_log, FILE_update_all_chip_id_rbf, FILE_update_all_launcher, \
-    FILE_update_all_pyz, CHIPSTER6502_ARTWORK_DEFAULT_STYLE, CHIPSTER6502_ARTWORK_STYLES
+    FILE_update_all_pyz, CHIPSTER6502_ARTWORK_DEFAULT_STYLE, CHIPSTER6502_ARTWORK_STYLES, UPDATE_ALL_VERSION
 from update_all.databases import db_ids_by_model_variables, model_variables_by_db_id, DB_ID_NAMES_TXT, ALL_DB_IDS
 from update_all.downloader_fingerprints import read_installed_db_ids, try_read_installed_db_ids
 from update_all.ini_repository import SEPARATE_DB_INI_FILES
@@ -157,6 +157,7 @@ class SettingsScreen(UiApplication):
 
     def initialize_ui(self, ui: UiContext) -> UiSectionFactory:
         ui.set_value('needs_save', 'false')
+        ui.set_value('update_all_version', UPDATE_ALL_VERSION)
 
         self._pending_mister_ini_edits = {}
         # mister_ini_add declarations bound to database variables apply whenever the
