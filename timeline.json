@@ -1,0 +1,168 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Loopy",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-09-12",
+      "timestamps": [
+        1789174615
+      ],
+      "title": "Updated TODAY (2026-09-12)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Laserdisc Games Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Moon Patrol Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Psikyo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega G80V Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega XBoard Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Seibu Cup Soccer Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Kick And Run MRA: Kick And Run",
+              "type": "standalone"
+            },
+            {
+              "name": "Laserdisc Games MRA: Cliff Hanger",
+              "type": "standalone"
+            },
+            {
+              "name": "Psikyo MRAs: Gunbird, Samurai Aces, Strikers 1945, Battle K-Road, Tengai",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega G80V MRAs: Eliminator, Star Trek, Tac-Scan, Zektor",
+              "type": "standalone"
+            },
+            {
+              "name": "Seibu Cup Soccer MRA: Seibu Cup Soccer",
+              "type": "standalone"
+            },
+            {
+              "name": "Sonson MRA: SonSon",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "CBM-II",
+              "type": "standalone"
+            },
+            {
+              "name": "Minimig",
+              "type": "standalone"
+            },
+            {
+              "name": "NeXT",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "GameCom",
+              "type": "standalone"
+            },
+            {
+              "name": "GameKing",
+              "type": "standalone"
+            },
+            {
+              "name": "Intellivision",
+              "type": "standalone"
+            },
+            {
+              "name": "PocketStation",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "MiSTer Firmware",
+              "type": "standalone"
+            },
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            },
+            {
+              "name": "Menu Core",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1788568746,
+        1788651349,
+        1788657666,
+        1788704144,
+        1788730060,
+        1788785132,
+        1788802079,
+        1788817013,
+        1788836904,
+        1788855153,
+        1788887168,
+        1788897522,
+        1788906416,
+        1788914160,
+        1788930836,
+        1788963157,
+        1788985678,
+        1789018698,
+        1789034672,
+        1789105161,
+        1789120957
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1899,
+    "total_file_updates": 1943,
+    "unique_files": 1005
+  }
+}
