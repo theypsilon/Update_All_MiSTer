@@ -34,7 +34,7 @@ from update_all.constants import ARCADE_ORGANIZER_INI, FILE_MiSTer, TEST_UNSTABL
     ARCADE_ORGANIZER_INSTALLED_NAMES_TXT, DEFAULT_SETTINGS_SCREEN_THEME, FILE_MiSTer_delme, \
     MEDIA_FAT, FILE_update_all_chip_id_linker_log, FILE_update_all_chip_id_rbf, FILE_update_all_launcher, \
     FILE_update_all_pyz, CHIPSTER6502_ARTWORK_DEFAULT_STYLE, CHIPSTER6502_ARTWORK_STYLES, UPDATE_ALL_VERSION
-from update_all.databases import db_ids_by_model_variables, model_variables_by_db_id, DB_ID_NAMES_TXT, ALL_DB_IDS
+from update_all.databases import db_ids_by_model_variables, model_variables_by_db_id, DB_ID_NAMES_TXT, ALL_DB_IDS, DEFAULT_COIN_OP_COLLECTION_RELEASES
 from update_all.downloader_fingerprints import read_installed_db_ids, try_read_installed_db_ids
 from update_all.ini_repository import SEPARATE_DB_INI_FILES
 from update_all.encryption import Encryption
@@ -72,6 +72,7 @@ from update_all.uninstall_db_ui import UninstallDbMenu
 
 CHIP_ID_DEBUG_LOG_PATH: Final[str] = f'{MEDIA_FAT}/{FILE_update_all_chip_id_linker_log}'
 CHIP_ID_BOOTSTRAP_LOG_PATH: Final[str] = str(Path(CHIP_ID_DEBUG_LOG_PATH).with_name('chip-id-linker-bootstrap.log'))
+COIN_OP_COLLECTION_RELEASES_LABELS: Final[dict[str, str]] = {'public': 'Public only', 'beta': 'Public and Beta', 'alpha': 'Public, Beta and Alpha'}
 CHIP_ID_WORKER_ARCHIVE_PATH: Final[str] = '/tmp/update_all_chipid_worker.pyz'
 CHIP_ID_WORKER_STARTUP_TIMEOUT_SECONDS: Final[float] = 15.0
 CHIP_ID_WORKER_STARTUP_POLL_INTERVAL_SECONDS: Final[float] = 0.05
@@ -252,10 +253,11 @@ class SettingsScreen(UiApplication):
             else 'false'
         )
         self._refresh_chipster6502_artwork_style_summary(ui)
+        self._refresh_retroaccount_coin_op_benefit_releases_ui(ui)
 
-        if ALL_DB_IDS['JTCORES'] not in config.databases and not local_store.get_allow_retroaccount_jt_beta_auto_enable():
-            # With JTCORES off there is no downloader.ini section for this. The flag guards against
-            # reading a value older builds mirrored into the store, which was never a user choice.
+        self._refresh_retroaccount_jtbeta_benefit_active_ui(ui)
+        if ALL_DB_IDS['JTCORES'] not in config.databases and not local_store.get_jtcores_private_releases_auto():
+            # With JTCORES off there is no downloader.ini section for this, so the manual choice lives in the store.
             ui.set_value('download_beta_cores', str(local_store.get_download_beta_cores()).lower())
 
         if DB_ID_NAMES_TXT not in config.databases:
@@ -272,6 +274,8 @@ class SettingsScreen(UiApplication):
         ui.add_custom_formatters({
             'bytes_to_gb': self._format_available_space,
             'device_label_message': self._format_device_label_message,
+            'coin_op_collection_releases_text': lambda _auto: self._format_coin_op_collection_releases(ui),
+            'download_beta_cores_text': lambda _auto: self._format_download_beta_cores(ui),
         })
 
         drawer_factory, theme_manager, device_login_renderer = self._settings_screen_printer.initialize_screen(config)
@@ -337,6 +341,28 @@ class SettingsScreen(UiApplication):
 
     def remove_file(self, ui, effect) -> None:
         ui.set_value('file_exists', self._file_system.unlink(effect['target']))
+
+    def _refresh_retroaccount_coin_op_benefit_releases_ui(self, ui: UiContext) -> bool:
+        benefit_releases = self._retroaccount.coin_op_benefit_releases() or DEFAULT_COIN_OP_COLLECTION_RELEASES
+        if ui.get_value('retroaccount_coin_op_benefit_releases') == benefit_releases:
+            return False
+        ui.set_value('retroaccount_coin_op_benefit_releases', benefit_releases)
+        return True
+
+    def _refresh_retroaccount_jtbeta_benefit_active_ui(self, ui: UiContext) -> bool:
+        active = 'true' if self._retroaccount.jtbeta_access_sync_state() == BenefitState.ACTIVE else 'false'
+        if ui.get_value('retroaccount_jtbeta_benefit_active') == active:
+            return False
+        ui.set_value('retroaccount_jtbeta_benefit_active', active)
+        return True
+
+    def _format_download_beta_cores(self, ui: UiContext) -> str:
+        label = 'Yes' if ui.get_value('download_beta_cores') == 'true' else 'No'
+        return f'Auto ({label})' if ui.get_value('jtcores_private_releases_auto') == 'true' else label
+
+    def _format_coin_op_collection_releases(self, ui: UiContext) -> str:
+        label = COIN_OP_COLLECTION_RELEASES_LABELS[ui.get_value('coin_op_collection_releases')]
+        return f'Auto ({label})' if ui.get_value('coin_op_collection_releases_auto') == 'true' else label
 
     def retroachievements_db_toggle(self, ui: UiContext) -> None:
         db_variable = ALL_DB_IDS['RETROACHIEVEMENTS_DB']
@@ -1020,11 +1046,12 @@ class SettingsScreen(UiApplication):
         store.set_pocket_backup(config.pocket_backup)
         store.set_overscan(config.overscan)
         store.set_monochrome_ui(config.monochrome_ui)
-        if ui.get_value('download_beta_cores_chosen') != 'false':
+        store.set_jtcores_private_releases_auto(config.jtcores_private_releases_auto)
+        if not config.jtcores_private_releases_auto:
             # Stored whether or not JTCORES is enabled: with JTCORES off there is no
             # downloader.ini section to hold it.
             store.set_download_beta_cores(config.download_beta_cores)
-            store.set_allow_retroaccount_jt_beta_auto_enable(False)
+        store.set_coin_op_collection_releases_auto(config.coin_op_collection_releases_auto)
         store.set_ajgowans_manuals_dbs_general_selector(ui.get_value('ajgowans_manuals_dbs_general_selector') != 'false')
         store.set_chipster6502_artwork_dbs_general_selector(ui.get_value('chipster6502_artwork_dbs_general_selector') != 'false')
         store.set_chipster6502_artwork_default_style(config.artwork_default_style)
@@ -1421,6 +1448,8 @@ class SettingsScreen(UiApplication):
 
         state_changed = self._refresh_retroaccount_device_verification_ui(ui) or state_changed
         state_changed = self._refresh_device_label_ui(ui) or state_changed
+        state_changed = self._refresh_retroaccount_coin_op_benefit_releases_ui(ui) or state_changed
+        state_changed = self._refresh_retroaccount_jtbeta_benefit_active_ui(ui) or state_changed
 
         checking_ui_key = 'retroaccount_checking'
         checking_ui_value = ui.get_value(checking_ui_key)

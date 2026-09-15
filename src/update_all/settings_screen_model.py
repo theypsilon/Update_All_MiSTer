@@ -503,11 +503,45 @@ def _switching_off_other_frontends(frontend, then):
 def _navigate_back_effects(): return [{"type": "navigate", "target": "back"}]
 
 
-def _toggle_jt_private_releases(): return [
-    {"type": "rotate_variable", "target": "download_beta_cores"},
-    # Consumed by SettingsScreen._fill_store: persists the choice and stops the RetroAccount JTBeta benefit from deciding it.
-    {"type": "set_variable", "target": "download_beta_cores_chosen", "value": "true"},
-]
+def _set(target, value): return {"type": "set_variable", "target": target, "value": value}
+
+
+def _rotate_coin_op_collection_releases(): return [{
+    "type": "condition", "variable": "coin_op_collection_releases_auto",
+    "true": [_set("coin_op_collection_releases_auto", "false"), _set("coin_op_collection_releases", "public")],
+    "false": [{
+        "type": "condition", "variable": "coin_op_collection_releases",
+        "public": [_set("coin_op_collection_releases", "beta")],
+        "beta": [_set("coin_op_collection_releases", "alpha")],
+        "alpha": [
+            _set("coin_op_collection_releases_auto", "true"),
+            {
+                "type": "condition", "variable": "retroaccount_coin_op_benefit_releases",
+                "public": [_set("coin_op_collection_releases", "public")],
+                "beta": [_set("coin_op_collection_releases", "beta")],
+                "alpha": [_set("coin_op_collection_releases", "alpha")],
+            },
+        ],
+    }],
+}]
+
+
+def _rotate_jt_private_releases(): return [{
+    "type": "condition", "variable": "jtcores_private_releases_auto",
+    "true": [_set("jtcores_private_releases_auto", "false"), _set("download_beta_cores", "false")],
+    "false": [{
+        "type": "condition", "variable": "download_beta_cores",
+        "false": [_set("download_beta_cores", "true")],
+        "true": [
+            _set("jtcores_private_releases_auto", "true"),
+            {
+                "type": "condition", "variable": "retroaccount_jtbeta_benefit_active",
+                "false": [_set("download_beta_cores", "false")],
+                "true": [_set("download_beta_cores", "true")],
+            },
+        ],
+    }],
+}]
 
 
 def _coin_op_collection_info(): return [{
@@ -517,6 +551,7 @@ def _coin_op_collection_info(): return [{
         "Public releases are available to everybody.",
         "Beta and Alpha releases only work for Coin-Op Collection Patreon supporters.",
         "Alpha also includes the Beta releases.",
+        "Auto follows the Coin-Op benefit of your RetroAccount.",
         "Check patreon.com/atrac17",
     ],
 }]
@@ -528,6 +563,7 @@ def _jtcores_info(): return [{
     "text": [
         "Public releases are available to everybody.",
         "Private releases only work for JOTEGO Patreon supporters.",
+        "Auto follows the JOTEGO benefit of your RetroAccount.",
         "Check patreon.com/jotego",
     ],
 }]
@@ -959,8 +995,9 @@ def settings_screen_model():
         "encc_forks": {"pinned_linux": "MiSTer-devel", "devel": "MiSTer-devel (Edge Linux)", "db9": "MiSTer-DB9", "aitorgomez": "AitorGomez Fork"},
         "encc_forks_description": {"pinned_linux": "Official Cores from MiSTer-devel", "devel": "Official Cores with the newest Linux", "db9": "DB9 / SNAC8 forks with ENCC", "aitorgomez": "AitorGomez Fork"},
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
+        "download_beta_cores_text": {},
         "coin_op_collection_releases": {"public": "public", "beta": "beta", "alpha": "alpha"},
-        "coin_op_collection_releases_description": {"public": "Public only", "beta": "Public and Beta", "alpha": "Public, Beta and Alpha"},
+        "coin_op_collection_releases_text": {},
         "mirror": {"": "Off.", "off": "Off.", "andi_br": "Andi Brazil"},
         "overscan": {"none": "None", "low": "Low", "medium": "Medium", "high": "High", "maximum": "Max"},
         "bytes_to_gb": {},
@@ -981,7 +1018,8 @@ def settings_screen_model():
         "encc_forks": {"group": "ua_ini", "default": "pinned_linux", "values": ["pinned_linux", "devel", "db9", "aitorgomez"]},
         "jotego_updater": {"group": ["ua_ini", "db"], "default": "true", "values": ["false", "true"]},
         "download_beta_cores": {"group": "jt_ini", "default": "false", "values": ["false", "true"]},
-        "download_beta_cores_chosen": {"default": "false", "values": ["false", "true"]},
+        "jtcores_private_releases_auto": {"group": "jt_ini", "default": "true", "values": ["true", "false"]},
+        "retroaccount_jtbeta_benefit_active": {"default": "false", "values": ["false", "true"]},
         "bios_getter": {"group": ["ua_ini", "separate_db"], "default": "false", "values": ["false", "true"]},
         "arcade_roms_db_downloader": {"group": ["ua_ini", "separate_db"], "default": "false", "values": ["false", "true"]},
         "names_txt_updater": {"group": ["ua_ini", "db"], "default": "false", "values": ["false", "true"]},
@@ -1295,9 +1333,9 @@ def settings_screen_model():
                 },
                 {
                     "title": "# Install Private Releases",
-                    "description": "{download_beta_cores:yesno}",
+                    "description": "{jtcores_private_releases_auto:download_beta_cores_text}",
                     "actions": {
-                        "ok": _toggle_jt_private_releases(),
+                        "ok": _rotate_jt_private_releases(),
                         "info": _jtcores_info(),
                     }
                 },
@@ -1308,6 +1346,8 @@ def settings_screen_model():
             "header": "Coin-Op Collection Settings",
             "variables": {
                 "coin_op_collection_releases": {"group": "coin_op_collection", "default": "public", "values": ["public", "beta", "alpha"]},
+                "coin_op_collection_releases_auto": {"group": "coin_op_collection", "default": "true", "values": ["true", "false"]},
+                "retroaccount_coin_op_benefit_releases": {"default": "public", "values": ["public", "beta", "alpha"]},
             },
             "entries": [
                 {
@@ -1320,9 +1360,9 @@ def settings_screen_model():
                 },
                 {
                     "title": "# Releases",
-                    "description": "{coin_op_collection_releases:coin_op_collection_releases_description}",
+                    "description": "{coin_op_collection_releases_auto:coin_op_collection_releases_text}",
                     "actions": {
-                        "ok": [{"type": "rotate_variable", "target": "coin_op_collection_releases"}],
+                        "ok": _rotate_coin_op_collection_releases(),
                         "info": _coin_op_collection_info(),
                     }
                 },

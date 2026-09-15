@@ -298,6 +298,58 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual('false', ui.get_value('names_char_code_warning'))
 
+    def test_initialize_ui___publishes_the_coin_op_benefit_releases_for_the_model_defaulting_to_public(self):
+        _sut, ui = tester(retroaccount=_RetroAccountStub(coin_op_benefit_releases='beta'))
+        self.assertEqual('beta', ui.get_value('retroaccount_coin_op_benefit_releases'))
+
+        _sut, ui = tester(retroaccount=_RetroAccountStub(coin_op_benefit_releases=None))
+        self.assertEqual('public', ui.get_value('retroaccount_coin_op_benefit_releases'))
+
+    def test_initialize_ui___publishes_whether_the_jtbeta_benefit_is_active_for_the_model(self):
+        _sut, ui = tester(retroaccount=_RetroAccountStub(jtbeta_access_state=BenefitState.ACTIVE))
+        self.assertEqual('true', ui.get_value('retroaccount_jtbeta_benefit_active'))
+
+        _sut, ui = tester(retroaccount=_RetroAccountStub(jtbeta_access_state=BenefitState.INACTIVE))
+        self.assertEqual('false', ui.get_value('retroaccount_jtbeta_benefit_active'))
+
+    def test_retroaccount_check_state___refreshes_the_jtbeta_benefit_when_the_sync_changes_it(self):
+        retroaccount = _RetroAccountStub()
+        sut, ui = tester(retroaccount=retroaccount)
+        retroaccount.set_jtbeta_access_state(BenefitState.ACTIVE)
+
+        sut.retroaccount_check_state(ui)
+
+        self.assertEqual('true', ui.get_value('retroaccount_jtbeta_benefit_active'))
+
+    def test_download_beta_cores_text___describes_auto_with_the_resolved_choice_and_manual_choices_plainly(self):
+        _sut, ui = tester(config=Config(databases=default_databases(), download_beta_cores=True))
+        text = ui.formatters['download_beta_cores_text']
+
+        self.assertEqual('Auto (Yes)', text('true'))
+        ui.set_value('jtcores_private_releases_auto', 'false')
+        self.assertEqual('Yes', text('false'))
+        ui.set_value('download_beta_cores', 'false')
+        self.assertEqual('No', text('false'))
+
+    def test_retroaccount_check_state___refreshes_the_coin_op_benefit_releases_when_the_sync_changes_them(self):
+        retroaccount = _RetroAccountStub(coin_op_benefit_releases=None)
+        sut, ui = tester(retroaccount=retroaccount)
+        retroaccount.set_coin_op_benefit_releases('alpha')
+
+        sut.retroaccount_check_state(ui)
+
+        self.assertEqual('alpha', ui.get_value('retroaccount_coin_op_benefit_releases'))
+
+    def test_coin_op_collection_releases_text___describes_auto_with_the_resolved_releases_and_manual_choices_plainly(self):
+        sut, ui = tester(config=Config(databases=default_databases(), coin_op_collection_releases='beta'))
+        text = ui.formatters['coin_op_collection_releases_text']
+
+        self.assertEqual('Auto (Public and Beta)', text('true'))
+        ui.set_value('coin_op_collection_releases_auto', 'false')
+        self.assertEqual('Public and Beta', text('false'))
+        ui.set_value('coin_op_collection_releases', 'alpha')
+        self.assertEqual('Public, Beta and Alpha', text('false'))
+
     def test_retroachievements_db_toggle___when_disabled___enables_db_and_sets_service_status(self):
         config = Config(databases=default_databases())
         service = _RetroAchievementsServiceStub(enable_status='missing_credentials')
@@ -1230,7 +1282,9 @@ class _MisterVideoModeServiceStub:
 
 
 class _RetroAccountStub:
-    def __init__(self, device_verified=False, attach_result=True, device_label=None, attach_status_code=200):
+    def __init__(self, device_verified=False, attach_result=True, device_label=None, attach_status_code=200, coin_op_benefit_releases=None, jtbeta_access_state=BenefitState.CHECKING):
+        self._coin_op_benefit_releases = coin_op_benefit_releases
+        self._jtbeta_access_state = jtbeta_access_state
         self._device_verified = device_verified
         self._verified_chip_id = '0123456789abcdef' if device_verified else None
         self._device_label = device_label
@@ -1259,7 +1313,16 @@ class _RetroAccountStub:
         return BenefitState.CHECKING
 
     def jtbeta_access_sync_state(self):
-        return BenefitState.CHECKING
+        return self._jtbeta_access_state
+
+    def set_jtbeta_access_state(self, state):
+        self._jtbeta_access_state = state
+
+    def coin_op_benefit_releases(self):
+        return self._coin_op_benefit_releases
+
+    def set_coin_op_benefit_releases(self, releases):
+        self._coin_op_benefit_releases = releases
 
     def attach_chip_id_to_current_device(self, chip_id):
         self.attach_calls.append(chip_id)

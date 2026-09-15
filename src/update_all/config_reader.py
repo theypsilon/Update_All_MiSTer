@@ -158,6 +158,8 @@ class ConfigReader:
         config.timeline_after_logs = store.get_timeline_after_logs()
         config.overscan = store.get_overscan()
         config.monochrome_ui = store.get_monochrome_ui()
+        config.coin_op_collection_releases_auto = store.get_coin_op_collection_releases_auto()
+        config.jtcores_private_releases_auto = store.get_jtcores_private_releases_auto()
         artwork_default_style = store.get_chipster6502_artwork_default_style()
         config.artwork_default_style = (
             artwork_default_style

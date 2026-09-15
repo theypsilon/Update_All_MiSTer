@@ -96,7 +96,9 @@ class Config:
     # Specific Updating Toggles
     encc_forks: str = "pinned_linux"  # Possible values: the keys of AllDBs.distribution_mister_forks()
     download_beta_cores: bool = False
+    jtcores_private_releases_auto: bool = True
     coin_op_collection_releases: str = "public"  # Possible values: databases.COIN_OP_COLLECTION_RELEASES
+    coin_op_collection_releases_auto: bool = True
     names_region: str = 'JP'
     names_char_code: str = 'CHAR18'
     names_sort_code: str = 'Common'

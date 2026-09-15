@@ -38,19 +38,13 @@ class TestLocalStore(unittest.TestCase):
         self.assertEqual(False, store.get_download_beta_cores())
         self.assertEqual(['download_beta_cores'], store.changed_fields())
 
-    def test_set_allow_retroaccount_jt_beta_auto_enable___updates_field_and_marks_store_dirty(self):
-        store = LocalStore({'allow_retroaccount_jt_beta_auto_enable': True})
+    def test_set_jtcores_private_releases_auto___updates_field_and_marks_store_dirty(self):
+        store = LocalStore({'jtcores_private_releases_auto': True})
 
-        store.set_allow_retroaccount_jt_beta_auto_enable(False)
+        store.set_jtcores_private_releases_auto(False)
 
-        self.assertEqual(False, store.get_allow_retroaccount_jt_beta_auto_enable())
-        self.assertEqual(['allow_retroaccount_jt_beta_auto_enable'], store.changed_fields())
-
-    def test_get_introduced_pinned_linux_distribution_mister___when_field_is_missing___returns_false_without_marking_store_dirty(self):
-        store = LocalStore({})
-
-        self.assertEqual(False, store.get_introduced_pinned_linux_distribution_mister())
-        self.assertEqual([], store.changed_fields())
+        self.assertEqual(False, store.get_jtcores_private_releases_auto())
+        self.assertEqual(['jtcores_private_releases_auto'], store.changed_fields())
 
     def test_set_introduced_pinned_linux_distribution_mister___adds_field_and_marks_store_dirty(self):
         store = LocalStore({})

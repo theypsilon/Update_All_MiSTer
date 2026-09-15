@@ -60,7 +60,8 @@ def make_new_local_store(store_migrator):
         'use_settings_screen_theme_in_log_viewer': default_config.use_settings_screen_theme_in_log_viewer,
         'autoreboot': default_config.autoreboot,
         'download_beta_cores': default_config.download_beta_cores,
-        'allow_retroaccount_jt_beta_auto_enable': True,
+        'jtcores_private_releases_auto': True,
+        'coin_op_collection_releases_auto': True,
         'names_region': default_config.names_region,
         'names_char_code': default_config.names_char_code,
         'names_sort_code': default_config.names_sort_code,
@@ -75,6 +76,7 @@ def make_new_local_store(store_migrator):
         'chipster6502_artwork_default_style': default_config.artwork_default_style,
         'chipster6502_artwork_db_styles': {},
         'introduced_related_database_ids': [],
+        'introduced_pinned_linux_distribution_mister': False,
     }
 
 

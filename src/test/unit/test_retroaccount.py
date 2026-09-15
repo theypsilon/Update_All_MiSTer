@@ -25,6 +25,7 @@ import unittest
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
 from test.logger_tester import LoggerSpy, NoLogger
+from test.update_all_service_tester import CoinOpCollectionServiceStub
 from update_all.config import Config
 from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FOLDER_mame, FILE_jtbeta, FILE_jtbeta_alt, FILE_patreon_key, FILE_patreon_key_md5, \
     FILE_retroaccount_device_id, FILE_retroaccount_user_json, FILE_retroaccount_verified_chip_id
@@ -220,7 +221,7 @@ class TestRetroAccountService(unittest.TestCase):
             stream.getvalue()
         )
 
-    def test_mister_sync___when_session_returns_active_jtbeta_access___tries_to_auto_enable_jt_private_releases(self):
+    def test_mister_sync___when_session_returns_active_jtbeta_access___follows_it_into_jt_private_releases(self):
         jtcores_service = _JtcoresServiceStub()
         sut, _file_system, _gateway, _encryption = tester(
             files=default_sync_files(),
@@ -231,9 +232,9 @@ class TestRetroAccountService(unittest.TestCase):
 
         mister_sync(sut)
 
-        self.assertEqual(1, jtcores_service.enable_private_beta_cores_from_retroaccount_if_allowed_calls)
+        self.assertEqual([True], jtcores_service.follow_retroaccount_benefit_calls)
 
-    def test_mister_sync___when_session_returns_inactive_jtbeta_access___does_not_auto_enable_jt_private_releases(self):
+    def test_mister_sync___when_session_returns_inactive_jtbeta_access___follows_it_out_of_jt_private_releases(self):
         jtcores_service = _JtcoresServiceStub()
         sut, _file_system, _gateway, _encryption = tester(
             files=default_sync_files(),
@@ -244,9 +245,9 @@ class TestRetroAccountService(unittest.TestCase):
 
         mister_sync(sut)
 
-        self.assertEqual(0, jtcores_service.enable_private_beta_cores_from_retroaccount_if_allowed_calls)
+        self.assertEqual([False], jtcores_service.follow_retroaccount_benefit_calls)
 
-    def test_mister_sync___when_session_does_not_return_jtbeta_access___does_not_auto_enable_jt_private_releases(self):
+    def test_mister_sync___when_session_does_not_return_jtbeta_access___does_not_follow_anything(self):
         jtcores_service = _JtcoresServiceStub()
         sut, _file_system, _gateway, _encryption = tester(
             files=default_sync_files(),
@@ -257,7 +258,52 @@ class TestRetroAccountService(unittest.TestCase):
 
         mister_sync(sut)
 
-        self.assertEqual(0, jtcores_service.enable_private_beta_cores_from_retroaccount_if_allowed_calls)
+        self.assertEqual([], jtcores_service.follow_retroaccount_benefit_calls)
+
+    def test_mister_sync___when_session_returns_coin_op_license_access___tries_to_auto_enable_that_release_kind(self):
+        coin_op_service = CoinOpCollectionServiceStub()
+        sut, _file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'coinop': {'license_access': True, 'license_access_kind': 'alpha', 'skip_license_renewal': False}}},
+            coin_op_collection_service=coin_op_service,
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual(['alpha'], coin_op_service.follow_retroaccount_benefit_calls)
+        self.assertEqual(BenefitState.ACTIVE, sut.coin_op_access_sync_state())
+        self.assertEqual('alpha', sut.coin_op_benefit_releases())
+
+    def test_mister_sync___when_session_returns_inactive_coin_op_license_access___follows_it_back_to_public(self):
+        coin_op_service = CoinOpCollectionServiceStub()
+        sut, _file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'coinop': {'license_access': False, 'skip_license_renewal': False}}},
+            coin_op_collection_service=coin_op_service,
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual(['public'], coin_op_service.follow_retroaccount_benefit_calls)
+        self.assertEqual(BenefitState.INACTIVE, sut.coin_op_access_sync_state())
+        self.assertEqual('public', sut.coin_op_benefit_releases())
+
+    def test_mister_sync___when_session_does_not_return_coin_op_benefit___keeps_checking_state_and_does_not_follow_anything(self):
+        coin_op_service = CoinOpCollectionServiceStub()
+        sut, _file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'jtbeta_access': True}},
+            coin_op_collection_service=coin_op_service,
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual([], coin_op_service.follow_retroaccount_benefit_calls)
+        self.assertEqual(BenefitState.CHECKING, sut.coin_op_access_sync_state())
+        self.assertIsNone(sut.coin_op_benefit_releases())
 
     def test_mister_sync___when_session_is_revoked___emits_ltsv_credentials_removed_event(self):
         stream = io.StringIO()
@@ -440,7 +486,7 @@ class TestAnyToRetroAccountFileDescription(unittest.TestCase):
 def mister_sync(sut: RetroAccountService) -> None:
     sut.mister_sync(NoopUpdateOutput())
 
-def tester(files=None, folders=None, gateway_result=SessionResult.VALID, gateway_response=None, logger=None, jtcores_service=None):
+def tester(files=None, folders=None, gateway_result=SessionResult.VALID, gateway_response=None, logger=None, jtcores_service=None, coin_op_collection_service=None):
     config = Config()
     config_provider = GenericProvider[Config]()
     config_provider.initialize(config)
@@ -455,6 +501,7 @@ def tester(files=None, folders=None, gateway_result=SessionResult.VALID, gateway
         gateway,
         encryption,
         jtcores_service or _JtcoresServiceStub(),
+        coin_op_collection_service or CoinOpCollectionServiceStub(),
     ), file_system, gateway, encryption
 
 
@@ -492,10 +539,10 @@ class _EncryptionSpy:
 
 class _JtcoresServiceStub:
     def __init__(self):
-        self.enable_private_beta_cores_from_retroaccount_if_allowed_calls = 0
+        self.follow_retroaccount_benefit_calls = []
 
-    def enable_private_beta_cores_from_retroaccount_if_allowed(self):
-        self.enable_private_beta_cores_from_retroaccount_if_allowed_calls += 1
+    def follow_retroaccount_benefit(self, private_releases: bool):
+        self.follow_retroaccount_benefit_calls.append(private_releases)
 
 
 class _RetroAccountGatewayStub:

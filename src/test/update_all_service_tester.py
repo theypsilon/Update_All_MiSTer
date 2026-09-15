@@ -47,6 +47,7 @@ from update_all.countdown import Countdown
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs, all_dbs
 from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
 from update_all.jtcores_service import JtcoresService
+from update_all.coin_op_collection_service import CoinOpCollectionService
 from update_all.file_system import FileSystem
 from update_all.local_repository import LocalRepository
 from update_all.local_store import LocalStore
@@ -487,7 +488,7 @@ class ArcadeOrganizerServiceStub(ArcadeOrganizerService):
 
 
 class RetroAccountServiceTester(RetroAccountService):
-    def __init__(self, file_system: FileSystem = None, config_provider: GenericProvider[Config] = None, retroaccount_gateway: RetroAccountGateway = None, encryption: Encryption = None, store_provider: GenericProvider[LocalStore] = None, jtcores_service: JtcoresService = None):
+    def __init__(self, file_system: FileSystem = None, config_provider: GenericProvider[Config] = None, retroaccount_gateway: RetroAccountGateway = None, encryption: Encryption = None, store_provider: GenericProvider[LocalStore] = None, jtcores_service: JtcoresService = None, coin_op_collection_service: CoinOpCollectionService = None):
         config_provider = config_provider or GenericProvider[Config]()
         file_system = file_system or FileSystemFactory().create_for_system_scope()
         del store_provider
@@ -498,6 +499,7 @@ class RetroAccountServiceTester(RetroAccountService):
             retroaccount_gateway or RetroAccountGatewayTester(config_provider=config_provider, file_system=file_system),
             encryption or EncryptionTester(config_provider=config_provider, file_system=file_system),
             jtcores_service or JtcoresServiceStub(),
+            coin_op_collection_service or CoinOpCollectionServiceStub(),
         )
         self.mister_sync_calls = []
 
@@ -507,7 +509,15 @@ class RetroAccountServiceTester(RetroAccountService):
 
 class JtcoresServiceStub:
     def __init__(self):
-        self.enable_private_beta_cores_from_retroaccount_if_allowed_calls = 0
+        self.follow_retroaccount_benefit_calls = []
 
-    def enable_private_beta_cores_from_retroaccount_if_allowed(self) -> None:
-        self.enable_private_beta_cores_from_retroaccount_if_allowed_calls += 1
+    def follow_retroaccount_benefit(self, private_releases: bool) -> None:
+        self.follow_retroaccount_benefit_calls.append(private_releases)
+
+
+class CoinOpCollectionServiceStub:
+    def __init__(self):
+        self.follow_retroaccount_benefit_calls = []
+
+    def follow_retroaccount_benefit(self, releases: str) -> None:
+        self.follow_retroaccount_benefit_calls.append(releases)

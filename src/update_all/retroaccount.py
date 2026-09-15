@@ -30,6 +30,8 @@ from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FOLDER_mame, FILE_jtbet
     FILE_patreon_key_prev, FILE_JOTEGO_mra_pack_json, FILE_JOTEGO_mra_pack_ini
 from update_all.encryption import Encryption, EncryptionResult
 from update_all.jtcores_service import JtcoresService
+from update_all.coin_op_collection_service import CoinOpCollectionService
+from update_all.databases import DEFAULT_COIN_OP_COLLECTION_RELEASES
 from update_all.retroaccount_gateway import RetroAccountGateway, SessionResult
 from update_all.update_output import NoopUpdateOutput, UpdateOutput
 from update_all.retroaccount_ui import DeviceLogin, DeviceLoginRenderer, RetroAccountClient
@@ -74,6 +76,7 @@ class _RetroAccountFileDescription(_RetroAccountFileDescriptionRequired, total=F
 class _SyncTransition:
     update_all_extras_active: Optional[bool] = None
     jtbeta_access_active: Optional[bool] = None
+    coin_op_license_access_kind: Optional[str] = None  # None when the benefit is absent, '' when it is inactive
     device_label: Optional[str] = None
     save_device_id: Optional[str] = None
     save_user_json: Optional[dict[str, Any]] = field(default=None, repr=False)
@@ -86,6 +89,15 @@ class _SyncTransition:
     credentials_were_revoked: bool = False
     connection_failed: bool = False
     need_login: bool = False
+
+
+def coin_op_license_access_kind_from_benefits(benefits: Any) -> Optional[str]:
+    coinop = benefits.get('coinop', None) if isinstance(benefits, dict) else None
+    if not isinstance(coinop, dict):
+        return None
+    if not any_to_bool(coinop.get('license_access', None)):
+        return ''
+    return any_to_nonfalsy_str(coinop.get('license_access_kind', None)) or ''
 
 
 def any_to_retroaccount_file_description(val: Any, discard_prev: bool = False) -> Optional[_RetroAccountFileDescription]:
@@ -126,18 +138,21 @@ def _credentials_removed_reason(transition: _SyncTransition) -> str:
 
 
 class RetroAccountService(RetroAccountClient):
-    def __init__(self, logger: Logger, file_system: FileSystem, config_provider: GenericProvider[Config], retroaccount_gateway: RetroAccountGateway, encryption: Encryption, jtcores_service: JtcoresService):
+    def __init__(self, logger: Logger, file_system: FileSystem, config_provider: GenericProvider[Config], retroaccount_gateway: RetroAccountGateway, encryption: Encryption, jtcores_service: JtcoresService, coin_op_collection_service: CoinOpCollectionService):
         self._logger = logger
         self._file_system = file_system
         self._config_provider = config_provider
         self._retroaccount_gateway = retroaccount_gateway
         self._encryption = encryption
         self._jtcores_service = jtcores_service
+        self._coin_op_collection_service = coin_op_collection_service
         self._has_installed_update_all_patreon_key = False
         self._has_installed_jtbeta = False
         self._update_all_extras: Optional[bool] = None
         self._update_all_extras_sync_state: BenefitState = BenefitState.CHECKING
         self._jtbeta_access_sync_state: BenefitState = BenefitState.CHECKING
+        self._coin_op_access_sync_state: BenefitState = BenefitState.CHECKING
+        self._coin_op_benefit_releases: Optional[str] = None
         self._device_label: Optional[str] = None
         self._update_all_patreon_key_prev_file: Optional[_RetroAccountFileDescription] = None
         self._important_messages: list[ImportantMessage] = []
@@ -147,6 +162,13 @@ class RetroAccountService(RetroAccountClient):
 
     def jtbeta_access_sync_state(self) -> BenefitState:
         return self._jtbeta_access_sync_state
+
+    def coin_op_access_sync_state(self) -> BenefitState:
+        return self._coin_op_access_sync_state
+
+    def coin_op_benefit_releases(self) -> Optional[str]:
+        # The releases the benefit grants: a tier when active, 'public' when inactive, None while unknown.
+        return self._coin_op_benefit_releases
 
     def get_device_label(self) -> Optional[str]:
         return self._device_label
@@ -344,7 +366,8 @@ class RetroAccountService(RetroAccountClient):
                 install_jt_mra_pack=any_to_retroaccount_file_description(benefits.get('jt_mra_pack', None), discard_prev=True),
                 remove_update_all_patreon_key=any_to_bool(benefits.get('update_all_patreon_key_remove', None)),
                 update_all_extras_active=any_to_bool(benefits.get('update_all_extras', None)),
-                jtbeta_access_active=any_to_bool(benefits.get('jtbeta_access', None)),
+                jtbeta_access_active=any_to_bool(benefits.get('jtbeta_access', None), default=None),
+                coin_op_license_access_kind=coin_op_license_access_kind_from_benefits(benefits),
             )
 
         if result == SessionResult.REVOKED:
@@ -379,14 +402,21 @@ class RetroAccountService(RetroAccountClient):
                 self._update_all_extras_sync_state = BenefitState.INACTIVE
 
         if transition.jtbeta_access_active is not None:
-            if transition.jtbeta_access_active:
-                self._jtbeta_access_sync_state = BenefitState.ACTIVE
-                self._jtcores_service.enable_private_beta_cores_from_retroaccount_if_allowed()
+            self._jtbeta_access_sync_state = BenefitState.ACTIVE if transition.jtbeta_access_active else BenefitState.INACTIVE
+            self._jtcores_service.follow_retroaccount_benefit(transition.jtbeta_access_active)
+
+        if transition.coin_op_license_access_kind is not None:
+            if transition.coin_op_license_access_kind:
+                self._coin_op_access_sync_state = BenefitState.ACTIVE
+                self._coin_op_benefit_releases = transition.coin_op_license_access_kind
             else:
-                self._jtbeta_access_sync_state = BenefitState.INACTIVE
+                self._coin_op_access_sync_state = BenefitState.INACTIVE
+                self._coin_op_benefit_releases = DEFAULT_COIN_OP_COLLECTION_RELEASES
+            self._coin_op_collection_service.follow_retroaccount_benefit(self._coin_op_benefit_releases)
 
         if transition.connection_failed:
             self._jtbeta_access_sync_state = BenefitState.CONNECTION_FAILED
+            self._coin_op_access_sync_state = BenefitState.CONNECTION_FAILED
             self._update_all_extras_sync_state = BenefitState.CONNECTION_FAILED
 
         if transition.device_label is not None:
@@ -394,6 +424,7 @@ class RetroAccountService(RetroAccountClient):
 
         if transition.need_login:
             self._jtbeta_access_sync_state = BenefitState.NEED_LOGIN
+            self._coin_op_access_sync_state = BenefitState.NEED_LOGIN
             self._update_all_extras_sync_state = BenefitState.NEED_LOGIN
             self._device_label = None
             self._file_system.unlink(FILE_retroaccount_verified_chip_id, verbose=False)

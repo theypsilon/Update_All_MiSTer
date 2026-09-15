@@ -47,8 +47,8 @@ class LocalStore:
     def get_pocket_backup(self): return self._props['pocket_backup']
     def set_download_beta_cores(self, download_beta_cores: bool) -> None: self.generic_set('download_beta_cores', download_beta_cores)
     def get_download_beta_cores(self) -> bool: return self._props['download_beta_cores']
-    def set_allow_retroaccount_jt_beta_auto_enable(self, value: bool) -> None: self.generic_set('allow_retroaccount_jt_beta_auto_enable', value)
-    def get_allow_retroaccount_jt_beta_auto_enable(self) -> bool: return self._props['allow_retroaccount_jt_beta_auto_enable']
+    def set_jtcores_private_releases_auto(self, value: bool) -> None: self.generic_set('jtcores_private_releases_auto', value)
+    def get_jtcores_private_releases_auto(self) -> bool: return self._props['jtcores_private_releases_auto']
     def set_names_region(self, names_region: str) -> None: self.generic_set('names_region', names_region)
     def get_names_region(self) -> str: return self._props['names_region']
     def set_names_char_code(self, names_char_code: str) -> None: self.generic_set('names_char_code', names_char_code)
@@ -86,11 +86,17 @@ class LocalStore:
         value = self._props['introduced_arcade_names_txt']
         return value == 'true' if type(value) is str else value
 
+    def set_coin_op_collection_releases_auto(self, auto: bool) -> None:
+        self.generic_set('coin_op_collection_releases_auto', auto)
+
+    def get_coin_op_collection_releases_auto(self) -> bool:
+        return self._props['coin_op_collection_releases_auto']
+
     def set_introduced_pinned_linux_distribution_mister(self, introduced: bool) -> None:
         self.generic_set('introduced_pinned_linux_distribution_mister', introduced)
 
     def get_introduced_pinned_linux_distribution_mister(self) -> bool:
-        return self._props.get('introduced_pinned_linux_distribution_mister', False)
+        return self._props['introduced_pinned_linux_distribution_mister']
 
     def set_introduced_related_database_ids(self, db_ids: List[str]) -> None:
         self.generic_set('introduced_related_database_ids', db_ids)

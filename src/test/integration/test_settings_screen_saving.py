@@ -118,6 +118,36 @@ class TestSettingsScreenSaving(unittest.TestCase):
             read_ini_contents(state.files[downloader_ini]['content'])[all_dbs('').COIN_OP_COLLECTION.db_id]['filter'],
         )
 
+    def test_calculate_needs_save___when_leaving_coin_op_auto_releases_for_public___returns_only_internal_changes(self) -> None:
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        choose_coin_op_collection_releases(ui, 'public')
+        sut.calculate_needs_save(ui)
+        self.assertEqual('  - Internals (coin_op_collection_releases_auto)', ui.get_value('needs_save_file_list'))
+
+    def test_calculate_needs_save___when_choosing_coin_op_beta_releases_manually___returns_downloader_ini_and_internal_changes(self) -> None:
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        choose_coin_op_collection_releases(ui, 'beta')
+        sut.calculate_needs_save(ui)
+        self.assertEqual('  - Internals (coin_op_collection_releases_auto)\n  - downloader.ini', ui.get_value('needs_save_file_list'))
+
+    def test_save___when_choosing_coin_op_beta_releases_manually___writes_the_filter_and_stores_that_auto_is_off(self) -> None:
+        sut, ui, state = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        choose_coin_op_collection_releases(ui, 'beta')
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+        self.assertEqual(False, state.files[store_json.lower()]['json']['coin_op_collection_releases_auto'])
+        self.assertEqual(
+            '[MiSTer] !coinop-collection-alpha',
+            read_ini_contents(state.files[downloader_ini]['content'])[all_dbs('').COIN_OP_COLLECTION.db_id]['filter'],
+        )
+
+    def test_save___when_coin_op_releases_is_not_touched___keeps_auto_on(self) -> None:
+        sut, ui, state = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        ui.set_value('autoreboot', 'true')
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+        self.assertEqual(True, state.files[store_json.lower()]['json']['coin_op_collection_releases_auto'])
+
     def test_calculate_needs_save___with_default_downloader_ini___returns_no_changes(self) -> None:
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
         sut.calculate_needs_save(ui)
@@ -620,7 +650,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
 
         sut.calculate_needs_save(ui)
 
-        self.assertEqual('  - Internals (allow_retroaccount_jt_beta_auto_enable)\n  - downloader.ini', ui.get_value('needs_save_file_list'))
+        self.assertEqual('  - Internals (jtcores_private_releases_auto)\n  - downloader.ini', ui.get_value('needs_save_file_list'))
 
     def test_save__when_disabling_jt_private_releases_with_mister_filter___removes_jtcores_filter(self):
         sut, ui, fs = tester(files={downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores_with_mister_inheritance.ini').read_text()}})
@@ -632,7 +662,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
 
         assertEqualIni(self, 'test/fixtures/downloader_ini/just_jtcores.ini', fs.files[downloader_ini.lower()]['content'])
 
-    def test_save__when_disabling_jt_private_releases___stores_the_choice_blocking_future_retroaccount_auto_enable(self):
+    def test_save__when_disabling_jt_private_releases___stores_the_choice_and_turns_auto_off(self):
         sut, ui, fs = tester(files={downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtpremium.ini').read_text()}})
 
         self.assertEqual('true', ui.get_value('download_beta_cores'))
@@ -641,7 +671,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.save(ui)
 
         self.assertEqual(False, fs.files[store_json.lower()]['json']['download_beta_cores'])
-        self.assertEqual(False, fs.files[store_json.lower()]['json']['allow_retroaccount_jt_beta_auto_enable'])
+        self.assertEqual(False, fs.files[store_json.lower()]['json']['jtcores_private_releases_auto'])
 
     def test_save__when_enabling_jt_private_releases___stores_the_choice(self):
         sut, ui, fs = tester(files={downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores.ini').read_text()}})
@@ -652,9 +682,9 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.save(ui)
 
         self.assertEqual(True, fs.files[store_json.lower()]['json']['download_beta_cores'])
-        self.assertEqual(False, fs.files[store_json.lower()]['json']['allow_retroaccount_jt_beta_auto_enable'])
+        self.assertEqual(False, fs.files[store_json.lower()]['json']['jtcores_private_releases_auto'])
 
-    def test_save__when_jt_private_releases_is_not_toggled___leaves_retroaccount_auto_enable_authoritative(self):
+    def test_save__when_jt_private_releases_is_not_toggled___keeps_auto_on(self):
         sut, ui, fs = tester(files={downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtpremium.ini').read_text()}})
 
         ui.set_value('autoreboot', 'true')
@@ -662,7 +692,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.calculate_needs_save(ui)
         sut.save(ui)
 
-        self.assertEqual(True, fs.files[store_json.lower()]['json']['allow_retroaccount_jt_beta_auto_enable'])
+        self.assertEqual(True, fs.files[store_json.lower()]['json']['jtcores_private_releases_auto'])
         self.assertEqual(False, fs.files[store_json.lower()]['json']['download_beta_cores'])
 
     def test_calculate_needs_save__when_jt_private_releases_toggled_while_jtcores_is_disabled___returns_internal_change(self):
@@ -1005,16 +1035,22 @@ def degauss_frontend_add_effect():
             "target": {"mister": {"main": "degauss/MiSTer_Degauss"}}}
 
 
+def choose_coin_op_collection_releases(ui: UiContextStub, releases: str) -> None:
+    """What the Settings Screen model does when the user rotates the Coin-Op Releases entry away from Auto."""
+    ui.set_value('coin_op_collection_releases_auto', 'false')
+    ui.set_value('coin_op_collection_releases', releases)
+
+
 def toggle_jt_private_releases(ui: UiContextStub) -> None:
     """What the Settings Screen model does when the user hits the Install Private Releases entry."""
     ui.set_value('download_beta_cores', 'false' if ui.get_value('download_beta_cores') == 'true' else 'true')
-    ui.set_value('download_beta_cores_chosen', 'true')
+    ui.set_value('jtcores_private_releases_auto', 'false')
 
 
 def files_with_jtcores_disabled_and_private_releases_chosen() -> dict:
     local_store = make_new_local_store(StoreMigratorTester())
     local_store['download_beta_cores'] = True
-    local_store['allow_retroaccount_jt_beta_auto_enable'] = False
+    local_store['jtcores_private_releases_auto'] = False
     return {
         downloader_ini: {'content': downloader_ini_content_only_update_all_db()},
         store_json: {'content': json.dumps(local_store)},

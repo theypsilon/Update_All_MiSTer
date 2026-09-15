@@ -97,7 +97,6 @@ class TestDatabases(unittest.TestCase):
         self.assertEqual(DEFAULT_COIN_OP_COLLECTION_RELEASES, Config().coin_op_collection_releases)
         for releases in COIN_OP_COLLECTION_RELEASES:
             self.assertIn(releases, settings_screen_model()['formatters']['coin_op_collection_releases'])
-            self.assertIn(releases, settings_screen_model()['formatters']['coin_op_collection_releases_description'])
 
     def test_coin_op_collection_filter_by_releases___public_has_no_filter_beta_excludes_alpha_and_alpha_inherits_mister(self):
         self.assertIsNone(coin_op_collection_filter_by_releases('public'))

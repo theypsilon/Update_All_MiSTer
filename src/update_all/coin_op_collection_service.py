@@ -17,12 +17,12 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 from update_all.config import Config
-from update_all.databases import ALL_DB_IDS
+from update_all.databases import ALL_DB_IDS, COIN_OP_COLLECTION_RELEASES
 from update_all.ini_repository import IniRepository
 from update_all.other import GenericProvider
 
 
-class JtcoresService:
+class CoinOpCollectionService:
     def __init__(
             self,
             config_provider: GenericProvider[Config],
@@ -31,13 +31,16 @@ class JtcoresService:
         self._config_provider = config_provider
         self._ini_repository = ini_repository
 
-    def follow_retroaccount_benefit(self, private_releases: bool) -> None:
+    def follow_retroaccount_benefit(self, releases: str) -> None:
         config = self._config_provider.get()
-        if not config.jtcores_private_releases_auto or ALL_DB_IDS['JTCORES'] not in config.databases:
+        if not config.coin_op_collection_releases_auto:
             return
 
-        if config.download_beta_cores == private_releases:
+        if releases not in COIN_OP_COLLECTION_RELEASES or ALL_DB_IDS['COIN_OP_COLLECTION'] not in config.databases:
             return
 
-        config.download_beta_cores = private_releases
+        if config.coin_op_collection_releases == releases:
+            return
+
+        config.coin_op_collection_releases = releases
         self._ini_repository.write_downloader_ini(config)

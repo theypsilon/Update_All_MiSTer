@@ -1718,11 +1718,33 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertIn('Beta and Alpha releases only work for Coin-Op Collection Patreon supporters.', text)
         self.assertIn('Alpha also includes the Beta releases.', text)
+        self.assertIn('Auto follows the Coin-Op benefit of your RetroAccount.', text)
 
     def test_jt_private_releases_entry___info_explains_that_private_releases_need_patreon_support(self):
         text = self._execute_core_info('# Install Private Releases').messages[0]['text']
 
         self.assertIn('Private releases only work for JOTEGO Patreon supporters.', text)
+        self.assertIn('Auto follows the JOTEGO benefit of your RetroAccount.', text)
+
+    def test_coin_op_releases_entry___cycles_auto_public_beta_alpha_and_back_to_auto_with_the_benefit_releases(self):
+        entry = self._entry('coin_op_collection_menu', '# Releases')
+        self.assertEqual('{coin_op_collection_releases_auto:coin_op_collection_releases_text}', entry['description'])
+
+        state = {'coin_op_collection_releases_auto': 'true', 'coin_op_collection_releases': 'public', 'retroaccount_coin_op_benefit_releases': 'beta'}
+        expected = [('false', 'public'), ('false', 'beta'), ('false', 'alpha'), ('true', 'beta'), ('false', 'public')]
+        for step in expected:
+            app = self._execute_tools_action(entry['actions']['ok'], state, entrypoint='coin_op_collection_menu')
+            state = {key: app.ui.get_value(key) for key in state}
+            self.assertEqual(step, (state['coin_op_collection_releases_auto'], state['coin_op_collection_releases']))
+
+    def test_coin_op_releases_entry___back_to_auto_without_a_known_benefit___falls_back_to_public(self):
+        entry = self._entry('coin_op_collection_menu', '# Releases')
+        state = {'coin_op_collection_releases_auto': 'false', 'coin_op_collection_releases': 'alpha', 'retroaccount_coin_op_benefit_releases': 'public'}
+
+        app = self._execute_tools_action(entry['actions']['ok'], state, entrypoint='coin_op_collection_menu')
+
+        self.assertEqual('true', app.ui.get_value('coin_op_collection_releases_auto'))
+        self.assertEqual('public', app.ui.get_value('coin_op_collection_releases'))
 
     def test_jtcores_and_coin_op_enable_entries___offer_no_info(self):
         for menu, title in (('jtcores_menu', '# JTCORES Enabled'), ('coin_op_collection_menu', '# Coin-Op')):
@@ -1735,17 +1757,22 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('# Install Private Releases', entries[1]['title'])
         self.assertEqual(2, len(entries))
 
-    def test_jt_private_releases_entry___when_disabled___enables_private_releases_and_marks_it_as_chosen(self):
-        app = self._execute_jt_private_releases_action(download_beta_cores='false')
+    def test_jt_private_releases_entry___cycles_auto_no_yes_and_back_to_auto_with_the_benefit_state(self):
+        entry = self.model['items']['jtcores_menu']['entries'][1]
+        self.assertEqual('{jtcores_private_releases_auto:download_beta_cores_text}', entry['description'])
 
-        self.assertEqual('true', app.ui.get_value('download_beta_cores'))
-        self.assertEqual('true', app.ui.get_value('download_beta_cores_chosen'))
+        state = {'jtcores_private_releases_auto': 'true', 'download_beta_cores': 'false', 'retroaccount_jtbeta_benefit_active': 'true'}
+        expected = [('false', 'false'), ('false', 'true'), ('true', 'true'), ('false', 'false')]
+        for step in expected:
+            app = self._execute_jt_private_releases_action(**state)
+            state = {key: app.ui.get_value(key) for key in state}
+            self.assertEqual(step, (state['jtcores_private_releases_auto'], state['download_beta_cores']))
 
-    def test_jt_private_releases_entry___when_enabled___disables_private_releases_and_marks_it_as_chosen(self):
-        app = self._execute_jt_private_releases_action(download_beta_cores='true')
+    def test_jt_private_releases_entry___back_to_auto_without_an_active_benefit___turns_private_releases_off(self):
+        app = self._execute_jt_private_releases_action(jtcores_private_releases_auto='false', download_beta_cores='true', retroaccount_jtbeta_benefit_active='false')
 
+        self.assertEqual('true', app.ui.get_value('jtcores_private_releases_auto'))
         self.assertEqual('false', app.ui.get_value('download_beta_cores'))
-        self.assertEqual('true', app.ui.get_value('download_beta_cores_chosen'))
 
     def test_main_menu___has_frontends_entry_right_above_tools_and_scripts_and_no_analogue_pocket(self):
         for menu in ('main_menu_login', 'main_menu_account'):
@@ -2040,10 +2067,11 @@ class TestSettingsScreenModel(unittest.TestCase):
     def _jt_private_releases_action_chain(self):
         return self.model['items']['jtcores_menu']['entries'][1]['actions']['ok']
 
-    def _execute_jt_private_releases_action(self, download_beta_cores):
+    def _execute_jt_private_releases_action(self, download_beta_cores, jtcores_private_releases_auto='false', retroaccount_jtbeta_benefit_active='false'):
         return self._execute_tools_action(self._jt_private_releases_action_chain(), {
             'download_beta_cores': download_beta_cores,
-            'download_beta_cores_chosen': 'false',
+            'jtcores_private_releases_auto': jtcores_private_releases_auto,
+            'retroaccount_jtbeta_benefit_active': retroaccount_jtbeta_benefit_active,
         }, entrypoint='jtcores_menu')
 
     def _execute_tools_mrext_action(
