@@ -29,7 +29,8 @@ from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOC
     KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH, CHIPSTER6502_ARTWORK_DEFAULT_STYLE, \
     CHIPSTER6502_ARTWORK_STYLES
 from update_all.databases import DB_ID_NAMES_TXT, model_variables_by_db_id, DB_ID_DISTRIBUTION_MISTER, all_dbs, \
-    ALL_DB_IDS, DB_ID_MREXT_TAPTO, chipster6502_artworkdbs, chipster6502_artwork_style_from_db_url
+    ALL_DB_IDS, DB_ID_MREXT_TAPTO, chipster6502_artworkdbs, chipster6502_artwork_style_from_db_url, \
+    coin_op_collection_releases_by_filter
 from update_all.ini_repository import IniRepository
 from update_all.ini_parser import IniParser
 from update_all.local_store import LocalStore
@@ -130,6 +131,10 @@ class ConfigReader:
             parser = downloader_ini[ALL_DB_IDS['RANNYSNICE_WALLPAPERS'].lower()]
             rannysnice_wallpapers_filter = parser.get_string('filter', '').replace('-', '').replace('_', '').lower()
             config.rannysnice_wallpapers_filter = 'ar16-9' if 'ar169' in rannysnice_wallpapers_filter else 'ar4-3' if 'ar43' in rannysnice_wallpapers_filter else 'all'
+
+        if ALL_DB_IDS['COIN_OP_COLLECTION'].lower() in downloader_ini:
+            parser = downloader_ini[ALL_DB_IDS['COIN_OP_COLLECTION'].lower()]
+            config.coin_op_collection_releases = coin_op_collection_releases_by_filter(parser.get_string('filter', None))
 
         for artwork_db in chipster6502_artworkdbs():
             parser = all_ini.get(artwork_db.db_id.lower())

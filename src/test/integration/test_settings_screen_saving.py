@@ -101,6 +101,23 @@ class TestSettingsScreenSaving(unittest.TestCase):
         )
         self.assertEqual(MIRROR_ANDI_BR, sut._store_provider.get().get_mirror())
 
+    def test_calculate_needs_save___with_coin_op_releases_changed___returns_downloader_ini_changes(self) -> None:
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        ui.set_value('coin_op_collection_releases', 'beta')
+        sut.calculate_needs_save(ui)
+        self.assertEqual('  - downloader.ini', ui.get_value('needs_save_file_list'))
+        self.assertEqual('true', ui.get_value('needs_save'))
+
+    def test_save___with_coin_op_releases_set_to_alpha___writes_mister_inheritance_filter_into_its_section(self) -> None:
+        sut, ui, state = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        ui.set_value('coin_op_collection_releases', 'alpha')
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+        self.assertEqual(
+            '[MiSTer]',
+            read_ini_contents(state.files[downloader_ini]['content'])[all_dbs('').COIN_OP_COLLECTION.db_id]['filter'],
+        )
+
     def test_calculate_needs_save___with_default_downloader_ini___returns_no_changes(self) -> None:
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
         sut.calculate_needs_save(ui)

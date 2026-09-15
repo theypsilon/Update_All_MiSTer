@@ -1103,6 +1103,7 @@ class SettingsScreen(UiApplication):
             *gather_variable_declarations(settings_screen_model(), "store"),
             *gather_variable_declarations(settings_screen_model(), "summary"),
             *gather_variable_declarations(settings_screen_model(), "jt_ini"),
+            *gather_variable_declarations(settings_screen_model(), "coin_op_collection"),
             *gather_variable_declarations(settings_screen_model(), "names_ini"),
             *gather_variable_declarations(settings_screen_model(), "arcade_roms"),
             *gather_variable_declarations(settings_screen_model(), "rannysnice_wallpapers"),

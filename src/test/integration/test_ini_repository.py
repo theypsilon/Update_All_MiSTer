@@ -20,7 +20,7 @@ from pathlib import Path
 from test.ini_assertions import assertEqualIni
 from test.logger_tester import LoggerSpy
 from test.spy_os_utils import SpyOsUtils
-from test.testing_objects import downloader_ini
+from test.testing_objects import downloader_ini, ini_with_db_ids
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, DOWNLOADER_INI_STANDARD_PATH, MEDIA_FAT
 from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, all_dbs
@@ -221,6 +221,23 @@ class TestIniRepository(unittest.TestCase):
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/just_jtcores_with_filter_wtf.ini').read_text()}
         }, config=config)
         assertEqualIni(self, 'test/fixtures/downloader_ini/just_jtcores_with_negated_jtbeta.ini', fs.files[downloader_ini]['content'])
+
+    def test_write_downloader_ini___with_coin_op_beta_releases___writes_filter_excluding_alpha(self):
+        fs = write_coin_op_downloader_ini(existing_filter=None, releases='beta')
+        self.assertEqual('[MiSTer] !coinop-collection-alpha', coin_op_section(fs)['filter'])
+
+    def test_write_downloader_ini___with_coin_op_alpha_releases___writes_mister_inheritance_filter(self):
+        fs = write_coin_op_downloader_ini(existing_filter='[MiSTer] !coinop-collection-alpha', releases='alpha')
+        self.assertEqual('[MiSTer]', coin_op_section(fs)['filter'])
+
+    def test_write_downloader_ini___with_coin_op_public_releases___removes_any_existing_filter(self):
+        fs = write_coin_op_downloader_ini(existing_filter='[MiSTer] custom-terms', releases='public')
+        self.assertNotIn('filter', coin_op_section(fs))
+
+    def test_write_downloader_ini___with_coin_op_beta_releases_but_db_disabled___removes_the_section(self):
+        config = Config(databases={all_dbs('').UPDATE_ALL_MISTER.db_id}, coin_op_collection_releases='beta')
+        fs = test_write_downloader_ini(files={downloader_ini: {'content': coin_op_ini('[MiSTer]')}}, config=config)
+        self.assertNotIn(all_dbs('').COIN_OP_COLLECTION.db_id, read_ini_contents(fs.files[downloader_ini.lower()]['content']).sections())
 
     def test_write_downloader_ini___with_update_all_ini_and_a_bunch_other_things___puts_update_all_ini_at_the_end(self):
         config = Config(databases=default_databases())
@@ -495,3 +512,18 @@ class TestIniRepository(unittest.TestCase):
 
         self.assertEqual(['keep_db'], read_ini_contents(state.files[multi_path]['content']).sections())
         self.assertNotIn(solo_path, state.files)
+
+
+def coin_op_ini(existing_filter) -> str:
+    coin_op = all_dbs('').COIN_OP_COLLECTION
+    filter_line = f'filter = {existing_filter}\n' if existing_filter is not None else ''
+    return f'[{coin_op.db_id}]\ndb_url = {coin_op.db_url}\n{filter_line}\n' + ini_with_db_ids(all_dbs('').UPDATE_ALL_MISTER.db_id)
+
+
+def write_coin_op_downloader_ini(existing_filter, releases: str) -> FileSystemState:
+    config = Config(databases={all_dbs('').COIN_OP_COLLECTION.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id}, coin_op_collection_releases=releases)
+    return test_write_downloader_ini(files={downloader_ini: {'content': coin_op_ini(existing_filter)}}, config=config)
+
+
+def coin_op_section(fs: FileSystemState) -> dict:
+    return read_ini_contents(fs.files[downloader_ini.lower()]['content'])[all_dbs('').COIN_OP_COLLECTION.db_id]

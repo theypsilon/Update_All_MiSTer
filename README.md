@@ -13,6 +13,7 @@ Update All has a Settings Screen that allows you to configure which databases an
     * You may additionally enable patreon-only cores.
 - **Other Cores**. A selection of curated databases that provide unofficial cores, including:
     * [Coin-Op Collection](https://github.com/Coin-OpCollection/Distribution-MiSTerFPGA). Downloads cores developed by [the Coin-Op Collection organization](https://github.com/Coin-OpCollection). **[Default option]**
+        * You may additionally enable their beta cores, or their alpha and beta cores.
     * [Arcade Offset](https://github.com/toryalai1/Arcade_Offset). Downloads patched arcade games curated by [Toya](https://github.com/toryalai1). **[Disabled by default]**
     * [LLAPI Forks Folder](https://github.com/MiSTer-LLAPI/LLAPI_folder_MiSTer). Downloads [LLAPI cores](https://github.com/MiSTer-LLAPI/Updater_script_MiSTer/wiki) which are compatible with BlisSTer and [LLAMA](https://github.com/bootsector/LLAMA). **[Disabled by default]**
     * And more...

@@ -20,7 +20,9 @@ import unittest
 from update_all.config import Config
 from update_all.databases import all_dbs, all_mirrors, ids_sequence, ALL_DB_IDS, AllDBs, AllDBsAndiBr, Database, \
     MIRROR_ANDI_BR, MIRROR_MYSTICAL_REALM_ORG, chipster6502_artworkdbs, \
-    chipster6502_artwork_style_from_db_url, DEFAULT_ENCC_FORKS, DB_ID_DISTRIBUTION_MISTER
+    chipster6502_artwork_style_from_db_url, DEFAULT_ENCC_FORKS, DB_ID_DISTRIBUTION_MISTER, \
+    COIN_OP_COLLECTION_RELEASES, DEFAULT_COIN_OP_COLLECTION_RELEASES, coin_op_collection_filter_by_releases, \
+    coin_op_collection_releases_by_filter
 from update_all.ini_repository import candidate_databases
 from update_all.settings_screen_model import settings_screen_model
 
@@ -86,6 +88,35 @@ class TestDatabases(unittest.TestCase):
         for encc_forks, db in dbs.distribution_mister_forks().items():
             self.assertTrue(db.db_url.startswith('https://mister.cc.cd/'))
             self.assertEqual(encc_forks, dbs.encc_forks_by_distribution_mister_db_url(db.db_url))
+
+    def test_coin_op_collection_releases___match_the_model_variable_values_and_defaults(self):
+        variable = settings_screen_model()['items']['coin_op_collection_menu']['variables']['coin_op_collection_releases']
+
+        self.assertEqual(list(COIN_OP_COLLECTION_RELEASES), variable['values'])
+        self.assertEqual(DEFAULT_COIN_OP_COLLECTION_RELEASES, variable['default'])
+        self.assertEqual(DEFAULT_COIN_OP_COLLECTION_RELEASES, Config().coin_op_collection_releases)
+        for releases in COIN_OP_COLLECTION_RELEASES:
+            self.assertIn(releases, settings_screen_model()['formatters']['coin_op_collection_releases'])
+            self.assertIn(releases, settings_screen_model()['formatters']['coin_op_collection_releases_description'])
+
+    def test_coin_op_collection_filter_by_releases___public_has_no_filter_beta_excludes_alpha_and_alpha_inherits_mister(self):
+        self.assertIsNone(coin_op_collection_filter_by_releases('public'))
+        self.assertEqual('[MiSTer] !coinop-collection-alpha', coin_op_collection_filter_by_releases('beta'))
+        self.assertEqual('[MiSTer]', coin_op_collection_filter_by_releases('alpha'))
+        self.assertIsNone(coin_op_collection_filter_by_releases('wrong'))
+
+    def test_coin_op_collection_releases_by_filter___round_trips_every_release_value(self):
+        for releases in COIN_OP_COLLECTION_RELEASES:
+            self.assertEqual(releases, coin_op_collection_releases_by_filter(coin_op_collection_filter_by_releases(releases)))
+
+    def test_coin_op_collection_releases_by_filter___on_missing_empty_or_fully_excluding_filter___returns_public(self):
+        self.assertEqual('public', coin_op_collection_releases_by_filter(None))
+        self.assertEqual('public', coin_op_collection_releases_by_filter('   '))
+        self.assertEqual('public', coin_op_collection_releases_by_filter('[MiSTer] !coinop-collection-beta !coinop-collection-alpha'))
+
+    def test_coin_op_collection_releases_by_filter___is_case_insensitive_and_ignores_other_terms(self):
+        self.assertEqual('beta', coin_op_collection_releases_by_filter('[mister] arcade !COINOP-COLLECTION-ALPHA'))
+        self.assertEqual('alpha', coin_op_collection_releases_by_filter('arcade'))
 
     def test_all_mirrors___includes_mystical_realm_and_andi_br(self):
         self.assertEqual(

@@ -510,6 +510,29 @@ def _toggle_jt_private_releases(): return [
 ]
 
 
+def _coin_op_collection_info(): return [{
+    "ui": "message",
+    "header": "Coin-Op Collection",
+    "text": [
+        "Public releases are available to everybody.",
+        "Beta and Alpha releases only work for Coin-Op Collection Patreon supporters.",
+        "Alpha also includes the Beta releases.",
+        "Check patreon.com/atrac17",
+    ],
+}]
+
+
+def _jtcores_info(): return [{
+    "ui": "message",
+    "header": "JTCORES for MiSTer",
+    "text": [
+        "Public releases are available to everybody.",
+        "Private releases only work for JOTEGO Patreon supporters.",
+        "Check patreon.com/jotego",
+    ],
+}]
+
+
 def _try_toggle_retroachievements_db(): return [
     {"type": "retroachievements_db_toggle"},
     {"type": "mister_ini_add", "variable": "theypsilon/RetroAchievementsDB_MiSTer",
@@ -932,9 +955,12 @@ def settings_screen_model():
         "yesno": {"false": "No", "true": "Yes"},
         "yesno_reverse": {"false": "Yes", "true": "No"},
         "enabled": {"false": "Off.", "true": "On."},
+        "enabled_disabled": {"false": "Disabled", "true": "Enabled"},
         "encc_forks": {"pinned_linux": "MiSTer-devel", "devel": "MiSTer-devel (Edge Linux)", "db9": "MiSTer-DB9", "aitorgomez": "AitorGomez Fork"},
         "encc_forks_description": {"pinned_linux": "Official Cores from MiSTer-devel", "devel": "Official Cores from MiSTer-devel with the newest Linux image", "db9": "DB9 / SNAC8 forks with ENCC", "aitorgomez": "AitorGomez Fork"},
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
+        "coin_op_collection_releases": {"public": "public", "beta": "beta", "alpha": "alpha"},
+        "coin_op_collection_releases_description": {"public": "Public only", "beta": "Public and Beta", "alpha": "Public, Beta and Alpha"},
         "mirror": {"": "Off.", "off": "Off.", "andi_br": "Andi Brazil"},
         "overscan": {"none": "None", "low": "Low", "medium": "Medium", "high": "High", "maximum": "Max"},
         "bytes_to_gb": {},
@@ -1256,7 +1282,7 @@ def settings_screen_model():
             ]
         },
         "jtcores_menu": {
-            "type": "dialog_sub_menu",
+            "type": "dialog_sub_menu_info",
             "header": "JTCORES Settings",
             "entries": [
                 {
@@ -1270,7 +1296,35 @@ def settings_screen_model():
                 {
                     "title": "# Install Private Releases",
                     "description": "{download_beta_cores:yesno}",
-                    "actions": {"ok": _toggle_jt_private_releases()}
+                    "actions": {
+                        "ok": _toggle_jt_private_releases(),
+                        "info": _jtcores_info(),
+                    }
+                },
+            ]
+        },
+        "coin_op_collection_menu": {
+            "type": "dialog_sub_menu_info",
+            "header": "Coin-Op Collection Settings",
+            "variables": {
+                "coin_op_collection_releases": {"group": "coin_op_collection", "default": "public", "values": ["public", "beta", "alpha"]},
+            },
+            "entries": [
+                {
+                    "title": "# Coin-Op",
+                    "description": "{coin_op_collection_downloader:enabled_disabled}",
+                    "actions": {
+                        "uninstall": uninstall_db_action("coin_op_collection_downloader", "Coin-OpCollection/Distribution-MiSTerFPGA", "Coin-Op Collection"),
+                        "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
+                    }
+                },
+                {
+                    "title": "# Releases",
+                    "description": "{coin_op_collection_releases:coin_op_collection_releases_description}",
+                    "actions": {
+                        "ok": [{"type": "rotate_variable", "target": "coin_op_collection_releases"}],
+                        "info": _coin_op_collection_info(),
+                    }
                 },
             ]
         },
@@ -1429,9 +1483,9 @@ def settings_screen_model():
             "entries": [
                 {
                     "title": "# Coin-Op Collection",
-                    "description": "{coin_op_collection_downloader:enabled} Arcades made by Coin-Op team",
-                    "actions": {"uninstall": uninstall_db_action("coin_op_collection_downloader", "Coin-OpCollection/Distribution-MiSTerFPGA", "Coin-Op Collection"),
-                        "ok": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
+                    "description": "{coin_op_collection_downloader:enabled} Arcades by CoC ({coin_op_collection_releases})",
+                    "actions": {
+                        "ok": [{"type": "navigate", "target": "coin_op_collection_menu"}],
                         "toggle": [{"type": "rotate_variable", "target": "coin_op_collection_downloader"}],
                     }
                 },

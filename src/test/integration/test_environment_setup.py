@@ -219,6 +219,27 @@ class TestEnvironmentSetup(unittest.TestCase):
             expected_config=Config(encc_forks='devel', databases={all_dbs('').MISTER_DEVEL_DISTRIBUTION_MISTER.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id})
         )
 
+    def test_setup___with_coin_op_without_filter___returns_public_releases(self):
+        self.assertCoinOpReleases(existing_filter=None, expected='public')
+
+    def test_setup___with_coin_op_filter_excluding_alpha___returns_beta_releases(self):
+        self.assertCoinOpReleases(existing_filter='[MiSTer] !coinop-collection-alpha', expected='beta')
+
+    def test_setup___with_coin_op_mister_inheritance_filter___returns_alpha_releases(self):
+        self.assertCoinOpReleases(existing_filter='[MiSTer]', expected='alpha')
+
+    def test_setup___with_coin_op_filter_excluding_beta_and_alpha___returns_public_releases(self):
+        self.assertCoinOpReleases(existing_filter='[MiSTer] !coinop-collection-beta !coinop-collection-alpha', expected='public')
+
+    def assertCoinOpReleases(self, existing_filter, expected: str) -> None:
+        coin_op = all_dbs('').COIN_OP_COLLECTION
+        filter_line = f'filter = {existing_filter}\n' if existing_filter is not None else ''
+        content = f'[{coin_op.db_id}]\ndb_url = {coin_op.db_url}\n{filter_line}\n' + ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER'])
+        self.assertSetup(
+            files={downloader_ini: content},
+            expected_config=Config(coin_op_collection_releases=expected, databases={coin_op.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id})
+        )
+
     def test_setup___with_duplicate_distribution_in_drop_in___main_downloader_ini_url_wins(self):
         main_url = _DISTRIBUTION_MISTER_DB9_URL
         drop_in_url = _DISTRIBUTION_MISTER_DB_URL

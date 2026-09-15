@@ -123,6 +123,12 @@ _SOFTWARE_DATABASE_DESCRIPTIONS = {**_HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS, **_
 
 # Every database entry that explains itself must credit whoever maintains it, both in
 # its info message and in its enable confirmation when it has one.
+# Entries whose Info credits the Patreon page that gates their private releases, instead of a maintainer.
+_PATREON_GATED_ENTRIES = {
+    '# Install Private Releases': 'Check patreon.com/jotego',
+    '# Releases': 'Check patreon.com/atrac17',
+}
+
 _DATABASE_MAINTAINERS = {
     '# Game Artwork DBs': 'chipster6502',
     '# Game Manuals (EN) DBs': 'Moondandy',
@@ -491,7 +497,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual(action, entry['actions']['toggle'])
 
     def test_core_menus___have_select_info_back_buttons(self):
-        for menu_id in ('other_cores_menu', 'hybrid_cores_menu'):
+        for menu_id in ('other_cores_menu', 'hybrid_cores_menu', 'jtcores_menu', 'coin_op_collection_menu'):
             with self.subTest(menu_id=menu_id):
                 menu = dict(self.model['items'][menu_id])
                 expand_type(menu, self.model['base_types'])
@@ -522,7 +528,6 @@ class TestSettingsScreenModel(unittest.TestCase):
 
     def test_other_cores_db_entries___have_conditional_uninstall_action(self):
         expected = {
-            '# Coin-Op Collection': ('coin_op_collection_downloader', 'Coin-OpCollection/Distribution-MiSTerFPGA'),
             '# RetroAchievements Cores': ('theypsilon/RetroAchievementsDB_MiSTer', 'theypsilon/RetroAchievementsDB_MiSTer'),
             '# Physical CD Support': ('MultiDatabases/physical-disc', 'MultiDatabases/physical-disc'),
             '# Unofficial Distribution': ('unofficial_updater', 'theypsilon_unofficial_distribution'),
@@ -600,6 +605,8 @@ class TestSettingsScreenModel(unittest.TestCase):
     def test_primary_tools_and_extra_content_db_entries___have_explicit_uninstall_actions(self):
         expected = [
             ('jtcores_menu', '# JTCORES Enabled', 'jotego_updater', 'jtcores', 'JTCORES for MiSTer'),
+            ('coin_op_collection_menu', '# Coin-Op', 'coin_op_collection_downloader',
+             'Coin-OpCollection/Distribution-MiSTerFPGA', 'Coin-Op Collection'),
             ('arcade_roms_database_menu', '# Arcade ROMs Database Enabled', 'arcade_roms_db_downloader',
              'arcade_roms_db', 'Arcade ROMs Database'),
             ('names_txt_menu', '# Arcade Names TXT', 'arcade_names_txt', 'arcade_names_txt', 'Arcade Names TXT'),
@@ -1218,7 +1225,16 @@ class TestSettingsScreenModel(unittest.TestCase):
         ]
 
         self.assertGreaterEqual(len(titled_entries), 20)
-        self.assertEqual(sorted(_DATABASE_MAINTAINERS), sorted(titled_entries))
+        self.assertEqual(sorted([*_DATABASE_MAINTAINERS, *_PATREON_GATED_ENTRIES]), sorted(titled_entries))
+
+    def test_patreon_gated_entries___info_ends_with_the_patreon_page_instead_of_a_maintainer_credit(self):
+        for title, patreon in _PATREON_GATED_ENTRIES.items():
+            with self.subTest(title=title):
+                text = self._execute_core_info(title).messages[0]['text']
+
+                self.assertEqual('Public releases are available to everybody.', text[0])
+                self.assertEqual(patreon, text[-1])
+                self.assertEqual([], [line for line in text if line.startswith('Maintainer:')])
 
     def test_software_database_info___explains_what_enabling_the_database_installs(self):
         for title in _SOFTWARE_DATABASE_TITLES:
@@ -1696,6 +1712,21 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertEqual(1, len(menus), f'{title} should live in exactly one menu, found: {menus}')
         return menus[0]
+
+    def test_coin_op_releases_entry___info_explains_that_beta_and_alpha_need_patreon_support(self):
+        text = self._execute_core_info('# Releases').messages[0]['text']
+
+        self.assertIn('Beta and Alpha releases only work for Coin-Op Collection Patreon supporters.', text)
+        self.assertIn('Alpha also includes the Beta releases.', text)
+
+    def test_jt_private_releases_entry___info_explains_that_private_releases_need_patreon_support(self):
+        text = self._execute_core_info('# Install Private Releases').messages[0]['text']
+
+        self.assertIn('Private releases only work for JOTEGO Patreon supporters.', text)
+
+    def test_jtcores_and_coin_op_enable_entries___offer_no_info(self):
+        for menu, title in (('jtcores_menu', '# JTCORES Enabled'), ('coin_op_collection_menu', '# Coin-Op')):
+            self.assertNotIn('info', self._entry(menu, title)['actions'], f'{menu}: {title}')
 
     def test_jtcores_submenu___has_no_separate_auto_enable_option(self):
         entries = self.model['items']['jtcores_menu']['entries']

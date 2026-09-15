@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+### Added
+- New Coin-Op Collection submenu inside Other Cores to choose which releases to install: Public, Beta, or Alpha. Beta adds the beta cores and Alpha adds both the alpha and beta cores, by writing the matching filter into the Coin-Op Collection section of downloader.ini.
+
 ### Changed
 - The default Main Distribution now points to a [republication of the MiSTer-devel Distribution](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/distribution-mister-pinned-linux) that is identical to the official one except for Linux, which is held at a stable release. Existing installations on the previous default are moved to it once, and the previous default remains selectable as "MiSTer-devel (Edge Linux)" in the Main Distribution menu, where the choice is kept from then on.
 

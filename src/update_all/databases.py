@@ -34,6 +34,28 @@ class Database:
 
 DB_ID_DISTRIBUTION_MISTER = 'distribution_mister'
 DEFAULT_ENCC_FORKS = 'pinned_linux'
+COIN_OP_COLLECTION_RELEASES: Tuple[str, ...] = ('public', 'beta', 'alpha')
+DEFAULT_COIN_OP_COLLECTION_RELEASES = COIN_OP_COLLECTION_RELEASES[0]
+_COIN_OP_COLLECTION_EXCLUDE_BETA = '!coinop-collection-beta'
+_COIN_OP_COLLECTION_EXCLUDE_ALPHA = '!coinop-collection-alpha'
+_COIN_OP_COLLECTION_FILTERS_BY_RELEASES: Dict[str, Optional[str]] = {
+    'public': None,  # No filter: the db's own default excludes beta and alpha cores.
+    'beta': f'[MiSTer] {_COIN_OP_COLLECTION_EXCLUDE_ALPHA}',
+    'alpha': '[MiSTer]',
+}
+
+
+def coin_op_collection_filter_by_releases(releases: str) -> Optional[str]:
+    return _COIN_OP_COLLECTION_FILTERS_BY_RELEASES.get(releases, _COIN_OP_COLLECTION_FILTERS_BY_RELEASES[DEFAULT_COIN_OP_COLLECTION_RELEASES])
+
+
+def coin_op_collection_releases_by_filter(db_filter: Optional[str]) -> str:
+    if db_filter is None or db_filter.strip() == '':
+        return 'public'
+    terms = db_filter.lower().split()
+    if _COIN_OP_COLLECTION_EXCLUDE_ALPHA in terms:
+        return 'public' if _COIN_OP_COLLECTION_EXCLUDE_BETA in terms else 'beta'
+    return 'alpha'
 DB_ID_NAMES_TXT = 'names_txt'
 DB_ID_ARCADE_NAMES_TXT = 'arcade_names_txt'
 DB_ID_MREXT_ALL = 'mrext/all'

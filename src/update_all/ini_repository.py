@@ -27,7 +27,7 @@ from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_
     DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, \
     DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI
 from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, ajgowans_manualsdbs, \
-    chipster6502_artworkdbs, chipster6502_artwork_db_with_style
+    chipster6502_artworkdbs, chipster6502_artwork_db_with_style, coin_op_collection_filter_by_releases
 from update_all.file_system import FileSystem
 from update_all.ini_parser import IniParser
 from update_all.logger import Logger
@@ -620,6 +620,14 @@ class IniRepository:
                 del ini[lower_id]['filter']
             elif not beta_cores_active and filter_value != '' and '!jtbeta' not in filter_value:
                 ini[lower_id]['filter'] = f'{filter_value} !jtbeta'
+
+        coin_op_lower_id = ALL_DB_IDS['COIN_OP_COLLECTION'].lower()
+        if ALL_DB_IDS['COIN_OP_COLLECTION'] in config.databases and coin_op_lower_id in ini:
+            coin_op_filter = coin_op_collection_filter_by_releases(config.coin_op_collection_releases)
+            if coin_op_filter is None:
+                ini[coin_op_lower_id].pop('filter', None)
+            else:
+                ini[coin_op_lower_id]['filter'] = coin_op_filter
 
     def _try_build_new_downloader_ini_contents(self, config: Config) -> Optional[str]:
         ini: Dict[str, Dict[str, str]] = self.get_downloader_ini(cached=False)
