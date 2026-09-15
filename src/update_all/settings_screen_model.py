@@ -957,7 +957,7 @@ def settings_screen_model():
         "enabled": {"false": "Off.", "true": "On."},
         "enabled_disabled": {"false": "Disabled", "true": "Enabled"},
         "encc_forks": {"pinned_linux": "MiSTer-devel", "devel": "MiSTer-devel (Edge Linux)", "db9": "MiSTer-DB9", "aitorgomez": "AitorGomez Fork"},
-        "encc_forks_description": {"pinned_linux": "Official Cores from MiSTer-devel", "devel": "Official Cores from MiSTer-devel with the newest Linux image", "db9": "DB9 / SNAC8 forks with ENCC", "aitorgomez": "AitorGomez Fork"},
+        "encc_forks_description": {"pinned_linux": "Official Cores from MiSTer-devel", "devel": "Official Cores with the newest Linux", "db9": "DB9 / SNAC8 forks with ENCC", "aitorgomez": "AitorGomez Fork"},
         "download_beta_cores": {"false": "jtcores", "true": "jtpremium"},
         "coin_op_collection_releases": {"public": "public", "beta": "beta", "alpha": "alpha"},
         "coin_op_collection_releases_description": {"public": "Public only", "beta": "Public and Beta", "alpha": "Public, Beta and Alpha"},
