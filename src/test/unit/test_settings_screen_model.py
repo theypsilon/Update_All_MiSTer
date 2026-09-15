@@ -43,6 +43,7 @@ _HYBRID_CORE_TITLES = {
     '# Sonic Mania MiSTer',
     '# MiSTer Duke3D',
     '# MiSTer Quake',
+    '# Diablo MiSTer',
     '# NBlood',
     '# Maldita Castilla MiSTer',
     '# Solarus MiSTer',
@@ -68,6 +69,7 @@ _FILE_DEPENDENT_CORE_PATHS = {
     '# Sonic Mania MiSTer': ('MultiDatabases/sonic-mania', ('games/sonic-mania/Data.rsdk',)),
     '# MiSTer Duke3D': ('MultiDatabases/duke3d', ('games/DUKE3D/duke3d.grp',)),
     '# MiSTer Quake': ('MultiDatabases/mister-quake', ('games/quake/id1/',)),
+    '# Diablo MiSTer': ('MultiDatabases/diablo', ('games/Diablo/',)),
     '# NBlood': ('MultiDatabases/nblood', ('games/NBlood/',)),
     '# Solarus MiSTer': ('MultiDatabases/solarus', ('games/Solarus/quests/', 'Scripts/Solarus.sh')),
     '# 3S-ARM': ('MultiDatabases/3s-arm', ('games/3s-arm/resources/SF33RD.AFS',)),
@@ -102,6 +104,7 @@ _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
     '# Sonic Mania MiSTer': 'Sonic Mania runs as a native recompilation of its reverse-engineered engine, in software rather than in the FPGA.',
     '# MiSTer Duke3D': 'MiSTer Duke3D is a native engine port that runs in software rather than in the FPGA.',
     '# MiSTer Quake': 'MiSTer Quake is a native engine port that runs in software rather than in the FPGA.',
+    '# Diablo MiSTer': 'Diablo MiSTer runs the DevilutionX engine port of Diablo and Hellfire in software rather than in the FPGA.',
     '# NBlood': 'NBlood is a Blood source port that runs in software rather than in the FPGA.',
     '# Maldita Castilla MiSTer': "Maldita Castilla MiSTer runs Locomalito's arcade action game on MiSTer's ARM processor, while a custom FPGA core accelerates its graphics.",
     '# Solarus MiSTer': 'Solarus MiSTer runs the Solarus 2D action-RPG engine in software rather than in the FPGA.',
@@ -149,6 +152,7 @@ _DATABASE_MAINTAINERS = {
     '# Sonic Mania MiSTer': 'kimchiman52',
     '# MiSTer Duke3D': 'neofreno',
     '# MiSTer Quake': 'neofreno',
+    '# Diablo MiSTer': 'Meathax',
     '# NBlood': 'Meathax',
     '# Maldita Castilla MiSTer': 'gmcnaught',
     '# Solarus MiSTer': 'gmcnaught',
@@ -173,6 +177,7 @@ _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
     '# Sonic Mania MiSTer': 'launch and play Sonic Mania',
     '# MiSTer Duke3D': 'launch and play Duke Nukem 3D',
     '# MiSTer Quake': 'launch and play Quake',
+    '# Diablo MiSTer': 'play the Diablo shareware right away, and the full Diablo and Hellfire campaigns',
     '# NBlood': 'launch and play Blood',
     '# Solarus MiSTer': 'play Solarus quests',
     '# 3S-ARM': 'launch and play Street Fighter III: 3rd Strike',
@@ -191,6 +196,7 @@ _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
     '# Sonic Mania MiSTer': 'manually add game data from your own Sonic Mania installation',
     '# MiSTer Duke3D': 'manually add game data from your own Duke Nukem 3D installation',
     '# MiSTer Quake': 'manually add game data from your own Quake installation',
+    '# Diablo MiSTer': 'manually add game data from your own Diablo and Hellfire installations',
     '# NBlood': 'manually add game data from your own Blood: Fresh Supply installation',
     '# Solarus MiSTer': 'manually add the quests you want to play',
     '# 3S-ARM': 'manually add game data from your own PlayStation 2 copy',
@@ -544,6 +550,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# Sonic Mania MiSTer': ('MultiDatabases/sonic-mania', 'MultiDatabases/sonic-mania'),
             '# MiSTer Duke3D': ('MultiDatabases/duke3d', 'MultiDatabases/duke3d'),
             '# MiSTer Quake': ('MultiDatabases/mister-quake', 'MultiDatabases/mister-quake'),
+            '# Diablo MiSTer': ('MultiDatabases/diablo', 'MultiDatabases/diablo'),
             '# NBlood': ('MultiDatabases/nblood', 'MultiDatabases/nblood'),
             '# MegaVGMDrive': ('MultiDatabases/megavgmdrive', 'MultiDatabases/megavgmdrive'),
         }
@@ -1052,6 +1059,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             'MultiDatabases/dreamster',
             'MultiDatabases/duke3d',
             'MultiDatabases/mister-quake',
+            'MultiDatabases/diablo',
             'MultiDatabases/nblood',
             'MultiDatabases/solarus',
             'MultiDatabases/3s-arm',
@@ -1063,6 +1071,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# DreamSTer',
             '# MiSTer Duke3D',
             '# MiSTer Quake',
+            '# Diablo MiSTer',
             '# NBlood',
             '# Solarus MiSTer',
             '# 3S-ARM',
@@ -1074,6 +1083,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             '{MultiDatabases/dreamster:enabled} Experimental Dreamcast emulator',
             '{MultiDatabases/duke3d:enabled} Duke Nukem 3D engine port',
             '{MultiDatabases/mister-quake:enabled} Quake engine port',
+            '{MultiDatabases/diablo:enabled} Diablo and Hellfire engine port',
             '{MultiDatabases/nblood:enabled} Blood engine port',
             '{MultiDatabases/solarus:enabled} Solarus 2D action-RPG engine',
             '{MultiDatabases/3s-arm:enabled} Street Fighter III: 3rd Strike port',
@@ -1149,6 +1159,11 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# NBlood',
             'MultiDatabases/nblood',
             "You can launch NBlood from MiSTer's Other folder.",
+        )
+        self._assert_core_menu_location(
+            '# Diablo MiSTer',
+            'MultiDatabases/diablo',
+            "You can launch Diablo and Hellfire from MiSTer's Scripts folder once you copy Diablo.sh and Hellfire.sh from _Other/Diablo/ to Scripts/.",
         )
         self._assert_core_menu_location(
             '# Maldita Castilla MiSTer',
@@ -1381,6 +1396,19 @@ class TestSettingsScreenModel(unittest.TestCase):
         ], app.mister_ini_effects)
         info = self._execute_core_info('# MiSTer Quake')
         self.assertIn('Quake engine runtime', ' '.join(info.messages[0]['text']))
+
+    def test_diablo_entry___when_yes_is_selected___enables_without_ini_edits_and_lists_the_retail_archives(self):
+        app = self._execute_multidatabase_action('# Diablo MiSTer', 'MultiDatabases/diablo', 'false', confirm_action_title='Yes')
+
+        self.assertEqual('true', app.ui.get_value('MultiDatabases/diablo'))
+        self.assertEqual([], app.messages)
+        self.assertEqual([], app.mister_ini_effects)
+        confirmation = ' '.join(app.confirms[0]['text'])
+        self.assertIn('DIABDAT.MPQ', confirmation)
+        for archive in ('hellfire.mpq', 'hfmonk.mpq', 'hfmusic.mpq', 'hfvoice.mpq'):
+            self.assertIn(archive, confirmation)
+        self.assertIn('games/Diablo/', confirmation)
+        self.assertIn('shareware', confirmation)
 
     def test_nblood_entry___when_yes_is_selected___arms_ini_sections_and_identifies_source_port_in_info(self):
         app = self._execute_multidatabase_action(

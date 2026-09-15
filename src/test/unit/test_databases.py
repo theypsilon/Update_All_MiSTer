@@ -123,6 +123,16 @@ class TestDatabases(unittest.TestCase):
             all_mirrors(),
         )
 
+    def test_diablo___uses_multidatabases_publication(self):
+        db = all_dbs('').DIABLO
+
+        self.assertEqual('MultiDatabases/diablo', db.db_id)
+        self.assertEqual(
+            'https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/diablo/db.json.zip',
+            db.db_url,
+        )
+        self.assertEqual('Diablo MiSTer', db.title)
+
     def test_nblood___uses_multidatabases_publication(self):
         db = all_dbs('').NBLOOD
 

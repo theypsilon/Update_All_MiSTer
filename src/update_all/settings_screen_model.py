@@ -1828,6 +1828,7 @@ def settings_screen_model():
                 "MultiDatabases/dreamster": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/duke3d": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-quake": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/diablo": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/nblood": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/solarus": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/3s-arm": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -2049,6 +2050,38 @@ def settings_screen_model():
                                 "You can launch MiSTer Quake from MiSTer's Other folder.",
                                 "You must manually add game data from your own Quake installation before playing.",
                                 "Maintainer: neofreno",
+                            ],
+                        }],
+                    }
+                },
+                {
+                    "title": "# Diablo MiSTer",
+                    "description": "{MultiDatabases/diablo:enabled} Diablo and Hellfire engine port",
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/diablo", "Diablo MiSTer"),
+                        "ok": _try_toggle_with_user_dependency(
+                            "MultiDatabases/diablo",
+                            "Diablo MiSTer",
+                            [
+                                "Diablo MiSTer runs the DevilutionX engine port of Diablo and Hellfire in software rather than in the FPGA.",
+                                "You can launch Diablo and Hellfire from MiSTer's Scripts folder once you copy Diablo.sh and Hellfire.sh from _Other/Diablo/ to Scripts/.",
+                                " ",
+                                "Diablo MiSTer installs the shareware data, so the shareware portion runs as is.",
+                                "For the full game, copy DIABDAT.MPQ from your own Diablo installation to:",
+                                "games/Diablo/",
+                                "For the Hellfire expansion, also copy hellfire.mpq, hfmonk.mpq, hfmusic.mpq, and hfvoice.mpq from your own Hellfire installation there.",
+                                "Maintainer: Meathax",
+                            ],
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "Diablo MiSTer",
+                            "text": [
+                                "Diablo MiSTer runs the DevilutionX engine port of Diablo and Hellfire in software rather than in the FPGA.",
+                                "Enabling this database installs the Diablo and Hellfire cores, the DevilutionX engine with its launcher, and the shareware and language data.",
+                                "You can play the Diablo shareware right away, and the full Diablo and Hellfire campaigns with your own game data.",
+                                "You can launch Diablo and Hellfire from MiSTer's Scripts folder once you copy Diablo.sh and Hellfire.sh from _Other/Diablo/ to Scripts/.",
+                                "You must manually add game data from your own Diablo and Hellfire installations for the full campaigns.",
+                                "Maintainer: Meathax",
                             ],
                         }],
                     }

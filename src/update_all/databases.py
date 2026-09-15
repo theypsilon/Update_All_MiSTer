@@ -140,6 +140,7 @@ class AllDBs:
         self.MISTER_DVD = Database(db_id='MultiDatabases/mister-dvd', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-dvd/db.json', title='MiSTer DVD')
         self.MISTER_HIFI = Database(db_id='MultiDatabases/mister-hifi', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-hifi/db.json', title='MiSTer Hi-Fi')
         self.MISTER_QUAKE = Database(db_id='MultiDatabases/mister-quake', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mister-quake/db.json', title='MiSTer Quake')
+        self.DIABLO = Database(db_id='MultiDatabases/diablo', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/diablo/db.json.zip', title='Diablo MiSTer')
         self.NBLOOD = Database(db_id='MultiDatabases/nblood', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/nblood/db.json', title='NBlood')
         self.MMS2_GB = Database(db_id='MultiDatabases/mms2-gb', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/mms2-gb/db.json', title='MMS2 GB Core')
         self.PAPRIUM = Database(db_id='MultiDatabases/paprium', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/paprium/db.json', title='Paprium MegaDrive')
