@@ -86,6 +86,12 @@ class LocalStore:
         value = self._props['introduced_arcade_names_txt']
         return value == 'true' if type(value) is str else value
 
+    def set_introduced_pinned_linux_distribution_mister(self, introduced: bool) -> None:
+        self.generic_set('introduced_pinned_linux_distribution_mister', introduced)
+
+    def get_introduced_pinned_linux_distribution_mister(self) -> bool:
+        return self._props.get('introduced_pinned_linux_distribution_mister', False)
+
     def set_introduced_related_database_ids(self, db_ids: List[str]) -> None:
         self.generic_set('introduced_related_database_ids', db_ids)
 

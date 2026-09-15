@@ -31,9 +31,9 @@ from test.update_all_service_tester import TransitionServiceTester, local_store,
 from test.update_output_tester import UpdateOutputTester
 from test.spy_os_utils import SpyOsUtils
 from update_all.config import Config
-from update_all.constants import FILE_MiSTer_ini, KENV_SKIP_DOWNLOADER, MEDIA_FAT
+from update_all.constants import FILE_MiSTer_ini, KENV_SKIP_DOWNLOADER, KENV_MIRROR_ID, MEDIA_FAT
 from update_all.databases import ALL_DB_IDS, all_dbs, DB_ID_DISTRIBUTION_MISTER, DB_ID_MREXT_ALL, DB_ID_MREXT_TAPTO, \
-    DB_ID_ZAPAROO_MISTER
+    DB_ID_ZAPAROO_MISTER, MIRROR_ANDI_BR
 from update_all.ini_repository import read_ini_contents
 from update_all.transition_service import RELATED_DATABASE_ACTIVATION_RELATIONSHIPS
 from update_all.update_output import NoopUpdateOutput
@@ -66,6 +66,7 @@ def test_transitions_with_state(config: Config, fs_state: FileSystemState, store
     config_reader.fill_config_with_database_sections(config, downloader_ini)
     sut.from_not_existing_downloader_ini(config, update_output)
     sut.from_update_all_1(config, store, update_output)
+    sut.from_devel_distribution_to_pinned_linux_distribution(config, store, downloader_ini, update_output)
     sut.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, store, update_output)
     sut.from_active_databases_to_related_databases(config, store, update_output)
     sut.from_old_db_urls_to_actual_db_urls(config, downloader_ini, update_output)
@@ -102,6 +103,25 @@ def run_artwork_transition(files: Dict[str, str], store=None, update_output=None
 
 
 mister_ini_path = f'{MEDIA_FAT}/{FILE_MiSTer_ini}'
+
+
+def distribution_ini(db_url: str) -> str:
+    return f'[{DB_ID_DISTRIBUTION_MISTER}]\ndb_url = {db_url}\n\n' + downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER'])
+
+
+def run_pinned_linux_distribution_transition(files: Dict[str, str], store=None, update_output=None, os_utils=None, env=None):
+    config = Config()
+    fs_state = FileSystemState(config=config, files={filename: {'content': content} for filename, content in files.items()})
+    fs = FileSystemFactory(state=fs_state).create_for_system_scope()
+    os_utils = os_utils or SpyOsUtils()
+    ini_repos = IniRepositoryTester(file_system=fs, os_utils=os_utils)
+    config_reader = ConfigReaderTester(downloader_ini_repository=ini_repos, file_system=fs, env=None if env is None else {**default_env(), **env})
+    sut = TransitionServiceTester(file_system=fs, os_utils=os_utils, ini_repository=ini_repos)
+    downloader_ini_sections = config_reader.read_downloader_ini()
+    config_reader.fill_config_with_environment(config)
+    config_reader.fill_config_with_database_sections(config, downloader_ini_sections)
+    sut.from_devel_distribution_to_pinned_linux_distribution(config, store or local_store(), downloader_ini_sections, update_output or NoopUpdateOutput())
+    return fs_state
 
 
 def run_physical_disc_transition(mister_ini: str = None, update_output=None, db_enabled: bool = True):
@@ -328,6 +348,78 @@ class TestTransitionService(unittest.TestCase):
         )
         self.assertEqual([target], store.get_introduced_related_database_ids())
 
+    def test_pinned_linux_distribution_with_devel_url___moves_it_to_the_stale_url_once(self):
+        store = local_store()
+        fs = test_transitions_with_contents({downloader_ini: distribution_ini(devel_distribution_url())}, store=store)
+
+        self.assertEqual(testableIni(distribution_ini(pinned_linux_distribution_url())), testableIni(fs.files[downloader_ini]['content']))
+        self.assertTrue(store.get_introduced_pinned_linux_distribution_mister())
+
+    def test_pinned_linux_distribution_with_devel_url_after_the_transition_already_ran___keeps_the_devel_url(self):
+        store = local_store()
+        store.set_introduced_pinned_linux_distribution_mister(True)
+        store.mark_as_cleaned()
+        fs = run_pinned_linux_distribution_transition({downloader_ini: distribution_ini(devel_distribution_url())}, store=store)
+
+        self.assertEqual(testableIni(distribution_ini(devel_distribution_url())), testableIni(fs.files[downloader_ini]['content']))
+        self.assertFalse(store.needs_save())
+
+    def test_pinned_linux_distribution_with_db9_url___keeps_the_db9_url_and_marks_the_transition_as_done(self):
+        db9_url = all_dbs('').MISTER_DB9_DISTRIBUTION_MISTER.db_url
+        store = local_store()
+        fs = test_transitions_with_contents({downloader_ini: distribution_ini(db9_url)}, store=store)
+
+        self.assertEqual(testableIni(distribution_ini(db9_url)), testableIni(fs.files[downloader_ini]['content']))
+        self.assertTrue(store.get_introduced_pinned_linux_distribution_mister())
+
+    def test_pinned_linux_distribution_with_custom_url___keeps_the_custom_url_and_marks_the_transition_as_done(self):
+        custom_url = 'https://example.com/custom-distribution/db.json.zip'
+        store = local_store()
+        fs = test_transitions_with_contents({downloader_ini: distribution_ini(custom_url)}, store=store)
+
+        self.assertEqual(testableIni(distribution_ini(custom_url)), testableIni(fs.files[downloader_ini]['content']))
+        self.assertTrue(store.get_introduced_pinned_linux_distribution_mister())
+
+    def test_pinned_linux_distribution_with_mirrored_devel_url___moves_it_to_the_mirrored_stale_url(self):
+        mirrored_devel_url = all_dbs(MIRROR_ANDI_BR).MISTER_DEVEL_DISTRIBUTION_MISTER.db_url
+
+        fs = run_pinned_linux_distribution_transition({downloader_ini: distribution_ini(mirrored_devel_url)}, env={KENV_MIRROR_ID: MIRROR_ANDI_BR})
+
+        self.assertEqual(
+            all_dbs(MIRROR_ANDI_BR).MISTER_PINNED_LINUX_DISTRIBUTION_MISTER.db_url,
+            read_ini_contents(fs.files[downloader_ini]['content'])[DB_ID_DISTRIBUTION_MISTER]['db_url']
+        )
+
+    def test_pinned_linux_distribution_with_devel_url_and_skipping_downloader___changes_nothing_and_keeps_the_transition_pending(self):
+        store = local_store()
+
+        fs = run_pinned_linux_distribution_transition({downloader_ini: distribution_ini(devel_distribution_url())}, store=store, env={KENV_SKIP_DOWNLOADER: 'true'})
+
+        self.assertEqual(testableIni(distribution_ini(devel_distribution_url())), testableIni(fs.files[downloader_ini]['content']))
+        self.assertFalse(store.get_introduced_pinned_linux_distribution_mister())
+
+    def test_pinned_linux_distribution_transition_event___is_emitted_with_the_new_url_before_waiting(self):
+        os_utils = SpyOsUtils()
+        output = UpdateOutputTester(os_utils)
+
+        run_pinned_linux_distribution_transition({downloader_ini: distribution_ini(devel_distribution_url())}, update_output=output, os_utils=os_utils)
+
+        self.assertEqual([(
+            'from_devel_distribution_to_pinned_linux_distribution',
+            {'db_id': DB_ID_DISTRIBUTION_MISTER, 'db_url': pinned_linux_distribution_url()}
+        )], output.transition_calls)
+        self.assertEqual([[]], output.sleep_calls_at_transition)
+        self.assertEqual([5.0], os_utils.calls_to_sleep)
+
+    def test_pinned_linux_distribution_transition_with_db9_url___emits_no_event_and_does_not_wait(self):
+        os_utils = SpyOsUtils()
+        output = UpdateOutputTester(os_utils)
+
+        run_pinned_linux_distribution_transition({downloader_ini: distribution_ini(all_dbs('').MISTER_DB9_DISTRIBUTION_MISTER.db_url)}, update_output=output, os_utils=os_utils)
+
+        self.assertEqual([], output.transition_calls)
+        self.assertEqual([], os_utils.calls_to_sleep)
+
     def test_manuals_select_all_active_and_one_manuals_db_missing___activates_the_missing_one(self):
         already_active = all_manuals_db_ids()
         missing = already_active.pop()
@@ -527,6 +619,14 @@ class TestTransitionService(unittest.TestCase):
         actual = {filename.lower(): read_description(description) for filename, description in actual.items()}
         expected = {filename.lower(): read_json_or_text(path) for filename, path in expected.items()}
         self.assertEqual(expected, actual)
+
+
+def devel_distribution_url() -> str:
+    return all_dbs('').MISTER_DEVEL_DISTRIBUTION_MISTER.db_url
+
+
+def pinned_linux_distribution_url() -> str:
+    return all_dbs('').MISTER_PINNED_LINUX_DISTRIBUTION_MISTER.db_url
 
 
 def read_description(description: Dict[str, Any]) -> Dict[str, str]:

@@ -45,3 +45,17 @@ class TestLocalStore(unittest.TestCase):
 
         self.assertEqual(False, store.get_allow_retroaccount_jt_beta_auto_enable())
         self.assertEqual(['allow_retroaccount_jt_beta_auto_enable'], store.changed_fields())
+
+    def test_get_introduced_pinned_linux_distribution_mister___when_field_is_missing___returns_false_without_marking_store_dirty(self):
+        store = LocalStore({})
+
+        self.assertEqual(False, store.get_introduced_pinned_linux_distribution_mister())
+        self.assertEqual([], store.changed_fields())
+
+    def test_set_introduced_pinned_linux_distribution_mister___adds_field_and_marks_store_dirty(self):
+        store = LocalStore({})
+
+        store.set_introduced_pinned_linux_distribution_mister(True)
+
+        self.assertEqual(True, store.get_introduced_pinned_linux_distribution_mister())
+        self.assertEqual(['introduced_pinned_linux_distribution_mister'], store.changed_fields())

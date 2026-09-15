@@ -20,8 +20,9 @@ import unittest
 from update_all.config import Config
 from update_all.databases import all_dbs, all_mirrors, ids_sequence, ALL_DB_IDS, AllDBs, AllDBsAndiBr, Database, \
     MIRROR_ANDI_BR, MIRROR_MYSTICAL_REALM_ORG, chipster6502_artworkdbs, \
-    chipster6502_artwork_style_from_db_url
+    chipster6502_artwork_style_from_db_url, DEFAULT_ENCC_FORKS, DB_ID_DISTRIBUTION_MISTER
 from update_all.ini_repository import candidate_databases
+from update_all.settings_screen_model import settings_screen_model
 
 
 class TestDatabases(unittest.TestCase):
@@ -37,6 +38,54 @@ class TestDatabases(unittest.TestCase):
 
     def test_names_locale_by_db_url___on_names_char18_common_jp_db_url___returns_proper_region_value(self):
         self.assertEqual('JP', names_locale_by_db_url(all_dbs('').NAMES_CHAR18_COMMON_JP_TXT.db_url)[0])
+
+    def test_distribution_mister_forks___all_share_the_distribution_mister_db_id(self):
+        self.assertEqual(
+            {DB_ID_DISTRIBUTION_MISTER},
+            {db.db_id for db in all_dbs('').distribution_mister_forks().values()},
+        )
+
+    def test_distribution_mister_forks___match_the_encc_forks_model_values_in_order_and_default(self):
+        encc_forks = settings_screen_model()['variables']['encc_forks']
+
+        self.assertEqual(list(all_dbs('').distribution_mister_forks().keys()), encc_forks['values'])
+        self.assertEqual(DEFAULT_ENCC_FORKS, encc_forks['default'])
+        self.assertEqual(DEFAULT_ENCC_FORKS, encc_forks['values'][0])
+        self.assertEqual(DEFAULT_ENCC_FORKS, Config().encc_forks)
+
+    def test_distribution_mister_forks___every_value_has_a_label_and_a_description_formatter(self):
+        formatters = settings_screen_model()['formatters']
+
+        for encc_forks in all_dbs('').distribution_mister_forks():
+            self.assertIn(encc_forks, formatters['encc_forks'])
+            self.assertIn(encc_forks, formatters['encc_forks_description'])
+
+    def test_db_distribution_mister_by_encc_forks___returns_the_stale_db_by_default_and_for_unknown_values(self):
+        dbs = all_dbs('')
+
+        self.assertEqual(dbs.MISTER_PINNED_LINUX_DISTRIBUTION_MISTER, dbs.db_distribution_mister_by_encc_forks(DEFAULT_ENCC_FORKS))
+        self.assertEqual(dbs.MISTER_PINNED_LINUX_DISTRIBUTION_MISTER, dbs.db_distribution_mister_by_encc_forks('wrong'))
+        self.assertEqual(dbs.MISTER_DEVEL_DISTRIBUTION_MISTER, dbs.db_distribution_mister_by_encc_forks('devel'))
+
+    def test_encc_forks_by_distribution_mister_db_url___round_trips_every_fork_case_insensitively(self):
+        dbs = all_dbs('')
+
+        for encc_forks, db in dbs.distribution_mister_forks().items():
+            self.assertEqual(encc_forks, dbs.encc_forks_by_distribution_mister_db_url(db.db_url))
+            self.assertEqual(encc_forks, dbs.encc_forks_by_distribution_mister_db_url(db.db_url.upper()))
+
+    def test_encc_forks_by_distribution_mister_db_url___on_missing_or_unknown_url___returns_the_default(self):
+        dbs = all_dbs('')
+
+        self.assertEqual(DEFAULT_ENCC_FORKS, dbs.encc_forks_by_distribution_mister_db_url(None))
+        self.assertEqual(DEFAULT_ENCC_FORKS, dbs.encc_forks_by_distribution_mister_db_url('https://example.com/custom/db.json.zip'))
+
+    def test_encc_forks_by_distribution_mister_db_url___with_andi_br_mirror___recognizes_the_mirrored_urls(self):
+        dbs = all_dbs(MIRROR_ANDI_BR)
+
+        for encc_forks, db in dbs.distribution_mister_forks().items():
+            self.assertTrue(db.db_url.startswith('https://mister.cc.cd/'))
+            self.assertEqual(encc_forks, dbs.encc_forks_by_distribution_mister_db_url(db.db_url))
 
     def test_all_mirrors___includes_mystical_realm_and_andi_br(self):
         self.assertEqual(

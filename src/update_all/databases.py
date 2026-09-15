@@ -33,6 +33,7 @@ class Database:
 
 
 DB_ID_DISTRIBUTION_MISTER = 'distribution_mister'
+DEFAULT_ENCC_FORKS = 'pinned_linux'
 DB_ID_NAMES_TXT = 'names_txt'
 DB_ID_ARCADE_NAMES_TXT = 'arcade_names_txt'
 DB_ID_MREXT_ALL = 'mrext/all'
@@ -49,7 +50,8 @@ class AllDBs:
         self.UPDATE_ALL_MISTER = Database(db_id='update_all_mister', db_url='https://raw.githubusercontent.com/theypsilon/Update_All_MiSTer/db/update_all_db.json', title='Update All files')
 
         # Distribution MiSTer
-        self.MISTER_DEVEL_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/db.json.zip', title='Main Distribution: MiSTer-devel')
+        self.MISTER_PINNED_LINUX_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/distribution-mister-pinned-linux/db.json.zip', title='Main Distribution: MiSTer-devel')
+        self.MISTER_DEVEL_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/db.json.zip', title='Main Distribution: MiSTer-devel (Edge Linux)')
         self.MISTER_DB9_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://raw.githubusercontent.com/MiSTer-DB9/Distribution_MiSTer/main/dbencc.json.zip', title='Main Distribution: DB9 / SNAC8')
         self.MISTER_AITORGOMEZ_DISTRIBUTION_MISTER = Database(db_id=DB_ID_DISTRIBUTION_MISTER, db_url='https://www.aitorgomez.net/static/mistermain/db.json.zip', title='Main Distribution: AitorGomez Fork')
 
@@ -239,23 +241,27 @@ class AllDBs:
             result[db.db_id].append(db)
         return result
 
+    def distribution_mister_forks(self) -> Dict[str, Database]:
+        # Order matters: the Settings Screen toggles through these keys in this sequence.
+        return {
+            'pinned_linux': self.MISTER_PINNED_LINUX_DISTRIBUTION_MISTER,
+            'devel': self.MISTER_DEVEL_DISTRIBUTION_MISTER,
+            'db9': self.MISTER_DB9_DISTRIBUTION_MISTER,
+            'aitorgomez': self.MISTER_AITORGOMEZ_DISTRIBUTION_MISTER,
+        }
+
     def db_distribution_mister_by_encc_forks(self, encc_forks: str) -> Database:
-        if encc_forks == "db9":
-            return self.MISTER_DB9_DISTRIBUTION_MISTER
-        elif encc_forks == "aitorgomez":
-            return self.MISTER_AITORGOMEZ_DISTRIBUTION_MISTER
-        else:
-            return self.MISTER_DEVEL_DISTRIBUTION_MISTER
+        forks = self.distribution_mister_forks()
+        return forks.get(encc_forks, forks[DEFAULT_ENCC_FORKS])
 
     def encc_forks_by_distribution_mister_db_url(self, db_url: Optional[str]) -> str:
         if db_url is not None:
             db_url = db_url.lower()
-            if db_url == self.MISTER_DB9_DISTRIBUTION_MISTER.db_url.lower():
-                return 'db9'
-            elif db_url == self.MISTER_AITORGOMEZ_DISTRIBUTION_MISTER.db_url.lower():
-                return 'aitorgomez'
+            for encc_forks, db in self.distribution_mister_forks().items():
+                if db_url == db.db_url.lower():
+                    return encc_forks
 
-        return 'devel'
+        return DEFAULT_ENCC_FORKS
 
     def should_download_beta_cores(self, db_url: Optional[str], jt_filter: Optional[str]) -> bool:
         if db_url is None:

@@ -96,7 +96,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
         self.assertIn('downloader.ini', ui.get_value('needs_save_file_list'))
         self.assertIn('mirror', ui.get_value('needs_save_file_list'))
         self.assertEqual(
-            all_dbs(MIRROR_ANDI_BR).MISTER_DEVEL_DISTRIBUTION_MISTER.db_url,
+            all_dbs(MIRROR_ANDI_BR).MISTER_PINNED_LINUX_DISTRIBUTION_MISTER.db_url,
             read_ini_contents(state.files[downloader_ini]['content'])['distribution_mister']['db_url'],
         )
         self.assertEqual(MIRROR_ANDI_BR, sut._store_provider.get().get_mirror())

@@ -4,8 +4,9 @@ All-in-one script for keeping up-to-date with the [MiSTer](https://github.com/Mi
 This script runs the [__MiSTer Downloader__](https://github.com/MiSTer-devel/Downloader_MiSTer/) under the hood. It expands it by selecting additional downloader databases.
 
 Update All has a Settings Screen that allows you to configure which databases and tools you want to use. In said screen the menu includes:
-- __Main Distribution__. Downloads most essential files, including cores and firmware. You are able to select between two versions:
-    * The [official MiSTer Distribution](https://github.com/MiSTer-devel/Distribution_MiSTer) in the [MiSTer-devel](https://github.com/MiSTer-devel) organization. **[Default option]**
+- __Main Distribution__. Downloads most essential files, including cores and firmware. You are able to select between these versions:
+    * The [MiSTer-devel Distribution](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/distribution-mister-pinned-linux), a republication of the official MiSTer Distribution that is identical except for Linux, which is held at a stable release. **[Default option]**
+    * The [MiSTer-devel (Edge Linux) Distribution](https://github.com/MiSTer-devel/Distribution_MiSTer), the official MiSTer Distribution in the [MiSTer-devel](https://github.com/MiSTer-devel) organization, with the newest Linux image.
     * The [DB9 Fork MiSTer Distribution](https://github.com/MiSTer-DB9/Distribution_MiSTer) with [Extended Native Controller Compatibility](https://github.com/theypsilon/Update_All_MiSTer/wiki#extended-native-controller-compatibility) for Genesis and NeoGeo/Supergun controllers. *Requires [SNAC8](https://github.com/theypsilon/Update_All_MiSTer/wiki#snac8) compatible adapter.*
     * The [Aitor Gómez fork](https://github.com/spark2k06/Main_MiSTer), which is same as the official MiSTer Distribution but includes his custom firmware.
 - [JTCORES for MiSTer](https://github.com/jotego/jtcores_mister). Downloads many cores made by [Jotego Team](https://github.com/jotego). **[Default option]** 

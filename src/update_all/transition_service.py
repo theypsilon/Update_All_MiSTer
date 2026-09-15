@@ -20,7 +20,7 @@ from typing import Dict, Final, List, Tuple
 from update_all.config import Config
 from update_all.constants import FILE_MiSTer_ini, FILE_update_all_ini, FILE_update_jtcores_ini, \
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
-from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, \
+from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DEFAULT_ENCC_FORKS, DB_ID_NAMES_TXT, \
     DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ajgowans_manualsdbs, ALL_DB_IDS, DB_ID_MREXT_ALL, \
     DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER, chipster6502_artworkdbs, chipster6502_artwork_db_with_style
 from update_all.ini_parser import IniParser
@@ -183,6 +183,39 @@ class TransitionService:
         )
         self._logger.print('Waiting 10 seconds...')
         self._os_utils.sleep(10.0)
+
+    def from_devel_distribution_to_pinned_linux_distribution(self, config: Config, store: LocalStore, downloader_ini: Dict[str, IniParser], update_output: UpdateOutput):
+        # Runs once per store, so users who pick Edge Linux afterwards keep it.
+        if store.get_introduced_pinned_linux_distribution_mister() or config.skip_downloader:
+            return
+
+        store.set_introduced_pinned_linux_distribution_mister(True)
+
+        db_defs = all_dbs(config.mirror)
+        db_id = DB_ID_DISTRIBUTION_MISTER.lower()
+        if db_id in downloader_ini:
+            # Only the raw URL counts: custom URLs resolve to the default fork in config but must stay untouched.
+            current_url = downloader_ini[db_id].get_string('db_url', '').lower()
+            if current_url != db_defs.MISTER_DEVEL_DISTRIBUTION_MISTER.db_url.lower():
+                return
+        elif DB_ID_DISTRIBUTION_MISTER not in config.databases or config.encc_forks != 'devel':
+            # Without a section, only the Update All 1 transition can have left config on MiSTer-devel.
+            return
+
+        config.encc_forks = DEFAULT_ENCC_FORKS
+        self._ini_repository.write_downloader_ini(config)
+        self._logger.print('Switching your Main Distribution to the new default:')
+        self._logger.print('It has the same content as MiSTer-devel, but Linux stays on a stable release instead of updating right away.')
+        self._logger.print('To keep receiving the newest Linux, select "MiSTer-devel (Edge Linux)" in the Main Distribution menu of the Settings Screen.')
+        self._logger.print('Writing downloader.ini.')
+        self._logger.print()
+        update_output.transition(
+            'from_devel_distribution_to_pinned_linux_distribution',
+            db_id=DB_ID_DISTRIBUTION_MISTER,
+            db_url=db_defs.MISTER_PINNED_LINUX_DISTRIBUTION_MISTER.db_url
+        )
+        self._logger.print('Waiting 5 seconds...')
+        self._os_utils.sleep(5.0)
 
     def from_active_databases_to_related_databases(self, config: Config, store: LocalStore, update_output: UpdateOutput):
         if config.skip_downloader:

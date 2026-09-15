@@ -40,6 +40,7 @@ import unittest
 
 _DISTRIBUTION_MISTER_DB_URL = all_dbs('').MISTER_DEVEL_DISTRIBUTION_MISTER.db_url
 _DISTRIBUTION_MISTER_DB9_URL = all_dbs('').MISTER_DB9_DISTRIBUTION_MISTER.db_url
+_DISTRIBUTION_MISTER_PINNED_LINUX_URL = all_dbs('').MISTER_PINNED_LINUX_DISTRIBUTION_MISTER.db_url
 
 
 class TestEnvironmentSetup(unittest.TestCase):
@@ -199,6 +200,25 @@ class TestEnvironmentSetup(unittest.TestCase):
             download_beta_cores=False,
         ))
 
+    def test_setup___with_devel_distribution_url_and_fresh_store___moves_it_to_the_stale_url(self):
+        self.assertSetup(
+            files={downloader_ini: distribution_ini(_DISTRIBUTION_MISTER_DB_URL)},
+            expected_files={downloader_ini: distribution_ini(_DISTRIBUTION_MISTER_PINNED_LINUX_URL)},
+            expected_config=Config(databases={all_dbs('').MISTER_DEVEL_DISTRIBUTION_MISTER.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id})
+        )
+
+    def test_setup___with_devel_distribution_url_and_store_that_already_ran_the_transition___keeps_the_devel_url(self):
+        store = local_store()
+        store.set_introduced_pinned_linux_distribution_mister(True)
+        self.assertSetup(
+            files={
+                downloader_ini: distribution_ini(_DISTRIBUTION_MISTER_DB_URL),
+                store_json: json.dumps(store.unwrap_props()),
+            },
+            expected_files={downloader_ini: distribution_ini(_DISTRIBUTION_MISTER_DB_URL)},
+            expected_config=Config(encc_forks='devel', databases={all_dbs('').MISTER_DEVEL_DISTRIBUTION_MISTER.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id})
+        )
+
     def test_setup___with_duplicate_distribution_in_drop_in___main_downloader_ini_url_wins(self):
         main_url = _DISTRIBUTION_MISTER_DB9_URL
         drop_in_url = _DISTRIBUTION_MISTER_DB_URL
@@ -343,6 +363,10 @@ class TestEnvironmentSetup(unittest.TestCase):
             expected_config=Config(databases=default_databases(), transition_service_only=True),
             expected_result=EnvironmentSetupResult(requires_early_exit=True)
         )
+
+
+def distribution_ini(db_url: str) -> str:
+    return f'[{all_dbs("").MISTER_DEVEL_DISTRIBUTION_MISTER.db_id}]\ndb_url = {db_url}\n\n' + ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER'])
 
 
 def db_ids_in_ini(state: FileSystemState, path: str) -> List[str]:
