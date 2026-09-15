@@ -44,7 +44,7 @@ _HYBRID_CORE_TITLES = {
     '# MiSTer Duke3D',
     '# MiSTer Quake',
     '# Diablo MiSTer',
-    '# NBlood',
+    '# NBlood MiSTer',
     '# Maldita Castilla MiSTer',
     '# Solarus MiSTer',
     '# 3S-ARM',
@@ -70,7 +70,7 @@ _FILE_DEPENDENT_CORE_PATHS = {
     '# MiSTer Duke3D': ('MultiDatabases/duke3d', ('games/DUKE3D/duke3d.grp',)),
     '# MiSTer Quake': ('MultiDatabases/mister-quake', ('games/quake/id1/',)),
     '# Diablo MiSTer': ('MultiDatabases/diablo', ('games/Diablo/',)),
-    '# NBlood': ('MultiDatabases/nblood', ('games/NBlood/',)),
+    '# NBlood MiSTer': ('MultiDatabases/nblood', ('games/NBlood/',)),
     '# Solarus MiSTer': ('MultiDatabases/solarus', ('games/Solarus/quests/', 'Scripts/Solarus.sh')),
     '# 3S-ARM': ('MultiDatabases/3s-arm', ('games/3s-arm/resources/SF33RD.AFS',)),
     '# MiSTer Frontier': (
@@ -105,7 +105,7 @@ _HYBRID_CORE_OUTSIDE_FPGA_DESCRIPTIONS = {
     '# MiSTer Duke3D': 'MiSTer Duke3D is a native engine port that runs in software rather than in the FPGA.',
     '# MiSTer Quake': 'MiSTer Quake is a native engine port that runs in software rather than in the FPGA.',
     '# Diablo MiSTer': 'Diablo MiSTer runs the DevilutionX engine port of Diablo and Hellfire in software rather than in the FPGA.',
-    '# NBlood': 'NBlood is a Blood source port that runs in software rather than in the FPGA.',
+    '# NBlood MiSTer': 'NBlood is a Blood source port that runs in software rather than in the FPGA.',
     '# Maldita Castilla MiSTer': "Maldita Castilla MiSTer runs Locomalito's arcade action game on MiSTer's ARM processor, while a custom FPGA core accelerates its graphics.",
     '# Solarus MiSTer': 'Solarus MiSTer runs the Solarus 2D action-RPG engine in software rather than in the FPGA.',
     '# 3S-ARM': '3S-ARM is a native port of the PlayStation 2 version of Street Fighter III: 3rd Strike that runs in software rather than in the FPGA.',
@@ -153,7 +153,7 @@ _DATABASE_MAINTAINERS = {
     '# MiSTer Duke3D': 'neofreno',
     '# MiSTer Quake': 'neofreno',
     '# Diablo MiSTer': 'Meathax',
-    '# NBlood': 'Meathax',
+    '# NBlood MiSTer': 'Meathax',
     '# Maldita Castilla MiSTer': 'gmcnaught',
     '# Solarus MiSTer': 'gmcnaught',
     '# 3S-ARM': 'kimchiman52',
@@ -178,7 +178,7 @@ _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
     '# MiSTer Duke3D': 'launch and play Duke Nukem 3D',
     '# MiSTer Quake': 'launch and play Quake',
     '# Diablo MiSTer': 'play the Diablo shareware right away, and the full Diablo and Hellfire campaigns',
-    '# NBlood': 'launch and play Blood',
+    '# NBlood MiSTer': 'launch and play Blood',
     '# Solarus MiSTer': 'play Solarus quests',
     '# 3S-ARM': 'launch and play Street Fighter III: 3rd Strike',
     '# MiSTer Frontier': 'launch PICO-8 carts and legacy or modern OpenBOR games',
@@ -197,7 +197,7 @@ _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
     '# MiSTer Duke3D': 'manually add game data from your own Duke Nukem 3D installation',
     '# MiSTer Quake': 'manually add game data from your own Quake installation',
     '# Diablo MiSTer': 'manually add game data from your own Diablo and Hellfire installations',
-    '# NBlood': 'manually add game data from your own Blood: Fresh Supply installation',
+    '# NBlood MiSTer': 'manually add game data from your own Blood: Fresh Supply installation',
     '# Solarus MiSTer': 'manually add the quests you want to play',
     '# 3S-ARM': 'manually add game data from your own PlayStation 2 copy',
     '# MiSTer Frontier': 'manually add the PICO-8 carts and OpenBOR game modules',
@@ -551,7 +551,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# MiSTer Duke3D': ('MultiDatabases/duke3d', 'MultiDatabases/duke3d'),
             '# MiSTer Quake': ('MultiDatabases/mister-quake', 'MultiDatabases/mister-quake'),
             '# Diablo MiSTer': ('MultiDatabases/diablo', 'MultiDatabases/diablo'),
-            '# NBlood': ('MultiDatabases/nblood', 'MultiDatabases/nblood'),
+            '# NBlood MiSTer': ('MultiDatabases/nblood', 'MultiDatabases/nblood'),
             '# MegaVGMDrive': ('MultiDatabases/megavgmdrive', 'MultiDatabases/megavgmdrive'),
         }
 
@@ -574,7 +574,7 @@ class TestSettingsScreenModel(unittest.TestCase):
                 'Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'},
                 'MiSTer_Quake': {'main': 'MiSTer_Quake', 'vga_scaler': '0'},
             },
-            '# NBlood': {
+            '# NBlood MiSTer': {
                 'NBlood': {'main': 'Mister_NBlood'},
                 'Mister_NBlood': {'main': 'Mister_NBlood'},
             },
@@ -1072,7 +1072,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             '# MiSTer Duke3D',
             '# MiSTer Quake',
             '# Diablo MiSTer',
-            '# NBlood',
+            '# NBlood MiSTer',
             '# Solarus MiSTer',
             '# 3S-ARM',
             '# MiSTer Frontier',
@@ -1156,7 +1156,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             "You can launch MiSTer Quake from MiSTer's Other folder.",
         )
         self._assert_core_menu_location(
-            '# NBlood',
+            '# NBlood MiSTer',
             'MultiDatabases/nblood',
             "You can launch NBlood from MiSTer's Other folder.",
         )
@@ -1412,7 +1412,7 @@ class TestSettingsScreenModel(unittest.TestCase):
 
     def test_nblood_entry___when_yes_is_selected___arms_ini_sections_and_identifies_source_port_in_info(self):
         app = self._execute_multidatabase_action(
-            '# NBlood',
+            '# NBlood MiSTer',
             'MultiDatabases/nblood',
             'false',
             confirm_action_title='Yes',
@@ -1438,7 +1438,7 @@ class TestSettingsScreenModel(unittest.TestCase):
              'target': {'NBlood': {'main': 'Mister_NBlood'},
                         'Mister_NBlood': {'main': 'Mister_NBlood'}}},
         ], app.mister_ini_effects)
-        info = self._execute_core_info('# NBlood')
+        info = self._execute_core_info('# NBlood MiSTer')
         self.assertIn('Blood engine runtime', ' '.join(info.messages[0]['text']))
 
     def test_maldita_castilla_entry___when_enabling___welcomes_with_included_game_and_preselects_yes(self):
@@ -1777,6 +1777,13 @@ class TestSettingsScreenModel(unittest.TestCase):
     def test_jtcores_and_coin_op_enable_entries___offer_no_info(self):
         for menu, title in (('jtcores_menu', '# JTCORES Enabled'), ('coin_op_collection_menu', '# Coin-Op')):
             self.assertNotIn('info', self._entry(menu, title)['actions'], f'{menu}: {title}')
+
+    def test_uninstall_center_entry___opens_the_uninstall_center_section(self):
+        entry = self._entry('system_options_menu', '# Uninstall Center')
+
+        self.assertEqual([{'type': 'navigate', 'target': 'uninstall_center_menu'}], entry['actions']['ok'])
+        self.assertEqual('uninstall_center', self.model['items']['uninstall_center_menu']['ui'])
+        self.assertEqual('Uninstall Center', self.model['items']['uninstall_center_menu']['header'])
 
     def test_jtcores_submenu___has_no_separate_auto_enable_option(self):
         entries = self.model['items']['jtcores_menu']['entries']

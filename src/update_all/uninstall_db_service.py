@@ -16,7 +16,11 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+from dataclasses import dataclass
+from typing import Optional
+
 from update_all.config import Config
+from update_all.databases import DB_ID_DISTRIBUTION_MISTER, ALL_DB_IDS, all_dbs
 from update_all.downloader_fingerprints import read_installed_db_ids
 from update_all.downloader_service import DownloaderService
 from update_all.file_system import FileSystem
@@ -39,6 +43,30 @@ class UninstallDbService:
         self._downloader_service = downloader_service
         self._file_system = file_system
         self._logger = logger
+
+    def list_installed_dbs(self) -> Optional[list['InstalledDb']]:
+        config = self._config_provider.get()
+        return_code, output = self._downloader_service.read_downloader_command_output(
+            config,
+            self._ini_repository.downloader_ini_standard_path(),
+            ['--list-dbs', 'all'],
+        )
+        if return_code != 0:
+            self._logger.debug('Downloader could not list the installed databases')
+            self._logger.debug(output)
+            return None
+
+        # Downloader reports ids lowercased; known databases get their canonical spelling and title back.
+        known_dbs = {db_id.lower(): dbs[0] for db_id, dbs in all_dbs(config.mirror).databases_by_ids().items()}
+        excluded = {DB_ID_DISTRIBUTION_MISTER.lower(), ALL_DB_IDS['UPDATE_ALL_MISTER'].lower()}
+        result = []
+        for installed in installed_dbs_from_ltsv(output):
+            lower_id = installed.db_id.lower()
+            if lower_id in excluded:
+                continue
+            known = known_dbs.get(lower_id)
+            result.append(InstalledDb(known.db_id, known.title, installed.description) if known is not None else installed)
+        return result
 
     def uninstall(self, db_ids: list[str], force: bool = False) -> int:
         config = self._config_provider.get()
@@ -64,3 +92,27 @@ class UninstallDbService:
                 config.set_database_enabled(db_id, False)
 
         return return_code
+
+
+@dataclass(frozen=True)
+class InstalledDb:
+    db_id: str
+    title: str
+    description: str
+
+
+def installed_dbs_from_ltsv(output: str) -> list[InstalledDb]:
+    descriptions: dict[str, str] = {}
+    installed_ids: list[str] = []
+    for line in output.splitlines():
+        fields = line.split('\t')
+        if fields[0] != 'DLP1':
+            continue
+        db_id = next((field[len('db:'):] for field in fields if field.startswith('db:')), '')
+        if not db_id:
+            continue
+        if 'event:installed_db' in fields:
+            installed_ids.append(db_id)
+        elif 'event:configured_db' in fields:
+            descriptions[db_id.lower()] = next((field[len('description:'):] for field in fields if field.startswith('description:')), '')
+    return [InstalledDb(db_id, db_id, descriptions.get(db_id.lower(), '')) for db_id in installed_ids]

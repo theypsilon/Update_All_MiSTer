@@ -141,7 +141,7 @@ class TestDatabases(unittest.TestCase):
             'https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/nblood/db.json',
             db.db_url,
         )
-        self.assertEqual('NBlood', db.title)
+        self.assertEqual('NBlood MiSTer', db.title)
 
     def test_all_dbs___with_andi_br_mirror___prepends_proxy_to_every_database_url(self):
         original_dbs = AllDBs()

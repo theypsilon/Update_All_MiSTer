@@ -31,6 +31,9 @@ class SpyOsUtils(OsUtils):
         self.calls_to_make_executable = []
         self.execute_process_return_code = 0
         self.execute_process_action = None
+        self.calls_to_read_command_output = []
+        self.read_command_output_result = (0, '')
+        self.read_command_output_action = None
 
     def sync(self):
         self.calls_to_sync += 1
@@ -48,8 +51,10 @@ class SpyOsUtils(OsUtils):
         return self.execute_process_return_code
 
     def read_command_output(self, cmd, env):
-        self.calls_to_execute_process.append((cmd, env))
-        return 0, ''
+        self.calls_to_read_command_output.append((cmd, env))
+        if self.read_command_output_action is not None:
+            self.read_command_output_action()
+        return self.read_command_output_result
 
     def download(self, url) -> Optional[bytes]:
         self.calls_to_download.append(url)

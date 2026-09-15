@@ -117,6 +117,8 @@ class LinuxOsUtils(OsUtils):
             return -1
 
     def read_command_output(self, cmd, env) -> [int, str]:
+        env = {**os.environ.copy(), **env}
+        self._logger.debug('Reading output of command', cmd, ' with env: ', env)
         proc = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         return proc.returncode, proc.stdout.decode()
 

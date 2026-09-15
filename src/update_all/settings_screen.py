@@ -68,6 +68,7 @@ from update_all.ui_engine_dialog_application import DialogSectionFactory
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string, gather_effects_by_type
 from update_all.uninstall_db_service import UninstallDbService
 from update_all.uninstall_db_ui import UninstallDbMenu
+from update_all.uninstall_center_ui import UninstallCenterMenu
 
 
 CHIP_ID_DEBUG_LOG_PATH: Final[str] = f'{MEDIA_FAT}/{FILE_update_all_chip_id_linker_log}'
@@ -326,6 +327,14 @@ class SettingsScreen(UiApplication):
             'device_login': lambda drawer, _interpolator, data: self._retroaccount.create_device_login_ui(drawer, device_login_renderer, data),
             'mister_video_mode': lambda drawer, _interpolator, data: MisterVideoModeMenu(drawer, self._mister_video_mode_service, data),
             'mister_video_adjust': lambda drawer, _interpolator, data: MisterVideoAdjustMenu(drawer, self._mister_video_mode_service, data),
+            'uninstall_center': lambda drawer, _interpolator, data: UninstallCenterMenu(
+                drawer,
+                self._uninstall_db_service,
+                self._ui_runtime,
+                self._logger,
+                lambda db_id: self.reconcile_uninstalled_database(ui, db_id),
+                data,
+            ),
             'uninstall_db': lambda drawer, _interpolator, data: UninstallDbMenu(
                 drawer,
                 self._uninstall_db_service,
@@ -994,6 +1003,11 @@ class SettingsScreen(UiApplication):
             for variable, db_id in db_ids_by_variable.items()
             if variable in model_variables
         }
+
+    def reconcile_uninstalled_database(self, ui: UiContext, db_id: str) -> None:
+        canonical_id = next((known_id for known_id in model_variables_by_db_id() if known_id.lower() == db_id.lower()), None)
+        if canonical_id is not None:
+            self.reconcile_failed_bulk_uninstall(ui, (canonical_id,))
 
     def reconcile_failed_bulk_uninstall(self, ui: UiContext, db_ids: tuple[str, ...]) -> None:
         installed_db_ids = try_read_installed_db_ids(self._file_system, self._logger)

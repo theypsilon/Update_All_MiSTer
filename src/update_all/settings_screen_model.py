@@ -2087,9 +2087,9 @@ def settings_screen_model():
                     }
                 },
                 {
-                    "title": "# NBlood",
+                    "title": "# NBlood MiSTer",
                     "description": "{MultiDatabases/nblood:enabled} Blood engine port",
-                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/nblood", "NBlood", on_success=lambda then: [
+                    "actions": {"uninstall": uninstall_db_action_for_id("MultiDatabases/nblood", "NBlood MiSTer", on_success=lambda then: [
                         {"type": "mister_ini_del", "immediate": True, "variable": "MultiDatabases/nblood",
                          "target": {
                              "NBlood": {"main": "Mister_NBlood"},
@@ -2099,7 +2099,7 @@ def settings_screen_model():
                     ]),
                         "ok": _try_toggle_with_user_dependency(
                             "MultiDatabases/nblood",
-                            "NBlood",
+                            "NBlood MiSTer",
                             [
                                 "NBlood is a Blood source port that runs in software rather than in the FPGA.",
                                 "You can launch NBlood from MiSTer's Other folder.",
@@ -2121,7 +2121,7 @@ def settings_screen_model():
                         ),
                         "info": [{
                             "ui": "message",
-                            "header": "NBlood",
+                            "header": "NBlood MiSTer",
                             "text": [
                                 "NBlood is a Blood source port that runs in software rather than in the FPGA.",
                                 "Enabling this database installs the Blood engine runtime, MiSTer launcher, and display core.",
@@ -3314,8 +3314,20 @@ def settings_screen_model():
                         }],
                         "andi_br": [{"type": "rotate_variable", "target": "mirror"}],
                     }]}
-                }
+                },
+                {
+                    "title": "# Uninstall Center",
+                    "description": "Remove dbs and their contents",
+                    "actions": {"ok": [{"type": "navigate", "target": "uninstall_center_menu"}]}
+                },
             ]
+        },
+        "uninstall_center_menu": {
+            "ui": "uninstall_center",
+            "header": "Uninstall Center",
+            "text": [
+                "Select a database and press Uninstall.",
+            ],
         },
         "system_video_mode_menu": {
             "type": "dialog_sub_menu",

@@ -27,7 +27,7 @@ from update_all.config import Config
 from update_all.constants import FILE_downloader_fingerprints_json
 from update_all.downloader_service import DownloaderService
 from update_all.other import GenericProvider
-from update_all.uninstall_db_service import UninstallDbService
+from update_all.uninstall_db_service import UninstallDbService, InstalledDb, installed_dbs_from_ltsv
 
 
 _DEFAULT_INSTALLED_AFTER = object()
@@ -76,7 +76,58 @@ def _sut(os_utils, config=None, installed_db_ids=(), installed_after=_DEFAULT_IN
     ), config
 
 
+_LTSV_LISTING = (
+    'DLP1\tevent:configured_db\tdb:distribution_mister\turl:https://example.com/db.json.zip\n'
+    'DLP1\tevent:configured_db\tdb:custom/my-db\turl:https://example.com/my.json.zip\tdescription:My custom database\tfilter:arcade\n'
+    'DLP1\tevent:configured_db\tdb:jtcores\turl:https://example.com/jt.json.zip\tdescription:My jtcores note\n'
+    'DLP1\tevent:installed_db\tdb:distribution_mister\n'
+    'DLP1\tevent:installed_db\tdb:update_all_mister\n'
+    'DLP1\tevent:installed_db\tdb:jtcores\n'
+    'DLP1\tevent:installed_db\tdb:coin-opcollection/distribution-misterfpga\n'
+    'DLP1\tevent:installed_db\tdb:custom/my-db\n'
+    'DLP1\tevent:installed_db\tdb:MultiDatabases/nblood\n'
+    'Some human line that should be ignored\n'
+    'DLP1\tevent:installed_db\n'
+)
+
+
 class TestUninstallDbService(unittest.TestCase):
+    def test_list_installed_dbs___runs_list_dbs_all_with_ltsv_output_and_drops_distribution_and_update_all(self):
+        os_utils = SpyOsUtils()
+        os_utils.read_command_output_result = (0, _LTSV_LISTING)
+        sut, _ = _sut(os_utils)
+
+        self.assertEqual([
+            InstalledDb('jtcores', 'JTCORES for MiSTer', 'My jtcores note'),
+            InstalledDb('Coin-OpCollection/Distribution-MiSTerFPGA', 'Coin-Op Collection', ''),
+            InstalledDb('custom/my-db', 'custom/my-db', 'My custom database'),
+            InstalledDb('MultiDatabases/nblood', 'NBlood MiSTer', ''),
+        ], sut.list_installed_dbs())
+
+        cmd, env = os_utils.calls_to_read_command_output[0]
+        self.assertEqual(['--list-dbs', 'all'], cmd[1:])
+        self.assertEqual('dlp1-ltsv', env['DOWNLOADER_OUTPUT'])
+        self.assertIn('DOWNLOADER_INI_PATH', env)
+        self.assertEqual([], os_utils.calls_to_execute_process)
+
+    def test_list_installed_dbs___when_downloader_fails___returns_none(self):
+        os_utils = SpyOsUtils()
+        os_utils.read_command_output_result = (1, 'boom')
+        sut, _ = _sut(os_utils)
+
+        self.assertIsNone(sut.list_installed_dbs())
+
+    def test_installed_dbs_from_ltsv___keeps_installed_db_events_and_attaches_configured_descriptions(self):
+        self.assertEqual([
+            InstalledDb('distribution_mister', 'distribution_mister', ''),
+            InstalledDb('update_all_mister', 'update_all_mister', ''),
+            InstalledDb('jtcores', 'jtcores', 'My jtcores note'),
+            InstalledDb('coin-opcollection/distribution-misterfpga', 'coin-opcollection/distribution-misterfpga', ''),
+            InstalledDb('custom/my-db', 'custom/my-db', 'My custom database'),
+            InstalledDb('MultiDatabases/nblood', 'MultiDatabases/nblood', ''),
+        ], installed_dbs_from_ltsv(_LTSV_LISTING))
+        self.assertEqual([], installed_dbs_from_ltsv(''))
+
     def test_uninstall___runs_all_installed_database_ids_in_one_downloader_command(self):
         os_utils = SpyOsUtils()
         config = Config(databases={'distribution_mister', 'jtcores'})

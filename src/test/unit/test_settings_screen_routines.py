@@ -118,6 +118,29 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_installed'))
 
+    def test_reconcile_uninstalled_database___for_a_model_database___clears_its_state_and_ignores_unknown_ids(self):
+        file_system = FileSystemFactory.from_state(files={
+            FILE_downloader_fingerprints_json: {'content': json.dumps({})},
+        }).create_for_system_scope()
+        coin_op = 'Coin-OpCollection/Distribution-MiSTerFPGA'
+        config = Config(databases={'jtcores', coin_op})
+        sut, ui = tester(config=config, file_system=file_system)
+        ui.set_value('jotego_updater', 'true')
+        ui.set_value('jtcores_installed', 'true')
+        ui.set_value('coin_op_collection_downloader', 'true')
+        ui.set_value(f'{coin_op}_installed', 'true')
+
+        sut.reconcile_uninstalled_database(ui, 'jtcores')
+        sut.reconcile_uninstalled_database(ui, coin_op.lower())
+        sut.reconcile_uninstalled_database(ui, 'custom/unknown-db')
+
+        self.assertEqual('false', ui.get_value('jotego_updater'))
+        self.assertEqual('false', ui.get_value('jtcores_installed'))
+        self.assertFalse(config.is_database_enabled('jtcores'))
+        self.assertEqual('false', ui.get_value('coin_op_collection_downloader'))
+        self.assertEqual('false', ui.get_value(f'{coin_op}_installed'))
+        self.assertFalse(config.is_database_enabled(coin_op))
+
     def test_reconcile_failed_bulk_uninstall___updates_only_removed_database_state(self):
         remaining = 'MultiDatabases/mister-quake'
         file_system = FileSystemFactory.from_state(files={

@@ -81,6 +81,32 @@ class TestDownloaderService(unittest.TestCase):
         self.assertTrue(file_system.is_file(_INJECTED_DOWNLOADER_PATH))
         self.assertFalse(file_system.is_file(_INJECTED_DOWNLOADER_TEMP_PATH))
 
+    def test_read_downloader_command_output___with_injected_path___captures_ltsv_output_of_the_command(self):
+        config = Config(
+            downloader_path=_INJECTED_DOWNLOADER_PATH,
+            downloader_python_compatible_path=_INJECTED_PYTHON_COMPATIBLE_PATH,
+        )
+        service, _file_system, os_utils, fetcher = _service(
+            config,
+            files={
+                _INJECTED_DOWNLOADER_PATH: {'content': '#!/bin/sh\n'},
+                _INJECTED_PYTHON_COMPATIBLE_PATH: {'content': ''},
+            },
+        )
+        os_utils.read_command_output_result = (0, 'DLP1\tevent:installed_db\tdb:jtcores\n')
+        os_utils.read_command_output_action = lambda: _file_system.unlink(FILE_downloader_run_signal, verbose=False)
+
+        result = service.read_downloader_command_output(config, '/media/fat/downloader.ini', ['--list-dbs', 'installed'])
+
+        self.assertEqual((0, 'DLP1\tevent:installed_db\tdb:jtcores\n'), result)
+        self.assertEqual([], fetcher.calls)
+        self.assertEqual([], os_utils.calls_to_execute_process)
+        cmd, env = os_utils.calls_to_read_command_output[0]
+        self.assertEqual([_INJECTED_DOWNLOADER_TEMP_PATH, '--list-dbs', 'installed'], cmd)
+        self.assertEqual('dlp1-ltsv', env['DOWNLOADER_OUTPUT'])
+        self.assertEqual('/media/fat/downloader.ini', env['DOWNLOADER_INI_PATH'])
+        self.assertNotIn('LOGFILE', env)
+
     def test_execute_downloader___when_injected_path_fails___uses_existing_fallback_chain(self):
         url = 'http://127.0.0.1:8765/downloader.pyz'
         config = Config(

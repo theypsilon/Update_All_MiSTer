@@ -25,7 +25,8 @@ from urllib.parse import quote, urlparse
 
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_LATEST_BIN_PATH, DOWNLOADER_LATEST_BIN_PYTHON_COMPATIBLE, \
-    DOWNLOADER_LATEST_ZIP_PATH, DOWNLOADER_URL, FILE_JOTEGO_mra_pack_ini, FILE_downloader_run_signal, MEDIA_FAT
+    DOWNLOADER_LATEST_ZIP_PATH, DOWNLOADER_URL, FILE_JOTEGO_mra_pack_ini, FILE_downloader_run_signal, MEDIA_FAT, \
+    KENV_DOWNLOADER_OUTPUT, DOWNLOADER_OUTPUT_LTSV
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, Database, all_dbs
 from update_all.fetcher import Fetcher
 from update_all.file_system import FileSystem
@@ -64,6 +65,25 @@ class DownloaderService:
     def execute_downloader_command(self, config: Config, downloader_ini_path: str, args: list[str], logfile: Optional[str], quiet: bool = False) -> int:
         env = self._prepare_env(config, downloader_ini_path, config.skip_linux_update, logfile, None)
         return self._run_with_fallbacks(config, env, quiet, args=args)
+
+    def read_downloader_command_output(self, config: Config, downloader_ini_path: str, args: list[str]) -> tuple[int, str]:
+        env = self._prepare_env(config, downloader_ini_path, config.skip_linux_update, None, None)
+        env[KENV_DOWNLOADER_OUTPUT] = DOWNLOADER_OUTPUT_LTSV
+        attempts = ((True, True), (False, True), (False, False))
+        for attempt, (consider_bin, consider_zip) in enumerate(attempts):
+            downloader_file = self._prepare_latest_downloader(config, consider_bin, consider_zip)
+            if downloader_file is None:
+                self._logger.debug('Downloader launcher preparation failed')
+                return 1, ''
+
+            self._temp_launchers.append(downloader_file)
+            return_code, output = self._os_utils.read_command_output([downloader_file, *args], env)
+            if attempt == len(attempts) - 1 or not self._file_system.is_file(FILE_downloader_run_signal):
+                return return_code, output
+
+            self._logger.debug('Downloader launcher failed startup check while reading its output; trying fallback')
+
+        return 1, ''
 
     def _prepare_env(self, config: Config, downloader_ini_path: str, skip_linux_update: bool, logfile: Optional[str], default_db: Optional[Database]) -> dict[str, str]:
         ts = config.term_size
