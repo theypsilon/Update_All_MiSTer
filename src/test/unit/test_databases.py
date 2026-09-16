@@ -123,6 +123,13 @@ class TestDatabases(unittest.TestCase):
             all_mirrors(),
         )
 
+    def test_shmup_deck___uses_multidatabases_publication(self):
+        db = all_dbs('').SHMUP_DECK
+
+        self.assertEqual('MultiDatabases/shmup-deck', db.db_id)
+        self.assertEqual('https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/shmup-deck/db.json', db.db_url)
+        self.assertEqual('Shmup Deck', db.title)
+
     def test_diablo___uses_multidatabases_publication(self):
         db = all_dbs('').DIABLO
 

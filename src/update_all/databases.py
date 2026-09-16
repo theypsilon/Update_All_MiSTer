@@ -132,6 +132,7 @@ class AllDBs:
 
         # MULTIDATABASES
         self.DISC_TOOLS = Database(db_id='MultiDatabases/disc-tools', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/disc-tools/db.json', title='Disc Tools')
+        self.SHMUP_DECK = Database(db_id='MultiDatabases/shmup-deck', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/shmup-deck/db.json', title='Shmup Deck')
         self.DREAMSTER = Database(db_id='MultiDatabases/dreamster', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/dreamster/db.json', title='DreamSTer')
         self.DUKE3D = Database(db_id='MultiDatabases/duke3d', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/duke3d/db.json', title='MiSTer Duke3D')
         self.MALDITA_CASTILLA = Database(db_id='MultiDatabases/maldita-castilla', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/maldita-castilla/db.json', title='Maldita Castilla MiSTer')

@@ -57,6 +57,7 @@ _TOOLS_DATABASE_TITLES = {
     '# MiSTerFin',
     '# MiSTer DVD',
     '# Disc Tools',
+    '# Shmup Deck',
     '# MiSTer Monitor',
 }
 
@@ -86,6 +87,9 @@ _FILE_DEPENDENT_CORE_PATHS = {
     # Disc Tools needs an optical drive and blank discs rather than files on the card,
     # so its confirmation states hardware instead of a path.
     '# Disc Tools': ('MultiDatabases/disc-tools', ()),
+    # Shmup Deck runs on the games already installed, so its confirmation states the
+    # always-on service footprint and the first-run launcher step instead of a path.
+    '# Shmup Deck': ('MultiDatabases/shmup-deck', ()),
     # MiSTer Monitor needs an external flashed display rather than files on the card,
     # and its launcher performs its own setup on the first run, so its confirmation
     # states the screen requirement and the first-run instruction instead of a path.
@@ -119,6 +123,7 @@ _TOOLS_DATABASE_DESCRIPTIONS = {
     '# MiSTerFin': 'MiSTerFin is a Jellyfin media client.',
     '# MiSTer DVD': 'MiSTer DVD is an FPGA DVD-Video player.',
     '# Disc Tools': 'Disc Tools is a disc ripping and burning utility.',
+    '# Shmup Deck': "Shmup Deck is a flyer-wall launcher for shoot 'em ups, served from your MiSTer to your phone.",
     '# MiSTer Monitor': "MiSTer Monitor shows your MiSTer's live status on a separate screen.",
 }
 
@@ -163,6 +168,7 @@ _DATABASE_MAINTAINERS = {
     '# MiSTerFin': 'puddingstudio',
     '# MiSTer DVD': 'owenb321',
     '# Disc Tools': 'Anime0t4ku',
+    '# Shmup Deck': 'searchsolved',
     '# MiSTer Monitor': 'chipster6502',
     '# Stock MiSTer UI': 'Sorgelig',
     '# Zaparoo': 'wizzo',
@@ -186,6 +192,7 @@ _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
     '# MiSTerFin': 'browse and play your Jellyfin library',
     '# MiSTer DVD': 'play decrypted DVD ISOs, VCDs and SVCDs',
     '# Disc Tools': 'rip physical CDs to BIN/CUE or CHD',
+    '# Shmup Deck': 'browse 178 arcade shooters as a flyer wall on your phone',
     '# MiSTer Monitor': "artwork, RetroAchievements progress, and live system stats",
 }
 
@@ -205,6 +212,7 @@ _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
     '# MiSTerFin': 'manually supply your own jellyfin.conf',
     '# MiSTer DVD': 'manually supply your own DVD, VCD, SVCD or ISO media',
     '# Disc Tools': 'manually supply an optical drive and blank writable discs',
+    '# Shmup Deck': "Run the shmup_deck script once from MiSTer's Scripts folder",
     '# MiSTer Monitor': 'get a compatible screen',
 }
 
@@ -633,6 +641,8 @@ class TestSettingsScreenModel(unittest.TestCase):
              'MultiDatabases/mister-dvd', 'MiSTer DVD'),
             ('tools_and_scripts_menu', '# Disc Tools', 'MultiDatabases/disc-tools',
              'MultiDatabases/disc-tools', 'Disc Tools'),
+            ('tools_and_scripts_menu', '# Shmup Deck', 'MultiDatabases/shmup-deck',
+             'MultiDatabases/shmup-deck', 'Shmup Deck'),
             ('tools_and_scripts_menu', '# MiSTer Monitor', 'chipster6502/MiSTer_monitor_DB',
              'chipster6502/MiSTer_monitor_DB', 'MiSTer Monitor'),
             ('tools_and_scripts_menu', '# tty2oled Add-on script', 'tty2oled_files_downloader',
@@ -1206,6 +1216,11 @@ class TestSettingsScreenModel(unittest.TestCase):
             "You can launch Disc Tools from MiSTer's Scripts folder.",
         )
         self._assert_core_menu_location(
+            '# Shmup Deck',
+            'MultiDatabases/shmup-deck',
+            "Run the shmup_deck script once from MiSTer's Scripts folder to start the service and register it at boot, then open http://shmupdeck.local on your phone.",
+        )
+        self._assert_core_menu_location(
             '# MiSTer Monitor',
             'chipster6502/MiSTer_monitor_DB',
             "If you're installing MiSTer Monitor for the first time, run MiSTer_Monitor from the Scripts menu once after Update All finishes.",
@@ -1223,6 +1238,17 @@ class TestSettingsScreenModel(unittest.TestCase):
 
                 for confirm in _entry_confirms(entry):
                     self.assertEqual([credit], _lines_naming(maintainer, confirm['text']), confirm['header'])
+
+    def test_maintainer_credits___are_separated_from_the_preceding_text_by_a_blank_line(self):
+        unseparated = [
+            (node.get('header'), text[index - 1])
+            for node in gather_all_nodes(self.model)
+            if isinstance(node.get('text'), list)
+            for text, index in [(node['text'], _maintainer_line_index(node['text']))]
+            if index is not None and text[index - 1] != ' '
+        ]
+
+        self.assertEqual([], unseparated)
 
     def test_entry_descriptions___leave_the_maintainer_credit_to_the_info_and_confirmation_texts(self):
         credited_descriptions = [
@@ -1602,6 +1628,21 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('false', app.ui.get_value('MultiDatabases/disc-tools'))
         self.assertIn('Disc Tools requires an optical drive connected to your MiSTer.', app.confirms[0]['text'])
         self.assertIn('Burning also requires blank writable discs.', app.confirms[0]['text'])
+
+    def test_shmup_deck_entry___is_immediately_below_disc_tools_and_its_confirmation_warns_in_red_about_the_always_on_footprint(self):
+        titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
+        self.assertEqual(titles.index('# Disc Tools') + 1, titles.index('# Shmup Deck'))
+
+        app = self._execute_multidatabase_action('# Shmup Deck', 'MultiDatabases/shmup-deck', 'false')
+
+        self.assertEqual('false', app.ui.get_value('MultiDatabases/shmup-deck'))
+        self.assertEqual('red', app.confirms[0]['alert_level'])
+        self.assertIn("WARNING: Shmup Deck keeps a runtime on at all times on MiSTer's ARM processor, using about 14 MB of RAM with idle CPU near zero.", app.confirms[0]['text'])
+
+    def test_other_dependency_confirmations___keep_the_default_alert_level(self):
+        app = self._execute_multidatabase_action('# Disc Tools', 'MultiDatabases/disc-tools', 'false')
+
+        self.assertNotIn('alert_level', app.confirms[0])
 
     def test_mister_monitor_entry___enable_confirmation___leads_with_the_screen_guidance(self):
         app = self._execute_multidatabase_action('# MiSTer Monitor', 'chipster6502/MiSTer_monitor_DB', 'false')
@@ -2302,6 +2343,13 @@ class TestSettingsScreenModel(unittest.TestCase):
         violations = _chain_violations(self.model)
 
         self.assertEqual([], violations)
+
+
+def _maintainer_line_index(text):
+    for index, line in enumerate(text):
+        if isinstance(line, str) and line.startswith('Maintainer: '):
+            return index
+    return None
 
 
 def _lines_naming(maintainer, text):
