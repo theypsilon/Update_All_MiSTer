@@ -26,7 +26,7 @@ from update_all.uninstall_db_service import UninstallDbService, InstalledDb
 from update_all.uninstall_db_ui import UninstallDbMenu
 
 
-class UninstallCenterMenu(UiSection):
+class DatabaseManagerMenu(UiSection):
     def __init__(
             self,
             drawer: UiDialogDrawer,
@@ -87,7 +87,7 @@ class UninstallCenterMenu(UiSection):
         self._drawer.clear()
 
     def _paint_menu(self) -> int:
-        self._drawer.start({'header': self._data.get('header', 'Uninstall Center')})
+        self._drawer.start({'header': self._data.get('header', 'Database Manager')})
         for line in self._data.get('text', []):
             self._drawer.add_text_line(line)
         for index, db in enumerate(self._dbs):
@@ -106,7 +106,7 @@ class UninstallCenterMenu(UiSection):
                     'This will uninstall the database:',
                     f'[{db.db_id}]',
                     ' ',
-                    'All its contents will be deleted from your system.',
+                    'All its files will be deleted from your system.',
                     'Do you really want to uninstall it?',
             ):
                 self._drawer.add_text_line(line)
@@ -137,7 +137,7 @@ class UninstallCenterMenu(UiSection):
 
     def _show_message(self, lines: list[str]) -> None:
         while True:
-            self._drawer.start({'header': self._data.get('header', 'Uninstall Center')})
+            self._drawer.start({'header': self._data.get('header', 'Database Manager')})
             for line in lines:
                 self._drawer.add_text_line(line)
             self._drawer.add_action('Ok', True)

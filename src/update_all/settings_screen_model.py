@@ -620,7 +620,7 @@ def uninstall_db_action(variable, db_id, title, on_success=None):
             "This will uninstall the database:",
             f"[{db_id}]",
             " ",
-            "All its contents will be deleted from your system.",
+            "All its files will be deleted from your system.",
             "Do you really want to uninstall it?",
         ],
         [
@@ -3316,15 +3316,15 @@ def settings_screen_model():
                     }]}
                 },
                 {
-                    "title": "# Uninstall Center",
-                    "description": "Remove dbs and their contents",
-                    "actions": {"ok": [{"type": "navigate", "target": "uninstall_center_menu"}]}
+                    "title": "# Database Manager",
+                    "description": "Uninstall dbs and files",
+                    "actions": {"ok": [{"type": "navigate", "target": "database_manager_menu"}]}
                 },
             ]
         },
-        "uninstall_center_menu": {
-            "ui": "uninstall_center",
-            "header": "Uninstall Center",
+        "database_manager_menu": {
+            "ui": "database_manager",
+            "header": "Database Manager",
             "text": [
                 "Select a database and press Uninstall.",
             ],

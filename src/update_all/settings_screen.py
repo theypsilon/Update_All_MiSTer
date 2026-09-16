@@ -68,7 +68,7 @@ from update_all.ui_engine_dialog_application import DialogSectionFactory
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string, gather_effects_by_type
 from update_all.uninstall_db_service import UninstallDbService
 from update_all.uninstall_db_ui import UninstallDbMenu
-from update_all.uninstall_center_ui import UninstallCenterMenu
+from update_all.database_manager_ui import DatabaseManagerMenu
 
 
 CHIP_ID_DEBUG_LOG_PATH: Final[str] = f'{MEDIA_FAT}/{FILE_update_all_chip_id_linker_log}'
@@ -327,7 +327,7 @@ class SettingsScreen(UiApplication):
             'device_login': lambda drawer, _interpolator, data: self._retroaccount.create_device_login_ui(drawer, device_login_renderer, data),
             'mister_video_mode': lambda drawer, _interpolator, data: MisterVideoModeMenu(drawer, self._mister_video_mode_service, data),
             'mister_video_adjust': lambda drawer, _interpolator, data: MisterVideoAdjustMenu(drawer, self._mister_video_mode_service, data),
-            'uninstall_center': lambda drawer, _interpolator, data: UninstallCenterMenu(
+            'database_manager': lambda drawer, _interpolator, data: DatabaseManagerMenu(
                 drawer,
                 self._uninstall_db_service,
                 self._ui_runtime,
