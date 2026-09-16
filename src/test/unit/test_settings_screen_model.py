@@ -1778,6 +1778,13 @@ class TestSettingsScreenModel(unittest.TestCase):
         for menu, title in (('jtcores_menu', '# JTCORES Enabled'), ('coin_op_collection_menu', '# Coin-Op')):
             self.assertNotIn('info', self._entry(menu, title)['actions'], f'{menu}: {title}')
 
+    def test_linux_updates_entry___toggles_the_update_linux_variable_and_shows_it_as_on_or_off(self):
+        entry = self._entry('system_options_menu', '# Linux Updates')
+
+        self.assertEqual('{update_linux:onoff}', entry['description'])
+        self.assertEqual([{'type': 'rotate_variable', 'target': 'update_linux'}], entry['actions']['ok'])
+        self.assertEqual({'group': 'mister_section', 'default': 'true', 'values': ['true', 'false']}, self.model['items']['system_options_menu']['variables']['update_linux'])
+
     def test_database_manager_entry___opens_the_database_manager_section(self):
         entry = self._entry('system_options_menu', '# Database Manager')
 

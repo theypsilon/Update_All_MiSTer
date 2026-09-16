@@ -79,6 +79,7 @@ class Config:
     paths_from_downloader_ini: bool = False
 
     skip_linux_update: bool = False
+    update_linux: bool = True
     not_mister: bool = False
     verbose: bool = False
     transition_service_only: bool = False

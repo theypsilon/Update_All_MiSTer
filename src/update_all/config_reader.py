@@ -55,6 +55,7 @@ class ConfigReader:
             config.base_system_path = mister_section.get_string('base_system_path', config.base_path)
             config.paths_from_downloader_ini = mister_section.has('base_path')
             config.verbose = mister_section.get_bool('verbose', config.verbose)
+            config.update_linux = mister_section.get_bool('update_linux', config.update_linux)
             if http_proxy := mister_section.get_string('http_proxy', ''):
                 config.http_proxy = http_proxy
                 config.http_config = http_config(http_proxy=http_proxy, https_proxy=None)

@@ -991,6 +991,7 @@ def settings_screen_model():
         "yesno": {"false": "No", "true": "Yes"},
         "yesno_reverse": {"false": "Yes", "true": "No"},
         "enabled": {"false": "Off.", "true": "On."},
+        "onoff": {"false": "Off", "true": "On"},
         "enabled_disabled": {"false": "Disabled", "true": "Enabled"},
         "encc_forks": {"pinned_linux": "MiSTer-devel", "devel": "MiSTer-devel (Edge Linux)", "db9": "MiSTer-DB9", "aitorgomez": "AitorGomez Fork"},
         "encc_forks_description": {"pinned_linux": "Official Cores from MiSTer-devel", "devel": "Official Cores with the newest Linux", "db9": "DB9 / SNAC8 forks with ENCC", "aitorgomez": "AitorGomez Fork"},
@@ -998,7 +999,7 @@ def settings_screen_model():
         "download_beta_cores_text": {},
         "coin_op_collection_releases": {"public": "public", "beta": "beta", "alpha": "alpha"},
         "coin_op_collection_releases_text": {},
-        "mirror": {"": "Off.", "off": "Off.", "andi_br": "Andi Brazil"},
+        "mirror": {"": "Off", "off": "Off", "andi_br": "Andi Brazil"},
         "overscan": {"none": "None", "low": "Low", "medium": "Medium", "high": "High", "maximum": "Max"},
         "bytes_to_gb": {},
         "device_label_message": {},
@@ -3251,12 +3252,18 @@ def settings_screen_model():
                 "overscan": {"group": "store", "default": "medium", "values": ["none", "low", "medium", "high", "maximum"]},
                 "monochrome_ui": {"group": "store", "default": "false", "values": ["false", "true"]},
                 "mirror": {"group": "store", "default": "off", "values": ["off", "andi_br"]},
+                "update_linux": {"group": "mister_section", "default": "true", "values": ["true", "false"]},
             },
             "entries": [
                 {
                     "title": "# Autoreboot (if needed)",
-                    "description": "{autoreboot:yesno}",
+                    "description": "{autoreboot:onoff}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "autoreboot"}]}
+                },
+                {
+                    "title": "# Linux Updates",
+                    "description": "{update_linux:onoff}",
+                    "actions": {"ok": [{"type": "rotate_variable", "target": "update_linux"}]}
                 },
                 {
                     "title": "# Countdown Timer",
@@ -3265,7 +3272,7 @@ def settings_screen_model():
                 },
                 {
                     "title": "# Log Viewer",
-                    "description": "Scrollable Screen: {log_viewer:yesno}",
+                    "description": "Scrollable Screen: {log_viewer:onoff}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "log_viewer"}]}
                 },
                 {
@@ -3285,7 +3292,7 @@ def settings_screen_model():
                 },
                 {
                     "title": "# Accessibility: Monochrome UI",
-                    "description": "{monochrome_ui:enabled}",
+                    "description": "{monochrome_ui:onoff}",
                     "actions": {"ok": [{"type": "rotate_variable", "target": "monochrome_ui"}, {"type": "apply_theme"}]}
                 },
                 {

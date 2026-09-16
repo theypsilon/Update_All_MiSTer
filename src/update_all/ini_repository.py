@@ -29,6 +29,7 @@ from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_
 from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, ajgowans_manualsdbs, \
     chipster6502_artworkdbs, chipster6502_artwork_db_with_style, coin_op_collection_filter_by_releases
 from update_all.file_system import FileSystem
+from update_all.other import str_to_bool
 from update_all.ini_parser import IniParser
 from update_all.logger import Logger
 from update_all.os_utils import OsUtils
@@ -629,6 +630,15 @@ class IniRepository:
             else:
                 ini[coin_op_lower_id]['filter'] = coin_op_filter
 
+        update_linux_value = bool(str_to_bool(ini.get('mister', {}).get('update_linux', 'true')))
+        if config.update_linux and not update_linux_value:
+            if 'mister' in ini and 'update_linux' in ini['mister']:
+                del ini['mister']['update_linux']
+                if not ini['mister']:
+                    del ini['mister']
+        elif not config.update_linux and update_linux_value:
+            ini.setdefault('mister', {})['update_linux'] = 'false'
+
     def _try_build_new_downloader_ini_contents(self, config: Config) -> Optional[str]:
         ini: Dict[str, Dict[str, str]] = self.get_downloader_ini(cached=False)
         before = json.dumps(ini)
@@ -645,10 +655,12 @@ class IniRepository:
 
     def _build_ini_contents_from_ini(self, ordered_ini: OrderedDict[str, Dict[str, str]], db_ids: Dict[str, str]) -> str:
         ini_ast = IniAst(ordered_ini, db_ids)
+        update_linux = ordered_ini.get('mister', {}).get('update_linux', None)
 
         if self._file_system.is_file(self.downloader_ini_standard_path()):
             ini_contents = io.StringIO(self._file_system.read_file_contents(self.downloader_ini_standard_path()))
             ini_ast.process(ini_contents.readlines())
+            ini_ast.sync_mister_key('update_linux', update_linux)
 
         parser = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
         for header, section_id in ordered_ini.items():
@@ -712,6 +724,23 @@ class IniAst:
                     continue
                 self._section_lines[self._current_section] = self._section_lines.get(self._current_section, [])
                 self._section_lines[self._current_section].append(line)
+
+    def sync_mister_key(self, key: str, value: Optional[str]) -> None:
+        # The [MiSTer] section is kept as the verbatim text of the file, so a key has to be edited in that text.
+        if self.mister_section == '':
+            return
+        key_regex = re.compile(rf'^\s*{re.escape(key)}\s*=\s*(.*?)\s*$', re.I)
+        current = next((m.group(1) for m in map(key_regex.match, self.mister_section.splitlines()) if m is not None), None)
+        if (current is None and value is None) or (current is not None and value is not None and str_to_bool(current) == str_to_bool(value)):
+            return
+
+        lines = [line for line in self.mister_section.splitlines() if key_regex.match(line) is None]
+        if value is not None:
+            lines.insert(1, f'{key} = {value}')
+        elif all(line.strip() == '' for line in lines[1:]):
+            self.mister_section = ''
+            return
+        self.mister_section = '\n'.join(lines) + '\n'
 
     def print(self):
         file_content = ''

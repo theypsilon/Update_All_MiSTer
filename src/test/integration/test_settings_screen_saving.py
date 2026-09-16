@@ -148,6 +148,25 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.save(ui)
         self.assertEqual(True, state.files[store_json.lower()]['json']['coin_op_collection_releases_auto'])
 
+    def test_calculate_needs_save___when_turning_linux_updates_off___returns_downloader_ini_changes(self) -> None:
+        sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        self.assertEqual('true', ui.get_value('update_linux'))
+        ui.set_value('update_linux', 'false')
+        sut.calculate_needs_save(ui)
+        self.assertEqual('  - downloader.ini', ui.get_value('needs_save_file_list'))
+
+    def test_save___when_turning_linux_updates_off_and_on_again___writes_and_then_removes_update_linux_in_the_mister_section(self) -> None:
+        sut, ui, state = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        ui.set_value('update_linux', 'false')
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+        self.assertEqual('false', read_ini_contents(state.files[downloader_ini]['content'])['mister']['update_linux'])
+
+        ui.set_value('update_linux', 'true')
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+        self.assertNotIn('mister', read_ini_contents(state.files[downloader_ini]['content']).sections())
+
     def test_calculate_needs_save___with_default_downloader_ini___returns_no_changes(self) -> None:
         sut, ui, _ = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
         sut.calculate_needs_save(ui)

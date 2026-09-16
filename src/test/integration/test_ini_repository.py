@@ -222,6 +222,30 @@ class TestIniRepository(unittest.TestCase):
         }, config=config)
         assertEqualIni(self, 'test/fixtures/downloader_ini/just_jtcores_with_negated_jtbeta.ini', fs.files[downloader_ini]['content'])
 
+    def test_write_downloader_ini___with_linux_updates_off_and_an_existing_mister_section___adds_update_linux_false_keeping_the_rest(self):
+        fs = _write_with_update_linux('[mister]\nfilter = aaa !bbb\n\n', update_linux=False)
+        self.assertEqual({'filter': 'aaa !bbb', 'update_linux': 'false'}, dict(_mister_section(fs)))
+
+    def test_write_downloader_ini___with_linux_updates_off_and_no_mister_section___creates_it(self):
+        fs = _write_with_update_linux('', update_linux=False)
+        self.assertEqual({'update_linux': 'false'}, dict(_mister_section(fs)))
+
+    def test_write_downloader_ini___with_linux_updates_on___removes_update_linux_false_keeping_the_rest(self):
+        fs = _write_with_update_linux('[mister]\nupdate_linux = false\nfilter = aaa !bbb\n\n', update_linux=True)
+        self.assertEqual({'filter': 'aaa !bbb'}, dict(_mister_section(fs)))
+
+    def test_does_downloader_ini_need_save___with_linux_updates_on_and_an_explicit_update_linux_true___reports_no_changes(self):
+        state = FileSystemState(files={downloader_ini: {'content': '[mister]\nupdate_linux = true\n\n' + ini_with_db_ids(all_dbs('').UPDATE_ALL_MISTER.db_id)}})
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+
+        self.assertFalse(ini_repository.does_downloader_ini_need_save(Config(databases={all_dbs('').UPDATE_ALL_MISTER.db_id}, update_linux=True)))
+
+    def test_does_downloader_ini_need_save___with_linux_updates_on_and_no_update_linux_key___reports_no_changes(self):
+        state = FileSystemState(files={downloader_ini: {'content': '[mister]\nfilter = aaa !bbb\n\n' + ini_with_db_ids(all_dbs('').UPDATE_ALL_MISTER.db_id)}})
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+
+        self.assertFalse(ini_repository.does_downloader_ini_need_save(Config(databases={all_dbs('').UPDATE_ALL_MISTER.db_id}, update_linux=True)))
+
     def test_write_downloader_ini___with_coin_op_beta_releases___writes_filter_excluding_alpha(self):
         fs = write_coin_op_downloader_ini(existing_filter=None, releases='beta')
         self.assertEqual('[MiSTer] !coinop-collection-alpha', coin_op_section(fs)['filter'])
@@ -527,3 +551,13 @@ def write_coin_op_downloader_ini(existing_filter, releases: str) -> FileSystemSt
 
 def coin_op_section(fs: FileSystemState) -> dict:
     return read_ini_contents(fs.files[downloader_ini.lower()]['content'])[all_dbs('').COIN_OP_COLLECTION.db_id]
+
+
+def _write_with_update_linux(mister_text: str, update_linux: bool) -> FileSystemState:
+    config = Config(databases={all_dbs('').UPDATE_ALL_MISTER.db_id}, update_linux=update_linux)
+    content = mister_text + ini_with_db_ids(all_dbs('').UPDATE_ALL_MISTER.db_id)
+    return test_write_downloader_ini(files={downloader_ini: {'content': content}}, config=config)
+
+
+def _mister_section(fs: FileSystemState):
+    return read_ini_contents(fs.files[downloader_ini.lower()]['content'])['mister']

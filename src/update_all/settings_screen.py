@@ -1154,6 +1154,7 @@ class SettingsScreen(UiApplication):
             *gather_variable_declarations(settings_screen_model(), "names_ini"),
             *gather_variable_declarations(settings_screen_model(), "arcade_roms"),
             *gather_variable_declarations(settings_screen_model(), "rannysnice_wallpapers"),
+            *gather_variable_declarations(settings_screen_model(), "mister_section"),
             *gather_variable_declarations(settings_screen_model(), "pocket"),
         ]
 

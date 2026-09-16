@@ -455,7 +455,7 @@ class TestSettingsScreenRoutines(unittest.TestCase):
     def test_initialize_ui___without_mirror_anywhere___keeps_the_mirror_variable_on_a_value_the_formatter_reads_as_off(self):
         _sut, ui = tester()
 
-        self.assertEqual('Off.', settings_screen_model()['formatters']['mirror'][ui.get_value('mirror')])
+        self.assertEqual('Off', settings_screen_model()['formatters']['mirror'][ui.get_value('mirror')])
 
     def test_initialize_ui___stores_media_fat_available_space_as_raw_bytes(self):
         file_system = FileSystemFactory.from_state(available_space={'/media/fat': 20 * 1024 * 1024 * 1024}).create_for_system_scope()

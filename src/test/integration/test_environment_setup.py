@@ -240,6 +240,12 @@ class TestEnvironmentSetup(unittest.TestCase):
             expected_config=Config(coin_op_collection_releases=expected, databases={coin_op.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id})
         )
 
+    def test_setup___with_update_linux_false_in_mister_section___returns_config_with_linux_updates_off(self):
+        self.assertSetup(
+            files={downloader_ini: '[mister]\nupdate_linux = false\n\n' + ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER'])},
+            expected_config=Config(update_linux=False, databases={all_dbs('').UPDATE_ALL_MISTER.db_id})
+        )
+
     def test_setup___with_duplicate_distribution_in_drop_in___main_downloader_ini_url_wins(self):
         main_url = _DISTRIBUTION_MISTER_DB9_URL
         drop_in_url = _DISTRIBUTION_MISTER_DB_URL
