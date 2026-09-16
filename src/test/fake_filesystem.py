@@ -169,7 +169,8 @@ class _FileSystem(ProductionFileSystem):
         return self._state.files[self._path(path)]['content']
 
     def read_file_binary(self, path):
-        return self._state.files[self._path(path)]['binary']
+        description = self._state.files[self._path(path)]
+        return description['content_bytes'] if 'content_bytes' in description else description['binary']
 
     def write_file_contents(self, path, content):
         if self._path(path) not in self._state.files:

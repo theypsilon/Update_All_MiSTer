@@ -30,6 +30,7 @@ class UpdateOutputTester(UpdateOutput):
         self.sync_started_calls = 0
         self.sync_finished_calls = 0
         self.jtbeta_updated_calls = 0
+        self.coinop_license_updated_calls = 0
         self.credentials_removed_calls = []
 
     def transition(self, transition: str, **fields: UpdateOutputField) -> None:
@@ -45,6 +46,9 @@ class UpdateOutputTester(UpdateOutput):
 
     def jtbeta_updated(self) -> None:
         self.jtbeta_updated_calls += 1
+
+    def coinop_license_updated(self) -> None:
+        self.coinop_license_updated_calls += 1
 
     def credentials_removed(self, reason: str) -> None:
         self.credentials_removed_calls.append(reason)

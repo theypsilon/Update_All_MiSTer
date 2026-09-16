@@ -26,7 +26,7 @@ class TestRetroAccountGateway(unittest.TestCase):
     def test_mister_sync___when_server_returns_401___returns_revoked_session(self):
         sut = RetroAccountGatewayTester(status=401)
 
-        result, response = sut.mister_sync('device-1', 'refresh-1', None, None)
+        result, response = sut.mister_sync('device-1', 'refresh-1', None, None, None)
 
         self.assertEqual(SessionResult.REVOKED, result)
         self.assertEqual(401, response)
@@ -35,7 +35,7 @@ class TestRetroAccountGateway(unittest.TestCase):
     def test_mister_sync___when_server_returns_403___returns_error_session(self):
         sut = RetroAccountGatewayTester(status=403)
 
-        result, response = sut.mister_sync('device-1', 'refresh-1', None, None)
+        result, response = sut.mister_sync('device-1', 'refresh-1', None, None, None)
 
         self.assertEqual(SessionResult.ERROR, result)
         self.assertEqual(403, response)
@@ -44,7 +44,7 @@ class TestRetroAccountGateway(unittest.TestCase):
     def test_mister_sync___posts_refresh_and_device_headers_to_current_sync_endpoint(self):
         sut = RetroAccountGatewayTester(status=401)
 
-        sut.mister_sync('device-1', 'refresh-1', 'patreon-md5', 'jtbeta-md5')
+        sut.mister_sync('device-1', 'refresh-1', 'patreon-md5', 'jtbeta-md5', 'coinop-md5')
 
         self.assertEqual([(
             'https://retroaccount.test/api/mister/sync',
@@ -52,6 +52,7 @@ class TestRetroAccountGateway(unittest.TestCase):
             {
                 'update_all_patreon_key_fingerprint': 'patreon-md5',
                 'jtbeta_fingerprint': 'jtbeta-md5',
+                'coinop_license_md5': 'coinop-md5',
             },
             {'x-refresh-token': 'refresh-1', 'x-device-id': 'device-1'},
             10,

@@ -19,6 +19,9 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 import io
+import zipfile
+import hashlib
+import base64
 import json
 import unittest
 
@@ -27,10 +30,10 @@ from test.file_system_tester_state import FileSystemState
 from test.logger_tester import LoggerSpy, NoLogger
 from test.update_all_service_tester import CoinOpCollectionServiceStub
 from update_all.config import Config
-from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FOLDER_mame, FILE_jtbeta, FILE_jtbeta_alt, FILE_patreon_key, FILE_patreon_key_md5, \
+from update_all.constants import FILE_coinopkey, FILE_coinopkey_alt, FILE_coinopkey_md5, COINOPKEY_ENTRY_NAME, MEDIA_FAT, OTHER_MEDIA, FOLDER_mame, FILE_jtbeta, FILE_jtbeta_alt, FILE_patreon_key, FILE_patreon_key_md5, \
     FILE_retroaccount_device_id, FILE_retroaccount_user_json, FILE_retroaccount_verified_chip_id
 from update_all.other import GenericProvider
-from update_all.retroaccount import BenefitState, ChipIdAttachResult, RetroAccountService, any_to_retroaccount_file_description
+from update_all.retroaccount import zip_single_file, BenefitState, ChipIdAttachResult, RetroAccountService, any_to_retroaccount_file_description
 from update_all.retroaccount_gateway import SessionResult
 from update_all.update_output import LtsvUpdateOutput, NoopUpdateOutput
 
@@ -114,7 +117,7 @@ class TestRetroAccountService(unittest.TestCase):
 
         mister_sync(sut)
 
-        self.assertEqual([('device-1', 'refresh-1', 'old-md5', None)], gateway.mister_sync_calls)
+        self.assertEqual([('device-1', 'refresh-1', 'old-md5', None, None)], gateway.mister_sync_calls)
         self.assertTrue(file_system.is_file(FILE_retroaccount_user_json))
         self.assertTrue(file_system.is_file(FILE_patreon_key))
         self.assertTrue(file_system.is_file(FILE_patreon_key_md5))
@@ -141,7 +144,7 @@ class TestRetroAccountService(unittest.TestCase):
 
         saved_user = file_system.load_dict_from_file(FILE_retroaccount_user_json)
         self.assertEqual('refresh-2', saved_user['refresh_token'])
-        self.assertEqual(('device-1', 'refresh-1', 'old-md5', None), gateway.mister_sync_calls[0])
+        self.assertEqual(('device-1', 'refresh-1', 'old-md5', None, None), gateway.mister_sync_calls[0])
         self.assertEqual('MiSTer Living Room', sut.get_device_label())
         self.assertEqual([(FILE_patreon_key, 'https://example.com/update_all.patreonkey')], gateway.install_calls)
         self.assertTrue(file_system.is_file(FILE_patreon_key))
@@ -167,7 +170,7 @@ class TestRetroAccountService(unittest.TestCase):
 
         mister_sync(sut)
 
-        self.assertEqual(('device-1', 'refresh-1', 'old-md5', None), gateway.mister_sync_calls[0])
+        self.assertEqual(('device-1', 'refresh-1', 'old-md5', None, None), gateway.mister_sync_calls[0])
         self.assertEqual([(FILE_jtbeta, 'https://example.com/jtbeta.zip')], gateway.install_calls)
         self.assertTrue(sut.has_installed_jtbeta())
         self.assertTrue(file_system.is_file(FILE_jtbeta))
@@ -304,6 +307,139 @@ class TestRetroAccountService(unittest.TestCase):
         self.assertEqual([], coin_op_service.follow_retroaccount_benefit_calls)
         self.assertEqual(BenefitState.CHECKING, sut.coin_op_access_sync_state())
         self.assertIsNone(sut.coin_op_benefit_releases())
+
+    def test_mister_sync___when_coin_op_license_is_installed___sends_its_fingerprint_to_the_server(self):
+        sut, _file_system, gateway, _encryption = tester(
+            files={
+                **default_sync_files(),
+                FILE_coinopkey: {'content': 'zip'},
+                FILE_coinopkey_md5: {'content': 'license-md5\n'},
+            },
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {}},
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual(('device-1', 'refresh-1', 'old-md5', None, 'license-md5'), gateway.mister_sync_calls[0])
+
+    def test_mister_sync___when_coin_op_license_zip_is_missing___sends_no_fingerprint_even_with_a_stale_md5_file(self):
+        sut, _file_system, gateway, _encryption = tester(
+            files={**default_sync_files(), FILE_coinopkey_md5: {'content': 'license-md5'}},
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {}},
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual(('device-1', 'refresh-1', 'old-md5', None, None), gateway.mister_sync_calls[0])
+
+    def test_mister_sync___when_server_sends_a_bare_coin_op_key___wraps_it_into_coinopkey_zip_and_copies_it_to_existing_media(self):
+        raw_key = b'UADRM1-license-bytes'
+        alt_path = f'{MEDIA_FAT}/{FILE_coinopkey_alt}'
+        usb_path = f'{OTHER_MEDIA[0]}/{FILE_coinopkey}'
+        sut, file_system, _gateway, _encryption = tester(
+            files={
+                **default_sync_files(),
+                alt_path: {'hash': 'old-alt', 'content': 'old-alt'},
+                usb_path: {'hash': 'old-usb', 'content': 'old-usb'},
+            },
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'coinop': {'license_access': True, 'license_access_kind': 'beta', 'skip_license_renewal': False, 'license_raw_bytes': base64.b64encode(raw_key).decode()}}},
+        )
+
+        mister_sync(sut)
+
+        self.assertTrue(sut.has_installed_coin_op_license())
+        archive = zipfile.ZipFile(io.BytesIO(file_system.read_file_binary(FILE_coinopkey)))
+        self.assertEqual([COINOPKEY_ENTRY_NAME], archive.namelist())
+        self.assertEqual(raw_key, archive.read(COINOPKEY_ENTRY_NAME))
+        self.assertEqual(hashlib.md5(raw_key).hexdigest(), file_system.read_file_contents(FILE_coinopkey_md5))
+        self.assertTrue(file_system.compare_files(FILE_coinopkey, alt_path))
+        self.assertTrue(file_system.compare_files(FILE_coinopkey, usb_path))
+        self.assertEqual([
+            ('print', 'New Coin-Op Collection license installed!'),
+            ('debug', f'coinop.key MD5: {hashlib.md5(raw_key).hexdigest()}'),
+            ('debug', f'coinopkey.zip also copied to {alt_path}'),
+            ('debug', f'coinopkey.zip also copied to {usb_path}'),
+        ], sut.consume_important_messages())
+
+    def test_mister_sync___when_server_sends_the_coin_op_key_already_zipped___stores_the_archive_as_is(self):
+        archive_bytes = zip_single_file(COINOPKEY_ENTRY_NAME, b'key-bytes')
+        sut, file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'coinop': {'license_access': True, 'license_access_kind': 'alpha', 'skip_license_renewal': False, 'license_raw_bytes': base64.b64encode(archive_bytes).decode()}}},
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual(archive_bytes, file_system.read_file_binary(FILE_coinopkey))
+        self.assertEqual(hashlib.md5(archive_bytes).hexdigest(), file_system.read_file_contents(FILE_coinopkey_md5))
+
+    def test_mister_sync___when_server_sends_the_license_manager_wrapper_zip___stores_the_inner_coinopkey_zip(self):
+        inner_archive = zip_single_file(COINOPKEY_ENTRY_NAME, b'key-bytes')
+        wrapper = io.BytesIO()
+        with zipfile.ZipFile(wrapper, 'w') as archive:
+            archive.writestr(FILE_coinopkey, inner_archive)
+            archive.writestr('Assets/coinopkey/common/coinop.key', b'key-bytes')
+        sut, file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'coinop': {'license_access': True, 'license_access_kind': 'beta', 'skip_license_renewal': False, 'license_raw_bytes': base64.b64encode(wrapper.getvalue()).decode()}}},
+        )
+
+        mister_sync(sut)
+
+        self.assertEqual(inner_archive, file_system.read_file_binary(FILE_coinopkey))
+        self.assertEqual(hashlib.md5(wrapper.getvalue()).hexdigest(), file_system.read_file_contents(FILE_coinopkey_md5))
+
+    def test_mister_sync___when_server_sends_an_unrelated_zip___installs_nothing(self):
+        sut, file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'coinop': {'license_access': True, 'license_access_kind': 'beta', 'skip_license_renewal': False, 'license_raw_bytes': base64.b64encode(zip_single_file('readme.txt', b'nope')).decode()}}},
+        )
+
+        mister_sync(sut)
+
+        self.assertFalse(sut.has_installed_coin_op_license())
+        self.assertFalse(file_system.is_file(FILE_coinopkey))
+
+    def test_mister_sync___when_coin_op_license_renewal_is_skipped_or_bytes_are_invalid___installs_nothing(self):
+        for coinop in (
+                {'license_access': True, 'license_access_kind': 'beta', 'skip_license_renewal': True},
+                {'license_access': True, 'license_access_kind': 'beta', 'skip_license_renewal': False, 'license_raw_bytes': 'not base64!'},
+                {'license_access': False, 'skip_license_renewal': False},
+        ):
+            with self.subTest(coinop=coinop):
+                sut, file_system, _gateway, _encryption = tester(
+                    files=default_sync_files(),
+                    gateway_result=SessionResult.VALID,
+                    gateway_response={'benefits': {'coinop': coinop}},
+                )
+
+                mister_sync(sut)
+
+                self.assertFalse(sut.has_installed_coin_op_license())
+                self.assertFalse(file_system.is_file(FILE_coinopkey))
+
+    def test_mister_sync___when_coin_op_license_is_installed___emits_ltsv_membership_extra_event(self):
+        stream = io.StringIO()
+        sut, _file_system, _gateway, _encryption = tester(
+            files=default_sync_files(),
+            gateway_result=SessionResult.VALID,
+            gateway_response={'benefits': {'coinop': {'license_access': True, 'license_access_kind': 'beta', 'skip_license_renewal': False, 'license_raw_bytes': base64.b64encode(b'key').decode()}}},
+        )
+
+        sut.mister_sync(LtsvUpdateOutput(stream))
+
+        self.assertIn(
+            'DLP1\tevent:retroaccount_membership_extra'
+            '\ttopic:coinop_license'
+            '\tmsg:New Coin-Op Collection license installed!\t',
+            stream.getvalue()
+        )
 
     def test_mister_sync___when_session_is_revoked___emits_ltsv_credentials_removed_event(self):
         stream = io.StringIO()
@@ -556,8 +692,8 @@ class _RetroAccountGatewayStub:
         self.attach_chip_id_calls = []
         self.attach_chip_id_status = 200
 
-    def mister_sync(self, device_id, refresh_token, update_all_patreon_key_fingerprint, jtbeta_fingerprint=None):
-        self.mister_sync_calls.append((device_id, refresh_token, update_all_patreon_key_fingerprint, jtbeta_fingerprint))
+    def mister_sync(self, device_id, refresh_token, update_all_patreon_key_fingerprint, jtbeta_fingerprint=None, coinop_license_md5=None):
+        self.mister_sync_calls.append((device_id, refresh_token, update_all_patreon_key_fingerprint, jtbeta_fingerprint, coinop_license_md5))
         return self._result, self._response
 
     def install_file(self, file_path, file_url):

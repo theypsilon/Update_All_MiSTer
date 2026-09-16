@@ -28,6 +28,7 @@ class UpdateOutput(Protocol):
     def sync_started(self) -> None: pass
     def sync_finished(self) -> None: pass
     def jtbeta_updated(self) -> None: pass
+    def coinop_license_updated(self) -> None: pass
     def credentials_removed(self, reason: str) -> None: pass
 
 
@@ -36,6 +37,7 @@ class NoopUpdateOutput(UpdateOutput):
     def sync_started(self) -> None: pass
     def sync_finished(self) -> None: pass
     def jtbeta_updated(self) -> None: pass
+    def coinop_license_updated(self) -> None: pass
     def credentials_removed(self, reason: str) -> None: pass
 
 
@@ -54,6 +56,9 @@ class LtsvUpdateOutput(UpdateOutput):
 
     def jtbeta_updated(self) -> None:
         self._emit('retroaccount_membership_extra', topic='jtbeta', msg='New jtbeta.zip from JOTEGO installed!', info='You are receiving the new jtbeta.zip because you are a member of JOTEGO.\nThis will allow you to run private and beta games made by the JOTEGO Team on your MiSTer.')
+
+    def coinop_license_updated(self) -> None:
+        self._emit('retroaccount_membership_extra', topic='coinop_license', msg='New Coin-Op Collection license installed!', info='You are receiving this license because you are a member of Coin-Op Collection.\nIt is bound to this MiSTer and lets its beta and alpha cores run.')
 
     def credentials_removed(self, reason: str) -> None:
         self._emit('retroaccount_credentials_removed', reason=reason)

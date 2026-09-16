@@ -63,12 +63,14 @@ class RetroAccountGateway:
     def _server_url(self) -> str:
         return self._config_provider.get().retroaccount_domain
 
-    def mister_sync(self, device_id: str, refresh_token: str, update_all_patreon_key_fingerprint: Optional[str], jtbeta_fingerprint: Optional[str]) -> Tuple[SessionResult, Union[MisterSyncResponse, int]]:
+    def mister_sync(self, device_id: str, refresh_token: str, update_all_patreon_key_fingerprint: Optional[str], jtbeta_fingerprint: Optional[str], coinop_license_md5: Optional[str]) -> Tuple[SessionResult, Union[MisterSyncResponse, int]]:
         body = {}
         if update_all_patreon_key_fingerprint:
             body['update_all_patreon_key_fingerprint'] = update_all_patreon_key_fingerprint
         if jtbeta_fingerprint:
             body['jtbeta_fingerprint'] = jtbeta_fingerprint
+        if coinop_license_md5:
+            body['coinop_license_md5'] = coinop_license_md5
         headers = {
             'x-refresh-token': refresh_token,
             'x-device-id': device_id,

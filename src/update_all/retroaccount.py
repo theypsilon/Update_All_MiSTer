@@ -16,6 +16,11 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
+import base64
+import binascii
+import hashlib
+import io
+import zipfile
 from dataclasses import dataclass, field
 from enum import IntEnum
 import os
@@ -26,6 +31,7 @@ from update_all.file_system import FileSystem
 from update_all.config import Config
 from update_all.other import GenericProvider, any_to_bool, any_to_nonfalsy_str
 from update_all.constants import MEDIA_FAT, OTHER_MEDIA, FOLDER_mame, FILE_jtbeta, FILE_jtbeta_alt, FILE_retroaccount_user_json, \
+    FILE_coinopkey, FILE_coinopkey_alt, FILE_coinopkey_md5, COINOPKEY_ENTRY_NAME, \
     FILE_retroaccount_device_id, FILE_retroaccount_verified_chip_id, FILE_patreon_key_md5, \
     FILE_patreon_key_prev, FILE_JOTEGO_mra_pack_json, FILE_JOTEGO_mra_pack_ini
 from update_all.encryption import Encryption, EncryptionResult
@@ -85,10 +91,46 @@ class _SyncTransition:
     install_update_all_patreon_key_file: Optional[_RetroAccountFileDescription] = None
     install_jtbeta_file: Optional[_RetroAccountFileDescription] = None
     install_jt_mra_pack: Optional[_RetroAccountFileDescription] = None
+    install_coin_op_license: Optional[bytes] = field(default=None, repr=False)
     credentials_were_corrupted: bool = False
     credentials_were_revoked: bool = False
     connection_failed: bool = False
     need_login: bool = False
+
+
+def coin_op_license_bytes_from_benefits(benefits: Any) -> Optional[bytes]:
+    coinop = benefits.get('coinop', None) if isinstance(benefits, dict) else None
+    if not isinstance(coinop, dict):
+        return None
+    raw = coinop.get('license_raw_bytes', None)
+    if not isinstance(raw, str) or not raw:
+        return None
+    try:
+        return base64.b64decode(raw, validate=True)
+    except (ValueError, binascii.Error):
+        return None
+
+
+def zip_single_file(entry_name: str, content: bytes) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_STORED) as archive:
+        archive.writestr(entry_name, content)
+    return buffer.getvalue()
+
+
+def coinopkey_zip_from_license_payload(payload: bytes) -> bytes:
+    # The license manager serves a wrapper ZIP meant to be extracted at the SD root, which places
+    # games/mame/coinopkey.zip (an archive holding coinop.key, as the MRAs load it). Accept that wrapper,
+    # the inner archive itself, or a bare key.
+    if not payload.startswith(b'PK\x03\x04'):
+        return zip_single_file(COINOPKEY_ENTRY_NAME, payload)
+    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        names = archive.namelist()
+        if FILE_coinopkey in names:
+            return archive.read(FILE_coinopkey)
+        if COINOPKEY_ENTRY_NAME in names:
+            return payload
+    raise ValueError(f'Unexpected Coin-Op license archive contents: {names}')
 
 
 def coin_op_license_access_kind_from_benefits(benefits: Any) -> Optional[str]:
@@ -148,6 +190,7 @@ class RetroAccountService(RetroAccountClient):
         self._coin_op_collection_service = coin_op_collection_service
         self._has_installed_update_all_patreon_key = False
         self._has_installed_jtbeta = False
+        self._has_installed_coin_op_license = False
         self._update_all_extras: Optional[bool] = None
         self._update_all_extras_sync_state: BenefitState = BenefitState.CHECKING
         self._jtbeta_access_sync_state: BenefitState = BenefitState.CHECKING
@@ -175,6 +218,7 @@ class RetroAccountService(RetroAccountClient):
 
     def has_installed_update_all_patreon_key(self) -> bool: return self._has_installed_update_all_patreon_key
     def has_installed_jtbeta(self) -> bool: return self._has_installed_jtbeta
+    def has_installed_coin_op_license(self) -> bool: return self._has_installed_coin_op_license
 
     def consume_important_messages(self) -> list[ImportantMessage]:
         messages = self._important_messages.copy()
@@ -344,8 +388,16 @@ class RetroAccountService(RetroAccountClient):
                 self._logger.debug(f"RetroAccountService: jtbeta.zip could not be hashed")
                 self._logger.debug(e)
 
+        coinop_license_md5 = None
+        if self._file_system.is_file(FILE_coinopkey) and self._file_system.is_file(FILE_coinopkey_md5):
+            try:
+                coinop_license_md5 = self._file_system.read_file_contents(FILE_coinopkey_md5).strip() or None
+            except Exception as e:
+                self._logger.debug(f"RetroAccountService: coinopkey.zip fingerprint could not be read")
+                self._logger.debug(e)
+
         self._logger.bench('RetroAccountService Gateway mister_sync start')
-        result, response = self._retroaccount_gateway.mister_sync(device_id, refresh_token, patreon_key_fingerprint, jtbeta_fingerprint)
+        result, response = self._retroaccount_gateway.mister_sync(device_id, refresh_token, patreon_key_fingerprint, jtbeta_fingerprint, coinop_license_md5)
         self._logger.bench('RetroAccountService Gateway mister_sync end')
 
         if result == SessionResult.VALID and isinstance(response, dict):
@@ -368,6 +420,7 @@ class RetroAccountService(RetroAccountClient):
                 update_all_extras_active=any_to_bool(benefits.get('update_all_extras', None)),
                 jtbeta_access_active=any_to_bool(benefits.get('jtbeta_access', None), default=None),
                 coin_op_license_access_kind=coin_op_license_access_kind_from_benefits(benefits),
+                install_coin_op_license=coin_op_license_bytes_from_benefits(benefits),
             )
 
         if result == SessionResult.REVOKED:
@@ -389,6 +442,7 @@ class RetroAccountService(RetroAccountClient):
     def _reset_sync_effects(self) -> None:
         self._has_installed_update_all_patreon_key = False
         self._has_installed_jtbeta = False
+        self._has_installed_coin_op_license = False
         self.consume_important_messages()
 
     def _apply_sync_transition(self, transition: _SyncTransition, output: UpdateOutput) -> None:
@@ -461,6 +515,13 @@ class RetroAccountService(RetroAccountClient):
             self._install_jt_mra_pack(transition.install_jt_mra_pack)
             self._logger.bench('RetroAccountService: Installing JT MRA PACK END')
 
+        if transition.install_coin_op_license is not None:
+            self._logger.bench('RetroAccountService: Installing Coin-Op license START')
+            self._install_coin_op_license(transition.install_coin_op_license)
+            if self._has_installed_coin_op_license:
+                output.coinop_license_updated()
+            self._logger.bench('RetroAccountService: Installing Coin-Op license END')
+
         if transition.credentials_were_corrupted:
             self._report_forced_logout('Your credentials are corrupted!\nDo you have any problems with your storage (SD)?')
 
@@ -522,25 +583,46 @@ class RetroAccountService(RetroAccountClient):
         except Exception as e:
             self._logger.debug('RetroAccountService: Could not install jtbeta.zip.')
             self._logger.debug(e)
+        self._copy_mame_file_to_other_media(FILE_jtbeta, FILE_jtbeta_alt, 'jtbeta.zip')
+
+    def _install_coin_op_license(self, license_bytes: bytes) -> None:
         try:
-            alt_path = os.path.join(MEDIA_FAT, FILE_jtbeta_alt)
+            zip_bytes = coinopkey_zip_from_license_payload(license_bytes)
+            license_md5 = hashlib.md5(license_bytes).hexdigest()
+            self._file_system.make_dirs_parent(FILE_coinopkey)
+            self._file_system.write_file_bytes(FILE_coinopkey, zip_bytes)
+            self._file_system.make_dirs_parent(FILE_coinopkey_md5)
+            self._file_system.write_file_contents(FILE_coinopkey_md5, license_md5)
+            self._has_installed_coin_op_license = True
+            self._logger.debug(f'RetroAccountService: New coinopkey.zip installed at {FILE_coinopkey} with license MD5: {license_md5}')
+            self._important_messages.append(('print', 'New Coin-Op Collection license installed!'))
+            self._important_messages.append(('debug', f'coinop.key MD5: {license_md5}'))
+        except Exception as e:
+            self._logger.debug('RetroAccountService: Could not install coinopkey.zip.')
+            self._logger.debug(e)
+            return
+        self._copy_mame_file_to_other_media(FILE_coinopkey, FILE_coinopkey_alt, 'coinopkey.zip')
+
+    def _copy_mame_file_to_other_media(self, file: str, alt_file: str, label: str) -> None:
+        try:
+            alt_path = os.path.join(MEDIA_FAT, alt_file)
             if self._file_system.is_file(alt_path):
-                self._file_system.copy(FILE_jtbeta, alt_path)
-                self._logger.debug(f'RetroAccountService: Copied jtbeta.zip to {alt_path}')
-                self._important_messages.append(('debug', f'jtbeta.zip also copied to {alt_path}'))
+                self._file_system.copy(file, alt_path)
+                self._logger.debug(f'RetroAccountService: Copied {label} to {alt_path}')
+                self._important_messages.append(('debug', f'{label} also copied to {alt_path}'))
 
             mame_folder_found = False
             for drive in OTHER_MEDIA:
                 has_mame_folder = not mame_folder_found and self._file_system.is_folder(os.path.join(drive, FOLDER_mame))
                 mame_folder_found |= has_mame_folder
 
-                o_path = os.path.join(drive, FILE_jtbeta)
+                o_path = os.path.join(drive, file)
                 if has_mame_folder or self._file_system.is_file(o_path):
-                    self._file_system.copy(FILE_jtbeta, o_path)
-                    self._logger.debug(f'RetroAccountService: Copied jtbeta.zip to {o_path}')
-                    self._important_messages.append(('debug', f'jtbeta.zip also copied to {o_path}'))
+                    self._file_system.copy(file, o_path)
+                    self._logger.debug(f'RetroAccountService: Copied {label} to {o_path}')
+                    self._important_messages.append(('debug', f'{label} also copied to {o_path}'))
         except Exception as e:
-            self._logger.debug('RetroAccountService: Could not copy jtbeta.zip to other media.')
+            self._logger.debug(f'RetroAccountService: Could not copy {label} to other media.')
             self._logger.debug(e)
 
     def _install_jt_mra_pack(self, jt_mra_pack: _RetroAccountFileDescription) -> None:
@@ -591,6 +673,7 @@ class RetroAccountService(RetroAccountClient):
         self._update_all_extras = False
         self._has_installed_update_all_patreon_key = False
         self._has_installed_jtbeta = False
+        self._has_installed_coin_op_license = False
         self._device_label = None
         self._update_all_patreon_key_prev_file = None
         self.consume_important_messages()
