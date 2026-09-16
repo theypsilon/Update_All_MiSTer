@@ -66,9 +66,9 @@ from update_all.settings_screen_printer import SettingsScreenPrinter
 from update_all.ui_engine import UiContext, UiApplication, UiSectionFactory, execute_ui_engine, UiRuntime
 from update_all.ui_engine_dialog_application import DialogSectionFactory
 from update_all.ui_model_utilities import gather_variable_declarations, dynamic_convert_string, gather_effects_by_type
-from update_all.uninstall_db_service import UninstallDbService
+from update_all.database_manager_service import DatabaseManagerService
 from update_all.uninstall_db_ui import UninstallDbMenu
-from update_all.uninstall_center_ui import UninstallCenterMenu
+from update_all.database_manager_ui import DatabaseManagerMenu
 
 
 CHIP_ID_DEBUG_LOG_PATH: Final[str] = f'{MEDIA_FAT}/{FILE_update_all_chip_id_linker_log}'
@@ -99,11 +99,11 @@ class SettingsScreen(UiApplication):
                  ui_runtime: UiRuntime, ao_service: ArcadeOrganizerService, encryption: Encryption,
                  retroaccount: RetroAccountService, retroachievements_service: RetroAchievementsService,
                  mister_ini_repository: MisterIniRepository,
-                 frontends_service: FrontendsService, uninstall_db_service: UninstallDbService):
+                 frontends_service: FrontendsService, database_manager_service: DatabaseManagerService):
         self._logger = logger
         self._retroachievements_service = retroachievements_service
         self._frontends_service = frontends_service
-        self._uninstall_db_service = uninstall_db_service
+        self._database_manager_service = database_manager_service
         self._mister_ini_repository = mister_ini_repository
         self._config_provider = config_provider
         self._file_system = file_system
@@ -327,17 +327,18 @@ class SettingsScreen(UiApplication):
             'device_login': lambda drawer, _interpolator, data: self._retroaccount.create_device_login_ui(drawer, device_login_renderer, data),
             'mister_video_mode': lambda drawer, _interpolator, data: MisterVideoModeMenu(drawer, self._mister_video_mode_service, data),
             'mister_video_adjust': lambda drawer, _interpolator, data: MisterVideoAdjustMenu(drawer, self._mister_video_mode_service, data),
-            'uninstall_center': lambda drawer, _interpolator, data: UninstallCenterMenu(
+            'database_manager': lambda drawer, _interpolator, data: DatabaseManagerMenu(
                 drawer,
-                self._uninstall_db_service,
+                self._database_manager_service,
                 self._ui_runtime,
                 self._logger,
                 lambda db_id: self.reconcile_uninstalled_database(ui, db_id),
+                self._text_line_width(),
                 data,
             ),
             'uninstall_db': lambda drawer, _interpolator, data: UninstallDbMenu(
                 drawer,
-                self._uninstall_db_service,
+                self._database_manager_service,
                 self._ui_runtime,
                 self._logger,
                 lambda db_ids: self.reconcile_failed_bulk_uninstall(ui, db_ids),
@@ -1003,6 +1004,11 @@ class SettingsScreen(UiApplication):
             for variable, db_id in db_ids_by_variable.items()
             if variable in model_variables
         }
+
+    def _text_line_width(self) -> int:
+        # Mirrors the width the standard printer wraps text lines at.
+        config = self._config_provider.get()
+        return config.term_size.columns - max(2, config.overscan_dim.cols * 2)
 
     def reconcile_uninstalled_database(self, ui: UiContext, db_id: str) -> None:
         canonical_id = next((known_id for known_id in model_variables_by_db_id() if known_id.lower() == db_id.lower()), None)

@@ -65,7 +65,7 @@ from update_all.retroachievements_service import RetroAchievementsService
 from update_all.update_output import LtsvUpdateOutput, NoopUpdateOutput
 from update_all.update_all_background_jobs_service import UpdateAllBackgroundJobsService, UpdateAllSelfUpdateCheck
 from update_all.update_all_self_update_service import UpdateAllSelfUpdateService, UpdateAllResumePoint
-from update_all.uninstall_db_service import UninstallDbService
+from update_all.database_manager_service import DatabaseManagerService
 from update_all.frontends_service import FrontendsService
 
 
@@ -130,7 +130,7 @@ class UpdateAllServiceFactory:
             self._logger,
         )
         frontends_service = FrontendsService(file_system, self._logger)
-        uninstall_db_service = UninstallDbService(
+        database_manager_service = DatabaseManagerService(
             ini_repository,
             config_provider,
             downloader_service,
@@ -161,7 +161,7 @@ class UpdateAllServiceFactory:
             retroachievements_service=retroachievements_service,
             mister_ini_repository=mister_ini_repository,
             frontends_service=frontends_service,
-            uninstall_db_service=uninstall_db_service,
+            database_manager_service=database_manager_service,
         )
         environment_setup = EnvironmentSetupImpl(
             logger=self._logger,

@@ -22,7 +22,7 @@ from update_all.logger import Logger
 from update_all.ui_engine import EffectChain, ProcessKeyResult, UiSection, UiRuntime
 from update_all.ui_engine_dialog_application import UiDialogDrawer
 from update_all.ui_model_utilities import Key
-from update_all.uninstall_db_service import UninstallDbService
+from update_all.database_manager_service import DatabaseManagerService
 
 _EXIT_UNINSTALL_EXTERNALS_UNVERIFIED = 22
 _EXIT_UNINSTALL_DRIVE_DISCONNECTED = 23
@@ -39,14 +39,14 @@ class UninstallDbMenu(UiSection):
     def __init__(
             self,
             drawer: UiDialogDrawer,
-            uninstall_db_service: UninstallDbService,
+            database_manager_service: DatabaseManagerService,
             ui_runtime: UiRuntime,
             logger: Logger,
             on_failed_bulk_uninstall: Callable[[tuple[str, ...]], None],
             data: Dict[str, Any],
     ):
         self._drawer = drawer
-        self._service = uninstall_db_service
+        self._service = database_manager_service
         self._ui_runtime = ui_runtime
         self._logger = logger
         self._on_failed_bulk_uninstall = on_failed_bulk_uninstall

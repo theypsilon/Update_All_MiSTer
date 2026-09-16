@@ -29,7 +29,7 @@ from update_all.logger import Logger
 from update_all.other import GenericProvider
 
 
-class UninstallDbService:
+class DatabaseManagerService:
     def __init__(
             self,
             ini_repository: IniRepository,
@@ -65,8 +65,16 @@ class UninstallDbService:
             if lower_id in excluded:
                 continue
             known = known_dbs.get(lower_id)
-            result.append(InstalledDb(known.db_id, known.title, installed.description) if known is not None else installed)
+            result.append(InstalledDb(known.db_id, known.title, installed.description, installed.configured, installed.db_url) if known is not None else installed)
         return result
+
+    def update(self, db_id: str) -> int:
+        return self._downloader_service.execute_downloader_command(
+            self._config_provider.get(),
+            self._ini_repository.downloader_ini_standard_path(),
+            ['--run-only', db_id],
+            None,
+        )
 
     def uninstall(self, db_ids: list[str], force: bool = False) -> int:
         config = self._config_provider.get()
@@ -99,20 +107,31 @@ class InstalledDb:
     db_id: str
     title: str
     description: str
+    configured: bool
+    db_url: str
 
 
 def installed_dbs_from_ltsv(output: str) -> list[InstalledDb]:
-    descriptions: dict[str, str] = {}
+    configured: dict[str, tuple[str, str]] = {}
     installed_ids: list[str] = []
     for line in output.splitlines():
         fields = line.split('\t')
         if fields[0] != 'DLP1':
             continue
-        db_id = next((field[len('db:'):] for field in fields if field.startswith('db:')), '')
+        db_id = _ltsv_field(fields, 'db')
         if not db_id:
             continue
         if 'event:installed_db' in fields:
             installed_ids.append(db_id)
         elif 'event:configured_db' in fields:
-            descriptions[db_id.lower()] = next((field[len('description:'):] for field in fields if field.startswith('description:')), '')
-    return [InstalledDb(db_id, db_id, descriptions.get(db_id.lower(), '')) for db_id in installed_ids]
+            configured[db_id.lower()] = (_ltsv_field(fields, 'description'), _ltsv_field(fields, 'url'))
+    result = []
+    for db_id in installed_ids:
+        description, db_url = configured.get(db_id.lower(), ('', ''))
+        result.append(InstalledDb(db_id, db_id, description, db_id.lower() in configured, db_url))
+    return result
+
+
+def _ltsv_field(fields: list[str], key: str) -> str:
+    prefix = f'{key}:'
+    return next((field[len(prefix):] for field in fields if field.startswith(prefix)), '')

@@ -72,7 +72,7 @@ from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
 from update_all.update_all_background_jobs_service import UpdateAllBackgroundJobsService
 from update_all.update_all_self_update_service import UpdateAllSelfUpdateService
 from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllService
-from update_all.uninstall_db_service import UninstallDbService
+from update_all.database_manager_service import DatabaseManagerService
 from update_all.frontends_service import FrontendsService
 
 
@@ -203,7 +203,7 @@ class SettingsScreenTester(SettingsScreen):
                  mister_ini_repository: MisterIniRepository = None,
                  retroachievements_service: RetroAchievementsService = None,
                  frontends_service: FrontendsService = None,
-                 uninstall_db_service: UninstallDbService = None):
+                 database_manager_service: DatabaseManagerService = None):
 
         config_provider = config_provider or GenericProvider[Config]()
         store_provider = store_provider or GenericProvider[LocalStore]()
@@ -248,9 +248,9 @@ class SettingsScreenTester(SettingsScreen):
                     file_system=file_system,
                 )
             ),
-            uninstall_db_service=(
-                uninstall_db_service
-                or UninstallDbService(
+            database_manager_service=(
+                database_manager_service
+                or DatabaseManagerService(
                     ini_repository,
                     config_provider,
                     DownloaderService(

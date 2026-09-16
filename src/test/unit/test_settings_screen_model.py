@@ -1778,12 +1778,12 @@ class TestSettingsScreenModel(unittest.TestCase):
         for menu, title in (('jtcores_menu', '# JTCORES Enabled'), ('coin_op_collection_menu', '# Coin-Op')):
             self.assertNotIn('info', self._entry(menu, title)['actions'], f'{menu}: {title}')
 
-    def test_uninstall_center_entry___opens_the_uninstall_center_section(self):
-        entry = self._entry('system_options_menu', '# Uninstall Center')
+    def test_database_manager_entry___opens_the_database_manager_section(self):
+        entry = self._entry('system_options_menu', '# Database Manager')
 
-        self.assertEqual([{'type': 'navigate', 'target': 'uninstall_center_menu'}], entry['actions']['ok'])
-        self.assertEqual('uninstall_center', self.model['items']['uninstall_center_menu']['ui'])
-        self.assertEqual('Uninstall Center', self.model['items']['uninstall_center_menu']['header'])
+        self.assertEqual([{'type': 'navigate', 'target': 'database_manager_menu'}], entry['actions']['ok'])
+        self.assertEqual('database_manager', self.model['items']['database_manager_menu']['ui'])
+        self.assertEqual('Database Manager', self.model['items']['database_manager_menu']['header'])
 
     def test_jtcores_submenu___has_no_separate_auto_enable_option(self):
         entries = self.model['items']['jtcores_menu']['entries']
