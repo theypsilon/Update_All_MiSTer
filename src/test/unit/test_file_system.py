@@ -15,6 +15,9 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import os
+import tempfile
+import pathlib
 import unittest
 
 from test.fake_filesystem import FileSystemFactory as FakeFileSystemFactory
@@ -85,6 +88,27 @@ class TestFileSystemPathResolution(unittest.TestCase):
 
 def _config() -> Config:
     return Config(base_path=_BASE_PATH, base_system_path=_BASE_SYSTEM_PATH)
+
+
+class TestFileSystemListing(unittest.TestCase):
+
+    def test_list_file_names_in_folder___lists_regular_files_and_skips_folders_and_dangling_symlinks(self):
+        with tempfile.TemporaryDirectory(prefix='ua_fs_') as folder:
+            pathlib.Path(folder, 'downloader_custom.ini').write_text('')
+            pathlib.Path(folder, '.dropbox.device').write_text('')
+            pathlib.Path(folder, 'downloader').mkdir()
+            os.symlink(os.path.join(folder, 'missing-target'), os.path.join(folder, 'dangling'))
+
+            self.assertEqual(['.dropbox.device', 'downloader_custom.ini'], sorted(_real_file_system().list_file_names_in_folder(folder)))
+
+    def test_list_file_names_in_folder___on_missing_folder___returns_empty_list(self):
+        self.assertEqual([], _real_file_system().list_file_names_in_folder('/tmp/ua_fs_missing_folder_for_tests'))
+
+
+def _real_file_system():
+    config_provider = GenericProvider[Config]()
+    config_provider.initialize(_config())
+    return FileSystemFactory(config_provider, {}, NoLogger()).create_for_system_scope()
 
 
 def _resolve(path: str) -> str:

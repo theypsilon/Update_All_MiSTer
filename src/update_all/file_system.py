@@ -330,7 +330,16 @@ class _FileSystem(FileSystem):
 
     def list_file_names_in_folder(self, path):
         try:
-            return [entry.name for entry in os.scandir(self._path(path)) if entry.is_file()]
+            result = []
+            for entry in os.scandir(self._path(path)):
+                try:
+                    if entry.is_file():
+                        result.append(entry.name)
+                except OSError as e:
+                    # Seen on FAT cards with names the kernel cannot decode (EILSEQ): skip the entry, keep listing.
+                    self._logger.debug('Skipping unreadable entry while listing folder', path, ': ', entry.name)
+                    self._logger.debug(e)
+            return result
         except FileNotFoundError as e:
             self._ignore_error(e)
         except NotADirectoryError as e:
