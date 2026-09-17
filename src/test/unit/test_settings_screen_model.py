@@ -183,7 +183,7 @@ _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
     '# Sonic Mania MiSTer': 'launch and play Sonic Mania',
     '# MiSTer Duke3D': 'launch and play Duke Nukem 3D',
     '# MiSTer Quake': 'launch and play Quake',
-    '# Diablo MiSTer': 'play the Diablo shareware right away, and the full Diablo and Hellfire campaigns',
+    '# Diablo MiSTer': 'play the full Diablo and Hellfire campaigns with your own game data',
     '# NBlood MiSTer': 'launch and play Blood',
     '# Solarus MiSTer': 'play Solarus quests',
     '# 3S-ARM': 'launch and play Street Fighter III: 3rd Strike',
@@ -1173,7 +1173,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self._assert_core_menu_location(
             '# Diablo MiSTer',
             'MultiDatabases/diablo',
-            "You can launch Diablo and Hellfire from MiSTer's Scripts folder once you copy Diablo.sh and Hellfire.sh from _Other/Diablo/ to Scripts/.",
+            "You can launch Diablo and Hellfire from MiSTer's Other folder.",
         )
         self._assert_core_menu_location(
             '# Maldita Castilla MiSTer',
@@ -1434,7 +1434,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         for archive in ('hellfire.mpq', 'hfmonk.mpq', 'hfmusic.mpq', 'hfvoice.mpq'):
             self.assertIn(archive, confirmation)
         self.assertIn('games/Diablo/', confirmation)
-        self.assertIn('shareware', confirmation)
+        self.assertNotIn('shareware', confirmation)
 
     def test_nblood_entry___when_yes_is_selected___arms_ini_sections_and_identifies_source_port_in_info(self):
         app = self._execute_multidatabase_action(
