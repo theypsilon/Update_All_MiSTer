@@ -15,12 +15,8 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
-import configparser
-import io
-import json
-import re
 from collections import OrderedDict
-from typing import Optional, Dict, List, Tuple, Any
+from typing import Optional, Dict, Iterable, Iterator, List, Tuple
 
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_INI, DOWNLOADER_STORE_STANDARD_PATH, \
@@ -28,6 +24,9 @@ from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_
     DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI
 from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, ajgowans_manualsdbs, \
     chipster6502_artworkdbs, chipster6502_artwork_db_with_style, coin_op_collection_filter_by_releases
+from update_all.downloader_ini_document import DownloaderIniDocument, IniSection, RepeatedSection
+from update_all.downloader_ini_reader import DownloaderIniReader, IniSections, first_definitions, read_ini_contents, \
+    sort_drop_in_ini_paths
 from update_all.file_system import FileSystem
 from update_all.other import str_to_bool
 from update_all.ini_parser import IniParser
@@ -52,24 +51,14 @@ def _build_separate_db_ini_files_by_filename() -> Dict[str, List[str]]:
 
 SEPARATE_DB_INI_FILES_BY_FILENAME: Dict[str, List[str]] = _build_separate_db_ini_files_by_filename()
 
-# INI files that Update All owns and writes to directly. Any other ini file matching the extra-db globs
-# is considered "read-only" for adds: databases living there are reflected in the settings screen, and
-# removed from there when toggled off, but never written to when toggled on.
-CANONICAL_DB_INI_RELATIVE_PATHS: frozenset = frozenset({
-    DOWNLOADER_INI_STANDARD_PATH.lower(),
-    *(filename.lower() for filename in SEPARATE_DB_INI_FILES.values()),
-})
-
-# Subfolder (relative to base_path) that is scanned for drop-in database ini files.
-EXTRA_DB_INI_FOLDER: str = 'downloader'
-
 
 class IniRepository:
 
-    def __init__(self, logger: Logger, file_system: FileSystem, os_utils: OsUtils):
+    def __init__(self, logger: Logger, file_system: FileSystem, os_utils: OsUtils, downloader_ini_reader: DownloaderIniReader):
         self._logger = logger
         self._file_system = file_system
         self._os_utils = os_utils
+        self._downloader_ini_reader = downloader_ini_reader
         self._base_path = None
         self._downloader_ini = None
         self._arcade_organizer_ini = None
@@ -82,7 +71,7 @@ class IniRepository:
         if cached and self._downloader_ini is not None:
             return self._downloader_ini
 
-        result = self._read_downloader_ini()
+        result, _ = self._read_downloader_ini()
         if cached:
             self._downloader_ini = result
         return result
@@ -96,19 +85,22 @@ class IniRepository:
             self._arcade_organizer_ini = result
         return result
 
-    def _read_downloader_ini(self) -> Dict[str, Dict[str, str]]:
+    def _read_downloader_ini(self) -> Tuple[IniSections, List[RepeatedSection]]:
+        contents = self._read_downloader_ini_rawtext()
+        if contents is None:
+            return {}, []
+        document = DownloaderIniDocument(contents)
+        return self._downloader_sections(document), document.repeated_sections
+
+    def _downloader_sections(self, document: DownloaderIniDocument) -> IniSections:
         path = self.downloader_ini_standard_path()
-        contents = ''
         try:
-            contents = self._file_system.read_file_contents(path)
-            parser = read_ini_contents(contents)
+            return document.section_values(literal_percent=True)
         except Exception as e:
             self._logger.debug(f'Could not read Downloader INI file at: {path}')
-            self._logger.debug(f'contents: {contents}')
+            self._logger.debug(f'contents: {document.original}')
             self._logger.debug(e)
             return {}
-
-        return {header.lower(): {k.lower(): v for k, v in section.items()} for header, section in parser.items() if header.lower() != 'default'}
 
     def _read_downloader_ini_rawtext(self) -> Optional[str]:
         path = self.downloader_ini_standard_path()
@@ -150,16 +142,40 @@ class IniRepository:
         return f'{self._base_path}/{DOWNLOADER_STORE_STANDARD_PATH}'
 
     def write_downloader_ini(self, config: Config) -> None:
-        target_path = self.downloader_ini_standard_path()
         self.refresh_database_sources(config)
-
-        new_ini_contents = self._try_build_new_downloader_ini_contents(config)
-        if new_ini_contents is None:
+        document = self._main_document_for_save()
+        if document is None:
             return
+        changed, repeated = self._edit_downloader_document(document, config, candidate_databases(config))
+        if changed:
+            self._save_ini_document(self.downloader_ini_standard_path(), document, separate_sections=True, ending='\n\n')
+            self._log_repeated_sections(self.downloader_ini_standard_path(), repeated)
 
-        self._file_system.make_dirs_parent(target_path)
-        self._file_system.write_file_contents(target_path, new_ini_contents)
-        self._downloader_ini = None
+    def _main_document_for_save(self) -> Optional[DownloaderIniDocument]:
+        if not self._file_system.is_file(self.downloader_ini_standard_path()):
+            return DownloaderIniDocument('')
+        contents = self._read_downloader_ini_rawtext()
+        return DownloaderIniDocument(contents) if contents is not None else None
+
+    def _save_ini_document(self, path: str, document: DownloaderIniDocument, *, delete_empty: bool = False,
+                           separate_sections: bool = False, ending: Optional[str] = None) -> None:
+        contents = document.render(separate_sections=separate_sections, ending=ending)
+        if delete_empty and not contents.strip():
+            if self._file_system.is_file(path):
+                self._file_system.unlink(path, verbose=False)
+        elif contents != document.original:
+            self._file_system.make_dirs_parent(path)
+            self._file_system.write_file_contents(path, contents)
+        else:
+            return
+        document.original = contents
+        if path == self.downloader_ini_standard_path():
+            self._downloader_ini = None
+
+    def _log_repeated_sections(self, path: str, repeated_sections: Dict[str, str]) -> None:
+        for section, contents in repeated_sections.items():
+            self._logger.print(f'WARNING! Section [{section}] was repeated in {path}, only the first one has been kept.')
+            self._logger.debug('Repeated section removed from ', path, ':\n', contents)
 
     def replace_db_ids_in_ini_and_fs(self, changed_ids: Dict[str, str], downloader_ini: Dict[str, IniParser]) -> None:
         downloader_ini_txt = self._read_downloader_ini_rawtext()
@@ -167,28 +183,25 @@ class IniRepository:
             self._logger.debug(f'WARNING! Could not replace db_id because downloader ini is not readable.')
             return
 
-        new_lines = []
-        replaced_ids = set()
-        for line in downloader_ini_txt.splitlines():
-            for old_id, new_id in changed_ids.items():
-                str_pos = line.lower().find(f'[{old_id.lower()}]')
-                if str_pos != -1:
-                    line = line[:str_pos] + f'[{new_id}]' + line[str_pos + len(old_id) + 2:]
-                    replaced_ids.add(old_id)
-
-            new_lines.append(line)
+        document = DownloaderIniDocument(downloader_ini_txt)
+        replaced_ids, removed_sections = document.rename_sections(changed_ids)
 
         if len(replaced_ids) == 0:
             self._logger.debug(f'WARNING! Could not replace db_id because downloader ini does not contain it.')
             return
 
         # Updating downloader.ini
-        self._file_system.write_file_contents(self.downloader_ini_standard_path(), '\n'.join(new_lines))
+        self._save_ini_document(self.downloader_ini_standard_path(), document, ending='')
+        for old_id in removed_sections:
+            self._logger.print(f'WARNING! Section [{old_id}] has been removed from {self.downloader_ini_standard_path()} because [{changed_ids[old_id]}] was already there.')
+        if removed_sections:
+            self._logger.debug('Sections removed from ', self.downloader_ini_standard_path(), ':\n', ''.join(removed_sections.values()).removesuffix('\n'))
 
         # Updating downloader_ini object
         for old_id in replaced_ids:
             new_id = changed_ids[old_id]
-            downloader_ini[new_id.lower()] = downloader_ini[old_id.lower()]
+            if new_id.lower() not in downloader_ini:
+                downloader_ini[new_id.lower()] = downloader_ini[old_id.lower()]
             del downloader_ini[old_id.lower()]
 
         # Updating downloader store from now on:
@@ -224,23 +237,10 @@ class IniRepository:
             self._logger.debug(f'WARNING! Could not replace db_id because downloader ini is not readable.')
             return
 
-        new_lines = []
-        ignoring_lines = False
-        for line in downloader_ini_txt.splitlines():
-            if ignoring_lines:
-                if line.strip().startswith('['):
-                    ignoring_lines = False
-
-            for rem_id in removed_ids:
-                str_pos = line.lower().find(f'[{rem_id.lower()}]')
-                if str_pos != -1:
-                    ignoring_lines = True
-
-            if not ignoring_lines:
-                new_lines.append(line)
-
         # Updating downloader.ini
-        self._file_system.write_file_contents(self.downloader_ini_standard_path(), '\n'.join(new_lines))
+        document = DownloaderIniDocument(downloader_ini_txt)
+        document.remove_sections(removed_ids)
+        self._save_ini_document(self.downloader_ini_standard_path(), document, ending='')
 
         # Updating downloader_ini object
         for rem_id in removed_ids:
@@ -282,55 +282,23 @@ class IniRepository:
             self._logger.debug(f'WARNING! Could not extract dbs because downloader ini is not readable.')
             return []
 
-        extract_set = set(lower_to_canonical.keys())
-        extracted_sections: OrderedDict[str, List[str]] = OrderedDict()
-        remaining_lines: List[str] = []
-        capturing_lower_id: Optional[str] = None
-
-        for line in downloader_ini_txt.splitlines():
-            stripped = line.strip()
-            if stripped.startswith('[') and ']' in stripped:
-                header = stripped[1:stripped.find(']')].lower()
-                if header in extract_set:
-                    capturing_lower_id = header
-                    if capturing_lower_id not in extracted_sections:
-                        extracted_sections[capturing_lower_id] = []
-                    extracted_sections[capturing_lower_id].append(f'[{lower_to_canonical[capturing_lower_id]}]')
-                    continue
-                capturing_lower_id = None
-                remaining_lines.append(line)
-                continue
-
-            if capturing_lower_id is not None:
-                extracted_sections[capturing_lower_id].append(line)
-            else:
-                remaining_lines.append(line)
-
-        if not extracted_sections:
+        source = DownloaderIniDocument(downloader_ini_txt)
+        if not any(name in source.sections for name in lower_to_canonical):
             return []
 
         target_path = f'{self._base_path}/{target_ini_filename}'
-        existing_sections: Dict[str, str] = {}
-        if self._file_system.is_file(target_path):
-            try:
-                existing_contents = self._file_system.read_file_contents(target_path)
-                existing_sections = self._split_ini_contents_into_sections(existing_contents)
-            except Exception as e:
-                self._logger.debug(f'Could not read existing separate DB INI file at: {target_path}')
-                self._logger.debug(e)
+        target = self._read_separate_document(target_path)
+        if target is None:
+            return []
 
-        merged_sections: OrderedDict[str, str] = OrderedDict()
-        for lower_id, section_text in existing_sections.items():
-            if lower_id not in extracted_sections:
-                merged_sections[lower_id] = section_text.rstrip('\n')
-        for lower_id, section_lines in extracted_sections.items():
-            merged_sections[lower_id] = '\n'.join(section_lines).rstrip('\n')
+        repeated_sections = source.deduplicate(lower_to_canonical)
+        extracted_sections = source.remove_sections(lower_to_canonical)
+        target.deduplicate()
+        target.put_sections({lower_to_canonical[name]: section for name, section in extracted_sections.items()})
 
-        self._file_system.make_dirs_parent(target_path)
-        self._file_system.write_file_contents(target_path, '\n\n'.join(merged_sections.values()) + '\n')
-
-        self._file_system.write_file_contents(self.downloader_ini_standard_path(), '\n'.join(remaining_lines).rstrip() + '\n')
-        self._downloader_ini = None
+        self._save_ini_document(target_path, target, separate_sections=True, ending='\n')
+        self._save_ini_document(self.downloader_ini_standard_path(), source, ending='\n')
+        self._log_repeated_sections(self.downloader_ini_standard_path(), repeated_sections)
 
         for lower_id in extracted_sections:
             if lower_id in downloader_ini:
@@ -338,49 +306,64 @@ class IniRepository:
 
         return [lower_to_canonical[lid] for lid in extracted_sections if lid in lower_to_canonical]
 
-    @staticmethod
-    def _split_ini_contents_into_sections(contents: str) -> Dict[str, str]:
-        sections: Dict[str, str] = {}
-        current: Optional[str] = None
-        for line in contents.splitlines():
-            stripped = line.strip()
-            if stripped.startswith('[') and ']' in stripped:
-                current = stripped[1:stripped.find(']')].lower()
-                sections[current] = line + '\n'
-            elif current is not None:
-                sections[current] += line + '\n'
-        return sections
+    def _read_separate_document(self, target_path: str) -> Optional[DownloaderIniDocument]:
+        # None means that the file is there but could not be read, so it must not be overwritten.
+        if not self._file_system.is_file(target_path):
+            return DownloaderIniDocument('')
+
+        try:
+            return DownloaderIniDocument(self._file_system.read_file_contents(target_path))
+        except Exception as e:
+            self._logger.debug(f'Could not read existing separate DB INI file at: {target_path}')
+            self._logger.debug(e)
+            return None
 
     def read_extra_db_ini_files(self) -> Tuple[Dict[str, IniParser], Dict[str, List[str]]]:
         """Scans every ini file that the MiSTer Downloader picks up besides downloader.ini, namely
         '{base_path}/downloader_*.ini' and '{base_path}/downloader/*.ini' (non-hidden), and returns:
           - sections: db_id (lower case) -> parsed section (first file wins on duplicates)
           - sources:  db_id (lower case) -> list of relative file paths where it was found, excluding the
-            files Update All owns (downloader.ini and the canonical separate db ini files)."""
-        sections: Dict[str, IniParser] = {}
-        sources: Dict[str, List[str]] = {}
-        base_path = self._extra_db_ini_base_path()
-        for relative_path in self._extra_db_ini_file_paths():
-            target_path = f'{base_path}/{relative_path}'
-            try:
-                contents = self._file_system.read_file_contents(target_path)
-                parser = read_ini_contents(contents)
-            except Exception as e:
-                self._logger.debug(f'Could not read DB INI file at: {target_path}')
-                self._logger.debug(e)
+            dedicated file of that database, which Update All writes. Anywhere else the database is "read-only"
+            for adds: it is reflected in the settings screen and removed from there when toggled off, but
+            never written to when toggled on."""
+        sections, sources = self._extra_sections(self._iter_extra_documents())
+        return {db_id: IniParser(section) for db_id, section in sections.items()}, self._external_sources(sources)
+
+    def _read_extra_document(self, relative_path: str) -> Optional[DownloaderIniDocument]:
+        target_path = relative_path if relative_path.startswith('/') else f'{self._extra_db_ini_base_path()}/{relative_path}'
+        try:
+            return DownloaderIniDocument(self._file_system.read_file_contents(target_path))
+        except Exception as e:
+            self._logger.debug(f'Could not read DB INI file at: {target_path}')
+            self._logger.debug(e)
+            return None
+
+    def _iter_extra_documents(self) -> Iterator[Tuple[str, Optional[DownloaderIniDocument]]]:
+        for path in self._downloader_ini_reader.drop_in_ini_paths(self._extra_db_ini_base_path()):
+            yield path, self._read_extra_document(path)
+
+    def _extra_sections(self, documents: Iterable[Tuple[str, Optional[DownloaderIniDocument]]]) -> Tuple[IniSections, Dict[str, List[str]]]:
+        readable_files: List[Tuple[str, IniSections]] = []
+        for relative_path, document in documents:
+            if document is None:
                 continue
+            try:
+                readable_files.append((relative_path, document.section_values(literal_percent=True)))
+            except Exception as e:
+                self._logger.debug(f'Could not read DB INI file at: {self._extra_db_ini_base_path()}/{relative_path}')
+                self._logger.debug(e)
 
-            is_canonical = relative_path.lower() in CANONICAL_DB_INI_RELATIVE_PATHS
-            for header, section in parser.items():
-                if header.lower() == 'default':
-                    continue
-                lower_id = header.lower()
-                if lower_id not in sections:
-                    sections[lower_id] = IniParser({k.lower(): v for k, v in section.items()})
-                if not is_canonical:
-                    sources.setdefault(lower_id, []).append(relative_path)
+        return first_definitions(readable_files)
 
-        return sections, sources
+    @staticmethod
+    def _external_sources(all_sources: Dict[str, List[str]]) -> Dict[str, List[str]]:
+        sources: Dict[str, List[str]] = {}
+        for db_id, relative_paths in all_sources.items():
+            not_owned = [path for path in relative_paths if path.lower() != SEPARATE_DB_INI_FILES.get(db_id, '').lower()]
+            if len(not_owned) > 0:
+                sources[db_id] = not_owned
+
+        return sources
 
     def resolve_all_database_sections(
             self,
@@ -398,24 +381,6 @@ class IniRepository:
         _, sources = self.read_extra_db_ini_files()
         config.database_sources = sources
 
-    def _extra_db_ini_file_paths(self) -> List[str]:
-        base_path = self._extra_db_ini_base_path()
-        result: List[str] = []
-        downloader_folder = f'{base_path}/{EXTRA_DB_INI_FOLDER}'
-        if self._file_system.is_folder(downloader_folder):
-            for name in sorted(self._file_system.list_file_names_in_folder(downloader_folder)):
-                if name.startswith('.'):
-                    continue
-                if name.lower().endswith('.ini'):
-                    result.append(f'{EXTRA_DB_INI_FOLDER}/{name}')
-
-        for name in sorted(self._file_system.list_file_names_in_folder(base_path)):
-            lower = name.lower()
-            if lower.startswith('downloader_') and lower.endswith('.ini'):
-                result.append(name)
-
-        return result
-
     def _extra_db_ini_base_path(self) -> str:
         downloader_ini_path = self.downloader_ini_standard_path()
         suffix = '/' + DOWNLOADER_INI_STANDARD_PATH
@@ -426,87 +391,113 @@ class IniRepository:
     def strip_db_ids_from_extra_files(self, sources: Dict[str, List[str]]) -> None:
         """Removes the given db_id sections from the extra (non-owned) ini files where they live. Files that
         become empty after the removal are deleted. `sources` maps db_id (lower case) -> list of relative paths."""
-        base_path = self._extra_db_ini_base_path()
+        paths = dict.fromkeys(path for paths in sources.values() for path in paths)
+        documents = {path: self._read_extra_document(path) for path in paths}
+        for path in self._remove_extra_sections(sources, documents):
+            target = path if path.startswith('/') else f'{self._extra_db_ini_base_path()}/{path}'
+            self._save_ini_document(target, documents[path], delete_empty=True, ending='\n')
+
+    @staticmethod
+    def _remove_extra_sections(sources: Dict[str, List[str]], documents: Dict[str, Optional[DownloaderIniDocument]]) -> set:
         ids_by_file: Dict[str, set] = {}
         for db_id, relative_paths in sources.items():
             for relative_path in relative_paths:
                 ids_by_file.setdefault(relative_path, set()).add(db_id.lower())
 
-        for relative_path, ids in ids_by_file.items():
-            target_path = relative_path if relative_path.startswith('/') else f'{base_path}/{relative_path}'
-            if not self._file_system.is_file(target_path):
-                continue
-            try:
-                contents = self._file_system.read_file_contents(target_path)
-            except Exception as e:
-                self._logger.debug(f'Could not read DB INI file at: {target_path}')
-                self._logger.debug(e)
-                continue
-
-            new_contents = self._strip_sections(contents, ids)
-            if new_contents.strip() == '':
-                self._file_system.unlink(target_path, verbose=False)
-            else:
-                self._file_system.write_file_contents(target_path, new_contents.rstrip() + '\n')
-
-    @staticmethod
-    def _strip_sections(contents: str, ids_lower: set) -> str:
-        new_lines: List[str] = []
-        ignoring = False
-        for line in contents.splitlines():
-            stripped = line.strip()
-            if stripped.startswith('[') and ']' in stripped:
-                header = stripped[1:stripped.find(']')].lower()
-                ignoring = header in ids_lower
-            if not ignoring:
-                new_lines.append(line)
-        return '\n'.join(new_lines)
+        changed = set()
+        for path, ids in ids_by_file.items():
+            document = documents.get(path)
+            if document is not None and document.remove_sections(ids):
+                changed.add(path)
+        return changed
 
     def write_separate_db_ini_files(self, config: Config) -> None:
-        active = {db.db_id.lower(): db for _, db in candidate_databases(config) if db.db_id in config.databases}
+        documents = dict(self._iter_extra_documents())
+        sources = self._extra_sections(documents.items())[1]
+        preserved = self._preserved_separate_sections(self._main_document_for_save(), documents, sources)
+        warnings = self._edit_separate_documents(config, candidate_databases(config), documents, preserved)
+        self._save_extra_documents(documents, set(warnings), warnings)
 
-        for ini_filename, canonical_db_ids in SEPARATE_DB_INI_FILES_BY_FILENAME.items():
-            target_path = f'{self._base_path}/{ini_filename}'
+    def _preserved_separate_sections(self, main: Optional[DownloaderIniDocument],
+                                     documents: Dict[str, Optional[DownloaderIniDocument]],
+                                     sources: Dict[str, List[str]]) -> Dict[str, IniSection]:
+        # Keep the complete winning definition before any file is edited. Later
+        # definitions must not contribute options that the user was not using.
+        sections = {name: documents[paths[0]].sections[name]
+                    for name, paths in sources.items() if name in SEPARATE_DB_INI_FILES}
+        if main is not None:
+            sections.update({name: main.sections[name] for name in self._downloader_sections(main)
+                             if name in SEPARATE_DB_INI_FILES})
+        return sections
+
+    def _edit_separate_documents(self, config: Config, candidates: List[Tuple[str, Database]],
+                                 documents: Dict[str, Optional[DownloaderIniDocument]],
+                                 preserved: Dict[str, IniSection]) -> Dict[str, Dict[str, str]]:
+        active = {db.db_id.lower(): db for _, db in candidates if db.db_id in config.databases}
+        warnings: Dict[str, Dict[str, str]] = {}
+
+        loaded_paths = {path.lower() for path in documents}
+        for ini_filename in SEPARATE_DB_INI_FILES_BY_FILENAME:
+            if ini_filename.lower() not in loaded_paths:
+                documents[ini_filename] = self._read_separate_document(f'{self._base_path}/{ini_filename}')
+
+        # Reuse the discovered spelling and document on case-preserving filesystems.
+        for ini_filename, document in documents.items():
+            canonical_db_ids = SEPARATE_DB_INI_FILES_BY_FILENAME.get(ini_filename.lower())
+            if canonical_db_ids is None or document is None:
+                continue
             active_dbs = [active[db_id.lower()] for db_id in canonical_db_ids if db_id.lower() in active]
-            if active_dbs:
-                self._file_system.make_dirs_parent(target_path)
-                sections = [self._build_separate_db_section(db, config) for db in active_dbs]
-                self._file_system.write_file_contents(target_path, '\n\n'.join(sections) + '\n')
-            elif self._file_system.is_file(target_path):
-                self._file_system.unlink(target_path, verbose=False)
+            warnings[ini_filename] = document.deduplicate()
+            document.remove_sections(db_id for db_id in canonical_db_ids if db_id.lower() not in active)
+            for db in active_dbs:
+                original = preserved.get(db.db_id.lower())
+                if original is not None and original is not document.sections.get(db.db_id.lower()):
+                    document.put_sections({db.db_id: original})
+                options: Dict[str, Optional[str]] = {'db_url': db.db_url}
+                if db.db_id.lower() == ALL_DB_IDS['ARCADE_ROMS'].lower():
+                    options['filter'] = '!hbmame' if config.hbmame_filter else None
+                document.set_options(db.db_id, options)
+            document.order_sections(db.db_id for db in active_dbs)
+        return warnings
+
+    def _save_extra_documents(self, documents: Dict[str, Optional[DownloaderIniDocument]], paths: set,
+                              warnings: Dict[str, Dict[str, str]]) -> None:
+        for path in sort_drop_in_ini_paths(paths):
+            target = f'{self._extra_db_ini_base_path()}/{path}'
+            self._save_ini_document(target, documents[path], delete_empty=True, separate_sections=path in warnings, ending='\n')
+            self._log_repeated_sections(target, warnings.get(path, {}))
 
     def write_database_configuration(self, config: Config) -> None:
         """Persists the complete database selection from config.
 
-        Extra drop-in sources are refreshed from disk before making decisions. Sections for disabled
-        databases are removed from those files, then sources are refreshed again before canonical
-        INI files are written. Keeping this workflow in one entry point prevents stale source metadata
-        from suppressing a later re-enable.
+        Read a fresh snapshot, apply every edit in memory, then write each changed
+        file once. Source discovery and the database catalog are shared by all writers.
         """
-        self.refresh_database_sources(config)
-
-        managed_db_ids = {db.db_id.lower() for _, db in candidate_databases(config)}
+        documents = dict(self._iter_extra_documents())
+        sources = self._extra_sections(documents.items())[1]
+        config.database_sources = self._external_sources(sources)
+        candidates = candidate_databases(config)
+        main = self._main_document_for_save()
+        preserved = self._preserved_separate_sections(main, documents, sources)
+        managed_db_ids = {db.db_id.lower() for _, db in candidates}
         inactive_sources = {
             db_id: relative_paths
             for db_id, relative_paths in config.database_sources.items()
             if db_id in managed_db_ids and not config.is_database_enabled(db_id)
         }
-        if inactive_sources:
-            self.strip_db_ids_from_extra_files(inactive_sources)
-
-        self.write_downloader_ini(config)
-        self.write_separate_db_ini_files(config)
-        self.resolve_all_database_sections({
-            db_id: IniParser(section)
-            for db_id, section in self.get_downloader_ini(cached=False).items()
-        })
-
-    @staticmethod
-    def _build_separate_db_section(db: Database, config: Config) -> str:
-        lines = [f'[{db.db_id}]', f'db_url = {db.db_url}']
-        if db.db_id.lower() == ALL_DB_IDS['ARCADE_ROMS'].lower() and config.hbmame_filter:
-            lines.append('filter = !hbmame')
-        return '\n'.join(lines)
+        changed_extras = self._remove_extra_sections(inactive_sources, documents)
+        changed, repeated = False, {}
+        if main is not None:
+            changed, repeated = self._edit_downloader_document(main, config, candidates)
+        warnings = self._edit_separate_documents(config, candidates, documents, preserved)
+        if changed:
+            self._save_ini_document(self.downloader_ini_standard_path(), main, separate_sections=True, ending='\n\n')
+            self._log_repeated_sections(self.downloader_ini_standard_path(), repeated)
+        self._save_extra_documents(documents, changed_extras | set(warnings), warnings)
+        extra_sections, sources = self._extra_sections((path, documents[path]) for path in sort_drop_in_ini_paths(documents))
+        config.database_sources = self._external_sources(sources)
+        main_sections = self._downloader_sections(main) if main is not None else {}
+        self._resolved_database_sections = {name: IniParser(values) for name, values in {**extra_sections, **main_sections}.items()}
 
     def write_arcade_organizer_active_at_arcade_organizer_ini(self, config: Config) -> None:
         contents = ''
@@ -532,29 +523,21 @@ class IniRepository:
 
     def does_downloader_ini_need_save(self, config: Config) -> bool:
         self.refresh_database_sources(config)
-
-        if not self._file_system.is_file(self.downloader_ini_standard_path()):
-            ini = {}
-            self._add_new_downloader_ini_changes(ini, config)
-            return len(ini) > 0
-
-        new_ini_contents = self._try_build_new_downloader_ini_contents(config)
-        if new_ini_contents is None:
+        document = self._main_document_for_save()
+        if document is None:
             return False
-        new_ini_contents = new_ini_contents.strip().lower()
-
-        current_ini_contents = self._file_system.read_file_contents(self.downloader_ini_standard_path()).strip().lower()
-        return new_ini_contents != current_ini_contents
+        changed, _ = self._edit_downloader_document(document, config, candidate_databases(config))
+        return changed and document.render().strip().lower() != document.original.strip().lower()
 
     @staticmethod
-    def _add_new_downloader_ini_changes(ini, config: Config) -> None:
-        for _, db in candidate_databases(config):
+    def _add_new_downloader_ini_changes(ini, config: Config, candidates: List[Tuple[str, Database]]) -> None:
+        for _, db in candidates:
             db_id = db.db_id.lower()
             if db_id in SEPARATE_DB_INI_FILES:
                 if db_id in ini:
                     del ini[db_id]
                 continue
-            if db in active_databases(config):
+            if db.db_id in config.databases:
                 if db_id in config.database_sources and db_id not in ini:
                     # Active and defined only in an extra ini file we don't own. Leave it there instead
                     # of materializing a higher-precedence duplicate section in downloader.ini. When
@@ -566,34 +549,6 @@ class IniRepository:
                 ini[db_id]['db_url'] = db.db_url
             elif db_id in ini:
                 del ini[db_id]
-
-        mister_filter = ini['mister']['filter'].strip().lower() if 'mister' in ini and 'filter' in ini['mister'] else ''
-
-        for db_id, filter_addition, filter_active in [(ALL_DB_IDS['ARCADE_ROMS'], '!hbmame', config.hbmame_filter)]:
-            if db_id not in config.databases:
-                continue
-
-            lower_id = db_id.lower()
-            if lower_id not in ini:
-                continue
-
-            if filter_active:
-                arcade_roms_filter = ini[lower_id]['filter'].strip().lower() if 'filter' in ini[lower_id] else ''
-
-                if len(arcade_roms_filter) == 0:
-                    filter_result = f'{mister_filter} {filter_addition}'
-                else:
-                    filter_result = f'{arcade_roms_filter.replace(filter_addition, "")} {filter_addition}'
-
-                ini[lower_id]['filter'] = ' '.join(filter_result.split()).strip()
-
-            elif 'filter' in ini[lower_id]:
-                filter_result = ini[lower_id]['filter'].replace(filter_addition, "").replace(mister_filter, "")
-
-                ini[lower_id]['filter'] = ' '.join(filter_result.split()).strip()
-
-                if len(ini[lower_id]['filter']) == 0:
-                    del ini[lower_id]['filter']
 
         for db_id, filter_addition in [(ALL_DB_IDS['RANNYSNICE_WALLPAPERS'], config.rannysnice_wallpapers_filter)]:
             if db_id not in config.databases:
@@ -639,134 +594,29 @@ class IniRepository:
         elif not config.update_linux and update_linux_value:
             ini.setdefault('mister', {})['update_linux'] = 'false'
 
-    def _try_build_new_downloader_ini_contents(self, config: Config) -> Optional[str]:
-        ini: Dict[str, Dict[str, str]] = self.get_downloader_ini(cached=False)
-        before = json.dumps(ini)
-
-        self._add_new_downloader_ini_changes(ini, config)
+    def _edit_downloader_document(self, document: DownloaderIniDocument, config: Config,
+                                  candidates: List[Tuple[str, Database]]) -> Tuple[bool, Dict[str, str]]:
+        before = self._downloader_sections(document)
+        ini = {name: dict(values) for name, values in before.items()}
+        self._add_new_downloader_ini_changes(ini, config, candidates)
         ordered_ini: OrderedDict[str, Dict[str, str]] = into_ordered_ini_dict(ini, [DB_ID_DISTRIBUTION_MISTER], [ALL_DB_IDS['UPDATE_ALL_MISTER']])
-        after = json.dumps(ordered_ini)
+        if list(before.items()) == list(ordered_ini.items()) and not document.repeated_sections:
+            return False, {}
 
-        if before == after:
-            return None
+        repeated = document.deduplicate()
+        db_ids = {db.db_id.lower(): db.db_id for _, db in candidates}
+        document.remove_sections(name for name in db_ids if name not in ordered_ini)
+        for name, values in ordered_ini.items():
+            if name in db_ids:
+                document.set_options(db_ids[name], values, replace=True, canonical_name=True)
 
-        db_ids = {db.db_id.lower(): db.db_id for _, db in candidate_databases(config)}
-        return self._build_ini_contents_from_ini(ordered_ini, db_ids)
-
-    def _build_ini_contents_from_ini(self, ordered_ini: OrderedDict[str, Dict[str, str]], db_ids: Dict[str, str]) -> str:
-        ini_ast = IniAst(ordered_ini, db_ids)
-        update_linux = ordered_ini.get('mister', {}).get('update_linux', None)
-
-        if self._file_system.is_file(self.downloader_ini_standard_path()):
-            ini_contents = io.StringIO(self._file_system.read_file_contents(self.downloader_ini_standard_path()))
-            ini_ast.process(ini_contents.readlines())
-            ini_ast.sync_mister_key('update_linux', update_linux)
-
-        parser = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
-        for header, section_id in ordered_ini.items():
-            if header in db_ids:
-                header = db_ids[header]
-            parser[header] = section_id
-
-        with io.StringIO() as ss:
-            if ini_ast.pre_section != '':
-                ss.write(ini_ast.pre_section.strip() + '\n\n')
-            if ini_ast.mister_section != '':
-                ss.write(ini_ast.mister_section.strip() + '\n\n')
-            parser.write(ss)
-            if ini_ast.nomister_section != '':
-                ss.write(ini_ast.nomister_section.strip() + '\n\n')
-            ss.seek(0)
-            return ss.read()
-
-
-class IniAst:
-    no_section = 0
-    other_section = 1
-    common_section = 2
-    ignore_section = 3
-
-    def __init__(self, ini: Dict[str, Any], db_ids: Dict[str, str]):
-        self._ini = ini
-        self._db_ids = db_ids
-        self._state = self.no_section
-        self.mister_section = ''
-        self.nomister_section = ''
-        self.pre_section = ''
-        self._current_section = ']['
-        self._section_order = ['][']
-        self._section_lines = {'][': []}
-
-    def _start_section(self, section: str):
-        if section.lower() in self._db_ids:
-            self._state = self.common_section
-            section = self._db_ids[section.lower()]
-        else:
-            self._state = self.other_section
-
-        self._current_section = section.lower()
-        self._section_order.append(section.lower())
-        self._section_lines[self._current_section] = self._section_lines.get(self._current_section, [])
-        self._section_lines[self._current_section].append(f'[{section}]')
-        self._add_line(f'[{section}]\n')
-
-    def process(self, lines: List[str]) -> None:
-        header_regex = re.compile(r'\s*\[([-_/a-zA-Z0-9]+)\].*', re.I)
-
-        for line in lines:
-            match = header_regex.match(line)
-            if match is not None:
-                self._start_section(match.group(1))
-            else:
-                self._add_line(line)
-                line = line.strip('" \n\'')
-                if line == '':
-                    continue
-                self._section_lines[self._current_section] = self._section_lines.get(self._current_section, [])
-                self._section_lines[self._current_section].append(line)
-
-    def sync_mister_key(self, key: str, value: Optional[str]) -> None:
-        # The [MiSTer] section is kept as the verbatim text of the file, so a key has to be edited in that text.
-        if self.mister_section == '':
-            return
-        key_regex = re.compile(rf'^\s*{re.escape(key)}\s*=\s*(.*?)\s*$', re.I)
-        current = next((m.group(1) for m in map(key_regex.match, self.mister_section.splitlines()) if m is not None), None)
-        if (current is None and value is None) or (current is not None and value is not None and str_to_bool(current) == str_to_bool(value)):
-            return
-
-        lines = [line for line in self.mister_section.splitlines() if key_regex.match(line) is None]
-        if value is not None:
-            lines.insert(1, f'{key} = {value}')
-        elif all(line.strip() == '' for line in lines[1:]):
-            self.mister_section = ''
-            return
-        self.mister_section = '\n'.join(lines) + '\n'
-
-    def print(self):
-        file_content = ''
-        for section in self._section_order:
-            for line in self._section_lines[section]:
-                file_content += line + '\n'
-            if len(self._section_lines[section]) > 0:
-                file_content += '\n'
-
-        return file_content
-
-    def _add_line(self, line: str):
-        if self._state == self.no_section:
-            self.pre_section += line
-        elif self._state == self.common_section:
-            pass
-        elif self._state == self.other_section:
-            if self._current_section in self._ini:
-                self._ini.pop(self._current_section)
-
-            if self._current_section.lower() == 'mister':
-                self.mister_section += line
-            else:
-                self.nomister_section += line
-        else:
-            raise Exception("Wrong state: " + str(self._state))
+        update_linux = ordered_ini.get('mister', {}).get('update_linux')
+        previous_update_linux = before.get('mister', {}).get('update_linux')
+        if previous_update_linux != update_linux:
+            document.set_options('mister', {'update_linux': update_linux})
+            document.remove_empty_sections(('mister',))
+        document.order_sections(['mister'] + [name for name in ordered_ini if name in db_ids])
+        return True, repeated
 
 
 def candidate_databases(config: Config) -> List[Tuple[str, Database]]:
@@ -795,12 +645,6 @@ def candidate_databases(config: Config) -> List[Tuple[str, Database]]:
 
 def active_databases(config: Config) -> list[Database]:
     return [db for var, db in candidate_databases(config) if db.db_id in config.databases]
-
-
-def read_ini_contents(contents: str):
-    parser = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
-    parser.read_string(contents)
-    return parser
 
 
 class IniRepositoryInitializationError(Exception):

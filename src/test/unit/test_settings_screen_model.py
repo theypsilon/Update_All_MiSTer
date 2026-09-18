@@ -1637,7 +1637,8 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertEqual('false', app.ui.get_value('MultiDatabases/shmup-deck'))
         self.assertEqual('red', app.confirms[0]['alert_level'])
-        self.assertIn("WARNING: Shmup Deck keeps a runtime on at all times on MiSTer's ARM processor, using about 14 MB of RAM with idle CPU near zero.", app.confirms[0]['text'])
+        self.assertIn("WARNING: Shmup Deck keeps a runtime on at all times on MiSTer's ARM processor, using about 25 MB of the ~500 MB of RAM available to Linux.", app.confirms[0]['text'])
+        self.assertIn("This can affect the performance of other programs and even cores.", app.confirms[0]['text'])
 
     def test_other_dependency_confirmations___keep_the_default_alert_level(self):
         app = self._execute_multidatabase_action('# Disc Tools', 'MultiDatabases/disc-tools', 'false')

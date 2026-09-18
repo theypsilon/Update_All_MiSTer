@@ -19,6 +19,7 @@ from typing import Any, Callable, Optional
 from test.countdown_stub import CountdownStub
 from test.fake_filesystem import FileSystemFactory
 from test.fetcher_stub import FetcherStub
+from test.ini_repository_tester import IniRepositoryTester
 from test.logger_tester import NoLogger
 from test.mister_ini_repository_tester import MisterIniRepositoryTester
 from test.mister_video_mode_service_tester import MisterVideoModeServiceTester
@@ -35,7 +36,7 @@ from update_all.downloader_service import DownloaderService
 from update_all.encryption import Encryption
 from update_all.environment_setup import EnvironmentSetup, EnvironmentSetupImpl, EnvironmentSetupResult
 from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OPTIONS, DEFAULT_COMMIT, \
-    KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, DEFAULT_DEBUG, KENV_DEBUG, \
+    KENV_LOCATION_STR, DEFAULT_LOCATION_STR, MEDIA_FAT, DEFAULT_DEBUG, KENV_DEBUG, \
     KENV_TRANSITION_SERVICE_ONLY, FILE_patreon_key, COMMAND_STANDARD, FILE_timeline_short, KENV_TIMELINE_PLUS_PATH, \
     DEFAULT_TRANSITION_SERVICE_ONLY, KENV_SKIP_DOWNLOADER, DEFAULT_SKIP_DOWNLOADER, KENV_PATREON_KEY_PATH, KENV_COMMAND, \
     KENV_TIMELINE_SHORT_PATH, FILE_timeline_plus, KENV_HTTP_PROXY, KENV_HTTPS_PROXY, KENV_MIRROR_ID, \
@@ -45,7 +46,7 @@ from update_all.constants import KENV_COMMIT, KENV_CURL_SSL, DEFAULT_CURL_SSL_OP
     KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
 from update_all.countdown import Countdown
 from update_all.databases import DB_ID_DISTRIBUTION_MISTER, AllDBs, all_dbs
-from update_all.ini_repository import IniRepository, IniRepositoryInitializationError
+from update_all.ini_repository import IniRepository
 from update_all.jtcores_service import JtcoresService
 from update_all.coin_op_collection_service import CoinOpCollectionService
 from update_all.file_system import FileSystem
@@ -127,21 +128,6 @@ class LocalRepositoryTester(LocalRepository):
             file_system=file_system or FileSystemFactory().create_for_system_scope(),
             store_migrator=store_migrator or StoreMigratorTester()
         )
-
-
-class IniRepositoryTester(IniRepository):
-    def __init__(self, file_system: FileSystem = None, os_utils: OsUtils = None):
-        super().__init__(
-            logger=NoLogger(),
-            file_system=file_system or FileSystemFactory().create_for_system_scope(),
-            os_utils=os_utils or SpyOsUtils()
-        )
-
-    def downloader_ini_standard_path(self):
-        try:
-            return super().downloader_ini_standard_path()
-        except IniRepositoryInitializationError as _e:
-            return f'{MEDIA_FAT}/{DOWNLOADER_INI_STANDARD_PATH}'
 
 
 class SettingsScreenPrinterStub(SettingsScreenPrinter):

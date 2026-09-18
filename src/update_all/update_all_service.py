@@ -39,6 +39,7 @@ from update_all.constants import UPDATE_ALL_VERSION, FILE_update_all_log, FILE_m
     COMMAND_TIMELINE, COMMAND_LATEST_LOG, COMMAND_STANDARD, FILE_update_all_chip_id_result_handoff, \
     FILE_update_all_print_tmp_log, FILE_mister_version, FILE_JOTEGO_mra_pack_ini
 from update_all.countdown import Countdown, CountdownImpl, CountdownOutcome
+from update_all.downloader_ini_reader import DownloaderIniReader
 from update_all.ini_repository import IniRepository, active_databases
 from update_all.local_store import LocalStore
 from update_all.log_viewer import LogViewer, create_log_document, to_overscanned_doc
@@ -88,7 +89,8 @@ class UpdateAllServiceFactory:
         file_system = FileSystemFactory(config_provider, {}, self._logger).create_for_system_scope()
         fetcher = Fetcher(config_provider, logger=None)
         os_utils = LinuxOsUtils(config_provider=config_provider, logger=self._logger, fetcher=fetcher)
-        ini_repository = IniRepository(self._logger, file_system=file_system, os_utils=os_utils)
+        downloader_ini_reader = DownloaderIniReader(file_system)
+        ini_repository = IniRepository(self._logger, file_system=file_system, os_utils=os_utils, downloader_ini_reader=downloader_ini_reader)
         downloader_service = DownloaderService(self._logger, file_system, os_utils, ini_repository, fetcher)
         self_update_service = UpdateAllSelfUpdateService(
             config_provider,

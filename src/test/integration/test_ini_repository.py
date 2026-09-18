@@ -14,19 +14,20 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import re
 import tempfile
 from pathlib import Path
 
 from test.ini_assertions import assertEqualIni
+from test.ini_repository_tester import removed_section_logs
 from test.logger_tester import LoggerSpy
-from test.spy_os_utils import SpyOsUtils
-from test.testing_objects import downloader_ini, ini_with_db_ids
+from test.testing_objects import downloader_ini, downloader_store, ini_with_db_ids
 from update_all.config import Config
 from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, DOWNLOADER_INI_STANDARD_PATH, MEDIA_FAT
 from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, all_dbs
 from update_all.file_system import FileSystemFactory as ProductionFileSystemFactory
 from update_all.ini_parser import IniParser
-from update_all.ini_repository import IniRepository, read_ini_contents
+from update_all.ini_repository import read_ini_contents
 from update_all.other import GenericProvider
 from test.fake_filesystem import FileSystemFactory
 from test.file_system_tester_state import FileSystemState
@@ -34,9 +35,9 @@ from test.update_all_service_tester import default_databases, IniRepositoryTeste
 import unittest
 
 
-def test_write_downloader_ini(files=None, folders=None, config: Config = None):
+def test_write_downloader_ini(files=None, folders=None, config: Config = None, logger: LoggerSpy = None):
     state = FileSystemState(files=files, folders=folders)
-    ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+    ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope(), logger=logger)
     ini_repository.write_downloader_ini(config)
     return state
 
@@ -230,6 +231,77 @@ class TestIniRepository(unittest.TestCase):
         fs = _write_with_update_linux('', update_linux=False)
         self.assertEqual({'update_linux': 'false'}, dict(_mister_section(fs)))
 
+    def test_write_downloader_ini___with_linux_updates_off_and_no_mister_section_among_several_dbs___puts_mister_section_first(self):
+        config = Config(databases=default_databases(), update_linux=False)
+        fs = test_write_downloader_ini(files={
+            downloader_ini: {'content': Path('test/fixtures/downloader_ini/default_downloader_unsorted.ini').read_text()}
+        }, config=config)
+        self.assertEqual('mister', _section_names(fs)[0])
+
+    def test_write_downloader_ini___with_linux_updates_off_and_a_mister_section_after_other_sections___puts_mister_section_first(self):
+        config = Config(databases={all_dbs('').UPDATE_ALL_MISTER.db_id}, update_linux=False)
+        content = ini_with_db_ids(all_dbs('').UPDATE_ALL_MISTER.db_id) + '\n[mister]\nfilter = aaa !bbb\n\n'
+        fs = test_write_downloader_ini(files={downloader_ini: {'content': content}}, config=config)
+        self.assertEqual('mister', _section_names(fs)[0])
+        self.assertEqual({'filter': 'aaa !bbb', 'update_linux': 'false'}, dict(_mister_section(fs)))
+
+    def test_write_downloader_ini___over_ini_with_repeated_or_unusual_sections___never_writes_a_section_twice(self):
+        config = Config(databases={all_dbs('').UPDATE_ALL_MISTER.db_id}, update_linux=False)
+        update_all_db = ini_with_db_ids(all_dbs('').UPDATE_ALL_MISTER.db_id)
+        for description, content in [
+            ('mister section twice', '[mister]\nfilter = a\n\n' + update_all_db + '\n[MiSTer]\nbase_path = /x\n'),
+            ('custom section twice', '[foo]\ndb_url = http://a\n\n' + update_all_db + '\n[FOO]\ndb_url = http://c\n'),
+            ('db section twice', update_all_db + '\n' + update_all_db),
+            ('dotted section first', '[my.db]\ndb_url = http://b\n\n' + update_all_db),
+            ('dotted section after a custom one', '[foo]\ndb_url = http://a\n\n[my.db]\ndb_url = http://b\n\n' + update_all_db),
+            ('header with inner spaces', '[ foo ]\ndb_url = http://a\n\n' + update_all_db),
+            ('header with trailing comment', '[mister] ; hi\nfilter = a\n\n' + update_all_db),
+        ]:
+            with self.subTest(description):
+                fs = test_write_downloader_ini(files={downloader_ini: {'content': content}}, config=config)
+                self.assertNotEqual(content, fs.files[downloader_ini.lower()]['content'])
+                self.assertEqual(sorted(set(_section_names(fs))), sorted(_section_names(fs)))
+
+    def test_write_downloader_ini___over_ini_with_mister_section_twice___keeps_only_the_first_one_at_the_top(self):
+        content = '[foo]\ndb_url = http://a\n\n[MiSTer]\nbase_path = /x\nfilter = b\n\n[mister]\nfilter = a\n\n' + ini_with_db_ids(all_dbs('').UPDATE_ALL_MISTER.db_id)
+        fs = test_write_downloader_ini(files={downloader_ini: {'content': content}}, config=Config(databases={all_dbs('').UPDATE_ALL_MISTER.db_id}, update_linux=False))
+        self.assertEqual(['mister', 'update_all_mister', 'foo'], _section_names(fs))
+        self.assertEqual({'base_path': '/x', 'filter': 'b', 'update_linux': 'false'}, dict(read_ini_contents(fs.files[downloader_ini.lower()]['content'])['MiSTer']))
+
+    def test_write_downloader_ini___over_ini_with_mister_section_twice___warns_the_user_and_debugs_the_removed_contents(self):
+        logger = LoggerSpy()
+        content = '[MiSTer]\nfilter = b\n\n[mister]\n; my note\nbase_path = /x\n\n' + ini_with_db_ids(all_dbs('').UPDATE_ALL_MISTER.db_id)
+        test_write_downloader_ini(files={downloader_ini: {'content': content}}, config=Config(databases={all_dbs('').UPDATE_ALL_MISTER.db_id}, update_linux=False), logger=logger)
+        self.assertEqual([f'WARNING! Section [mister] was repeated in {downloader_ini}, only the first one has been kept.'], logger.print_lines)
+        self.assertEqual([f'Repeated section removed from {downloader_ini}:\n[mister]\n; my note\nbase_path = /x\n\n'], logger.debug_lines)
+
+    def test_write_downloader_ini___over_ini_with_db_section_twice___writes_it_once_with_the_first_values_and_warns_the_user(self):
+        jtcores = all_dbs('').JTCORES.db_id
+        for description, second_header in [('same casing', jtcores), ('different casing', jtcores.upper())]:
+            with self.subTest(description):
+                logger = LoggerSpy()
+                content = f'[{jtcores}]\ndb_url = http://first\nfilter = first\n\n[{second_header}]\ndb_url = http://last\nfilter = last\n'
+                fs = test_write_downloader_ini(files={downloader_ini: {'content': content}}, config=Config(databases={jtcores}), logger=logger)
+                self.assertEqual([jtcores], _section_names(fs))
+                self.assertEqual('first !jtbeta', read_ini_contents(fs.files[downloader_ini.lower()]['content'])[jtcores]['filter'])
+                self.assertEqual([f'WARNING! Section [{jtcores}] was repeated in {downloader_ini}, only the first one has been kept.'], logger.print_lines)
+                self.assertEqual([f'Repeated section removed from {downloader_ini}:\n[{second_header}]\ndb_url = http://last\nfilter = last\n'], logger.debug_lines)
+
+    def test_write_downloader_ini___over_ini_without_repeated_sections___does_not_log_removed_sections(self):
+        logger = LoggerSpy()
+        test_write_downloader_ini(files={downloader_ini: {'content': '[mister]\nfilter = b\n\n'}}, config=Config(databases=default_databases(), update_linux=False), logger=logger)
+        self.assertEqual([], logger.print_lines)
+        self.assertEqual([], removed_section_logs(logger))
+
+    def test_does_downloader_ini_need_save___over_ini_with_mister_section_twice___does_not_log_removed_sections(self):
+        logger = LoggerSpy()
+        state = FileSystemState(files={downloader_ini: {'content': '[MiSTer]\nfilter = b\n\n[mister]\nbase_path = /x\n'}})
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope(), logger=logger)
+
+        self.assertTrue(ini_repository.does_downloader_ini_need_save(Config(databases=default_databases(), update_linux=False)))
+        self.assertEqual([], logger.print_lines)
+        self.assertEqual([], removed_section_logs(logger))
+
     def test_write_downloader_ini___with_linux_updates_on___removes_update_linux_false_keeping_the_rest(self):
         fs = _write_with_update_linux('[mister]\nupdate_linux = false\nfilter = aaa !bbb\n\n', update_linux=True)
         self.assertEqual({'filter': 'aaa !bbb'}, dict(_mister_section(fs)))
@@ -349,6 +421,83 @@ class TestIniRepository(unittest.TestCase):
         self.assertIn('[ajgowans/manualsdb-nes]', state.files[manuals_path]['content'])
         self.assertNotIn('bios_db', state.files[manuals_path]['content'])
 
+    def test_remove_db_ids_in_ini_and_fs___when_a_comment_mentions_the_removed_id___removes_only_its_section(self):
+        state = FileSystemState(files={downloader_ini: {'content':
+            '[mister]\n'
+            '; I no longer use [n64_dev]\n'
+            'base_path = /media/usb0\n\n'
+            '[n64_dev]\n'
+            'db_url = http://n64\n\n'
+            '[other_db]\n'
+            'db_url = http://other\n'
+        }})
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        downloader_ini_dict = {'mister': IniParser({}), 'n64_dev': IniParser({}), 'other_db': IniParser({})}
+
+        ini_repository.remove_db_ids_in_ini_and_fs({'n64_dev'}, downloader_ini_dict)
+
+        self.assertEqual(
+            '[mister]\n'
+            '; I no longer use [n64_dev]\n'
+            'base_path = /media/usb0\n\n'
+            '[other_db]\n'
+            'db_url = http://other',
+            state.files[downloader_ini.lower()]['content']
+        )
+        self.assertEqual(['mister', 'other_db'], list(downloader_ini_dict))
+
+    def test_replace_db_ids_in_ini_and_fs___when_new_id_is_already_in_the_ini___drops_old_section_and_keeps_its_store(self):
+        state = FileSystemState(files={
+            downloader_ini: {'content': '[old_db]\ndb_url = http://old\n\n[new_db]\ndb_url = http://new\n'},
+            downloader_store: {'content': '{"dbs": {"old_db": {"files": {"a.rbf": {}}}}}'},
+        })
+        logger = LoggerSpy()
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope(), logger=logger)
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+        downloader_ini_dict = {'old_db': IniParser({}), 'new_db': IniParser({})}
+
+        ini_repository.replace_db_ids_in_ini_and_fs({'old_db': 'new_db'}, downloader_ini_dict)
+
+        self.assertEqual('[new_db]\ndb_url = http://new', state.files[downloader_ini.lower()]['content'])
+        self.assertEqual(['new_db'], list(downloader_ini_dict))
+        self.assertEqual({'dbs': {'new_db': {'files': {'a.rbf': {}}}}}, state.files[downloader_store.lower()]['json'])
+        self.assertEqual([f'WARNING! Section [old_db] has been removed from {downloader_ini} because [new_db] was already there.'], logger.print_lines)
+        self.assertIn(f'Sections removed from {downloader_ini}:\n[old_db]\ndb_url = http://old\n', logger.debug_lines)
+
+    def test_replace_db_ids_in_ini_and_fs___when_old_id_is_twice_in_the_ini___renames_the_first_and_removes_the_rest(self):
+        state = FileSystemState(files={downloader_ini: {'content': '[old_db]\ndb_url = http://first\n\n[OLD_DB]\ndb_url = http://last\n\n[other_db]\ndb_url = http://other\n'}})
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+
+        ini_repository.replace_db_ids_in_ini_and_fs({'old_db': 'new_db'}, {'old_db': IniParser({}), 'other_db': IniParser({})})
+
+        self.assertEqual('[new_db]\ndb_url = http://first\n\n[other_db]\ndb_url = http://other', state.files[downloader_ini.lower()]['content'])
+
+    def test_replace_db_ids_in_ini_and_fs___when_new_id_is_already_in_the_ini_and_a_comment_mentions_the_old_id___removes_only_the_old_section(self):
+        state = FileSystemState(files={downloader_ini: {'content':
+            '[mister]\n'
+            '; Replaced [old_db] with new_db\n'
+            'base_path = /media/usb0\n\n'
+            '[old_db]\n'
+            'db_url = http://old\n\n'
+            '[new_db]\n'
+            'db_url = http://new\n'
+        }})
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+
+        ini_repository.replace_db_ids_in_ini_and_fs({'old_db': 'new_db'}, {'mister': IniParser({}), 'old_db': IniParser({}), 'new_db': IniParser({})})
+
+        self.assertEqual(
+            '[mister]\n'
+            '; Replaced [old_db] with new_db\n'
+            'base_path = /media/usb0\n\n'
+            '[new_db]\n'
+            'db_url = http://new',
+            state.files[downloader_ini.lower()]['content']
+        )
+
     def test_extract_dbs_to_separate_ini___with_multiple_manualsdbs_in_downloader_ini___extracts_all_into_single_file_in_one_pass(self):
         state = FileSystemState(files={
             downloader_ini: {'content':
@@ -384,6 +533,28 @@ class TestIniRepository(unittest.TestCase):
         self.assertNotIn('ajgowans/manualsdb-3do', downloader_ini_dict)
         self.assertNotIn('ajgowans/manualsdb-nes', downloader_ini_dict)
 
+    def test_extract_dbs_to_separate_ini___with_same_db_section_in_different_casing___extracts_only_the_first_one(self):
+        state = FileSystemState(files={
+            downloader_ini: {'content':
+                '[update_all_mister]\n'
+                'db_url = https://update_all\n\n'
+                '[bios_db]\n'
+                'db_url = https://bios\n\n'
+                '[BIOS_DB]\n'
+                'db_url = https://other_bios\n'
+            }
+        })
+        logger = LoggerSpy()
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope(), logger=logger)
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+
+        ini_repository.extract_dbs_to_separate_ini(['bios_db'], DOWNLOADER_BIOS_DB_INI, {'update_all_mister': None, 'bios_db': None})
+
+        self.assertEqual('[bios_db]\ndb_url = https://bios\n', state.files[f'{MEDIA_FAT}/{DOWNLOADER_BIOS_DB_INI}'.lower()]['content'])
+        self.assertEqual('[update_all_mister]\ndb_url = https://update_all\n', state.files[downloader_ini.lower()]['content'])
+        self.assertEqual([f'WARNING! Section [bios_db] was repeated in {downloader_ini}, only the first one has been kept.'], logger.print_lines)
+        self.assertEqual([f'Repeated section removed from {downloader_ini}:\n[BIOS_DB]\ndb_url = https://other_bios\n'], logger.debug_lines)
+
     def test_extract_dbs_to_separate_ini___with_existing_target_file___merges_preserving_non_conflicting_sections(self):
         state = FileSystemState(files={
             downloader_ini: {'content':
@@ -409,6 +580,22 @@ class TestIniRepository(unittest.TestCase):
         manuals_path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
         merged = read_ini_contents(state.files[manuals_path]['content'])
         self.assertEqual({'ajgowans/manualsdb-3do', 'ajgowans/manualsdb-nes'}, set(merged.sections()))
+
+    def test_extract_dbs_to_separate_ini___with_repeated_section_in_target_file___keeps_its_first_definition(self):
+        manuals_path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'
+        state = FileSystemState(files={
+            downloader_ini: {'content': '[ajgowans/manualsdb-nes]\ndb_url = https://nes\n'},
+            manuals_path: {'content': '[ajgowans/manualsdb-3do]\ndb_url = https://first\n\n[AJGOWANS/MANUALSDB-3DO]\ndb_url = https://last\n'},
+        })
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+
+        ini_repository.extract_dbs_to_separate_ini(['ajgowans/manualsdb-3do', 'ajgowans/manualsdb-nes'], DOWNLOADER_AJGOWANS_MANUALSDB_INI, {'ajgowans/manualsdb-nes': None})
+
+        self.assertEqual(
+            '[ajgowans/manualsdb-3do]\ndb_url = https://first\n\n[ajgowans/manualsdb-nes]\ndb_url = https://nes\n',
+            state.files[manuals_path.lower()]['content']
+        )
 
     def test_extract_dbs_to_separate_ini___with_colliding_section_in_target_file___downloader_ini_version_wins(self):
         state = FileSystemState(files={
@@ -507,13 +694,47 @@ class TestIniRepository(unittest.TestCase):
             ini_repository.resolved_database_url(DB_ID_DISTRIBUTION_MISTER),
         )
 
+    def test_get_downloader_ini___with_repeated_sections_in_any_casing___reads_the_first_definition_of_each(self):
+        state = FileSystemState(files={downloader_ini: {'content':
+            '[MiSTer]\nfilter = first\n\n'
+            '[jtcores]\ndb_url = http://first\n\n'
+            '[mister]\nfilter = last\nbase_path = /last\n\n'
+            '[jtcores]\ndb_url = http://same_casing\n\n'
+            '[JTCORES]\ndb_url = http://different_casing\n\n'
+            '[other_db]\ndb_url = http://other\n'
+        }})
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+
+        self.assertEqual({
+            'mister': {'filter': 'first'},
+            'jtcores': {'db_url': 'http://first'},
+            'other_db': {'db_url': 'http://other'},
+        }, ini_repository.get_downloader_ini(cached=False))
+
+    def test_read_extra_db_ini_files___with_repeated_sections_within_and_across_files___reads_the_first_definition_of_each(self):
+        state = FileSystemState(files={
+            f'{MEDIA_FAT}/downloader/a.ini'.lower(): {'content': '[db_one]\ndb_url = http://first\n\n[DB_ONE]\ndb_url = http://second\n\n[db_one]\ndb_url = http://third\n'},
+            f'{MEDIA_FAT}/downloader_b.ini'.lower(): {'content': '[Db_One]\ndb_url = http://other_file\n\n[db_two]\ndb_url = http://two\n'},
+        }, folders=[f'{MEDIA_FAT}/downloader'.lower()])
+        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
+        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
+
+        sections, sources = ini_repository.read_extra_db_ini_files()
+
+        self.assertEqual({'db_one': 'http://first', 'db_two': 'http://two'}, {db_id: section.get_string('db_url', None) for db_id, section in sections.items()})
+        self.assertEqual({'db_one': ['downloader/a.ini', 'downloader_b.ini'], 'db_two': ['downloader_b.ini']}, sources)
+
+    def test_read_ini_contents___with_a_header_looking_continuation_line___does_not_take_it_as_a_repeated_section(self):
+        parser = read_ini_contents('[db_one]\nfilter = a\n    [db_one]\ndb_url = http://one\n')
+        self.assertEqual({'filter': 'a\n[db_one]', 'db_url': 'http://one'}, dict(parser['db_one']))
+
     def test_read_extra_db_ini_files___without_optional_downloader_folder___returns_empty_without_debug_error(self):
         with tempfile.TemporaryDirectory() as base_path:
             config_provider = GenericProvider[Config]()
             config_provider.initialize(Config(base_path=base_path, base_system_path=base_path))
             logger = LoggerSpy()
             file_system = ProductionFileSystemFactory(config_provider, {}, logger).create_for_system_scope()
-            ini_repository = IniRepository(logger, file_system, SpyOsUtils())
+            ini_repository = IniRepositoryTester(file_system=file_system, logger=logger)
             ini_repository.initialize_downloader_ini_base_path(base_path)
 
             self.assertEqual(({}, {}), ini_repository.read_extra_db_ini_files())
@@ -561,3 +782,7 @@ def _write_with_update_linux(mister_text: str, update_linux: bool) -> FileSystem
 
 def _mister_section(fs: FileSystemState):
     return read_ini_contents(fs.files[downloader_ini.lower()]['content'])['mister']
+
+
+def _section_names(fs: FileSystemState, path: str = downloader_ini):
+    return [name.lower() for name in re.findall(r'^\s*\[([^\]]+)\]', fs.files[path.lower()]['content'], re.M)]
