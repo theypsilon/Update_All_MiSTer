@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from update_all.config import Config
-from update_all.databases import DB_ID_DISTRIBUTION_MISTER, ALL_DB_IDS, all_dbs
+from update_all.databases import DB_ID_DISTRIBUTION_MISTER, ALL_DB_IDS, all_dbs, MANUALS_DB_ID_PREFIX, ARTWORK_DB_ID_PREFIX
 from update_all.downloader_fingerprints import read_installed_db_ids
 from update_all.downloader_service import DownloaderService
 from update_all.file_system import FileSystem
@@ -66,7 +66,7 @@ class DatabaseManagerService:
                 continue
             known = known_dbs.get(lower_id)
             result.append(InstalledDb(known.db_id, known.title, installed.description, installed.configured, installed.db_url) if known is not None else installed)
-        return result
+        return sorted(result, key=_list_priority)
 
     def update(self, db_id: str) -> int:
         return self._downloader_service.execute_downloader_command(
@@ -109,6 +109,11 @@ class InstalledDb:
     description: str
     configured: bool
     db_url: str
+
+
+def _list_priority(db: InstalledDb) -> int:
+    lower_id = db.db_id.lower()
+    return 2 if lower_id.startswith(MANUALS_DB_ID_PREFIX) else 1 if lower_id.startswith(ARTWORK_DB_ID_PREFIX) else 0
 
 
 def installed_dbs_from_ltsv(output: str) -> list[InstalledDb]:

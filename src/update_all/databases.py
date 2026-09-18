@@ -422,13 +422,16 @@ def changed_db_ids() -> Dict[str, str]:
         DB_ID_UBERYOJI_BOOT_ROMS_DEPRECATED: ALL_DB_IDS['UBERYOJI_BOOT_ROMS'],
     }
 
+MANUALS_DB_ID_PREFIX = 'ajgowans/manualsdb-'
+ARTWORK_DB_ID_PREFIX = 'chipster6502/artworkdb-'
+
 def ajgowans_manualsdbs() -> List[Database]:
     dbs = AllDBs()
-    return [getattr(dbs, name) for name, db_id in ALL_DB_IDS.items() if db_id.startswith('ajgowans/manualsdb-')]
+    return [getattr(dbs, name) for name, db_id in ALL_DB_IDS.items() if db_id.startswith(MANUALS_DB_ID_PREFIX)]
 
 def chipster6502_artworkdbs() -> List[Database]:
     dbs = AllDBs()
-    return [getattr(dbs, name) for name, db_id in ALL_DB_IDS.items() if db_id.startswith('chipster6502/artworkdb-')]
+    return [getattr(dbs, name) for name, db_id in ALL_DB_IDS.items() if db_id.startswith(ARTWORK_DB_ID_PREFIX)]
 
 def chipster6502_artwork_db_with_style(db: Database, style: str) -> Database:
     if style not in CHIPSTER6502_ARTWORK_STYLES:

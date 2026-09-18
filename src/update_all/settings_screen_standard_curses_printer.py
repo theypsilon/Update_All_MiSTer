@@ -724,7 +724,8 @@ def _calc_compact_vertical_layout(ts, oc, max_length_header: int, visible_text_l
     menu_entries = all_menu_entries
 
     if content_lines > available:
-        max_entries = max(1, available - len(visible_text_lines))
+        header_lines = 4 if max_length_header > 0 and available - 4 - len(visible_text_lines) >= 1 else 0
+        max_entries = max(1, available - header_lines - len(visible_text_lines))
         menu_entries, menu_scroll_offset = _build_visible_menu_entries(list(all_menu_entries), menu_scroll_offset, max_entries)
         content_lines = len(visible_text_lines) + len(menu_entries)
 

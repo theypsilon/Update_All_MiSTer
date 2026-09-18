@@ -1211,8 +1211,9 @@ def settings_screen_model():
                     "description": "{retroaccount_coin_op_access}",
                     "actions": {"ok": [{
                         "ui": "message", "header": "Coin-Op Collection Integration", "text": [
-                            "Your Coin-Op Collection license key is installed as games/mame/coinopkey.zip during the RetroAccount sync, and renewed automatically whenever it changes.",
-                            "With the Coin-Op Collection Releases setting on Auto, the Beta and Alpha releases follow the tier of this benefit.",
+                            "Get access to Coin-Op Collection beta and alpha cores before public release!",
+                            "With this benefit, your license key coinopkey.zip is installed automatically, so you don't have to download it and copy it by hand every time it gets renewed.",
+                            "The Beta and Alpha releases are also installed automatically according to your tier, when the Coin-Op Collection Releases setting is on Auto.",
                             "\n",
                             "{retroaccount_coin_op_access_support}",
                         ],

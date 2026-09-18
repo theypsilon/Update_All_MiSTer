@@ -1641,7 +1641,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('{retroaccount_coin_op_access}', entry['description'])
         message = entry['actions']['ok'][0]
         self.assertEqual('Coin-Op Collection Integration', message['header'])
-        self.assertIn('Your Coin-Op Collection license key is installed as games/mame/coinopkey.zip during the RetroAccount sync, and renewed automatically whenever it changes.', message['text'])
+        self.assertIn("With this benefit, your license key coinopkey.zip is installed automatically, so you don't have to download it and copy it by hand every time it gets renewed.", message['text'])
         self.assertIn('{retroaccount_coin_op_access_support}', message['text'])
 
     def test_shmup_deck_entry___is_immediately_below_disc_tools_and_its_confirmation_warns_in_red_about_the_always_on_footprint(self):

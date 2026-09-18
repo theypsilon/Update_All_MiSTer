@@ -20,7 +20,7 @@ from contextlib import contextmanager
 
 import update_all.settings_screen_standard_curses_printer as printer_module
 from update_all.other import OverscanDim, TerminalSize
-from update_all.settings_screen_standard_curses_printer import Drawer, DrawerPaintLayout, paint_overscan_preview
+from update_all.settings_screen_standard_curses_printer import Drawer, DrawerPaintLayout, calc_drawer_paint, paint_overscan_preview
 from update_all.ui_model_utilities import Key
 
 
@@ -127,6 +127,22 @@ class TestSettingsScreenStandardCursesPrinter(unittest.TestCase):
         self.assertEqual(14, runtime.window.hline.call_count)
         for y, call in enumerate(runtime.window.hline.call_args_list):
             self.assertEqual((y, 37, ord(' '), 5), call.args)
+
+    def test_calc_drawer_paint___when_a_titled_menu_has_to_scroll___keeps_the_header_and_shows_fewer_entries(self):
+        entries = [(f'{i + 1} Entry', '', i == 0) for i in range(40)]
+
+        layout = calc_drawer_paint(_ScreenDims(columns=80, lines=24, overscan_lines=1), ['Select a database and pick an action.'], 0, 'Database Manager', entries, 0, [('<Select>', True)])
+
+        self.assertFalse(layout.skip_header)
+        self.assertEqual(15, len(layout.menu_entries))
+
+    def test_calc_drawer_paint___when_a_scrolling_menu_has_no_room_left_for_its_title___drops_the_header_to_keep_an_entry_visible(self):
+        entries = [(f'{i + 1} Entry', '', i == 0) for i in range(40)]
+
+        layout = calc_drawer_paint(_ScreenDims(columns=80, lines=8, overscan_lines=1), ['Select a database and pick an action.'], 0, 'Database Manager', entries, 0, [('<Select>', True)])
+
+        self.assertTrue(layout.skip_header)
+        self.assertEqual(3, len(layout.menu_entries))
 
     def test_clear_content_area___when_header_separator_is_static___keeps_separator_row_untouched(self):
         runtime = _RuntimeStub()
