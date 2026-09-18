@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## Version 2.11 - 2026-09-18
+
+### Added
+- New Frontends menu in the main menu, gathering the Stock MiSTer UI (the official MiSTer menu maintained by MiSTer-devel), the Zaparoo Frontend, and the new [Degauss](https://github.com/giancarloerra/Degauss) frontend (giancarloerra), which replaces the MiSTer menu with a console-like UI with themes and views. Only one frontend can be On at a time, and turning the Stock MiSTer UI On switches the others Off.
+- New Database Manager in the System Options menu. It lists every database Downloader has installed, including ones no longer present in any ini file, shows the id, description, and URL of each one, and offers Update Only, which runs Downloader for just that database, and Uninstall, which removes the database with all its files, both after confirmation. Game Artwork and Game Manuals databases are listed at the end.
+- New Coin-Op Collection submenu inside Other Cores to choose which releases to install: Public, Beta, or Alpha, where Alpha includes Beta. An Auto value follows the tier of your Coin-Op Collection benefit in RetroAccount, and the Coin-Op license key bound to your linked FPGA ID is installed as `coinopkey.zip` and renewed automatically during the RetroAccount sync. The release toggles of Coin-Op Collection and JTCORES gain Info messages explaining their Patreon requirements.
+- New [Diablo MiSTer](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/diablo) entry in Hybrid Cores (meathax): the DevilutionX port of Diablo and Hellfire, with the shareware data included and your own game data for the full campaigns.
+- New [Shmup Deck](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/shmup-deck) database in Tools & Scripts (searchsolved): a flyer wall of 178 arcade shoot 'em ups served from your MiSTer to your phone, where tapping a flyer loads the game. It runs as an always-on background service using about 25 MB of the ~500 MB of RAM available to Linux, which can affect the performance of other programs and even cores.
+- New Loopy Manuals database in the Game Manuals (EN) section.
+- New Linux Updates option in the System Options menu to turn Downloader's Linux updates On or Off, stored as `update_linux` in the `[MiSTer]` section of downloader.ini.
+
+### Changed
+- The default Main Distribution now points to a [republication of the MiSTer-devel Distribution](https://github.com/theypsilon/MultiDatabases_MiSTer/tree/main/distribution-mister-pinned-linux) that is identical to the official one except for Linux, which is held at a stable release. Existing installations on the previous default are moved to it once, and the previous default remains selectable as "MiSTer-devel (Edge Linux)" in the Main Distribution menu, where the choice is kept from then on.
+- The JTCORES Install Private Releases setting gains an Auto value that follows the JOTEGO benefit of your RetroAccount, switching private releases on and off with your membership, while Yes and No remain available as manual choices that are never overridden. Existing opt-outs are preserved.
+- Fixed Update All failing to start on SD cards containing entries whose names the system cannot read.
+- Downloader INI files handling has been refactored to better preserve what you write in them and to fix some issues with repeated sections and custom settings.
+- A few other tweaks, fixes and optimizations.
+
 ## Version 2.10 - 2026-09-04
 
 ### Added

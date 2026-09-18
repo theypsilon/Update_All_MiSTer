@@ -203,7 +203,7 @@ class PathType(Enum):
 
 
 # Update All old constants
-UPDATE_ALL_VERSION: Final[str] = "2.10"
+UPDATE_ALL_VERSION: Final[str] = "2.11"
 MISTER_DOWNLOADER_VERSION: Final[str] = "2.4"
 ARCADE_ORGANIZER_INSTALLED_NAMES_TXT: Final[str] = "Scripts/.config/arcade-organizer/installed_names.txt"
 ARCADE_ORGANIZER_INI: Final[str] = "Scripts/update_arcade-organizer.ini"

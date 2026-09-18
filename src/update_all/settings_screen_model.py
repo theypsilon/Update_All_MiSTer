@@ -1017,7 +1017,7 @@ def settings_screen_model():
     },
     "variables": {
         # Global variables
-        "update_all_version": {"default": "2.10"},
+        "update_all_version": {"default": "2.11"},
         "device_label": {"default": ""},
         **{frontend["variable"]: {"default": "false", "values": ["false", "true"]} for frontend in _FRONTENDS},
         "stock_mister_ui_active": {"default": "true", "values": ["false", "true"]},
