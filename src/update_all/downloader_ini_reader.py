@@ -16,10 +16,6 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-# This module is the Downloader layer: how MiSTer Downloader understands its INI files. Nothing in it knows about
-# Update All, its databases or its settings. Whatever is specific to Update All belongs in ini_repository.py, which
-# is built on top of this module.
-
 import configparser
 from typing import Dict, Iterable, List, Tuple
 
@@ -35,14 +31,12 @@ class IniFile:
         self.section_lines = {section.name: section.line for section in document.sections.values()}
 
     def sections(self, literal_percent: bool = False) -> IniSections:
-        """Reading the values raises the configparser interpolation error when one has a % that is not part of %% or
-        %(name)s, which is what Downloader does. With literal_percent that value is read as it is written instead."""
+        """Use raw values on interpolation errors only when literal_percent is enabled."""
         return parser_sections(self.parser, literal_percent)
 
 
 class DownloaderIniReader:
-    """It reports what it finds and lets errors through. What to do about an ini that can not be read, or about its
-    repeated sections, is up to each application."""
+    """Report duplicate sections and propagate read/parse errors for callers to handle."""
 
     def __init__(self, file_system: FileSystem):
         self._file_system = file_system
@@ -85,7 +79,7 @@ def read_ini_contents(contents: str) -> configparser.ConfigParser:
 
 
 def first_definitions(files: Iterable[Tuple[str, IniSections]]) -> Tuple[IniSections, Dict[str, List[str]]]:
-    """Takes the sections of each file in loading order. Returns the winning sections and where each one was found."""
+    """Return first definitions and all source paths in the supplied loading order."""
     sections: IniSections = {}
     sources: Dict[str, List[str]] = {}
     for path, file_sections in files:

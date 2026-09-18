@@ -182,22 +182,16 @@ class IniRepository:
         if len(replaced_ids) == 0:
             self._logger.debug(f'WARNING! Could not replace db_id because downloader ini does not contain it.')
             return
-
-        # Updating downloader.ini
         self._save_ini_document(self.downloader_ini_standard_path(), document, ending='')
         for old_id in removed_sections:
             self._logger.print(f'WARNING! Section [{old_id}] has been removed from {self.downloader_ini_standard_path()} because [{changed_ids[old_id]}] was already there.')
         if removed_sections:
             self._logger.debug('Sections removed from ', self.downloader_ini_standard_path(), ':\n', ''.join(removed_sections.values()).removesuffix('\n'))
-
-        # Updating downloader_ini object
         for old_id in replaced_ids:
             new_id = changed_ids[old_id]
             if new_id.lower() not in downloader_ini:
                 downloader_ini[new_id.lower()] = downloader_ini[old_id.lower()]
             del downloader_ini[old_id.lower()]
-
-        # Updating downloader store from now on:
         store_path = self.downloader_store_standard_path()
         if not self._file_system.is_file(store_path):
             return
@@ -229,17 +223,11 @@ class IniRepository:
         if downloader_ini_txt is None:
             self._logger.debug(f'WARNING! Could not replace db_id because downloader ini is not readable.')
             return
-
-        # Updating downloader.ini
         document = DownloaderIniDocument(downloader_ini_txt)
         document.remove_sections(removed_ids)
         self._save_ini_document(self.downloader_ini_standard_path(), document, ending='')
-
-        # Updating downloader_ini object
         for rem_id in removed_ids:
             del downloader_ini[rem_id.lower()]
-
-        # Updating downloader store from now on:
         store_path = self.downloader_store_standard_path()
         if not self._file_system.is_file(store_path):
             return
@@ -319,13 +307,11 @@ class IniRepository:
         return self._read_extra_document(target_path)
 
     def read_extra_db_ini_files(self) -> Tuple[Dict[str, IniParser], Dict[str, List[str]]]:
-        """Scans every ini file that the MiSTer Downloader picks up besides downloader.ini, namely
-        '{base_path}/downloader_*.ini' and '{base_path}/downloader/*.ini' (non-hidden), and returns:
-          - sections: db_id (lower case) -> parsed section (first file wins on duplicates)
-          - sources:  db_id (lower case) -> list of relative file paths where it was found, excluding the
-            dedicated file of that database, which Update All writes. Anywhere else the database is "read-only"
-            for adds: it is reflected in the settings screen and removed from there when toggled off, but
-            never written to when toggled on."""
+        """Return each drop-in database's first definition and external source paths.
+
+        Sources exclude a database's dedicated file. External definitions are
+        preserved when enabled and removed when disabled.
+        """
         sections, sources = self._extra_sections(self._iter_extra_documents())
         return {db_id: IniParser(section) for db_id, section in sections.items()}, self._external_sources(sources)
 
@@ -423,8 +409,7 @@ class IniRepository:
     def _preserved_separate_sections(self, main: Optional[DownloaderIniDocument],
                                      documents: Dict[str, Optional[DownloaderIniDocument]],
                                      sources: Dict[str, List[str]]) -> Dict[str, IniSection]:
-        # Keep the complete winning definition before any file is edited. Later
-        # definitions must not contribute options that the user was not using.
+        # Preserve whole winning definitions so ignored repeats cannot supply options.
         sections = {name: documents[paths[0]].sections[name]
                     for name, paths in sources.items() if name in SEPARATE_DB_INI_FILES}
         if main is not None:
@@ -433,19 +418,33 @@ class IniRepository:
         return sections
 
     @staticmethod
-    def _deferred_transfers(destinations: Dict[str, str], documents: Dict[str, Optional[DownloaderIniDocument]]) -> set:
+    def _main_transfer_destinations(main: Optional[DownloaderIniDocument], config: Config,
+                                     candidates: List[Tuple[str, Database]]) -> Dict[str, str]:
+        if main is None:
+            return {}
+        return {db.db_id.lower(): SEPARATE_DB_INI_FILES[db.db_id.lower()] for _, db in candidates
+                if db.db_id in config.databases and db.db_id.lower() in SEPARATE_DB_INI_FILES
+                and db.db_id.lower() in main.sections}
+
+    @staticmethod
+    def _deferred_transfers(destinations: Dict[str, str], documents: Dict[str, Optional[DownloaderIniDocument]], *,
+                            require_readable: bool = False) -> set:
         """Keep a main-file winner when its destination is unusable or would be shadowed.
 
         An unreadable earlier file could contain a competing definition, so it
         also prevents a move until it can be inspected on a later save.
+        The save check requires readable inputs: a known precedence conflict can
+        be considered saved in the main file, but read/parse failures stay pending.
         """
         existing_paths = {path.lower(): path for path in documents}
         destinations = {name: existing_paths.get(path.lower(), path) for name, path in destinations.items()}
         order = {path: index for index, path in enumerate(sort_drop_in_ini_paths(set(documents) | set(destinations.values())))}
+        first_unreadable = min((order[path] for path, document in documents.items() if document is None), default=len(order))
         return {name for name, target in destinations.items()
-                if (target in documents and documents[target] is None)
-                or any(order[path] < order[target] and (document is None or name in document.sections)
-                       for path, document in documents.items())}
+                if (not require_readable or order[target] < first_unreadable)
+                and ((target in documents and documents[target] is None)
+                     or any(order[path] < order[target] and (document is None or name in document.sections)
+                            for path, document in documents.items()))}
 
     @staticmethod
     def _separate_database_options(db: Database, config: Config) -> Dict[str, Optional[str]]:
@@ -493,7 +492,6 @@ class IniRepository:
             self._log_repeated_sections(target, warnings.get(path, {}))
 
     def write_database_configuration(self, config: Config) -> None:
-        """Persists the complete database selection from config."""
         self._write_database_configuration(config, reconcile_drop_ins=True)
 
     def _write_database_configuration(self, config: Config, *, reconcile_drop_ins: bool) -> None:
@@ -508,9 +506,7 @@ class IniRepository:
         candidates = candidate_databases(config)
         main = self._main_document_for_save()
         preserved = self._preserved_separate_sections(main, documents, sources)
-        main_destinations = {db.db_id.lower(): SEPARATE_DB_INI_FILES[db.db_id.lower()] for _, db in candidates
-                             if db.db_id in config.databases and db.db_id.lower() in SEPARATE_DB_INI_FILES
-                             and main is not None and db.db_id.lower() in main.sections}
+        main_destinations = self._main_transfer_destinations(main, config, candidates)
         deferred = self._deferred_transfers(main_destinations, documents)
         separate_db_ids = SEPARATE_DB_INI_FILES if reconcile_drop_ins else {
             db.db_id.lower() for _, db in candidates
@@ -524,7 +520,6 @@ class IniRepository:
         }
         changed_extras = self._remove_extra_sections(inactive_sources, documents)
         warnings = self._edit_separate_documents(config, candidates, documents, preserved, set(separate_db_ids) - deferred)
-        # A failed destination write must leave the source definition on disk.
         self._save_extra_documents(documents, changed_extras | set(warnings), warnings)
 
         # A newly discovered unreadable destination must also retain its source.
@@ -564,11 +559,15 @@ class IniRepository:
         self._arcade_organizer_ini = None
 
     def does_downloader_ini_need_save(self, config: Config) -> bool:
-        self.refresh_database_sources(config)
+        documents = dict(self._iter_extra_documents())
+        config.database_sources = self._external_sources(self._extra_sections(documents.items())[1])
         document = self._main_document_for_save()
         if document is None:
             return False
-        changed, _ = self._edit_downloader_document(document, config, candidate_databases(config))
+        candidates = candidate_databases(config)
+        destinations = self._main_transfer_destinations(document, config, candidates)
+        retained = self._deferred_transfers(destinations, documents, require_readable=True)
+        changed, _ = self._edit_downloader_document(document, config, candidates, retained_db_ids=retained)
         return changed and document.render().strip().lower() != document.original.strip().lower()
 
     @staticmethod

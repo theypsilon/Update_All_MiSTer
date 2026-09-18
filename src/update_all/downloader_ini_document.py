@@ -1,11 +1,7 @@
 # Copyright (c) 2022-2026 José Manuel Barroso Galindo <theypsilon@gmail.com>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Downloader INI syntax and text editing, independent of application settings.
-
-A document keeps the original text and one small object per section. Lines are
-scanned only while reading or editing; there is no persistent tree of tokens.
-"""
+"""Downloader INI syntax and text editing, independent of application settings."""
 
 import configparser
 import io
@@ -181,7 +177,6 @@ class DownloaderIniDocument:
         return set(changes), {old: ''.join(texts) for old, texts in removed.items()}
 
     def render(self, *, separate_sections: bool = False, ending: Optional[str] = None) -> str:
-        """Render safely, optionally normalizing section spacing and the file's ending."""
         parts = ([self.preamble] if self.preamble else []) + [section.text for section in self._blocks]
         if separate_sections:
             contents = '\n\n'.join(part.rstrip('\r\n') for part in parts)
@@ -216,13 +211,18 @@ def _replace_references(text: str, changes: Dict[str, str]) -> str:
     for old, new in changes.items():
         needle = f'[{old.lower()}]'
         lower = text.lower()
+        # Lowercasing can expand a character, such as İ. Map search positions
+        # back to the original text before slicing.
+        offsets = range(len(text))
+        if len(lower) != len(text):
+            offsets = [position for position, char in enumerate(text) for _ in char.lower()]
         parts = []
         start = 0
         index = lower.find(needle)
         while index != -1:
-            parts.extend((text[start:index], f'[{new}]'))
-            start = index + len(needle)
-            index = lower.find(needle, start)
+            parts.extend((text[start:offsets[index]], f'[{new}]'))
+            start = offsets[index + len(needle) - 1] + 1
+            index = lower.find(needle, index + len(needle))
         if parts:
             parts.append(text[start:])
             text = ''.join(parts)
@@ -264,7 +264,6 @@ def with_ini_options(section_text: str, values: Dict[str, Optional[str]], *, rep
     desired = {key.lower(): value.replace('%', '%%') if literal_values and value is not None else value
                for key, value in values.items()}
     if replace:
-        # Replacing the complete option set also gives it the supplied order.
         header = section_text.split('\n', 1)[0]
         return header + '\n' + ''.join(_option_text(key, value, '') for key, value in desired.items()
                                        if value is not None) + '\n'
@@ -299,7 +298,9 @@ def with_ini_options(section_text: str, values: Dict[str, Optional[str]], *, rep
 
 
 def _option_text(key: str, value: str, indent: str) -> str:
-    return f'{indent}{key} = ' + value.replace('\n', '\n' + indent + '\t') + '\n'
+    # A space before a leading # or ; would turn the value into a comment.
+    separator = ' =' if value.startswith(('#', ';')) else ' = '
+    return f'{indent}{key}{separator}' + value.replace('\n', '\n' + indent + '\t') + '\n'
 
 
 def without_ini_comment(line: str) -> str:
