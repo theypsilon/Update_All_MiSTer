@@ -72,17 +72,18 @@ class DownloaderIniDocument:
         self._parser = None
         self._values = None
 
+    def _is_repeated(self, section: IniSection) -> bool:
+        # configparser merges every [DEFAULT] block, so none of them is a repeat.
+        return section.name != configparser.DEFAULTSECT and section is not self.sections[section.name.lower()]
+
     @property
     def repeated_sections(self) -> List[RepeatedSection]:
         return [RepeatedSection(section.name, section.line, self.sections[section.name.lower()].line)
-                for section in self._blocks
-                if section is not self.sections[section.name.lower()]]
+                for section in self._blocks if self._is_repeated(section)]
 
     def parser(self) -> configparser.ConfigParser:
         if self._parser is None:
-            # DEFAULT is configparser's special options container, not a database.
-            blocks = [self.preamble] + [section.text for section in self._blocks
-                      if section is self.sections[section.name.lower()] or section.name == configparser.DEFAULTSECT]
+            blocks = [self.preamble] + [section.text for section in self._blocks if not self._is_repeated(section)]
             parser = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
             parser.read_string(_join_blocks(blocks))
             self._parser = parser
@@ -101,7 +102,7 @@ class DownloaderIniDocument:
         kept = []
         for section in self._blocks:
             key = section.name.lower()
-            if key in selected and section is not self.sections[key]:
+            if key in selected and self._is_repeated(section):
                 removed.setdefault(key, []).append(section.text)
             else:
                 kept.append(section)

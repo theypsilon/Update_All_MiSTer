@@ -142,14 +142,7 @@ class IniRepository:
         return f'{self._base_path}/{DOWNLOADER_STORE_STANDARD_PATH}'
 
     def write_downloader_ini(self, config: Config) -> None:
-        self.refresh_database_sources(config)
-        document = self._main_document_for_save()
-        if document is None:
-            return
-        changed, repeated = self._edit_downloader_document(document, config, candidate_databases(config))
-        if changed:
-            self._save_ini_document(self.downloader_ini_standard_path(), document, separate_sections=True, ending='\n\n')
-            self._log_repeated_sections(self.downloader_ini_standard_path(), repeated)
+        self._write_database_configuration(config, reconcile_drop_ins=False)
 
     def _main_document_for_save(self) -> Optional[DownloaderIniDocument]:
         if not self._file_system.is_file(self.downloader_ini_standard_path()):
@@ -283,12 +276,24 @@ class IniRepository:
             return []
 
         source = DownloaderIniDocument(downloader_ini_txt)
-        if not any(name in source.sections for name in lower_to_canonical):
+        if not any(name in self._downloader_sections(source) for name in lower_to_canonical):
             return []
 
+        paths = self._downloader_ini_reader.drop_in_ini_paths(self._extra_db_ini_base_path())
+        target_ini_filename = next((path for path in paths if path.lower() == target_ini_filename.lower()), target_ini_filename)
         target_path = f'{self._base_path}/{target_ini_filename}'
         target = self._read_separate_document(target_path)
         if target is None:
+            return []
+
+        documents = {target_ini_filename: target}
+        for path in sort_drop_in_ini_paths(set(paths) | {target_ini_filename}):
+            if path == target_ini_filename:
+                break
+            documents[path] = self._read_extra_document(path)
+        deferred = self._deferred_transfers({name: target_ini_filename for name in lower_to_canonical}, documents)
+        lower_to_canonical = {name: canonical for name, canonical in lower_to_canonical.items() if name not in deferred}
+        if not any(name in source.sections for name in lower_to_canonical):
             return []
 
         repeated_sections = source.deduplicate(lower_to_canonical)
@@ -307,16 +312,11 @@ class IniRepository:
         return [lower_to_canonical[lid] for lid in extracted_sections if lid in lower_to_canonical]
 
     def _read_separate_document(self, target_path: str) -> Optional[DownloaderIniDocument]:
-        # None means that the file is there but could not be read, so it must not be overwritten.
+        # None means that the existing file could not be read or parsed, so it must not be overwritten.
         if not self._file_system.is_file(target_path):
             return DownloaderIniDocument('')
 
-        try:
-            return DownloaderIniDocument(self._file_system.read_file_contents(target_path))
-        except Exception as e:
-            self._logger.debug(f'Could not read existing separate DB INI file at: {target_path}')
-            self._logger.debug(e)
-            return None
+        return self._read_extra_document(target_path)
 
     def read_extra_db_ini_files(self) -> Tuple[Dict[str, IniParser], Dict[str, List[str]]]:
         """Scans every ini file that the MiSTer Downloader picks up besides downloader.ini, namely
@@ -332,7 +332,9 @@ class IniRepository:
     def _read_extra_document(self, relative_path: str) -> Optional[DownloaderIniDocument]:
         target_path = relative_path if relative_path.startswith('/') else f'{self._extra_db_ini_base_path()}/{relative_path}'
         try:
-            return DownloaderIniDocument(self._file_system.read_file_contents(target_path))
+            document = DownloaderIniDocument(self._file_system.read_file_contents(target_path))
+            document.section_values(literal_percent=True)
+            return document
         except Exception as e:
             self._logger.debug(f'Could not read DB INI file at: {target_path}')
             self._logger.debug(e)
@@ -415,7 +417,7 @@ class IniRepository:
         documents = dict(self._iter_extra_documents())
         sources = self._extra_sections(documents.items())[1]
         preserved = self._preserved_separate_sections(self._main_document_for_save(), documents, sources)
-        warnings = self._edit_separate_documents(config, candidate_databases(config), documents, preserved)
+        warnings = self._edit_separate_documents(config, candidate_databases(config), documents, preserved, SEPARATE_DB_INI_FILES)
         self._save_extra_documents(documents, set(warnings), warnings)
 
     def _preserved_separate_sections(self, main: Optional[DownloaderIniDocument],
@@ -430,20 +432,46 @@ class IniRepository:
                              if name in SEPARATE_DB_INI_FILES})
         return sections
 
+    @staticmethod
+    def _deferred_transfers(destinations: Dict[str, str], documents: Dict[str, Optional[DownloaderIniDocument]]) -> set:
+        """Keep a main-file winner when its destination is unusable or would be shadowed.
+
+        An unreadable earlier file could contain a competing definition, so it
+        also prevents a move until it can be inspected on a later save.
+        """
+        existing_paths = {path.lower(): path for path in documents}
+        destinations = {name: existing_paths.get(path.lower(), path) for name, path in destinations.items()}
+        order = {path: index for index, path in enumerate(sort_drop_in_ini_paths(set(documents) | set(destinations.values())))}
+        return {name for name, target in destinations.items()
+                if (target in documents and documents[target] is None)
+                or any(order[path] < order[target] and (document is None or name in document.sections)
+                       for path, document in documents.items())}
+
+    @staticmethod
+    def _separate_database_options(db: Database, config: Config) -> Dict[str, Optional[str]]:
+        options: Dict[str, Optional[str]] = {'db_url': db.db_url}
+        if db.db_id.lower() == ALL_DB_IDS['ARCADE_ROMS'].lower():
+            options['filter'] = '!hbmame' if config.hbmame_filter else None
+        return options
+
     def _edit_separate_documents(self, config: Config, candidates: List[Tuple[str, Database]],
                                  documents: Dict[str, Optional[DownloaderIniDocument]],
-                                 preserved: Dict[str, IniSection]) -> Dict[str, Dict[str, str]]:
+                                 preserved: Dict[str, IniSection], db_ids: Iterable[str]) -> Dict[str, Dict[str, str]]:
+        selected_ids = {db_id.lower() for db_id in db_ids}
+        selected_files = {filename: [db_id for db_id in canonical_ids if db_id.lower() in selected_ids]
+                          for filename, canonical_ids in SEPARATE_DB_INI_FILES_BY_FILENAME.items()}
+        selected_files = {filename: ids for filename, ids in selected_files.items() if ids}
         active = {db.db_id.lower(): db for _, db in candidates if db.db_id in config.databases}
         warnings: Dict[str, Dict[str, str]] = {}
 
         loaded_paths = {path.lower() for path in documents}
-        for ini_filename in SEPARATE_DB_INI_FILES_BY_FILENAME:
+        for ini_filename in selected_files:
             if ini_filename.lower() not in loaded_paths:
                 documents[ini_filename] = self._read_separate_document(f'{self._base_path}/{ini_filename}')
 
         # Reuse the discovered spelling and document on case-preserving filesystems.
         for ini_filename, document in documents.items():
-            canonical_db_ids = SEPARATE_DB_INI_FILES_BY_FILENAME.get(ini_filename.lower())
+            canonical_db_ids = selected_files.get(ini_filename.lower())
             if canonical_db_ids is None or document is None:
                 continue
             active_dbs = [active[db_id.lower()] for db_id in canonical_db_ids if db_id.lower() in active]
@@ -453,10 +481,7 @@ class IniRepository:
                 original = preserved.get(db.db_id.lower())
                 if original is not None and original is not document.sections.get(db.db_id.lower()):
                     document.put_sections({db.db_id: original})
-                options: Dict[str, Optional[str]] = {'db_url': db.db_url}
-                if db.db_id.lower() == ALL_DB_IDS['ARCADE_ROMS'].lower():
-                    options['filter'] = '!hbmame' if config.hbmame_filter else None
-                document.set_options(db.db_id, options)
+                document.set_options(db.db_id, self._separate_database_options(db, config))
             document.order_sections(db.db_id for db in active_dbs)
         return warnings
 
@@ -468,10 +493,14 @@ class IniRepository:
             self._log_repeated_sections(target, warnings.get(path, {}))
 
     def write_database_configuration(self, config: Config) -> None:
-        """Persists the complete database selection from config.
+        """Persists the complete database selection from config."""
+        self._write_database_configuration(config, reconcile_drop_ins=True)
 
-        Read a fresh snapshot, apply every edit in memory, then write each changed
-        file once. Source discovery and the database catalog are shared by all writers.
+    def _write_database_configuration(self, config: Config, *, reconcile_drop_ins: bool) -> None:
+        """Read each file once and save destinations before removing their sources.
+
+        Main-file saves transfer selected dedicated databases already in the main
+        file. Full saves also reconcile all database selections in the drop-ins.
         """
         documents = dict(self._iter_extra_documents())
         sources = self._extra_sections(documents.items())[1]
@@ -479,21 +508,34 @@ class IniRepository:
         candidates = candidate_databases(config)
         main = self._main_document_for_save()
         preserved = self._preserved_separate_sections(main, documents, sources)
+        main_destinations = {db.db_id.lower(): SEPARATE_DB_INI_FILES[db.db_id.lower()] for _, db in candidates
+                             if db.db_id in config.databases and db.db_id.lower() in SEPARATE_DB_INI_FILES
+                             and main is not None and db.db_id.lower() in main.sections}
+        deferred = self._deferred_transfers(main_destinations, documents)
+        separate_db_ids = SEPARATE_DB_INI_FILES if reconcile_drop_ins else {
+            db.db_id.lower() for _, db in candidates
+            if db.db_id in config.databases and main is not None and db.db_id.lower() in main.sections
+        }
         managed_db_ids = {db.db_id.lower() for _, db in candidates}
         inactive_sources = {
             db_id: relative_paths
             for db_id, relative_paths in config.database_sources.items()
-            if db_id in managed_db_ids and not config.is_database_enabled(db_id)
+            if reconcile_drop_ins and db_id in managed_db_ids and not config.is_database_enabled(db_id)
         }
         changed_extras = self._remove_extra_sections(inactive_sources, documents)
+        warnings = self._edit_separate_documents(config, candidates, documents, preserved, set(separate_db_ids) - deferred)
+        # A failed destination write must leave the source definition on disk.
+        self._save_extra_documents(documents, changed_extras | set(warnings), warnings)
+
+        # A newly discovered unreadable destination must also retain its source.
+        deferred.update(db_id.lower() for path, document in documents.items() if document is None
+                        for db_id in SEPARATE_DB_INI_FILES_BY_FILENAME.get(path.lower(), ()))
         changed, repeated = False, {}
         if main is not None:
-            changed, repeated = self._edit_downloader_document(main, config, candidates)
-        warnings = self._edit_separate_documents(config, candidates, documents, preserved)
+            changed, repeated = self._edit_downloader_document(main, config, candidates, retained_db_ids=deferred)
         if changed:
             self._save_ini_document(self.downloader_ini_standard_path(), main, separate_sections=True, ending='\n\n')
             self._log_repeated_sections(self.downloader_ini_standard_path(), repeated)
-        self._save_extra_documents(documents, changed_extras | set(warnings), warnings)
         extra_sections, sources = self._extra_sections((path, documents[path]) for path in sort_drop_in_ini_paths(documents))
         config.database_sources = self._external_sources(sources)
         main_sections = self._downloader_sections(main) if main is not None else {}
@@ -530,12 +572,20 @@ class IniRepository:
         return changed and document.render().strip().lower() != document.original.strip().lower()
 
     @staticmethod
-    def _add_new_downloader_ini_changes(ini, config: Config, candidates: List[Tuple[str, Database]]) -> None:
+    def _add_new_downloader_ini_changes(ini, config: Config, candidates: List[Tuple[str, Database]],
+                                       retained_db_ids: Iterable[str]) -> None:
         for _, db in candidates:
             db_id = db.db_id.lower()
             if db_id in SEPARATE_DB_INI_FILES:
                 if db_id in ini:
-                    del ini[db_id]
+                    if db_id in retained_db_ids and db.db_id in config.databases:
+                        for option, value in IniRepository._separate_database_options(db, config).items():
+                            if value is None:
+                                ini[db_id].pop(option, None)
+                            else:
+                                ini[db_id][option] = value
+                    else:
+                        del ini[db_id]
                 continue
             if db.db_id in config.databases:
                 if db_id in config.database_sources and db_id not in ini:
@@ -595,10 +645,11 @@ class IniRepository:
             ini.setdefault('mister', {})['update_linux'] = 'false'
 
     def _edit_downloader_document(self, document: DownloaderIniDocument, config: Config,
-                                  candidates: List[Tuple[str, Database]]) -> Tuple[bool, Dict[str, str]]:
+                                  candidates: List[Tuple[str, Database]], *,
+                                  retained_db_ids: Iterable[str] = ()) -> Tuple[bool, Dict[str, str]]:
         before = self._downloader_sections(document)
         ini = {name: dict(values) for name, values in before.items()}
-        self._add_new_downloader_ini_changes(ini, config, candidates)
+        self._add_new_downloader_ini_changes(ini, config, candidates, retained_db_ids)
         ordered_ini: OrderedDict[str, Dict[str, str]] = into_ordered_ini_dict(ini, [DB_ID_DISTRIBUTION_MISTER], [ALL_DB_IDS['UPDATE_ALL_MISTER']])
         if list(before.items()) == list(ordered_ini.items()) and not document.repeated_sections:
             return False, {}

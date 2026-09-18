@@ -92,6 +92,18 @@ class IniRepositoryTester(IniRepository):
         with patch.object(self.file_system, 'read_file_contents', side_effect=read):
             yield
 
+    @contextmanager
+    def unwritable(self, filename: str):
+        write_contents = self.file_system.write_file_contents
+
+        def write(path, contents):
+            if self.file_path(path).lower() == self.file_path(filename).lower():
+                raise PermissionError(f'Cannot write {filename}')
+            return write_contents(path, contents)
+
+        with patch.object(self.file_system, 'write_file_contents', side_effect=write):
+            yield
+
     def downloader_sections(self) -> Dict[str, IniParser]:
         return {name: IniParser(values) for name, values in self.get_downloader_ini(cached=False).items()}
 
@@ -114,6 +126,15 @@ class IniRepositoryTester(IniRepository):
         if len(matches) != 1:
             raise AssertionError(f'Expected exactly one [{section_name}] section, found {matches}')
         return dict(parser[matches[0]])
+
+    def effective_section_values(self, section_name: str, *filenames_in_loading_order: str) -> Dict[str, str]:
+        """Inspect the first complete definition in an explicitly specified Downloader loading order."""
+        for filename in filenames_in_loading_order:
+            if self.file_exists(filename):
+                parser = self.parsed_ini(filename)
+                if any(name.lower() == section_name.lower() for name in parser.sections()):
+                    return self.section_values(section_name, filename)
+        raise AssertionError(f'No [{section_name}] definition in {filenames_in_loading_order}')
 
 
 def removed_section_logs(logger: LoggerSpy) -> List[str]:
