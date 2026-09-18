@@ -222,6 +222,9 @@ class TestSettingsScreenModel(unittest.TestCase):
     def setUp(self) -> None:
         self.model = settings_screen_model()
 
+    def _retroaccount_entry(self, title: str) -> dict:
+        return next(entry for entry in self.model['items']['retroaccount_account_menu']['entries'] if entry.get('title') == title)
+
     def test___there_are_some_navigate_nodes(self):
         nodes = [n for n in gather_all_nodes(self.model) if 'type' in n and n['type'] == 'navigate']
         self.assertGreater(len(nodes), len(self.model['items']))
@@ -326,7 +329,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual(navigate_targets, section_names)
 
     def test_retroaccount_link_fpga_id_entry___confirms_before_extracting_chip_id(self):
-        entry = self.model['items']['retroaccount_account_menu']['entries'][2]
+        entry = self._retroaccount_entry('# Link FPGA ID')
         action = entry['actions']['ok'][0]
         confirmation = action['false'][0]
 
@@ -368,7 +371,7 @@ class TestSettingsScreenModel(unittest.TestCase):
 
 
     def test_retroaccount_linked_fpga_id_entry___explains_that_fpga_id_is_linked(self):
-        entry = self.model['items']['retroaccount_account_menu']['entries'][2]
+        entry = self._retroaccount_entry('# Link FPGA ID')
         message = entry['actions']['ok'][0]['true'][0]
 
         self.assertEqual('message', message['ui'])
@@ -377,7 +380,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('{retroaccount_verified_chip_id_message}', message['text'][1])
 
     def test_retroaccount_manage_account_entry___shows_device_label(self):
-        entry = self.model['items']['retroaccount_account_menu']['entries'][3]
+        entry = self._retroaccount_entry('# Manage Your Account')
         message = entry['actions']['ok'][0]
 
         self.assertEqual('# Manage Your Account', entry['title'])
@@ -1628,6 +1631,18 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('false', app.ui.get_value('MultiDatabases/disc-tools'))
         self.assertIn('Disc Tools requires an optical drive connected to your MiSTer.', app.confirms[0]['text'])
         self.assertIn('Burning also requires blank writable discs.', app.confirms[0]['text'])
+
+    def test_retroaccount_menu___lists_coin_op_integration_right_after_jotego___and_its_message_states_what_the_benefit_does(self):
+        entries = self.model['items']['retroaccount_account_menu']['entries']
+        titles = [entry.get('title') for entry in entries]
+        self.assertEqual(titles.index('# JOTEGO Patreon Access') + 1, titles.index('# Coin-Op Integration'))
+
+        entry = entries[titles.index('# Coin-Op Integration')]
+        self.assertEqual('{retroaccount_coin_op_access}', entry['description'])
+        message = entry['actions']['ok'][0]
+        self.assertEqual('Coin-Op Collection Integration', message['header'])
+        self.assertIn('Your Coin-Op Collection license key is installed as games/mame/coinopkey.zip during the RetroAccount sync, and renewed automatically whenever it changes.', message['text'])
+        self.assertIn('{retroaccount_coin_op_access_support}', message['text'])
 
     def test_shmup_deck_entry___is_immediately_below_disc_tools_and_its_confirmation_warns_in_red_about_the_always_on_footprint(self):
         titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]

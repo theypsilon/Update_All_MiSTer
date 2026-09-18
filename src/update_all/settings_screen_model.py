@@ -1174,6 +1174,8 @@ def settings_screen_model():
                 "retroaccount_update_all_extras_support": {"default": ""},
                 "retroaccount_jtbeta_access": {"default": "Checking..."},
                 "retroaccount_jtbeta_access_support": {"default": ""},
+                "retroaccount_coin_op_access": {"default": "Checking..."},
+                "retroaccount_coin_op_access_support": {"default": ""},
                 "retroaccount_device_verified": {"default": "false", "values": ["false", "true"]},
                 "retroaccount_device_verification_description": {"default": "FPGA ID not linked"},
                 "retroaccount_device_verification_message": {"default": "Linking FPGA ID..."},
@@ -1201,6 +1203,18 @@ def settings_screen_model():
                             "Other Patreon attachments, such as the KAI MRAs, are also installed automatically."
                             "\n",
                             "{retroaccount_jtbeta_access_support}",
+                        ],
+                    }]}
+                },
+                {
+                    "title": "# Coin-Op Integration",
+                    "description": "{retroaccount_coin_op_access}",
+                    "actions": {"ok": [{
+                        "ui": "message", "header": "Coin-Op Collection Integration", "text": [
+                            "Your Coin-Op Collection license key is installed as games/mame/coinopkey.zip during the RetroAccount sync, and renewed automatically whenever it changes.",
+                            "With the Coin-Op Collection Releases setting on Auto, the Beta and Alpha releases follow the tier of this benefit.",
+                            "\n",
+                            "{retroaccount_coin_op_access_support}",
                         ],
                     }]}
                 },

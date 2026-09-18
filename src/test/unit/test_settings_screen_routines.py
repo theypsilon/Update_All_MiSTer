@@ -344,6 +344,26 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual('true', ui.get_value('retroaccount_jtbeta_benefit_active'))
 
+    def test_retroaccount_check_state___when_the_coin_op_integration_benefit_is_active___shows_it_as_active(self):
+        retroaccount = _RetroAccountStub()
+        sut, ui = tester(retroaccount=retroaccount)
+        retroaccount.set_coin_op_access_state(BenefitState.ACTIVE)
+
+        sut.retroaccount_check_state(ui)
+
+        self.assertEqual('Active', ui.get_value('retroaccount_coin_op_access'))
+        self.assertEqual('This benefit is active!', ui.get_value('retroaccount_coin_op_access_support'))
+
+    def test_retroaccount_check_state___when_the_coin_op_integration_benefit_is_inactive___tells_how_to_unlock_it(self):
+        retroaccount = _RetroAccountStub()
+        sut, ui = tester(retroaccount=retroaccount)
+        retroaccount.set_coin_op_access_state(BenefitState.INACTIVE)
+
+        sut.retroaccount_check_state(ui)
+
+        self.assertEqual('Inactive', ui.get_value('retroaccount_coin_op_access'))
+        self.assertEqual('Support theypsilon and Coin-Op Collection on Patreon to unlock this benefit.', ui.get_value('retroaccount_coin_op_access_support'))
+
     def test_download_beta_cores_text___describes_auto_with_the_resolved_choice_and_manual_choices_plainly(self):
         _sut, ui = tester(config=Config(databases=default_databases(), download_beta_cores=True))
         text = ui.formatters['download_beta_cores_text']
@@ -1305,9 +1325,10 @@ class _MisterVideoModeServiceStub:
 
 
 class _RetroAccountStub:
-    def __init__(self, device_verified=False, attach_result=True, device_label=None, attach_status_code=200, coin_op_benefit_releases=None, jtbeta_access_state=BenefitState.CHECKING):
+    def __init__(self, device_verified=False, attach_result=True, device_label=None, attach_status_code=200, coin_op_benefit_releases=None, jtbeta_access_state=BenefitState.CHECKING, coin_op_access_state=BenefitState.CHECKING):
         self._coin_op_benefit_releases = coin_op_benefit_releases
         self._jtbeta_access_state = jtbeta_access_state
+        self._coin_op_access_state = coin_op_access_state
         self._device_verified = device_verified
         self._verified_chip_id = '0123456789abcdef' if device_verified else None
         self._device_label = device_label
@@ -1340,6 +1361,12 @@ class _RetroAccountStub:
 
     def set_jtbeta_access_state(self, state):
         self._jtbeta_access_state = state
+
+    def coin_op_access_sync_state(self):
+        return self._coin_op_access_state
+
+    def set_coin_op_access_state(self, state):
+        self._coin_op_access_state = state
 
     def coin_op_benefit_releases(self):
         return self._coin_op_benefit_releases

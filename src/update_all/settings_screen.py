@@ -1467,6 +1467,13 @@ class SettingsScreen(UiApplication):
             ui.set_value('retroaccount_jtbeta_access_support', 'This benefit is active!' if jtbeta_access == ACTIVE_BENEFIT_MSG else 'Support JOTEGO and theypsilon on Patreon to unlock this benefit.')
             state_changed = True
 
+        coin_op_access = benefit_state_to_message(self._retroaccount.coin_op_access_sync_state())
+        coin_op_access_ui_key = 'retroaccount_coin_op_access'
+        if ui.get_value(coin_op_access_ui_key) != coin_op_access:
+            ui.set_value(coin_op_access_ui_key, coin_op_access)
+            ui.set_value('retroaccount_coin_op_access_support', 'This benefit is active!' if coin_op_access == ACTIVE_BENEFIT_MSG else 'Support theypsilon and Coin-Op Collection on Patreon to unlock this benefit.')
+            state_changed = True
+
         state_changed = self._refresh_retroaccount_device_verification_ui(ui) or state_changed
         state_changed = self._refresh_device_label_ui(ui) or state_changed
         state_changed = self._refresh_retroaccount_coin_op_benefit_releases_ui(ui) or state_changed
