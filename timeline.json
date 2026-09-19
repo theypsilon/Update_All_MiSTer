@@ -1,0 +1,174 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Badlands Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Badlands MRA: Badlands",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "ColecoAdam",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-09-19",
+      "timestamps": [
+        1789794175,
+        1789809934
+      ],
+      "title": "Updated TODAY (2026-09-19)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Aleck 64 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Blasteroids Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Laserdisc Games Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Moon Patrol Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Psikyo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Vindicators Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Xybots Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Astrocade MRA: Wizard of Wor",
+              "type": "standalone"
+            },
+            {
+              "name": "Blasteroids MRA: Blasteroids",
+              "type": "standalone"
+            },
+            {
+              "name": "Psikyo MRAs: Battle K-Road, Gunbird, Samurai Aces, Strikers 1945, Tengai",
+              "type": "standalone"
+            },
+            {
+              "name": "Vindicators MRA: Vindicators",
+              "type": "standalone"
+            },
+            {
+              "name": "Xybots MRA: Xybots",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "FM-7",
+              "type": "standalone"
+            },
+            {
+              "name": "MacLC",
+              "type": "standalone"
+            },
+            {
+              "name": "SGIIndy",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Loopy",
+              "type": "standalone"
+            },
+            {
+              "name": "Studio-II",
+              "type": "standalone"
+            },
+            {
+              "name": "SuperAcan",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "MiSTer Firmware",
+              "type": "standalone"
+            },
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1789174615,
+        1789190840,
+        1789218530,
+        1789230242,
+        1789238755,
+        1789280342,
+        1789334270,
+        1789433061,
+        1789451528,
+        1789486691,
+        1789499602,
+        1789510806,
+        1789571012,
+        1789595794,
+        1789639053,
+        1789671124,
+        1789701407,
+        1789719769,
+        1789736629,
+        1789751371,
+        1789769997
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1903,
+    "total_file_updates": 1964,
+    "unique_files": 1016
+  }
+}
