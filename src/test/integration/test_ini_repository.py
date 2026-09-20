@@ -23,7 +23,7 @@ from test.ini_repository_tester import removed_section_logs
 from test.logger_tester import LoggerSpy
 from test.testing_objects import downloader_ini, downloader_store, ini_with_db_ids
 from update_all.config import Config
-from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, DOWNLOADER_INI_STANDARD_PATH, MEDIA_FAT
+from update_all.constants import DOWNLOADER_AJGOWANS_MANUALSDB_INI, DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI, DOWNLOADER_INI_STANDARD_PATH, MEDIA_FAT
 from update_all.databases import AllDBs, DB_ID_DISTRIBUTION_MISTER, DB_ID_NAMES_TXT, all_dbs
 from update_all.file_system import FileSystemFactory as ProductionFileSystemFactory
 from update_all.ini_parser import IniParser
@@ -120,8 +120,8 @@ class TestIniRepository(unittest.TestCase):
         }, config=config)
         assertEqualIni(self, 'test/fixtures/downloader_ini/coin_op_uppercase_plus_names_downloader.ini', fs.files[downloader_ini]['content'])
 
-    def test_write_downloader_ini___with_separate_db_and_filtered_hbmame___does_not_add_arcade_roms_to_downloader_ini(self):
-        config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=True)
+    def test_write_downloader_ini___with_a_separate_db_enabled___does_not_add_it_to_downloader_ini(self):
+        config = Config(databases=default_databases(add=[all_dbs('').MANUALSDB_NES.db_id]))
         fs = test_write_downloader_ini(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()}
         }, config=config)
@@ -166,41 +166,26 @@ class TestIniRepository(unittest.TestCase):
             read_ini_contents(fs.files[f'{MEDIA_FAT}/downloader/duplicate.ini'.lower()]['content'])['jtcores']['db_url'],
         )
 
-    def test_write_downloader_ini___with_existing_arcade_roms_in_downloader_ini___removes_it(self):
-        config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=True)
+    def test_write_downloader_ini___with_existing_separate_db_in_downloader_ini___removes_it(self):
+        config = Config(databases=default_databases(add=[all_dbs('').MANUALSDB_NES.db_id]))
         fs = test_write_downloader_ini(files={
-            downloader_ini: {'content': Path('test/fixtures/downloader_ini/filtered_hbmame_downloader.ini').read_text()}
+            downloader_ini: {'content': Path('test/fixtures/downloader_ini/manualsdb_in_main_downloader.ini').read_text()}
         }, config=config)
         assertEqualIni(self, 'test/fixtures/downloader_ini/default_downloader.ini', fs.files[downloader_ini]['content'])
 
-    def test_write_downloader_ini___with_existing_arcade_roms_and_mister_filter___removes_arcade_roms_keeps_mister(self):
-        config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=False)
+    def test_write_downloader_ini___with_existing_separate_db_and_mister_filter___removes_separate_db_keeps_mister(self):
+        config = Config(databases=default_databases(add=[all_dbs('').MANUALSDB_NES.db_id]))
         fs = test_write_downloader_ini(files={
-            downloader_ini: {'content': Path('test/fixtures/downloader_ini/mister_filtered_plus_hbmame_downloader.ini').read_text()}
+            downloader_ini: {'content': Path('test/fixtures/downloader_ini/mister_filtered_plus_manualsdb_downloader.ini').read_text()}
         }, config=config)
-        assertEqualIni(self, 'test/fixtures/downloader_ini/mister_filtered_no_arcade_roms_downloader.ini', fs.files[downloader_ini]['content'])
+        assertEqualIni(self, 'test/fixtures/downloader_ini/mister_filtered_no_manualsdb_downloader.ini', fs.files[downloader_ini]['content'])
 
-    def test_write_downloader_ini___with_existing_arcade_roms_and_heavy_filter___removes_arcade_roms_keeps_rest(self):
-        config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=False)
+    def test_write_downloader_ini___with_existing_separate_db_and_heavy_filter___removes_separate_db_keeps_rest(self):
+        config = Config(databases=default_databases(add=[all_dbs('').MANUALSDB_NES.db_id]))
         fs = test_write_downloader_ini(files={
-            downloader_ini: {'content': Path('test/fixtures/downloader_ini/heavily_filtered_plus_hbmame_downloader.ini').read_text()}
+            downloader_ini: {'content': Path('test/fixtures/downloader_ini/heavily_filtered_plus_manualsdb_downloader.ini').read_text()}
         }, config=config)
-        assertEqualIni(self, 'test/fixtures/downloader_ini/heavily_filtered_no_arcade_roms_downloader.ini', fs.files[downloader_ini]['content'])
-
-    def test_write_separate_db_ini_files___with_filtered_hbmame___writes_filter_to_arcade_roms_ini(self):
-        state = FileSystemState()
-        ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
-        ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
-        config = Config(databases=default_databases(add=[all_dbs('').ARCADE_ROMS.db_id]), hbmame_filter=True)
-
-        ini_repository.write_separate_db_ini_files(config)
-
-        self.assertEqual(
-            '[arcade_roms_db]\n'
-            'db_url = https://raw.githubusercontent.com/zakk4223/ArcadeROMsDB_MiSTer/db/arcade_roms_db.json.zip\n'
-            'filter = !hbmame\n',
-            state.files[f'{MEDIA_FAT}/{DOWNLOADER_ARCADE_ROMS_DB_INI}'.lower()]['content']
-        )
+        assertEqualIni(self, 'test/fixtures/downloader_ini/heavily_filtered_no_manualsdb_downloader.ini', fs.files[downloader_ini]['content'])
 
     def test_write_downloader_ini___with_negated_jtbeta_but_beta_cores_activated___writes_jtcores_without_negated_jtbeta(self):
         config = Config(databases={all_dbs('').JTCORES.db_id, all_dbs('').UPDATE_ALL_MISTER.db_id}, download_beta_cores=True)
@@ -403,23 +388,23 @@ class TestIniRepository(unittest.TestCase):
         path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
         self.assertNotIn(path, state.files)
 
-    def test_write_separate_db_ini_files___with_bios_and_manualsdbs_active___writes_them_to_different_files(self):
+    def test_write_separate_db_ini_files___with_artworkdbs_and_manualsdbs_active___writes_them_to_different_files(self):
         state = FileSystemState()
         ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope())
         ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
         config = Config(databases=default_databases(add=[
-            all_dbs('').BIOS.db_id,
+            all_dbs('').ARTWORKDB_NES.db_id,
             all_dbs('').MANUALSDB_NES.db_id,
         ]))
 
         ini_repository.write_separate_db_ini_files(config)
 
-        bios_path = f'{MEDIA_FAT}/{DOWNLOADER_BIOS_DB_INI}'.lower()
+        artwork_path = f'{MEDIA_FAT}/{DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI}'.lower()
         manuals_path = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'.lower()
-        self.assertIn('[bios_db]', state.files[bios_path]['content'])
-        self.assertNotIn('manualsdb', state.files[bios_path]['content'])
+        self.assertIn('[chipster6502/artworkdb-nes]', state.files[artwork_path]['content'])
+        self.assertNotIn('manualsdb', state.files[artwork_path]['content'])
         self.assertIn('[ajgowans/manualsdb-nes]', state.files[manuals_path]['content'])
-        self.assertNotIn('bios_db', state.files[manuals_path]['content'])
+        self.assertNotIn('artworkdb', state.files[manuals_path]['content'])
 
     def test_remove_db_ids_in_ini_and_fs___when_a_comment_mentions_the_removed_id___removes_only_its_section(self):
         state = FileSystemState(files={downloader_ini: {'content':
@@ -538,22 +523,22 @@ class TestIniRepository(unittest.TestCase):
             downloader_ini: {'content':
                 '[update_all_mister]\n'
                 'db_url = https://update_all\n\n'
-                '[bios_db]\n'
-                'db_url = https://bios\n\n'
-                '[BIOS_DB]\n'
-                'db_url = https://other_bios\n'
+                '[example_db]\n'
+                'db_url = https://example\n\n'
+                '[EXAMPLE_DB]\n'
+                'db_url = https://other_example\n'
             }
         })
         logger = LoggerSpy()
         ini_repository = IniRepositoryTester(file_system=FileSystemFactory(state=state).create_for_system_scope(), logger=logger)
         ini_repository.initialize_downloader_ini_base_path(MEDIA_FAT)
 
-        ini_repository.extract_dbs_to_separate_ini(['bios_db'], DOWNLOADER_BIOS_DB_INI, {'update_all_mister': None, 'bios_db': None})
+        ini_repository.extract_dbs_to_separate_ini(['example_db'], 'downloader_example_db.ini', {'update_all_mister': None, 'example_db': None})
 
-        self.assertEqual('[bios_db]\ndb_url = https://bios\n', state.files[f'{MEDIA_FAT}/{DOWNLOADER_BIOS_DB_INI}'.lower()]['content'])
+        self.assertEqual('[example_db]\ndb_url = https://example\n', state.files[f'{MEDIA_FAT}/downloader_example_db.ini'.lower()]['content'])
         self.assertEqual('[update_all_mister]\ndb_url = https://update_all\n', state.files[downloader_ini.lower()]['content'])
-        self.assertEqual([f'WARNING! Section [bios_db] was repeated in {downloader_ini}, only the first one has been kept.'], logger.print_lines)
-        self.assertEqual([f'Repeated section removed from {downloader_ini}:\n[BIOS_DB]\ndb_url = https://other_bios\n'], logger.debug_lines)
+        self.assertEqual([f'WARNING! Section [example_db] was repeated in {downloader_ini}, only the first one has been kept.'], logger.print_lines)
+        self.assertEqual([f'Repeated section removed from {downloader_ini}:\n[EXAMPLE_DB]\ndb_url = https://other_example\n'], logger.debug_lines)
 
     def test_extract_dbs_to_separate_ini___with_existing_target_file___merges_preserving_non_conflicting_sections(self):
         state = FileSystemState(files={
@@ -624,10 +609,10 @@ class TestIniRepository(unittest.TestCase):
 
     def test_read_extra_db_ini_files___scans_downloader_globs___records_only_non_owned_sources(self):
         state = FileSystemState(files={
-            f'{MEDIA_FAT}/{DOWNLOADER_BIOS_DB_INI}': {'content': '[bios_db]\ndb_url = https://bios\n'},
+            f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}': {'content': '[ajgowans/manualsdb-nes]\ndb_url = https://manuals\n'},
             f'{MEDIA_FAT}/downloader_custom.ini': {'content': '[custom_db]\ndb_url = https://custom\n'},
             f'{MEDIA_FAT}/downloader/dropins.ini': {'content': '[dropin_db]\ndb_url = https://dropin\n'},
-            f'{MEDIA_FAT}/downloader/{DOWNLOADER_BIOS_DB_INI}': {
+            f'{MEDIA_FAT}/downloader/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}': {
                 'content': '[nested_db]\ndb_url = https://nested\n'
             },
             f'{MEDIA_FAT}/downloader/.hidden.ini': {'content': '[hidden_db]\ndb_url = https://hidden\n'},
@@ -638,11 +623,11 @@ class TestIniRepository(unittest.TestCase):
 
         sections, sources = ini_repository.read_extra_db_ini_files()
 
-        self.assertEqual({'bios_db', 'custom_db', 'dropin_db', 'nested_db'}, set(sections))
+        self.assertEqual({'ajgowans/manualsdb-nes', 'custom_db', 'dropin_db', 'nested_db'}, set(sections))
         self.assertEqual({
             'custom_db': ['downloader_custom.ini'],
             'dropin_db': ['downloader/dropins.ini'],
-            'nested_db': [f'downloader/{DOWNLOADER_BIOS_DB_INI}'],
+            'nested_db': [f'downloader/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'],
         }, sources)
 
     def test_read_extra_db_ini_files___with_duplicate_db_ids___uses_downloader_order_and_first_wins(self):

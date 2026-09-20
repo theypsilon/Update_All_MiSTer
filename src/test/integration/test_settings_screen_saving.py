@@ -22,7 +22,7 @@ from typing import Tuple
 from unittest.mock import patch
 
 from update_all.config import Config
-from update_all.constants import DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_BIOS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, \
+from update_all.constants import DOWNLOADER_AJGOWANS_MANUALSDB_INI, \
     DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI, MEDIA_FAT, FILE_MiSTer_ini, FILE_lastcore_dat
 from update_all.ini_repository import read_ini_contents, SEPARATE_DB_INI_FILES
 from update_all.local_store import LocalStore
@@ -553,19 +553,6 @@ class TestSettingsScreenSaving(unittest.TestCase):
             saved_store['chipster6502_artwork_db_styles']['chipster6502/artworkdb-nes'],
         )
 
-    def test_calculate_needs_save___with_hbmame_filter_changed_on_separate_arcade_roms_db___returns_separate_ini_changes(self) -> None:
-        sut, ui, _ = tester(files={
-            downloader_ini: {'content': default_downloader_ini_content()},
-            f'{MEDIA_FAT}/{DOWNLOADER_ARCADE_ROMS_DB_INI}': {'content': Path('test/fixtures/downloader_ini/arcade_roms_downloader.ini').read_text()}
-        })
-
-        ui.set_value('hbmame_filter', 'true')
-
-        sut.calculate_needs_save(ui)
-
-        self.assertEqual('  - downloader_arcade_roms_db.ini', ui.get_value('needs_save_file_list'))
-        self.assertEqual('true', ui.get_value('needs_save'))
-
     def test_calculate_needs_save___with_removed_database_in_downloader___returns_downloader_ini_changes(self):
         sut, ui, _ = tester(files={
             downloader_ini: {'content': Path('test/fixtures/downloader_ini/bug_names_txt_updater_disabled_downloader.ini').read_text()}
@@ -967,7 +954,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
         self.assertNotIn('llapi_folder', sut._config_provider.get().database_sources)
 
     def test_save__when_disabling_db_in_nested_file_with_canonical_basename___removes_nested_file(self):
-        extra_path = f'{MEDIA_FAT}/downloader/{DOWNLOADER_BIOS_DB_INI}'
+        extra_path = f'{MEDIA_FAT}/downloader/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'
         sut, ui, fs = tester(files={
             downloader_ini: {'content': default_downloader_ini_content()},
             extra_path: {'content': f'[llapi_folder]\ndb_url = {all_dbs("").LLAPI_FOLDER.db_url}\n'},
@@ -978,7 +965,7 @@ class TestSettingsScreenSaving(unittest.TestCase):
         sut.calculate_needs_save(ui)
         sut.save(ui)
 
-        self.assertIn(f'downloader/{DOWNLOADER_BIOS_DB_INI}', ui.get_value('needs_save_file_list'))
+        self.assertIn(f'downloader/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}', ui.get_value('needs_save_file_list'))
         self.assertNotIn(extra_path.lower(), fs.files)
         self.assertNotIn('llapi_folder', sut._config_provider.get().database_sources)
 
