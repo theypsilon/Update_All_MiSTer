@@ -31,7 +31,7 @@ from test.update_all_service_tester import TransitionServiceTester, local_store,
 from test.update_output_tester import UpdateOutputTester
 from test.spy_os_utils import SpyOsUtils
 from update_all.config import Config
-from update_all.constants import FILE_MiSTer_ini, KENV_SKIP_DOWNLOADER, KENV_MIRROR_ID, MEDIA_FAT
+from update_all.constants import FILE_MiSTer_ini, FILE_cifs_mount_sh, KENV_SKIP_DOWNLOADER, KENV_MIRROR_ID, MEDIA_FAT
 from update_all.databases import ALL_DB_IDS, all_dbs, DB_ID_DISTRIBUTION_MISTER, DB_ID_MREXT_ALL, DB_ID_MREXT_TAPTO, \
     DB_ID_ZAPAROO_MISTER, MIRROR_ANDI_BR
 from update_all.ini_repository import read_ini_contents
@@ -69,6 +69,7 @@ def test_transitions_with_state(config: Config, fs_state: FileSystemState, store
     sut.from_devel_distribution_to_pinned_linux_distribution(config, store, downloader_ini, update_output)
     sut.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, store, update_output)
     sut.from_active_databases_to_related_databases(config, store, update_output)
+    sut.from_installed_cifs_mount_script_to_cifs_scripts_db(config, store, update_output)
     sut.from_old_db_urls_to_actual_db_urls(config, downloader_ini, update_output)
     sut.from_no_update_all_mister_db_to_adding_it(config, downloader_ini, update_output)
     return fs_state
@@ -121,6 +122,23 @@ def run_pinned_linux_distribution_transition(files: Dict[str, str], store=None, 
     config_reader.fill_config_with_environment(config)
     config_reader.fill_config_with_database_sections(config, downloader_ini_sections)
     sut.from_devel_distribution_to_pinned_linux_distribution(config, store or local_store(), downloader_ini_sections, update_output or NoopUpdateOutput())
+    return fs_state
+
+
+cifs_mount_sh_path = f'{MEDIA_FAT}/{FILE_cifs_mount_sh}'
+
+
+def run_cifs_scripts_transition(files: Dict[str, str], store=None, update_output=None, os_utils=None, env=None):
+    config = Config()
+    fs_state = FileSystemState(config=config, files={filename: {'content': content} for filename, content in files.items()})
+    fs = FileSystemFactory(state=fs_state).create_for_system_scope()
+    os_utils = os_utils or SpyOsUtils()
+    ini_repos = IniRepositoryTester(file_system=fs, os_utils=os_utils)
+    config_reader = ConfigReaderTester(downloader_ini_repository=ini_repos, file_system=fs, env=None if env is None else {**default_env(), **env})
+    sut = TransitionServiceTester(file_system=fs, os_utils=os_utils, ini_repository=ini_repos)
+    config_reader.fill_config_with_environment(config)
+    config_reader.fill_config_with_database_sections(config, config_reader.read_downloader_ini())
+    sut.from_installed_cifs_mount_script_to_cifs_scripts_db(config, store or local_store(), update_output or NoopUpdateOutput())
     return fs_state
 
 
@@ -416,6 +434,82 @@ class TestTransitionService(unittest.TestCase):
         output = UpdateOutputTester(os_utils)
 
         run_pinned_linux_distribution_transition({downloader_ini: distribution_ini(all_dbs('').MISTER_DB9_DISTRIBUTION_MISTER.db_url)}, update_output=output, os_utils=os_utils)
+
+        self.assertEqual([], output.transition_calls)
+        self.assertEqual([], os_utils.calls_to_sleep)
+
+    def test_cifs_scripts_with_cifs_mount_sh_installed___enables_the_db_once(self):
+        store = local_store()
+        fs = run_cifs_scripts_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER']),
+            cifs_mount_sh_path: '#!/bin/bash',
+        }, store=store)
+
+        self.assertEqual(
+            testableIni(downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER'], ALL_DB_IDS['CIFS_SCRIPTS'])),
+            testableIni(fs.files[downloader_ini]['content'])
+        )
+        self.assertTrue(store.get_introduced_cifs_scripts())
+
+    def test_cifs_scripts_without_cifs_mount_sh___keeps_downloader_ini_and_marks_the_transition_as_done(self):
+        store = local_store()
+        fs = run_cifs_scripts_transition({downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER'])}, store=store)
+
+        self.assertEqual(
+            testableIni(downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER'])),
+            testableIni(fs.files[downloader_ini]['content'])
+        )
+        self.assertTrue(store.get_introduced_cifs_scripts())
+
+    def test_cifs_scripts_with_cifs_mount_sh_installed_after_the_transition_already_ran___keeps_the_db_disabled(self):
+        store = local_store()
+        store.set_introduced_cifs_scripts(True)
+        store.mark_as_cleaned()
+        fs = run_cifs_scripts_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER']),
+            cifs_mount_sh_path: '#!/bin/bash',
+        }, store=store)
+
+        self.assertEqual(
+            testableIni(downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER'])),
+            testableIni(fs.files[downloader_ini]['content'])
+        )
+        self.assertFalse(store.needs_save())
+
+    def test_cifs_scripts_with_cifs_mount_sh_installed_and_skipping_downloader___changes_nothing_and_keeps_the_transition_pending(self):
+        store = local_store()
+        fs = run_cifs_scripts_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER']),
+            cifs_mount_sh_path: '#!/bin/bash',
+        }, store=store, env={KENV_SKIP_DOWNLOADER: 'true'})
+
+        self.assertEqual(
+            testableIni(downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER'])),
+            testableIni(fs.files[downloader_ini]['content'])
+        )
+        self.assertFalse(store.get_introduced_cifs_scripts())
+
+    def test_cifs_scripts_transition_event___is_emitted_with_the_db_id_before_waiting(self):
+        os_utils = SpyOsUtils()
+        output = UpdateOutputTester(os_utils)
+
+        run_cifs_scripts_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER']),
+            cifs_mount_sh_path: '#!/bin/bash',
+        }, update_output=output, os_utils=os_utils)
+
+        self.assertEqual([(
+            'from_installed_cifs_mount_script_to_cifs_scripts_db',
+            {'db_id': ALL_DB_IDS['CIFS_SCRIPTS']}
+        )], output.transition_calls)
+        self.assertEqual([[]], output.sleep_calls_at_transition)
+        self.assertEqual([5.0], os_utils.calls_to_sleep)
+
+    def test_cifs_scripts_transition_without_cifs_mount_sh___emits_no_event_and_does_not_wait(self):
+        os_utils = SpyOsUtils()
+        output = UpdateOutputTester(os_utils)
+
+        run_cifs_scripts_transition({downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['UPDATE_ALL_MISTER'])}, update_output=output, os_utils=os_utils)
 
         self.assertEqual([], output.transition_calls)
         self.assertEqual([], os_utils.calls_to_sleep)

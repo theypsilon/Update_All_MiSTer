@@ -20,7 +20,7 @@ import unittest
 from test.logger_tester import NoLogger
 from update_all.local_store import LocalStore
 from update_all.migrations import migration_v7, migration_v8, migration_v9, migration_v10, migration_v11, migration_v12, \
-    migration_v13, migration_v14
+    migration_v13, migration_v14, migration_v15
 from update_all.store_migrator import StoreMigrator
 
 
@@ -119,6 +119,13 @@ class TestMigrations(unittest.TestCase):
 
         self.assertEqual(False, local_store['jtcores_private_releases_auto'])
         self.assertNotIn('allow_retroaccount_jt_beta_auto_enable', local_store)
+
+    def test_migration_v15___adds_cifs_scripts_transition_flag(self):
+        local_store = {}
+
+        migration_v15(local_store)
+
+        self.assertEqual(False, local_store['introduced_cifs_scripts'])
 
     def test_store_migrator___after_running_migrations___marks_store_for_persistence(self):
         props = {'migration_version': 0}

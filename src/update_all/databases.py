@@ -131,6 +131,7 @@ class AllDBs:
         self.MISTER_FRONTIER = Database(db_id='MiSTerOrganize/MiSTer_Frontier', db_url='https://raw.githubusercontent.com/MiSTerOrganize/MiSTer_Frontier/db/db.json.zip', title='MiSTer Frontier')
 
         # MULTIDATABASES
+        self.CIFS_SCRIPTS = Database(db_id='MultiDatabases/cifs-scripts', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/cifs-scripts/db.json', title='CIFS Scripts')
         self.DISC_TOOLS = Database(db_id='MultiDatabases/disc-tools', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/disc-tools/db.json', title='Disc Tools')
         self.SHMUP_DECK = Database(db_id='MultiDatabases/shmup-deck', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/shmup-deck/db.json', title='Shmup Deck')
         self.DREAMSTER = Database(db_id='MultiDatabases/dreamster', db_url='https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/dreamster/db.json', title='DreamSTer')

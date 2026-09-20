@@ -77,6 +77,7 @@ def make_new_local_store(store_migrator):
         'chipster6502_artwork_db_styles': {},
         'introduced_related_database_ids': [],
         'introduced_pinned_linux_distribution_mister': False,
+        'introduced_cifs_scripts': False,
     }
 
 

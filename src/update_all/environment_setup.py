@@ -79,6 +79,7 @@ class EnvironmentSetupImpl(EnvironmentSetup):
         self._transition_service.from_devel_distribution_to_pinned_linux_distribution(config, local_store, downloader_ini, update_output)
         self._transition_service.from_just_names_txt_enabled_to_arcade_names_txt_enabled(config, local_store, update_output)
         self._transition_service.from_active_databases_to_related_databases(config, local_store, update_output)
+        self._transition_service.from_installed_cifs_mount_script_to_cifs_scripts_db(config, local_store, update_output)
         self._transition_service.from_old_db_urls_to_actual_db_urls(config, downloader_ini, update_output)
         self._transition_service.from_no_update_all_mister_db_to_adding_it(config, downloader_ini, update_output)
         self._transition_service.from_downloader_ini_to_separate_db_ini_files(downloader_ini, update_output)

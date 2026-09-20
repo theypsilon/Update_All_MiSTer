@@ -98,6 +98,12 @@ class LocalStore:
     def get_introduced_pinned_linux_distribution_mister(self) -> bool:
         return self._props['introduced_pinned_linux_distribution_mister']
 
+    def set_introduced_cifs_scripts(self, introduced: bool) -> None:
+        self.generic_set('introduced_cifs_scripts', introduced)
+
+    def get_introduced_cifs_scripts(self) -> bool:
+        return self._props['introduced_cifs_scripts']
+
     def set_introduced_related_database_ids(self, db_ids: List[str]) -> None:
         self.generic_set('introduced_related_database_ids', db_ids)
 

@@ -130,6 +130,13 @@ class TestDatabases(unittest.TestCase):
         self.assertEqual('https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/shmup-deck/db.json', db.db_url)
         self.assertEqual('Shmup Deck', db.title)
 
+    def test_cifs_scripts___uses_multidatabases_publication(self):
+        db = all_dbs('').CIFS_SCRIPTS
+
+        self.assertEqual('MultiDatabases/cifs-scripts', db.db_id)
+        self.assertEqual('https://raw.githubusercontent.com/theypsilon/MultiDatabases_MiSTer/db/cifs-scripts/db.json', db.db_url)
+        self.assertEqual('CIFS Scripts', db.title)
+
     def test_diablo___uses_multidatabases_publication(self):
         db = all_dbs('').DIABLO
 

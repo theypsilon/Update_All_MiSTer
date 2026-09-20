@@ -2334,6 +2334,7 @@ def settings_screen_model():
                 "mrext/all": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-dvd": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "anime0t4ku_mister_scripts": {"group": "db", "default": "false", "values": ["false", "true"]},
+                "MultiDatabases/cifs-scripts": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "chipster6502/MiSTer_monitor_DB": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/mister-hifi": {"group": "db", "default": "false", "values": ["false", "true"]},
                 "MultiDatabases/misterfin": {"group": "db", "default": "false", "values": ["false", "true"]},
@@ -2439,6 +2440,45 @@ def settings_screen_model():
                         "uninstall": uninstall_db_action_for_id(
                             "anime0t4ku_mister_scripts", "Anime0t4ku MiSTer Scripts"),
                         "ok": [{"type": "rotate_variable", "target": "anime0t4ku_mister_scripts"}],
+                    }
+                },
+                {
+                    "title": "# CIFS Scripts",
+                    "description": "{MultiDatabases/cifs-scripts:enabled} Mount a NAS or PC network share",
+                    "actions": {
+                        "uninstall": uninstall_db_action_for_id("MultiDatabases/cifs-scripts", "CIFS Scripts"),
+                        "ok": _try_toggle_with_user_dependency(
+                            "MultiDatabases/cifs-scripts",
+                            "CIFS Scripts",
+                            [
+                                "CIFS Scripts are the official scripts that mount a network share on your MiSTer.",
+                                "You can run cifs_mount and cifs_umount from MiSTer's Scripts folder.",
+                                " ",
+                                "CIFS Scripts require your own CIFS/SMB share on a NAS or PC in your network.",
+                                "Write your share settings, one per line, and save them as:",
+                                "Scripts/cifs_mount.ini",
+                                'The settings look like SERVER="192.168.1.10", SHARE="MiSTer", USERNAME="mister" and PASSWORD="secret". Only SERVER is mandatory.',
+                                " ",
+                                "Maintainer: MiSTer-devel",
+                            ],
+                        ),
+                        "info": [{
+                            "ui": "message",
+                            "header": "CIFS Scripts",
+                            "text": [
+                                "CIFS Scripts are the official scripts that mount a network share on your MiSTer.",
+                                " ",
+                                "Enabling this database installs the cifs_mount and cifs_umount scripts.",
+                                "You can load games from a CIFS/SMB share on your NAS or PC, mounted on /media/fat/cifs.",
+                                " ",
+                                "You can run cifs_mount and cifs_umount from MiSTer's Scripts folder.",
+                                "You must manually supply your own cifs_mount.ini with your share settings (SERVER, SHARE, USERNAME, PASSWORD), where only SERVER is mandatory.",
+                                "MiSTer looks for games in /media/fat/cifs before /media/fat/games, so lay the share out like the games folder.",
+                                'Add MOUNT_AT_BOOT="true" to cifs_mount.ini and run cifs_mount once to mount the share on every boot.',
+                                " ",
+                                "Maintainer: MiSTer-devel",
+                            ],
+                        }],
                     }
                 },
                 {

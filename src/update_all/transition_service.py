@@ -19,7 +19,7 @@ from collections import Counter
 from typing import Dict, Final, List, Tuple
 from update_all.config import Config
 from update_all.constants import FILE_MiSTer_ini, FILE_update_all_ini, FILE_update_jtcores_ini, \
-    FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh
+    FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh, FILE_cifs_mount_sh
 from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DEFAULT_ENCC_FORKS, DB_ID_NAMES_TXT, \
     DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ajgowans_manualsdbs, ALL_DB_IDS, DB_ID_MREXT_ALL, \
     DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER, chipster6502_artworkdbs, chipster6502_artwork_db_with_style
@@ -213,6 +213,32 @@ class TransitionService:
             'from_devel_distribution_to_pinned_linux_distribution',
             db_id=DB_ID_DISTRIBUTION_MISTER,
             db_url=db_defs.MISTER_PINNED_LINUX_DISTRIBUTION_MISTER.db_url
+        )
+        self._logger.print('Waiting 5 seconds...')
+        self._os_utils.sleep(5.0)
+
+    def from_installed_cifs_mount_script_to_cifs_scripts_db(self, config: Config, store: LocalStore, update_output: UpdateOutput):
+        # Runs once per store, so users who disable CIFS Scripts afterwards keep it disabled.
+        if store.get_introduced_cifs_scripts() or config.skip_downloader:
+            return
+
+        store.set_introduced_cifs_scripts(True)
+
+        db_id = all_dbs(config.mirror).CIFS_SCRIPTS.db_id
+        if config.is_database_enabled(db_id):
+            return
+
+        if not self._file_exists(FILE_cifs_mount_sh):
+            return
+
+        config.set_database_enabled(db_id, True)
+        self._ini_repository.write_downloader_ini(config)
+        self._logger.print(f'Found {FILE_cifs_mount_sh} in your system:')
+        self._logger.print('Adding CIFS Scripts db to downloader.ini to keep your CIFS scripts updated.')
+        self._logger.print()
+        update_output.transition(
+            'from_installed_cifs_mount_script_to_cifs_scripts_db',
+            db_id=db_id
         )
         self._logger.print('Waiting 5 seconds...')
         self._os_utils.sleep(5.0)

@@ -20,7 +20,7 @@ from update_all.store_migrator import Migration
 
 
 def migrations() -> list[Migration]:
-    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6, migration_v7, migration_v8, migration_v9, migration_v10, migration_v11, migration_v12, migration_v13, migration_v14]
+    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6, migration_v7, migration_v8, migration_v9, migration_v10, migration_v11, migration_v12, migration_v13, migration_v14, migration_v15]
 
 def migration_v1(local_store) -> None:
     """create arcade_names_txt field"""
@@ -96,3 +96,7 @@ def migration_v14(local_store) -> None:
     local_store['introduced_pinned_linux_distribution_mister'] = False
     local_store['coin_op_collection_releases_auto'] = True
     local_store['jtcores_private_releases_auto'] = local_store.pop('allow_retroaccount_jt_beta_auto_enable', True)
+
+def migration_v15(local_store) -> None:
+    """create CIFS Scripts transition flag"""
+    local_store['introduced_cifs_scripts'] = False

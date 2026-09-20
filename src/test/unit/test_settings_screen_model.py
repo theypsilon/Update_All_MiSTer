@@ -57,6 +57,7 @@ _TOOLS_DATABASE_TITLES = {
     '# MiSTerFin',
     '# MiSTer DVD',
     '# Disc Tools',
+    '# CIFS Scripts',
     '# Shmup Deck',
     '# MiSTer Monitor',
 }
@@ -87,6 +88,7 @@ _FILE_DEPENDENT_CORE_PATHS = {
     # Disc Tools needs an optical drive and blank discs rather than files on the card,
     # so its confirmation states hardware instead of a path.
     '# Disc Tools': ('MultiDatabases/disc-tools', ()),
+    '# CIFS Scripts': ('MultiDatabases/cifs-scripts', ('Scripts/cifs_mount.ini',)),
     # Shmup Deck runs on the games already installed, so its confirmation states the
     # always-on service footprint and the first-run launcher step instead of a path.
     '# Shmup Deck': ('MultiDatabases/shmup-deck', ()),
@@ -123,6 +125,7 @@ _TOOLS_DATABASE_DESCRIPTIONS = {
     '# MiSTerFin': 'MiSTerFin is a Jellyfin media client.',
     '# MiSTer DVD': 'MiSTer DVD is an FPGA DVD-Video player.',
     '# Disc Tools': 'Disc Tools is a disc ripping and burning utility.',
+    '# CIFS Scripts': 'CIFS Scripts are the official scripts that mount a network share on your MiSTer.',
     '# Shmup Deck': "Shmup Deck is a flyer-wall launcher for shoot 'em ups, served from your MiSTer to your phone.",
     '# MiSTer Monitor': "MiSTer Monitor shows your MiSTer's live status on a separate screen.",
 }
@@ -164,6 +167,7 @@ _DATABASE_MAINTAINERS = {
     '# 3S-ARM': 'kimchiman52',
     '# MiSTer Frontier': 'MiSTerOrganize',
     '# 240p Test Suites': 'Moondandy',
+    '# CIFS Scripts': 'MiSTer-devel',
     '# MiSTer Hi-Fi': 'Anime0t4ku',
     '# MiSTerFin': 'puddingstudio',
     '# MiSTer DVD': 'owenb321',
@@ -192,6 +196,7 @@ _FILE_DEPENDENT_CORE_EXPERIENCE_PHRASES = {
     '# MiSTerFin': 'browse and play your Jellyfin library',
     '# MiSTer DVD': 'play decrypted DVD ISOs, VCDs and SVCDs',
     '# Disc Tools': 'rip physical CDs to BIN/CUE or CHD',
+    '# CIFS Scripts': 'load games from a CIFS/SMB share on your NAS or PC',
     '# Shmup Deck': 'browse 178 arcade shooters as a flyer wall on your phone',
     '# MiSTer Monitor': "artwork, RetroAchievements progress, and live system stats",
 }
@@ -212,6 +217,7 @@ _FILE_DEPENDENT_CORE_MANUAL_CONTENT_PHRASES = {
     '# MiSTerFin': 'manually supply your own jellyfin.conf',
     '# MiSTer DVD': 'manually supply your own DVD, VCD, SVCD or ISO media',
     '# Disc Tools': 'manually supply an optical drive and blank writable discs',
+    '# CIFS Scripts': 'manually supply your own cifs_mount.ini',
     '# Shmup Deck': "Run the shmup_deck script once from MiSTer's Scripts folder",
     '# MiSTer Monitor': 'get a compatible screen',
 }
@@ -634,6 +640,8 @@ class TestSettingsScreenModel(unittest.TestCase):
              'ajgowans/240p', '240p Test Suites'),
             ('tools_and_scripts_menu', '# Anime0t4ku MiSTer Scripts', 'anime0t4ku_mister_scripts',
              'anime0t4ku_mister_scripts', 'Anime0t4ku MiSTer Scripts'),
+            ('tools_and_scripts_menu', '# CIFS Scripts', 'MultiDatabases/cifs-scripts',
+             'MultiDatabases/cifs-scripts', 'CIFS Scripts'),
             ('tools_and_scripts_menu', '# MiSTer Hi-Fi', 'MultiDatabases/mister-hifi',
              'MultiDatabases/mister-hifi', 'MiSTer Hi-Fi'),
             ('tools_and_scripts_menu', '# MiSTerFin', 'MultiDatabases/misterfin',
@@ -1216,6 +1224,11 @@ class TestSettingsScreenModel(unittest.TestCase):
             "You can launch Disc Tools from MiSTer's Scripts folder.",
         )
         self._assert_core_menu_location(
+            '# CIFS Scripts',
+            'MultiDatabases/cifs-scripts',
+            "You can run cifs_mount and cifs_umount from MiSTer's Scripts folder.",
+        )
+        self._assert_core_menu_location(
             '# Shmup Deck',
             'MultiDatabases/shmup-deck',
             "Run the shmup_deck script once from MiSTer's Scripts folder to start the service and register it at boot, then open http://shmupdeck.local on your phone.",
@@ -1552,10 +1565,15 @@ class TestSettingsScreenModel(unittest.TestCase):
         info = self._execute_core_info('# Paprium MegaDrive')
         self.assertIn("FPGA core fork of MiSTer's Mega Drive core", ' '.join(info.messages[0]['text']))
 
-    def test_mister_dvd_entry___is_immediately_below_anime0t4ku_mister_scripts(self):
+    def test_cifs_scripts_entry___is_immediately_below_anime0t4ku_mister_scripts(self):
         titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
 
-        self.assertEqual(titles.index('# Anime0t4ku MiSTer Scripts') + 1, titles.index('# MiSTer DVD'))
+        self.assertEqual(titles.index('# Anime0t4ku MiSTer Scripts') + 1, titles.index('# CIFS Scripts'))
+
+    def test_mister_dvd_entry___is_immediately_below_cifs_scripts(self):
+        titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
+
+        self.assertEqual(titles.index('# CIFS Scripts') + 1, titles.index('# MiSTer DVD'))
 
     def test_mister_monitor_entry___is_immediately_above_mister_hi_fi(self):
         titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
