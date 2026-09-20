@@ -1570,6 +1570,19 @@ class TestSettingsScreenModel(unittest.TestCase):
 
         self.assertEqual(titles.index('# Anime0t4ku MiSTer Scripts') + 1, titles.index('# CIFS Scripts'))
 
+    def test_cifs_scripts_enable_confirmation___warns_in_red_that_the_scripts_are_overwrite_protected_and_what_it_means(self):
+        entry = self._entry(self._core_menu('# CIFS Scripts'), '# CIFS Scripts')
+        confirm = _entry_confirms(entry)[0]
+
+        text = ' '.join(confirm['text'])
+
+        self.assertEqual('red', confirm['alert_level'])
+
+        self.assertIn('WARNING: cifs_mount.sh and cifs_umount.sh are overwrite protected.', text)
+        self.assertIn('This means a script already installed on your MiSTer is never replaced, so it stops receiving new versions.', text)
+        self.assertIn('To get a new version, delete the script and run Update All again. Settings edited inside the script get lost.', text)
+        self.assertIn('Updates never touch Scripts/cifs_mount.ini, so settings saved there are kept.', text)
+
     def test_mister_dvd_entry___is_immediately_below_cifs_scripts(self):
         titles = [entry.get('title') for entry in self.model['items']['tools_and_scripts_menu']['entries']]
 
