@@ -32,7 +32,7 @@ from update_all.constants import DEFAULT_CURL_SSL_OPTIONS, \
     KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount, MEDIA_FAT, FILE_update_all_log, \
     KENV_UPDATE_ALL_MISTER_DB_URL, KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, \
     KENV_UPDATE_ALL_NON_INTERACTIVE, DEFAULT_UPDATE_ALL_NON_INTERACTIVE, \
-    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
+    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH, KENV_LAUNCH_ORIGIN_ID
 
 from update_all.logger import FileLoggerDecorator, PrintLogger
 from update_all.other import GenericProvider
@@ -72,22 +72,11 @@ def execute_update_all(logger: FileLoggerDecorator, local_repository_provider, e
     args = sys.argv if args is None else args
     if len(args) > 1 and args[1] == '--chip-id-linker':
         from update_all.chip_id_linker import run_chip_id_linker_command
-        return run_chip_id_linker_command(logger, args[2:])
+        return run_chip_id_linker_command(logger, env, args[2:])
 
-    from update_all.update_all_service import UpdateAllServiceFactory, UpdateAllServicePass
-    if len(args) > 1 and args[1] == '--continue':
-        full_run_param = UpdateAllServicePass.Continue
-    elif len(args) > 1 and args[1] == '--no-continue':
-        full_run_param = UpdateAllServicePass.NewRunNonStop
-    elif len(args) > 1 and args[1] == '--retroaccount-sync':
-        full_run_param = UpdateAllServicePass.RetroAccountSync
-    else:
-        full_run_param = UpdateAllServicePass.NewRun
-
+    from update_all.update_all_service import UpdateAllServiceFactory
     factory = UpdateAllServiceFactory(logger, local_repository_provider=local_repository_provider)
-    exit_code = factory.create(env).full_run(full_run_param)
-    logger.debug(f'Update All flow finished: exit_code={exit_code}.')
-    return exit_code
+    return factory.create(env).run_command(args)
 
 
 def read_env(default_commit: str, real_start_time: float) -> EnvDict:
@@ -110,6 +99,7 @@ def read_env(default_commit: str, real_start_time: float) -> EnvDict:
         KENV_UPDATE_ALL_DOWNLOADER_URL: os.getenv(KENV_UPDATE_ALL_DOWNLOADER_URL, ''),
         KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH: os.getenv(KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH, ''),
         KENV_UPDATE_ALL_NON_INTERACTIVE: os.getenv(KENV_UPDATE_ALL_NON_INTERACTIVE, DEFAULT_UPDATE_ALL_NON_INTERACTIVE),
+        KENV_LAUNCH_ORIGIN_ID: os.getenv(KENV_LAUNCH_ORIGIN_ID, ''),
         KENV_RETROACCOUNT_DOMAIN: os.getenv(KENV_RETROACCOUNT_DOMAIN, DOMAIN_default_retroaccount),
         'real_start_time': real_start_time
     }

@@ -20,7 +20,7 @@
 import sys
 import os
 import zipfile
-from typing import Generic, TypeVar, NamedTuple, Protocol
+from typing import Callable, Generic, TypeVar, NamedTuple, Protocol
 import shutil
 import types
 
@@ -153,6 +153,17 @@ def test_only(func):
         return result
 
     return wrapper
+
+
+class Defer:
+    def __init__(self, callback: Callable[[], None]):
+        self._callback = callback
+
+    def __enter__(self) -> 'Defer':
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self._callback()
 
 
 class ClosableValue:

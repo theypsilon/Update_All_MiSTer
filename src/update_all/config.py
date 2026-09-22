@@ -46,6 +46,7 @@ class EnvDict(TypedDict):
     UPDATE_ALL_DOWNLOADER_URL: str
     UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH: str
     UPDATE_ALL_NON_INTERACTIVE: str
+    LAUNCH_ORIGIN_ID: str
     RETROACCOUNT_DOMAIN: str
     real_start_time: float
 
@@ -72,6 +73,7 @@ class Config:
     downloader_url: Optional[str] = None
     downloader_python_compatible_path: Optional[str] = None
     non_interactive: bool = False
+    launch_origin_id: str = ''
 
     # General options
     base_path: str = MEDIA_FAT

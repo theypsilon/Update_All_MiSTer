@@ -25,7 +25,7 @@ from update_all.config import Config
 from update_all.constants import KENV_DEBUG, KENV_LOCATION_STR, FILE_update_all_storage, KENV_TRANSITION_SERVICE_ONLY, \
     MEDIA_FAT, KENV_UPDATE_ALL_MISTER_DB_URL, \
     KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, KENV_UPDATE_ALL_NON_INTERACTIVE, \
-    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
+    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH, KENV_LAUNCH_ORIGIN_ID
 from update_all.databases import DB_ID_NAMES_TXT, AllDBs, DB_ID_ARCADE_NAMES_TXT, all_dbs, ALL_DB_IDS
 from update_all.environment_setup import EnvironmentSetupResult
 from update_all.ini_repository import read_ini_contents
@@ -146,6 +146,17 @@ class TestEnvironmentSetup(unittest.TestCase):
                 non_interactive=True,
             ),
         )
+
+    def test_setup___with_launch_origin___keeps_runtime_context_out_of_ini_files(self):
+        default_ini = Path('test/fixtures/downloader_ini/default_downloader.ini').read_text()
+        for origin in ('degauss', 'zaparoo_frontend', 'another-launcher', 'DEGAUSS', ''):
+            with self.subTest(origin=origin):
+                self.assertSetup(
+                    files={downloader_ini: default_ini},
+                    env={KENV_LAUNCH_ORIGIN_ID: f' {origin} '},
+                    expected_files={downloader_ini: default_ini},
+                    expected_config=Config(databases=default_databases(), launch_origin_id=origin),
+                )
 
     def test_setup___with_default_downloader_ini_and_update_all_ini_with_disabled_arcade_organizer___returns_config_with_default_databases_and_disabled_ao(self):
         self.assertSetup(files={

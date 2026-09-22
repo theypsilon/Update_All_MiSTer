@@ -310,6 +310,20 @@ class UpdateAllService:
         self._error_reports: list[str] = []
         self._timeline_after_log_doc: list[str] = []
 
+    def run_command(self, args: list[str]) -> int:
+        if len(args) > 1 and args[1] == '--continue':
+            run_pass = UpdateAllServicePass.Continue
+        elif len(args) > 1 and args[1] == '--no-continue':
+            run_pass = UpdateAllServicePass.NewRunNonStop
+        elif len(args) > 1 and args[1] == '--retroaccount-sync':
+            run_pass = UpdateAllServicePass.RetroAccountSync
+        else:
+            run_pass = UpdateAllServicePass.NewRun
+
+        exit_code = self.full_run(run_pass)
+        self._logger.debug(f'Update All flow finished: exit_code={exit_code}.')
+        return exit_code
+
     def full_run(self, run_pass: UpdateAllServicePass) -> int:
         if self._is_media_fat_read_only():
             self._logger.print('The SD card is temporarily not writable.')

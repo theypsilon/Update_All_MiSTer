@@ -17,170 +17,100 @@
 # https://github.com/theypsilon/Update_All_MiSTer
 
 import unittest
-from contextlib import contextmanager
-from unittest.mock import patch
 
-import update_all.main as main_module
-import update_all.chip_id_linker as chip_id_linker_module
-import update_all.update_all_service as update_all_service_module
+from test.main_tester import MainTester
 from update_all.constants import KENV_UPDATE_ALL_MISTER_DB_URL, KENV_UPDATE_ALL_DOWNLOADER_PATH, \
     KENV_UPDATE_ALL_DOWNLOADER_URL, KENV_UPDATE_ALL_NON_INTERACTIVE, \
-    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH
-from update_all.main import execute_update_all, initial_logfile_path, read_env
+    KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH, EXIT_CODE_REQUIRES_EARLY_EXIT
+from update_all.environment_setup import EnvironmentSetupResult
+from update_all.update_output import LtsvUpdateOutput
 from update_all.update_all_service import UpdateAllServicePass
 
 
 class TestMain(unittest.TestCase):
+    def setUp(self):
+        self.main = MainTester()
+
     def test_read_env___with_update_all_mister_url_override___includes_override(self):
         override = 'http://127.0.0.1:8765/update_all_db.json'
 
-        with patch.dict(main_module.os.environ, {KENV_UPDATE_ALL_MISTER_DB_URL: override}):
-            result = read_env('default-commit', 123.0)
+        result = self.main.read_env({KENV_UPDATE_ALL_MISTER_DB_URL: override})
 
         self.assertEqual(override, result[KENV_UPDATE_ALL_MISTER_DB_URL])
 
     def test_read_env___with_downloader_overrides___includes_path_and_url(self):
-        path = '/tmp/fake_downloader'
-        url = 'http://127.0.0.1:8765/downloader.pyz'
-        python_compatible_path = '/tmp/python3.9'
+        environment = {
+            KENV_UPDATE_ALL_DOWNLOADER_PATH: '/tmp/fake_downloader',
+            KENV_UPDATE_ALL_DOWNLOADER_URL: 'http://127.0.0.1:8765/downloader.pyz',
+            KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH: '/tmp/python3.9',
+        }
 
-        with patch.dict(main_module.os.environ, {
-            KENV_UPDATE_ALL_DOWNLOADER_PATH: path,
-            KENV_UPDATE_ALL_DOWNLOADER_URL: url,
-            KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH: python_compatible_path,
-        }):
-            result = read_env('default-commit', 123.0)
+        result = self.main.read_env(environment)
 
-        self.assertEqual(path, result[KENV_UPDATE_ALL_DOWNLOADER_PATH])
-        self.assertEqual(url, result[KENV_UPDATE_ALL_DOWNLOADER_URL])
-        self.assertEqual(python_compatible_path, result[KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH])
+        for key, value in environment.items():
+            self.assertEqual(value, result[key])
 
     def test_read_env___with_non_interactive_override___includes_override(self):
-        with patch.dict(main_module.os.environ, {KENV_UPDATE_ALL_NON_INTERACTIVE: 'true'}):
-            result = read_env('default-commit', 123.0)
+        result = self.main.read_env({KENV_UPDATE_ALL_NON_INTERACTIVE: 'true'})
 
         self.assertEqual('true', result[KENV_UPDATE_ALL_NON_INTERACTIVE])
 
-    def test_initial_logfile_path___when_media_fat_log_dir_exists___returns_media_fat_path(self):
-        with _replace(main_module.os.path, 'isdir', _FunctionStub(True)):
-            result = initial_logfile_path()
-
-        self.assertEqual('/media/fat/Scripts/.config/update_all/update_all.log', result)
-
-    def test_initial_logfile_path___when_media_fat_log_dir_does_not_exist___returns_leaf_relative_path(self):
-        with _replace(main_module.os.path, 'isdir', _FunctionStub(False)):
-            result = initial_logfile_path()
-
-        self.assertEqual('update_all.log', result)
-
     def test_execute_update_all___with_chip_id_linker_command___delegates_to_chip_id_linker_command(self):
-        logger = _LoggerStub()
-        local_repository_provider = _LocalRepositoryProviderStub()
+        process, loaded_modules = self.main.run_linker_help()
 
-        run_linker = _FunctionSpy(return_value=123)
-        with _replace(chip_id_linker_module, 'run_chip_id_linker_command', run_linker):
-            result = execute_update_all(
-                logger,
-                local_repository_provider,
-                {},
-                args=['update_all.pyz', '--chip-id-linker', '--blank-display', '--log', '/tmp/chipid.log'],
-            )
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertIn('Update All FPGA ID linker launcher', process.stdout)
+        self.assertIn('--blank-display', process.stdout)
+        self.assertIn('--zaparoo-console-lease', process.stdout)
+        self.assertIn('update_all.chip_id_linker', loaded_modules)
+        self.assertNotIn('update_all.update_all_service', loaded_modules)
+        self.assertNotIn('update_all.settings_screen', loaded_modules)
+        self.assertNotIn('update_all.retroaccount', loaded_modules)
 
-        self.assertEqual(123, result)
-        run_linker.assert_called_once_with(logger, ['--blank-display', '--log', '/tmp/chipid.log'])
+    def test_linker_package_imports_only_shared_primitives(self):
+        loaded_modules = self.main.loaded_application_modules('update_all.chip_id_linker')
 
-    def test_execute_update_all___with_retroaccount_sync_argument___runs_retroaccount_sync_pass(self):
-        logger = _LoggerStub()
-        local_repository_provider = object()
-        factory_class = _FactoryClassSpy()
+        outside_package = {name for name in loaded_modules
+                           if name != 'update_all.chip_id_linker' and not name.startswith('update_all.chip_id_linker.')}
+        self.assertEqual({'update_all.constants', 'update_all.logger', 'update_all.other'}, outside_package)
 
-        with _replace(update_all_service_module, 'UpdateAllServiceFactory', factory_class):
-            result = execute_update_all(
-                logger,
-                local_repository_provider,
-                {'ENV': 'value'},
-                args=['update_all.pyz', '--retroaccount-sync'],
-            )
+    def test_normal_update_service_does_not_import_linker_package(self):
+        loaded_modules = self.main.loaded_application_modules('update_all.update_all_service')
 
-        self.assertEqual(123, result)
-        self.assertEqual((logger, local_repository_provider), factory_class.call)
-        self.assertEqual({'ENV': 'value'}, factory_class.factory.env)
-        self.assertEqual(UpdateAllServicePass.RetroAccountSync, factory_class.factory.service.run_pass)
-        self.assertEqual(['Update All flow finished: exit_code=123.'], logger.debug_lines)
+        self.assertFalse(any(name == 'update_all.chip_id_linker' or name.startswith('update_all.chip_id_linker.')
+                             for name in loaded_modules), loaded_modules)
 
+    def test_run_command___with_retroaccount_sync_argument___runs_retroaccount_sync_pass(self):
+        service = self.main.create_update_all_service()
 
-@contextmanager
-def _replace(target, attribute, replacement):
-    original = getattr(target, attribute)
-    setattr(target, attribute, replacement)
-    try:
-        yield replacement
-    finally:
-        setattr(target, attribute, original)
+        result = service.run_command(['update_all.pyz', '--retroaccount-sync'])
 
+        self.assertEqual(0, result)
+        self.assertEqual(1, len(self.main.retroaccount.mister_sync_calls))
+        self.assertIsInstance(self.main.retroaccount.mister_sync_calls[0], LtsvUpdateOutput)
+        self.assertIn('Update All flow started: pass=RetroAccountSync.', self.main.logger.debug_lines)
+        self.assertEqual('Update All flow finished: exit_code=0.', self.main.logger.debug_lines[-1])
 
-class _FunctionStub:
-    def __init__(self, return_value):
-        self._return_value = return_value
+    def test_run_command_preserves_normal_run_modes(self):
+        for args, expected in (([], UpdateAllServicePass.NewRun),
+                               (['--continue'], UpdateAllServicePass.Continue),
+                               (['--no-continue'], UpdateAllServicePass.NewRunNonStop),
+                               (['--unknown'], UpdateAllServicePass.NewRun)):
+            with self.subTest(args=args):
+                main = MainTester()
+                service = main.create_update_all_service()
 
-    def __call__(self, *_args, **_kwargs):
-        return self._return_value
+                result = service.run_command(['update_all.pyz'] + args)
 
+                self.assertEqual(0, result)
+                self.assertIn(f'Update All flow started: pass={expected.name}.', main.logger.debug_lines)
+                self.assertEqual('Update All flow finished: exit_code=0.', main.logger.debug_lines[-1])
 
-class _FunctionSpy:
-    def __init__(self, return_value=None):
-        self._return_value = return_value
-        self.calls = []
+    def test_run_command_preserves_service_exit_code(self):
+        service = self.main.create_update_all_service(EnvironmentSetupResult(requires_early_exit=True))
 
-    def __call__(self, *args, **kwargs):
-        self.calls.append((args, kwargs))
-        return self._return_value
+        result = service.run_command(['update_all.pyz', '--retroaccount-sync'])
 
-    def assert_called_once_with(self, *args, **kwargs):
-        if self.calls != [(args, kwargs)]:
-            raise AssertionError(f'Expected one call with {(args, kwargs)}, got {self.calls}')
-
-
-class _LoggerStub:
-    def __init__(self):
-        self.debug_lines = []
-
-    def debug(self, message):
-        self.debug_lines.append(message)
-
-
-class _LocalRepositoryProviderStub:
-    pass
-
-
-class _FactoryClassSpy:
-    def __init__(self):
-        self.call = None
-        self.factory = _FactoryStub()
-
-    def __call__(self, logger, local_repository_provider):
-        self.call = (logger, local_repository_provider)
-        return self.factory
-
-
-class _FactoryStub:
-    def __init__(self):
-        self.env = None
-        self.service = _ServiceStub()
-
-    def create(self, env):
-        self.env = env
-        return self.service
-
-
-class _ServiceStub:
-    def __init__(self):
-        self.run_pass = None
-
-    def full_run(self, run_pass):
-        self.run_pass = run_pass
-        return 123
-
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertEqual(EXIT_CODE_REQUIRES_EARLY_EXIT, result)
+        self.assertEqual([], self.main.retroaccount.mister_sync_calls)
+        self.assertEqual(f'Update All flow finished: exit_code={result}.', self.main.logger.debug_lines[-1])

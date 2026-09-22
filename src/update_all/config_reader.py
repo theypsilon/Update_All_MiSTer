@@ -27,7 +27,7 @@ from update_all.constants import MEDIA_FAT, KENV_CURL_SSL, KENV_COMMIT, KENV_LOC
     FILE_retroaccount_cfg, K_RETROACCOUNT_DOMAIN, KENV_UPDATE_ALL_MISTER_DB_URL, \
     KENV_UPDATE_ALL_DOWNLOADER_PATH, KENV_UPDATE_ALL_DOWNLOADER_URL, KENV_UPDATE_ALL_NON_INTERACTIVE, \
     KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH, CHIPSTER6502_ARTWORK_DEFAULT_STYLE, \
-    CHIPSTER6502_ARTWORK_STYLES
+    CHIPSTER6502_ARTWORK_STYLES, KENV_LAUNCH_ORIGIN_ID
 from update_all.databases import DB_ID_NAMES_TXT, model_variables_by_db_id, DB_ID_DISTRIBUTION_MISTER, all_dbs, \
     ALL_DB_IDS, DB_ID_MREXT_TAPTO, chipster6502_artworkdbs, chipster6502_artwork_style_from_db_url, \
     coin_op_collection_releases_by_filter
@@ -80,6 +80,7 @@ class ConfigReader:
         config.downloader_url = self._env.get(KENV_UPDATE_ALL_DOWNLOADER_URL, '').strip() or None
         config.downloader_python_compatible_path = self._env.get(KENV_UPDATE_ALL_DOWNLOADER_PYTHON_COMPATIBLE_PATH, '').strip() or None
         config.non_interactive = str_to_bool(self._env.get(KENV_UPDATE_ALL_NON_INTERACTIVE, '').strip().lower())
+        config.launch_origin_id = self._env.get(KENV_LAUNCH_ORIGIN_ID, '').strip()
         config.retroaccount_domain = self._env.get('RETROACCOUNT_DOMAIN', DOMAIN_default_retroaccount).strip().rstrip('/')
         if self._env['HTTP_PROXY'] or self._env['HTTPS_PROXY']:
             config.http_config = http_config(http_proxy=self._env['HTTP_PROXY'], https_proxy=self._env['HTTPS_PROXY'])

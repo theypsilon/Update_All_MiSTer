@@ -17,17 +17,9 @@
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
 
-# This module is intentionally isolated from the rest of the application.
-# It is executed through the special `update_all.pyz --chip-id-linker` command path,
-# before normal Update All services are imported. Keep imports limited to the
-# standard library or tiny dependency-free helpers; do not import SettingsScreen,
-# UpdateAllService, RetroAccount, downloader services, or UI modules here.
-
 import argparse
-import fcntl
 import hashlib
 import mmap
-import multiprocessing
 import os
 import queue
 import shlex
@@ -35,13 +27,15 @@ import signal
 import struct
 import subprocess
 import sys
-import time
 from typing import NamedTuple, Optional
 
-from update_all.constants import FILE_update_all_chip_id_result_handoff
+from update_all.constants import FILE_update_all_chip_id_result_handoff, KENV_LAUNCH_ORIGIN_ID
+from update_all.chip_id_linker.chip_id_system import ChipIdSystem
+from update_all.chip_id_linker.console_system import ConsoleSystem
+from update_all.chip_id_linker.degauss_console import DegaussConsole
 from update_all.logger import FileLoggerDecorator
-from update_all.other import current_update_all_archive_path
-
+from update_all.other import Defer
+from update_all.chip_id_linker.zaparoo_console import ZaparooConsole, ZaparooConsoleLease, ZaparooConsoleUnavailable
 
 FIFO_PATH = '/dev/MiSTer_cmd'
 
@@ -92,7 +86,6 @@ CHIP_ID_RELAUNCH_SCRIPT_START_TIMEOUT_SECONDS = 5.0
 CHIP_ID_UPDATE_ALL_PYZ_RELATIVE_PATH = '.config/update_all/update_all.pyz'
 CHIP_ID_RELAUNCH_RUN_PYZ_PATH = '/tmp/update_all_chipid.pyz'
 CHIP_ID_RESULT_HANDOFF_PATH = FILE_update_all_chip_id_result_handoff
-# UPDATE_ALL_CHIP_ID_RESULT is the env var that carried the result before the handoff file; never forward a stale one.
 CHIP_ID_RELAUNCH_ENV_EXCLUDED_NAMES = frozenset(('COMMAND', 'UPDATE_ALL_CHIP_ID_RESULT', 'PWD', 'OLDPWD', 'SHLVL', '_'))
 CHIP_ID_F9_CONSOLE_TTY = '1'
 CHIP_ID_SCRIPT_CONSOLE_TTY = '3'
@@ -137,14 +130,12 @@ class HpsFpgaStatus(NamedTuple):
         )
 
 
-def run_chip_id_linker_command(logger: FileLoggerDecorator, argv=None) -> int:
+def run_chip_id_linker_command(logger: FileLoggerDecorator, env, argv=None) -> int:
     args = _parse_args(argv)
     _validate_args(args)
-    if not args.restore_after_relaunch and not args.blank_display:
-        _reset_chip_id_log(args.log)
-    logger.set_logfile(args.log, append=True, eager=True)
-    linker = ChipIdLinker(logger, args.log)
-    _write_worker_startup_marker(args.startup_marker, linker)
+    linker = ChipIdLinker(
+        logger, args.log, env, ChipIdSystem(os.environ), ConsoleSystem(logger.debug, '/proc', '/dev'),
+    )
     return linker.run(args)
 
 
@@ -152,6 +143,7 @@ def _parse_args(argv):
     parser = argparse.ArgumentParser(description='Update All FPGA ID linker launcher')
     parser.add_argument('--restore-after-relaunch', action='store_true')
     parser.add_argument('--restore-menu-after-relaunch', action='store_true')
+    parser.add_argument('--zaparoo-console-lease', default='')
     parser.add_argument('--blank-display', action='store_true')
     parser.add_argument('--extract-only', action='store_true')
     parser.add_argument('--rbf')
@@ -175,16 +167,24 @@ def _validate_args(args) -> None:
 
 
 class ChipIdLinker:
-    def __init__(self, logger: FileLoggerDecorator, log_path: str):
+    def __init__(self, logger: FileLoggerDecorator, log_path: str, env,
+                 system: ChipIdSystem, console_system: ConsoleSystem):
         self._logger = logger
+        self.system = system
+        self.console_system = console_system
         self.log_path = log_path
+        self.launch_origin_id = env.get(KENV_LAUNCH_ORIGIN_ID, '').strip()
 
-    def debug(self, message: str) -> None:
+    def debug(self, message: object) -> None:
         self._logger.debug(message)
 
     def run(self, args) -> int:
+        if not args.restore_after_relaunch and not args.blank_display:
+            _reset_chip_id_log(args.log, self.system)
+        self._logger.set_logfile(args.log, append=True, eager=True)
+        _write_worker_startup_marker(args.startup_marker, self)
         if args.restore_after_relaunch:
-            _restore_display_after_update_all_relaunch(self, args.restore_menu_after_relaunch)
+            _restore_display_after_update_all_relaunch(self, args.restore_menu_after_relaunch, args.zaparoo_console_lease)
             return 0
 
         if args.blank_display:
@@ -192,7 +192,7 @@ class ChipIdLinker:
             return 0
 
         if args.extract_only:
-            print(_extract_chip_id_without_relaunch(args.rbf, self))
+            self.system.print_result(_extract_chip_id_without_relaunch(args.rbf, self))
             return 0
 
         _run_detached_chip_id_extraction(self, args.rbf, args.update_all_dir)
@@ -207,7 +207,7 @@ def _extract_chip_id_from_core(rbf_path: str, linker: ChipIdLinker) -> tuple[str
         rbf_md5 = _chip_id_rbf_md5(rbf_path, linker)
 
         _prepare_display_before_chip_id_core_load(linker)
-        previous_core_name_mtime_ns = _file_mtime_ns(CHIP_ID_MENU_CORE_NAME_PATH)
+        previous_core_name_mtime_ns = _file_mtime_ns(CHIP_ID_MENU_CORE_NAME_PATH, linker.system)
         linker.debug('_extract_chip_id_from_core: loading Linker core')
         try:
             _load_chip_id_core(rbf_path, rbf_md5, linker)
@@ -256,7 +256,6 @@ def _extract_chip_id_without_relaunch(rbf_path: str, linker: ChipIdLinker) -> st
 def _run_detached_chip_id_extraction(linker: ChipIdLinker, rbf_path: str, update_all_dir: str) -> None:
     linker.debug('_run_detached_chip_id_extraction: started')
     result, chip_id_core_was_loaded = _extract_chip_id_from_core(rbf_path, linker)
-    restore_result = None
     if not chip_id_core_was_loaded:
         linker.debug('_run_detached_chip_id_extraction: Linker core was not loaded, relaunching Update All from current menu')
         relaunch_result = _relaunch_update_all_from_scripts_menu(
@@ -307,7 +306,7 @@ def _run_detached_chip_id_extraction(linker: ChipIdLinker, rbf_path: str, update
 def _chip_id_rbf_md5(rbf_path: str, linker: ChipIdLinker) -> Optional[str]:
     linker.debug(f'_load_chip_id_core: resolved RBF path: {rbf_path}')
     try:
-        with open(rbf_path, 'rb') as rbf_file:
+        with linker.system.open_file(rbf_path, 'rb') as rbf_file:
             rbf_md5 = hashlib.md5(rbf_file.read()).hexdigest()
         linker.debug(f'_load_chip_id_core: RBF md5: {rbf_md5}')
         return rbf_md5
@@ -326,8 +325,8 @@ def _restore_menu_after_chip_id(linker: ChipIdLinker) -> Optional[str]:
     try:
         _load_core('menu.rbf', linker)
         linker.debug(f'_restore_menu_after_chip_id: sleeping {CHIP_ID_MENU_RESTORE_DELAY_SECONDS}s after menu load')
-        time.sleep(CHIP_ID_MENU_RESTORE_DELAY_SECONDS)
-        menu_ready_result = _wait_for_menu_core_after_restore(linker)
+        linker.system.sleep(CHIP_ID_MENU_RESTORE_DELAY_SECONDS)
+        menu_ready_result = _wait_for_menu_core_after_restore(linker, (CHIP_ID_MENU_CORE_NAME, 'Zaparoo Launcher'))
         if menu_ready_result is not None:
             return menu_ready_result
         return None
@@ -338,22 +337,22 @@ def _restore_menu_after_chip_id(linker: ChipIdLinker) -> Optional[str]:
 
 def _load_core(rbf_path: str, linker: ChipIdLinker) -> None:
     linker.debug(f'_load_core: opening FIFO {FIFO_PATH} for {rbf_path}')
-    fd = os.open(FIFO_PATH, os.O_WRONLY | os.O_NONBLOCK)
+    fd = linker.system.open_device(FIFO_PATH, os.O_WRONLY | os.O_NONBLOCK)
     try:
         command = f'load_core {rbf_path}'
         linker.debug(f'_load_core: writing command: {command}')
-        os.write(fd, command.encode())
+        linker.system.write(fd, command.encode())
         linker.debug(f'_load_core: command write completed: {command}')
     finally:
-        os.close(fd)
+        linker.system.close(fd)
         linker.debug(f'_load_core: closed FIFO fd for {rbf_path}')
 
 
 def _is_firmware_fifo_available(linker: ChipIdLinker) -> bool:
     linker.debug(f'_is_firmware_fifo_available: probing FIFO {FIFO_PATH}')
     try:
-        fd = os.open(FIFO_PATH, os.O_WRONLY | os.O_NONBLOCK)
-        os.close(fd)
+        fd = linker.system.open_device(FIFO_PATH, os.O_WRONLY | os.O_NONBLOCK)
+        linker.system.close(fd)
         linker.debug('_is_firmware_fifo_available: FIFO has a reader')
         return True
     except OSError as e:
@@ -362,7 +361,7 @@ def _is_firmware_fifo_available(linker: ChipIdLinker) -> bool:
 
 
 def _wait_for_firmware_core_restart_after_load(previous_core_name_mtime_ns: Optional[int], linker: ChipIdLinker) -> Optional[str]:
-    deadline = time.monotonic() + CHIP_ID_FIRMWARE_CORE_RESTART_TIMEOUT_SECONDS
+    deadline = linker.system.monotonic() + CHIP_ID_FIRMWARE_CORE_RESTART_TIMEOUT_SECONDS
     last_core_name_mtime_ns = previous_core_name_mtime_ns
     linker.debug(
         '_wait_for_firmware_core_restart_after_load: '
@@ -371,7 +370,7 @@ def _wait_for_firmware_core_restart_after_load(previous_core_name_mtime_ns: Opti
     )
 
     while True:
-        core_name_mtime_ns = _file_mtime_ns(CHIP_ID_MENU_CORE_NAME_PATH)
+        core_name_mtime_ns = _file_mtime_ns(CHIP_ID_MENU_CORE_NAME_PATH, linker.system)
         if core_name_mtime_ns != last_core_name_mtime_ns:
             linker.debug(
                 '_wait_for_firmware_core_restart_after_load: '
@@ -383,17 +382,17 @@ def _wait_for_firmware_core_restart_after_load(previous_core_name_mtime_ns: Opti
             linker.debug('_wait_for_firmware_core_restart_after_load: firmware core restart observed')
             return None
 
-        if time.monotonic() >= deadline:
+        if linker.system.monotonic() >= deadline:
             linker.debug(
                 '_wait_for_firmware_core_restart_after_load: timed out waiting for firmware core restart marker'
             )
             return 'FAILURE_FIRMWARE_CORE_RESTART_TIMEOUT'
 
-        time.sleep(CHIP_ID_FIRMWARE_CORE_RESTART_POLL_INTERVAL_SECONDS)
+        linker.system.sleep(CHIP_ID_FIRMWARE_CORE_RESTART_POLL_INTERVAL_SECONDS)
 
 
 def _wait_for_hps_fpga_lw_bridge_ready_after_core_load(linker: ChipIdLinker) -> Optional[str]:
-    deadline = time.monotonic() + CHIP_ID_HPS_FPGA_READY_TIMEOUT_SECONDS
+    deadline = linker.system.monotonic() + CHIP_ID_HPS_FPGA_READY_TIMEOUT_SECONDS
     stable_since = None
     last_status = None
     linker.debug(
@@ -403,7 +402,7 @@ def _wait_for_hps_fpga_lw_bridge_ready_after_core_load(linker: ChipIdLinker) -> 
 
     while True:
         try:
-            status = _read_hps_fpga_status()
+            status = _read_hps_fpga_status(linker.system)
         except Exception as e:
             linker.debug(
                 '_wait_for_hps_fpga_lw_bridge_ready_after_core_load: '
@@ -415,7 +414,7 @@ def _wait_for_hps_fpga_lw_bridge_ready_after_core_load(linker: ChipIdLinker) -> 
             linker.debug(f'_wait_for_hps_fpga_lw_bridge_ready_after_core_load: status {status}')
             last_status = status
 
-        now = time.monotonic()
+        now = linker.system.monotonic()
         if status.is_lw_bridge_safe():
             if stable_since is None:
                 stable_since = now
@@ -436,17 +435,17 @@ def _wait_for_hps_fpga_lw_bridge_ready_after_core_load(linker: ChipIdLinker) -> 
             )
             return 'FAILURE_HPS_FPGA_LW_BRIDGE_NOT_READY'
 
-        time.sleep(CHIP_ID_HPS_FPGA_READY_POLL_INTERVAL_SECONDS)
+        linker.system.sleep(CHIP_ID_HPS_FPGA_READY_POLL_INTERVAL_SECONDS)
 
 
-def _read_hps_fpga_status() -> HpsFpgaStatus:
+def _read_hps_fpga_status(system: ChipIdSystem) -> HpsFpgaStatus:
     fd = -1
     fpgamgr = None
     rstmgr = None
     try:
-        fd = os.open('/dev/mem', os.O_RDONLY | os.O_SYNC)
-        fpgamgr = mmap.mmap(fd, CHIP_ID_HPS_REG_SPAN, mmap.MAP_SHARED, mmap.PROT_READ, offset=CHIP_ID_HPS_FPGAMGR_BASE)
-        rstmgr = mmap.mmap(fd, CHIP_ID_HPS_REG_SPAN, mmap.MAP_SHARED, mmap.PROT_READ, offset=CHIP_ID_HPS_RSTMGR_BASE)
+        fd = system.open_device('/dev/mem', os.O_RDONLY | os.O_SYNC)
+        fpgamgr = system.mmap(fd, CHIP_ID_HPS_REG_SPAN, mmap.MAP_SHARED, mmap.PROT_READ, offset=CHIP_ID_HPS_FPGAMGR_BASE)
+        rstmgr = system.mmap(fd, CHIP_ID_HPS_REG_SPAN, mmap.MAP_SHARED, mmap.PROT_READ, offset=CHIP_ID_HPS_RSTMGR_BASE)
 
         fpgamgr_stat = _read_chip_id_reg(fpgamgr, 0, CHIP_ID_FPGAMGR_STAT_OFFSET)
         fpgamgr_gpio_ext_porta = _read_chip_id_reg(fpgamgr, 0, CHIP_ID_FPGAMGR_GPIO_EXT_PORTA_OFFSET)
@@ -462,18 +461,18 @@ def _read_hps_fpga_status() -> HpsFpgaStatus:
         if fpgamgr is not None:
             fpgamgr.close()
         if fd >= 0:
-            os.close(fd)
+            system.close(fd)
 
 
-def _file_mtime_ns(path: str) -> Optional[int]:
+def _file_mtime_ns(path: str, system: ChipIdSystem) -> Optional[int]:
     try:
-        return os.stat(path).st_mtime_ns
+        return system.stat(path).st_mtime_ns
     except OSError:
         return None
 
 
 def _read_chip_id_from_memory_after_core_load(linker: ChipIdLinker) -> str:
-    deadline = time.monotonic() + CHIP_ID_CORE_READY_TIMEOUT_SECONDS
+    deadline = linker.system.monotonic() + CHIP_ID_CORE_READY_TIMEOUT_SECONDS
     last_result = 'FAILURE_CORE_NOT_READY'
     attempt = 1
 
@@ -487,7 +486,7 @@ def _read_chip_id_from_memory_after_core_load(linker: ChipIdLinker) -> str:
             return result
 
         last_result = result
-        if time.monotonic() >= deadline:
+        if linker.system.monotonic() >= deadline:
             linker.debug(f'_read_chip_id_from_memory_after_core_load: timeout with last result {last_result}')
             return last_result
 
@@ -499,7 +498,7 @@ def _read_chip_id_from_memory_after_core_load(linker: ChipIdLinker) -> str:
             linker.debug('_read_chip_id_from_memory_after_core_load: firmware FIFO disappeared while waiting')
             return 'FAILURE_FIRMWARE_EXITED_AFTER_LOAD'
 
-        time.sleep(CHIP_ID_CORE_READY_POLL_INTERVAL_SECONDS)
+        linker.system.sleep(CHIP_ID_CORE_READY_POLL_INTERVAL_SECONDS)
         attempt += 1
 
 
@@ -516,7 +515,7 @@ def _blank_chip_id_core_display(linker: ChipIdLinker) -> None:
 
 def _write_chip_id_display_control(value: int, linker: ChipIdLinker) -> Optional[str]:
     linker.debug('_write_chip_id_display_control: starting isolated writer process')
-    ctx = multiprocessing.get_context('fork')
+    ctx = linker.system.get_context('fork')
     result_queue = ctx.Queue()
     process = ctx.Process(target=_write_chip_id_display_control_process, args=(result_queue, value, linker))
     process.start()
@@ -562,8 +561,8 @@ def _write_chip_id_display_control_direct(value: int, linker: ChipIdLinker) -> O
     memory = None
     try:
         linker.debug(f'_write_chip_id_display_control_direct: opening /dev/mem at base 0x{CHIP_ID_BASE:08x}')
-        fd = os.open('/dev/mem', os.O_RDWR | os.O_SYNC)
-        memory = mmap.mmap(
+        fd = linker.system.open_device('/dev/mem', os.O_RDWR | os.O_SYNC)
+        memory = linker.system.mmap(
             fd,
             CHIP_ID_REG_SPAN,
             mmap.MAP_SHARED,
@@ -583,7 +582,7 @@ def _write_chip_id_display_control_direct(value: int, linker: ChipIdLinker) -> O
             memory.close()
             linker.debug('_write_chip_id_display_control_direct: closed memory map')
         if fd >= 0:
-            os.close(fd)
+            linker.system.close(fd)
             linker.debug('_write_chip_id_display_control_direct: closed /dev/mem fd')
 
 
@@ -600,7 +599,7 @@ def _write_chip_id_display_control_to_registers(memory, map_delta: int, value: i
 
 def _read_chip_id_from_memory(linker: ChipIdLinker) -> str:
     linker.debug('_read_chip_id_from_memory: starting isolated reader process')
-    ctx = multiprocessing.get_context('fork')
+    ctx = linker.system.get_context('fork')
     result_queue = ctx.Queue()
     process = ctx.Process(target=_read_chip_id_from_memory_process, args=(result_queue, linker))
     process.start()
@@ -643,8 +642,8 @@ def _read_chip_id_from_memory_direct(linker: ChipIdLinker) -> str:
     memory = None
     try:
         linker.debug(f'_read_chip_id_from_memory_direct: opening /dev/mem at base 0x{CHIP_ID_BASE:08x}')
-        fd = os.open('/dev/mem', os.O_RDONLY | os.O_SYNC)
-        memory = mmap.mmap(fd, CHIP_ID_REG_SPAN, mmap.MAP_SHARED, mmap.PROT_READ, offset=CHIP_ID_BASE)
+        fd = linker.system.open_device('/dev/mem', os.O_RDONLY | os.O_SYNC)
+        memory = linker.system.mmap(fd, CHIP_ID_REG_SPAN, mmap.MAP_SHARED, mmap.PROT_READ, offset=CHIP_ID_BASE)
         linker.debug(f'_read_chip_id_from_memory_direct: mapped {CHIP_ID_REG_SPAN} bytes')
         return _read_chip_id_from_registers(memory, 0, linker)
     except OSError as e:
@@ -658,7 +657,7 @@ def _read_chip_id_from_memory_direct(linker: ChipIdLinker) -> str:
             memory.close()
             linker.debug('_read_chip_id_from_memory_direct: closed memory map')
         if fd >= 0:
-            os.close(fd)
+            linker.system.close(fd)
             linker.debug('_read_chip_id_from_memory_direct: closed /dev/mem fd')
 
 
@@ -686,19 +685,19 @@ def _read_chip_id_from_registers(memory, map_delta: int, linker: ChipIdLinker) -
 
 
 def _wait_for_chip_id_magic(memory, map_delta: int, linker: ChipIdLinker) -> int:
-    deadline = time.monotonic() + CHIP_ID_MAGIC_TIMEOUT_SECONDS
+    deadline = linker.system.monotonic() + CHIP_ID_MAGIC_TIMEOUT_SECONDS
     magic = 0
 
     while True:
         magic = _read_chip_id_reg(memory, map_delta, CHIP_ID_REG_MAGIC)
-        if magic == CHIP_ID_EXPECTED_MAGIC or time.monotonic() >= deadline:
+        if magic == CHIP_ID_EXPECTED_MAGIC or linker.system.monotonic() >= deadline:
             linker.debug(f'_wait_for_chip_id_magic: returning MAGIC 0x{magic:08x}')
             return magic
-        time.sleep(0.05)
+        linker.system.sleep(0.05)
 
 
 def _wait_for_chip_id_ready(memory, map_delta: int, linker: ChipIdLinker) -> Optional[str]:
-    deadline = time.monotonic() + CHIP_ID_READY_TIMEOUT_SECONDS
+    deadline = linker.system.monotonic() + CHIP_ID_READY_TIMEOUT_SECONDS
     status = 0
 
     while True:
@@ -709,10 +708,10 @@ def _wait_for_chip_id_ready(memory, map_delta: int, linker: ChipIdLinker) -> Opt
         if status & CHIP_ID_STATUS_READY:
             linker.debug(f'_wait_for_chip_id_ready: READY status 0x{status:08x}')
             return None
-        if time.monotonic() >= deadline:
+        if linker.system.monotonic() >= deadline:
             linker.debug(f'_wait_for_chip_id_ready: timeout with status 0x{status:08x}')
             return f'FAILURE_READY_TIMEOUT_{status:08x}'
-        time.sleep(CHIP_ID_POLL_INTERVAL_SECONDS)
+        linker.system.sleep(CHIP_ID_POLL_INTERVAL_SECONDS)
 
 
 def _validate_chip_id_reads(memory, map_delta: int, linker: ChipIdLinker) -> str:
@@ -765,62 +764,209 @@ def _relaunch_update_all_from_scripts_menu(
     chip_id_result: str = '',
 ) -> Optional[str]:
     try:
-        handoff_result = _write_chip_id_result_handoff(CHIP_ID_RESULT_HANDOFF_PATH, chip_id_result, linker)
-        if handoff_result is not None:
-            return handoff_result
+        if linker.launch_origin_id == 'degauss':
+            handoff_result = _write_chip_id_result_handoff(CHIP_ID_RESULT_HANDOFF_PATH, chip_id_result, linker)
+            if handoff_result is not None:
+                return handoff_result
 
+            degauss, reload_menu = _prepare_degauss_relaunch(linker)
+            start_marker_path = CHIP_ID_RELAUNCH_SCRIPT_STARTED_PATH if require_script_start_confirmation else None
+            prepare_result = _prepare_console_for_update_all_relaunch(linker, start_marker_path)
+            if prepare_result is not None:
+                return prepare_result
+
+            open_result, reload_menu_after_open = _open_degauss_relaunch_console(linker, degauss)
+            if open_result is not None:
+                return open_result
+            _write_update_all_relaunch_script(
+                linker, CHIP_ID_RELAUNCH_SCRIPT_PATH, update_all_dir,
+                restore_menu_after_relaunch or reload_menu or reload_menu_after_open, start_marker_path,
+            )
+            return _start_update_all_relaunch(linker, start_marker_path)
+
+        elif linker.launch_origin_id == 'zaparoo_frontend':
+            handoff_result = _write_chip_id_result_handoff(CHIP_ID_RESULT_HANDOFF_PATH, chip_id_result, linker)
+            if handoff_result is not None:
+                return handoff_result
+
+            lease = _find_zaparoo_relaunch_lease(linker)
+            zaparoo_lease = lease.restore_token() if lease is not None else ''
+            with Defer(lambda: _release_zaparoo_relaunch_lease(linker, zaparoo_lease)):
+                zaparoo_lease = _acquire_zaparoo_relaunch_lease(linker, lease)
+                start_marker_path = CHIP_ID_RELAUNCH_SCRIPT_STARTED_PATH if require_script_start_confirmation or zaparoo_lease else None
+                prepare_result = _prepare_console_for_update_all_relaunch(linker, start_marker_path)
+                if prepare_result is not None:
+                    return prepare_result
+
+                _open_zaparoo_relaunch_console(linker, zaparoo_lease)
+                if zaparoo_lease:
+                    _write_zaparoo_relaunch_script(
+                        linker, CHIP_ID_RELAUNCH_SCRIPT_PATH, update_all_dir,
+                        zaparoo_lease, restore_menu_after_relaunch, start_marker_path,
+                    )
+                else:
+                    _write_update_all_relaunch_script(
+                        linker, CHIP_ID_RELAUNCH_SCRIPT_PATH, update_all_dir,
+                        restore_menu_after_relaunch, start_marker_path,
+                    )
+                result = _start_update_all_relaunch(linker, start_marker_path)
+                if result is None:
+                    zaparoo_lease = ''
+                return result
+        else:
+                return _relaunch_update_all_from_stock_menu(
+                    linker, update_all_dir, restore_menu_after_relaunch, require_script_start_confirmation, chip_id_result,
+                )
+    except Exception as e:
+        linker.debug('Could not relaunch Update All')
+        linker.debug(e)
+        return f'FAILURE_RELAUNCH_{type(e).__name__.upper()}'
+
+
+def _relaunch_update_all_from_stock_menu(
+    linker: ChipIdLinker,
+    update_all_dir: str,
+    restore_menu_after_relaunch: bool,
+    require_script_start_confirmation: bool,
+    chip_id_result: str,
+) -> Optional[str]:
+    handoff_result = _write_chip_id_result_handoff(CHIP_ID_RESULT_HANDOFF_PATH, chip_id_result, linker)
+    if handoff_result is not None:
+        return handoff_result
+
+    start_marker_path = CHIP_ID_RELAUNCH_SCRIPT_STARTED_PATH if require_script_start_confirmation else None
+    prepare_result = _prepare_console_for_update_all_relaunch(linker, start_marker_path)
+    if prepare_result is not None:
+        return prepare_result
+
+    _open_script_console(linker)
+    _switch_to_relaunch_tty(linker)
+    _write_update_all_relaunch_script(
+        linker, CHIP_ID_RELAUNCH_SCRIPT_PATH, update_all_dir, restore_menu_after_relaunch, start_marker_path,
+    )
+    return _start_update_all_relaunch(linker, start_marker_path)
+
+
+def _prepare_degauss_relaunch(linker: ChipIdLinker) -> tuple[DegaussConsole, bool]:
+    try:
+        linker.debug('Preparing console for Degauss launch origin')
+        degauss = DegaussConsole(linker.console_system, linker.debug)
+        # Main starts Degauss once per core load, so stopping it requires a later menu reload.
+        return degauss, degauss.prepare()
+    except Exception as e:
+        linker.debug('Could not prepare the frontend console for Update All')
+        linker.debug(e)
+        raise
+
+
+def _open_degauss_relaunch_console(linker: ChipIdLinker, degauss: DegaussConsole) -> tuple[Optional[str], bool]:
+    reload_menu = False
+    try:
+        _open_script_console(linker)
+    except TimeoutError as e:
+        linker.debug('Console opening timed out; checking for a late Degauss startup')
+        linker.debug(e)
+        if not degauss.prepare():
+            raise
+        reload_menu = True
         clear_result = _clear_visible_script_processes(linker)
         if clear_result is not None:
-            return clear_result
+            return clear_result, reload_menu
+        linker.system.sleep(CHIP_ID_RELAUNCH_AFTER_SCRIPT_CLEAR_SETTLE_SECONDS)
+        _open_script_console(linker)
+    _switch_to_relaunch_tty(linker)
+    return None, reload_menu
 
-        start_marker_path = CHIP_ID_RELAUNCH_SCRIPT_STARTED_PATH if require_script_start_confirmation else None
-        if start_marker_path is not None:
-            clear_marker_result = _clear_relaunch_script_start_marker(start_marker_path, linker)
-            if clear_marker_result is not None:
-                return clear_marker_result
 
-        linker.debug(
-            f'_relaunch_update_all_from_scripts_menu: sleeping {CHIP_ID_RELAUNCH_AFTER_SCRIPT_CLEAR_SETTLE_SECONDS}s after stale script cleanup'
-        )
-        time.sleep(CHIP_ID_RELAUNCH_AFTER_SCRIPT_CLEAR_SETTLE_SECONDS)
-        linker.debug(f'_relaunch_update_all_from_scripts_menu: Update All dir: {update_all_dir}')
-        _reset_script_tty(linker)
+def _find_zaparoo_relaunch_lease(linker: ChipIdLinker) -> Optional[ZaparooConsoleLease]:
+    try:
+        linker.debug('Preparing console for Zaparoo launch origin')
+        return ZaparooConsole(linker.console_system, linker.debug).detect()
+    except Exception as e:
+        linker.debug('Could not prepare the frontend console for Update All')
+        linker.debug(e)
+        raise
+
+
+def _acquire_zaparoo_relaunch_lease(linker: ChipIdLinker, lease: Optional[ZaparooConsoleLease]) -> str:
+    if lease is None:
+        return ''
+    try:
+        lease.acquire(CHIP_ID_RELAUNCH_TTY)
+        return lease.restore_token()
+    except ZaparooConsoleUnavailable as e:
+        linker.debug('Zaparoo did not grant a lease; using the standard console')
+        linker.debug(e)
+        return ''
+    except Exception as e:
+        linker.debug('Could not prepare the frontend console for Update All')
+        linker.debug(e)
+        raise
+
+
+def _release_zaparoo_relaunch_lease(linker: ChipIdLinker, token: str) -> None:
+    if not token:
+        return
+    try:
+        ZaparooConsole(linker.console_system, linker.debug).restore(token)
+    except Exception as e:
+        linker.debug('Could not release Zaparoo console after relaunch failure')
+        linker.debug(e)
+
+
+def _open_zaparoo_relaunch_console(linker: ChipIdLinker, token: str) -> None:
+    if token:
+        _wait_for_framebuffer_ready(CHIP_ID_CONSOLE_OPEN_TIMEOUT_SECONDS, linker)
+        if not _is_script_console_ready(linker):
+            raise TimeoutError('Zaparoo acknowledged the console but it is not ready')
+    else:
         _open_script_console(linker)
         _switch_to_relaunch_tty(linker)
-        _write_update_all_relaunch_script(
-            linker,
-            CHIP_ID_RELAUNCH_SCRIPT_PATH,
-            update_all_dir,
-            restore_menu_after_relaunch,
-            start_marker_path,
-        )
-        process = subprocess.Popen([
-            'setsid',
-            '/sbin/agetty',
-            '-a',
-            'root',
-            '-l',
-            CHIP_ID_RELAUNCH_SCRIPT_PATH,
-            '--nohostname',
-            '-L',
-            f'tty{CHIP_ID_RELAUNCH_TTY}',
-            'linux',
-        ])
-        linker.debug(f'_relaunch_update_all_from_scripts_menu: started agetty pid {process.pid}')
-        if start_marker_path is not None:
-            start_result = _wait_for_relaunch_script_start(process, start_marker_path, linker)
-            if start_result is not None:
-                _terminate_relaunch_process(process, linker)
-                return start_result
-        return None
-    except Exception as e:
-        linker.debug(f'_relaunch_update_all_from_scripts_menu: failed: {type(e).__name__}: {str(e)}')
-        return f'FAILURE_RELAUNCH_{type(e).__name__.upper()}'
+
+
+def _prepare_console_for_update_all_relaunch(linker: ChipIdLinker, start_marker_path: Optional[str]) -> Optional[str]:
+    clear_result = _clear_visible_script_processes(linker)
+    if clear_result is not None:
+        return clear_result
+
+    if start_marker_path is not None:
+        clear_marker_result = _clear_relaunch_script_start_marker(start_marker_path, linker)
+        if clear_marker_result is not None:
+            return clear_marker_result
+
+    linker.system.sleep(CHIP_ID_RELAUNCH_AFTER_SCRIPT_CLEAR_SETTLE_SECONDS)
+    _reset_script_tty(linker)
+    return None
+
+
+def _start_update_all_relaunch(
+    linker: ChipIdLinker,
+    start_marker_path: Optional[str],
+) -> Optional[str]:
+    process = linker.system.popen([
+        'setsid',
+        '/sbin/agetty',
+        '-a',
+        'root',
+        '-l',
+        CHIP_ID_RELAUNCH_SCRIPT_PATH,
+        '--nohostname',
+        '-L',
+        f'tty{CHIP_ID_RELAUNCH_TTY}',
+        'linux',
+    ])
+    linker.debug(f'_relaunch_update_all_from_scripts_menu: started agetty pid {process.pid}')
+    if start_marker_path is not None:
+        start_result = _wait_for_relaunch_script_start(process, start_marker_path, linker)
+        if start_result is not None:
+            _terminate_relaunch_process(process, linker)
+            return start_result
+    return None
 
 
 def _clear_relaunch_script_start_marker(marker_path: str, linker: ChipIdLinker) -> Optional[str]:
     try:
-        os.remove(marker_path)
+        linker.system.remove(marker_path)
         linker.debug(f'_clear_relaunch_script_start_marker: removed stale marker {marker_path}')
         return None
     except FileNotFoundError:
@@ -832,12 +978,12 @@ def _clear_relaunch_script_start_marker(marker_path: str, linker: ChipIdLinker) 
 
 
 def _wait_for_relaunch_script_start(process, marker_path: str, linker: ChipIdLinker) -> Optional[str]:
-    deadline = time.monotonic() + CHIP_ID_RELAUNCH_SCRIPT_START_TIMEOUT_SECONDS
+    deadline = linker.system.monotonic() + CHIP_ID_RELAUNCH_SCRIPT_START_TIMEOUT_SECONDS
     linker.debug(
         f'_wait_for_relaunch_script_start: waiting up to {CHIP_ID_RELAUNCH_SCRIPT_START_TIMEOUT_SECONDS}s for {marker_path}'
     )
     while True:
-        if os.path.exists(marker_path):
+        if linker.system.exists(marker_path):
             linker.debug(f'_wait_for_relaunch_script_start: marker found at {marker_path}')
             return None
 
@@ -846,11 +992,11 @@ def _wait_for_relaunch_script_start(process, marker_path: str, linker: ChipIdLin
             linker.debug(f'_wait_for_relaunch_script_start: agetty exited before marker with {returncode}')
             return f'FAILURE_RELAUNCH_PROCESS_EXIT_{returncode}'
 
-        if time.monotonic() >= deadline:
+        if linker.system.monotonic() >= deadline:
             linker.debug('_wait_for_relaunch_script_start: timed out waiting for script start marker')
             return 'FAILURE_RELAUNCH_SCRIPT_START_TIMEOUT'
 
-        time.sleep(0.05)
+        linker.system.sleep(0.05)
 
 
 def _terminate_relaunch_process(process, linker: ChipIdLinker) -> None:
@@ -892,18 +1038,18 @@ def _open_script_console(linker: ChipIdLinker) -> None:
         except Exception as e:
             linker.debug(f'_open_script_console: initial chvt failed: {type(e).__name__}: {str(e)}')
 
-        deadline = time.monotonic() + CHIP_ID_CONSOLE_OPEN_TIMEOUT_SECONDS
+        deadline = linker.system.monotonic() + CHIP_ID_CONSOLE_OPEN_TIMEOUT_SECONDS
         backoff = 0.05
-        while time.monotonic() < deadline:
+        while linker.system.monotonic() < deadline:
             linker.debug('_open_script_console: requesting framebuffer console')
             _press_f9_for_console(keyboard_fd, linker)
-            time.sleep(backoff)
+            linker.system.sleep(backoff)
 
             tty = _active_tty(linker)
             linker.debug(f'_open_script_console: active tty after F9 is {tty}')
             if tty == f'tty{CHIP_ID_F9_CONSOLE_TTY}':
                 linker.debug('_open_script_console: F9 console confirmed')
-                _wait_for_framebuffer_ready(max(0, deadline - time.monotonic()), linker)
+                _wait_for_framebuffer_ready(max(0, deadline - linker.system.monotonic()), linker)
                 if CHIP_ID_SCRIPT_CONSOLE_TTY != CHIP_ID_F9_CONSOLE_TTY:
                     try:
                         _switch_to_open_console_tty(linker)
@@ -927,53 +1073,53 @@ def _is_script_console_ready(linker: ChipIdLinker) -> bool:
 
 def _is_tty_console_ready(tty_id: str, linker: ChipIdLinker) -> bool:
     tty = _active_tty(linker)
-    framebuffer_ready = os.path.exists('/dev/fb0') and os.path.exists('/sys/class/graphics/fbcon/cursor_blink')
+    framebuffer_ready = linker.system.exists('/dev/fb0') and linker.system.exists('/sys/class/graphics/fbcon/cursor_blink')
     ready = tty == f'tty{tty_id}' and framebuffer_ready
     linker.debug(f'_is_tty_console_ready: target=tty{tty_id}, tty={tty}, framebuffer_ready={framebuffer_ready}, ready={ready}')
     return ready
 
 
 def _wait_for_framebuffer_ready(timeout_seconds: float, linker: ChipIdLinker) -> None:
-    deadline = time.monotonic() + timeout_seconds
+    deadline = linker.system.monotonic() + timeout_seconds
     while True:
-        framebuffer_ready = os.path.exists('/dev/fb0') and os.path.exists('/sys/class/graphics/fbcon/cursor_blink')
+        framebuffer_ready = linker.system.exists('/dev/fb0') and linker.system.exists('/sys/class/graphics/fbcon/cursor_blink')
         if framebuffer_ready:
             linker.debug('_wait_for_framebuffer_ready: framebuffer ready')
             return
-        if time.monotonic() >= deadline:
+        if linker.system.monotonic() >= deadline:
             raise TimeoutError('timeout waiting for framebuffer readiness')
-        time.sleep(0.05)
+        linker.system.sleep(0.05)
 
 
 def _active_tty(linker: ChipIdLinker) -> str:
     try:
-        with open('/sys/devices/virtual/tty/tty0/active') as active_tty_file:
+        with linker.system.open_file('/sys/devices/virtual/tty/tty0/active') as active_tty_file:
             return active_tty_file.read().strip()
     except Exception as e:
         linker.debug(f'_active_tty: failed: {type(e).__name__}: {str(e)}')
         return ''
 
 
-def _wait_for_menu_core_after_restore(linker: ChipIdLinker) -> Optional[str]:
-    deadline = time.monotonic() + CHIP_ID_MENU_CORE_READY_TIMEOUT_SECONDS
+def _wait_for_menu_core_after_restore(linker: ChipIdLinker, menu_core_names: tuple[str, ...]) -> Optional[str]:
+    deadline = linker.system.monotonic() + CHIP_ID_MENU_CORE_READY_TIMEOUT_SECONDS
     last_core_name = ''
-    linker.debug(f'_wait_for_menu_core_after_restore: waiting for {CHIP_ID_MENU_CORE_NAME_PATH}={CHIP_ID_MENU_CORE_NAME}')
+    linker.debug(f'_wait_for_menu_core_after_restore: waiting for {CHIP_ID_MENU_CORE_NAME_PATH} in {menu_core_names}')
     while True:
         last_core_name = _active_core_name(linker)
-        if last_core_name == CHIP_ID_MENU_CORE_NAME:
+        if last_core_name in menu_core_names:
             linker.debug('_wait_for_menu_core_after_restore: menu core is active')
             return None
 
-        if time.monotonic() >= deadline:
+        if linker.system.monotonic() >= deadline:
             linker.debug(f'_wait_for_menu_core_after_restore: timeout with active core {last_core_name or "UNKNOWN"}')
             return f'FAILURE_RESTORE_MENU_CORE_TIMEOUT_{last_core_name or "UNKNOWN"}'
 
-        time.sleep(CHIP_ID_MENU_CORE_READY_POLL_INTERVAL_SECONDS)
+        linker.system.sleep(CHIP_ID_MENU_CORE_READY_POLL_INTERVAL_SECONDS)
 
 
 def _active_core_name(linker: ChipIdLinker) -> str:
     try:
-        with open(CHIP_ID_MENU_CORE_NAME_PATH) as core_name_file:
+        with linker.system.open_file(CHIP_ID_MENU_CORE_NAME_PATH) as core_name_file:
             core_name = core_name_file.read().strip()
         linker.debug(f'_active_core_name: {core_name}')
         return core_name
@@ -990,12 +1136,12 @@ def _prepare_display_before_chip_id_core_load(linker: ChipIdLinker) -> None:
 
 def _create_uinput_keyboard(linker: ChipIdLinker) -> int:
     linker.debug(f'_create_uinput_keyboard: opening {CHIP_ID_UINPUT_PATH}')
-    fd = os.open(CHIP_ID_UINPUT_PATH, os.O_WRONLY | os.O_NONBLOCK)
+    fd = linker.system.open_device(CHIP_ID_UINPUT_PATH, os.O_WRONLY | os.O_NONBLOCK)
     created = False
     try:
-        fcntl.ioctl(fd, CHIP_ID_UI_SET_EVBIT, CHIP_ID_EV_KEY)
+        linker.system.ioctl(fd, CHIP_ID_UI_SET_EVBIT, CHIP_ID_EV_KEY)
         for key_code in range(CHIP_ID_KEY_MAX + 1):
-            fcntl.ioctl(fd, CHIP_ID_UI_SET_KEYBIT, key_code)
+            linker.system.ioctl(fd, CHIP_ID_UI_SET_KEYBIT, key_code)
         linker.debug(f'_create_uinput_keyboard: registered EV_KEY and keys 0..{CHIP_ID_KEY_MAX}')
 
         user_device = struct.pack(
@@ -1007,27 +1153,27 @@ def _create_uinput_keyboard(linker: ChipIdLinker) -> int:
             1,
             0,
         ) + bytes(64 * 4 * 4)
-        os.write(fd, user_device)
-        fcntl.ioctl(fd, CHIP_ID_UI_DEV_CREATE)
+        linker.system.write(fd, user_device)
+        linker.system.ioctl(fd, CHIP_ID_UI_DEV_CREATE)
         created = True
         linker.debug(f'_create_uinput_keyboard: created virtual keyboard, sleeping {CHIP_ID_UINPUT_CREATE_DELAY_SECONDS}s')
-        time.sleep(CHIP_ID_UINPUT_CREATE_DELAY_SECONDS)
+        linker.system.sleep(CHIP_ID_UINPUT_CREATE_DELAY_SECONDS)
         _log_uinput_keyboard_presence(linker)
         return fd
     except Exception:
         if created:
             try:
-                fcntl.ioctl(fd, CHIP_ID_UI_DEV_DESTROY)
+                linker.system.ioctl(fd, CHIP_ID_UI_DEV_DESTROY)
             except Exception:
                 pass
-        os.close(fd)
+        linker.system.close(fd)
         raise
 
 
 def _log_uinput_keyboard_presence(linker: ChipIdLinker) -> None:
     try:
         device_name = CHIP_ID_UINPUT_DEVICE_NAME.decode()
-        with open('/proc/bus/input/devices') as devices_file:
+        with linker.system.open_file('/proc/bus/input/devices') as devices_file:
             present = device_name in devices_file.read()
         linker.debug(f'_create_uinput_keyboard: /proc/bus/input/devices contains {device_name}: {present}')
     except Exception as e:
@@ -1036,12 +1182,12 @@ def _log_uinput_keyboard_presence(linker: ChipIdLinker) -> None:
 
 def _destroy_uinput_keyboard(fd: int, linker: ChipIdLinker) -> None:
     try:
-        fcntl.ioctl(fd, CHIP_ID_UI_DEV_DESTROY)
+        linker.system.ioctl(fd, CHIP_ID_UI_DEV_DESTROY)
         linker.debug('_destroy_uinput_keyboard: destroyed virtual keyboard')
     except Exception as e:
         linker.debug(f'_destroy_uinput_keyboard: destroy failed: {type(e).__name__}: {str(e)}')
     try:
-        os.close(fd)
+        linker.system.close(fd)
         linker.debug('_destroy_uinput_keyboard: closed virtual keyboard fd')
     except Exception as e:
         linker.debug(f'_destroy_uinput_keyboard: close failed: {type(e).__name__}: {str(e)}')
@@ -1056,19 +1202,19 @@ def _press_f12_for_menu(fd: int, linker: ChipIdLinker) -> None:
 
 
 def _press_key(fd: int, key_code: int, log_label: str, linker: ChipIdLinker) -> None:
-    _set_key(fd, key_code, 1)
-    time.sleep(CHIP_ID_UINPUT_KEY_PRESS_DELAY_SECONDS)
-    _set_key(fd, key_code, 0)
+    _set_key(fd, key_code, 1, linker.system)
+    linker.system.sleep(CHIP_ID_UINPUT_KEY_PRESS_DELAY_SECONDS)
+    _set_key(fd, key_code, 0, linker.system)
     linker.debug(f'{log_label}: key down/up sent')
 
 
-def _set_key(fd: int, key_code: int, value: int) -> None:
-    _send_uinput_event(fd, CHIP_ID_EV_KEY, key_code, value)
-    _send_uinput_event(fd, CHIP_ID_EV_SYN, CHIP_ID_SYN_REPORT, 0)
+def _set_key(fd: int, key_code: int, value: int, system: ChipIdSystem) -> None:
+    _send_uinput_event(fd, CHIP_ID_EV_KEY, key_code, value, system)
+    _send_uinput_event(fd, CHIP_ID_EV_SYN, CHIP_ID_SYN_REPORT, 0, system)
 
 
-def _send_uinput_event(fd: int, event_type: int, code: int, value: int) -> None:
-    os.write(fd, struct.pack('llHHi', 0, 0, event_type, code, value))
+def _send_uinput_event(fd: int, event_type: int, code: int, value: int, system: ChipIdSystem) -> None:
+    system.write(fd, struct.pack('llHHi', 0, 0, event_type, code, value))
 
 
 def _clear_visible_script_processes(linker: ChipIdLinker) -> Optional[str]:
@@ -1098,25 +1244,25 @@ def _clear_visible_script_processes(linker: ChipIdLinker) -> Optional[str]:
 
 
 def _wait_for_no_visible_script_processes(timeout_seconds: float, linker: ChipIdLinker) -> bool:
-    deadline = time.monotonic() + timeout_seconds
+    deadline = linker.system.monotonic() + timeout_seconds
     while True:
         processes = _visible_script_processes(linker)
         if not processes:
             linker.debug('_wait_for_no_visible_script_processes: no active /tmp/script process')
             return True
 
-        if time.monotonic() >= deadline:
+        if linker.system.monotonic() >= deadline:
             linker.debug(f'_wait_for_no_visible_script_processes: timeout with {len(processes)} active /tmp/script process(es)')
             return False
 
-        time.sleep(0.1)
+        linker.system.sleep(0.1)
 
 
 def _signal_visible_script_processes(processes, sig: int, linker: ChipIdLinker) -> None:
     for pid, line in processes:
         try:
             linker.debug(f'_signal_visible_script_processes: sending signal {sig} to pid={pid}: {line}')
-            os.kill(pid, sig)
+            linker.system.kill(pid, sig)
         except ProcessLookupError:
             linker.debug(f'_signal_visible_script_processes: pid={pid} already exited')
         except Exception as e:
@@ -1132,9 +1278,9 @@ def _reset_tty(tty_id: str, log_label: str, linker: ChipIdLinker) -> None:
     linker.debug(f'{log_label}: resetting {tty_path}')
     fd = -1
     try:
-        fd = os.open(tty_path, os.O_RDWR | os.O_NONBLOCK)
+        fd = linker.system.open_device(tty_path, os.O_RDWR | os.O_NONBLOCK)
         with os.fdopen(os.dup(fd), 'rb', buffering=0) as tty:
-            process = subprocess.run(
+            process = linker.system.run(
                 ['stty', 'sane'],
                 stdin=tty,
                 stdout=subprocess.DEVNULL,
@@ -1148,22 +1294,22 @@ def _reset_tty(tty_id: str, log_label: str, linker: ChipIdLinker) -> None:
 
     try:
         if fd < 0:
-            fd = os.open(tty_path, os.O_RDWR | os.O_NONBLOCK)
-        os.write(fd, b'\x1bc\x1b[2J\x1b[H\x1b[?25h')
+            fd = linker.system.open_device(tty_path, os.O_RDWR | os.O_NONBLOCK)
+        linker.system.write(fd, b'\x1bc\x1b[2J\x1b[H\x1b[?25h')
         linker.debug(f'{log_label}: terminal reset sequence written to {tty_path}')
     except Exception as e:
         linker.debug(f'{log_label}: terminal reset sequence failed for {tty_path}: {type(e).__name__}: {str(e)}')
     finally:
         if fd >= 0:
             try:
-                os.close(fd)
+                linker.system.close(fd)
             except Exception:
                 pass
 
 
 def _visible_script_processes(linker: ChipIdLinker):
     try:
-        process = subprocess.run(
+        process = linker.system.run(
             ['ps', 'ax'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -1171,7 +1317,7 @@ def _visible_script_processes(linker: ChipIdLinker):
             timeout=2,
         )
         processes = []
-        current_pid = os.getpid()
+        current_pid = linker.system.getpid()
         for line in process.stdout.splitlines():
             if '/tmp/script' not in line:
                 continue
@@ -1204,12 +1350,45 @@ def _switch_to_relaunch_tty(linker: ChipIdLinker) -> None:
 
 def _switch_to_tty(tty_id: str, log_label: str, linker: ChipIdLinker) -> None:
     linker.debug(f'{log_label}: chvt {tty_id}')
-    subprocess.run(['chvt', tty_id], check=True, timeout=2)
+    linker.system.run(['chvt', tty_id], check=True, timeout=2)
     linker.debug(f'{log_label}: chvt {tty_id} completed')
 
 
-def _restore_display_after_update_all_relaunch(linker: ChipIdLinker, restore_menu_after_relaunch: bool = False) -> Optional[str]:
+def _restore_display_after_update_all_relaunch(
+    linker: ChipIdLinker, restore_menu_after_relaunch: bool = False, zaparoo_console_lease: str = '',
+) -> Optional[str]:
     linker.debug('_restore_display_after_update_all_relaunch: started')
+    close_result = None
+    if zaparoo_console_lease:
+        close_result = _close_zaparoo_console(linker, zaparoo_console_lease)
+    else:
+        _close_standard_console(linker)
+
+    if restore_menu_after_relaunch:
+        restore_result = _restore_menu_after_chip_id(linker)
+        if restore_result is not None:
+            linker.debug(f'_restore_display_after_update_all_relaunch: menu restore result: {restore_result}')
+            return restore_result
+
+    linker.system.sleep(CHIP_ID_RELAUNCH_MENU_SETTLE_SECONDS)
+    linker.debug('_restore_display_after_update_all_relaunch: completed')
+    return close_result
+
+
+def _close_zaparoo_console(linker: ChipIdLinker, token: str) -> Optional[str]:
+    # Reset our terminal before release can start a new frontend on tty7.
+    _reset_script_tty(linker)
+    _restore_cursor_blink(linker)
+    try:
+        ZaparooConsole(linker.console_system, linker.debug).restore(token)
+    except Exception as e:
+        linker.debug('Could not restore Zaparoo console after Update All')
+        linker.debug(e)
+        return 'FAILURE_RESTORE_ZAPAROO_CONSOLE'
+    return None
+
+
+def _close_standard_console(linker: ChipIdLinker) -> None:
     keyboard_fd = None
     try:
         keyboard_fd = _create_uinput_keyboard(linker)
@@ -1217,7 +1396,7 @@ def _restore_display_after_update_all_relaunch(linker: ChipIdLinker, restore_men
         linker.debug(
             f'_restore_display_after_update_all_relaunch: sleeping {CHIP_ID_RELAUNCH_CONSOLE_CLOSE_SETTLE_SECONDS}s after F12'
         )
-        time.sleep(CHIP_ID_RELAUNCH_CONSOLE_CLOSE_SETTLE_SECONDS)
+        linker.system.sleep(CHIP_ID_RELAUNCH_CONSOLE_CLOSE_SETTLE_SECONDS)
     except Exception as e:
         linker.debug(
             f'_restore_display_after_update_all_relaunch: F12 restore failed: {type(e).__name__}: {str(e)}'
@@ -1230,23 +1409,10 @@ def _restore_display_after_update_all_relaunch(linker: ChipIdLinker, restore_men
         _reset_tty(tty_id, '_restore_display_after_update_all_relaunch', linker)
     _restore_cursor_blink(linker)
 
-    if restore_menu_after_relaunch:
-        restore_result = _restore_menu_after_chip_id(linker)
-        if restore_result is not None:
-            linker.debug(f'_restore_display_after_update_all_relaunch: menu restore result: {restore_result}')
-            return restore_result
-
-    linker.debug(
-        f'_restore_display_after_update_all_relaunch: sleeping {CHIP_ID_RELAUNCH_MENU_SETTLE_SECONDS}s after display restore'
-    )
-    time.sleep(CHIP_ID_RELAUNCH_MENU_SETTLE_SECONDS)
-    linker.debug('_restore_display_after_update_all_relaunch: completed')
-    return None
-
 
 def _restore_cursor_blink(linker: ChipIdLinker) -> None:
     try:
-        with open(CHIP_ID_CURSOR_BLINK_PATH, 'w') as cursor_blink:
+        with linker.system.open_file(CHIP_ID_CURSOR_BLINK_PATH, 'w') as cursor_blink:
             cursor_blink.write('1\n')
         linker.debug(f'_restore_cursor_blink: wrote {CHIP_ID_CURSOR_BLINK_PATH}')
     except Exception as e:
@@ -1259,31 +1425,72 @@ def _write_update_all_relaunch_script(
     update_all_dir: str,
     restore_menu_after_relaunch: bool = False,
     start_marker_path: Optional[str] = None,
+    run_pyz_path: str = CHIP_ID_RELAUNCH_RUN_PYZ_PATH,
 ) -> None:
-    update_all_pyz_path = _update_all_pyz_path(update_all_dir)
-    python_executable = sys.executable or '/usr/bin/python3'
-    linker.debug(f'_write_update_all_relaunch_script: writing {script_path}')
-    shell_log_path = shlex.quote(linker.log_path)
-    forwarded_environment = _shell_export_forwarded_environment()
-    start_marker_command = ''
+    restore_arguments = ['--restore-after-relaunch']
+    if restore_menu_after_relaunch:
+        restore_arguments.append('--restore-menu-after-relaunch')
+    start_marker_command = _relaunch_start_marker_function(start_marker_path)
     if start_marker_path is not None:
-        shell_start_marker_path = shlex.quote(start_marker_path)
-        start_marker_command = f'''mark_update_all_relaunch_started() {{
+        start_marker_command += 'mark_update_all_relaunch_started\n'
+    _write_relaunch_script(
+        linker, script_path, update_all_dir, restore_arguments, start_marker_command, '', run_pyz_path,
+    )
+
+
+def _write_zaparoo_relaunch_script(
+    linker: ChipIdLinker,
+    script_path: str,
+    update_all_dir: str,
+    zaparoo_console_lease: str,
+    restore_menu_after_relaunch: bool = False,
+    start_marker_path: Optional[str] = None,
+    run_pyz_path: str = CHIP_ID_RELAUNCH_RUN_PYZ_PATH,
+) -> None:
+    restore_arguments = ['--restore-after-relaunch']
+    if restore_menu_after_relaunch:
+        restore_arguments.append('--restore-menu-after-relaunch')
+    restore_arguments.extend(['--zaparoo-console-lease', zaparoo_console_lease])
+    start_marker_command = _relaunch_start_marker_function(start_marker_path)
+    # Lease ownership can only transfer after the script installs cleanup.
+    after_trap_command = 'mark_update_all_relaunch_started\n' if start_marker_path is not None else ''
+    _write_relaunch_script(
+        linker, script_path, update_all_dir, restore_arguments, start_marker_command, after_trap_command, run_pyz_path,
+    )
+
+
+def _relaunch_start_marker_function(start_marker_path: Optional[str]) -> str:
+    if start_marker_path is None:
+        return ''
+    shell_start_marker_path = shlex.quote(start_marker_path)
+    return f'''mark_update_all_relaunch_started() {{
   if printf "%s\\n" "$$" > {shell_start_marker_path} 2>/dev/null; then
     log_update_all_relaunch "started marker written {shell_start_marker_path}"
   else
     log_update_all_relaunch "started marker write failed {shell_start_marker_path}"
   fi
 }}
-mark_update_all_relaunch_started
 '''
-    restore_command = (
-        f'{shlex.quote(python_executable)} {shlex.quote(update_all_pyz_path)} '
-        f'--chip-id-linker '
-        f'--restore-after-relaunch'
-        f'{" --restore-menu-after-relaunch" if restore_menu_after_relaunch else ""}'
-        f' --log {shell_log_path}'
-    )
+
+
+def _write_relaunch_script(
+    linker: ChipIdLinker,
+    script_path: str,
+    update_all_dir: str,
+    restore_arguments: list[str],
+    start_marker_command: str,
+    after_trap_command: str,
+    run_pyz_path: str,
+) -> None:
+    linker.debug(f'_relaunch_update_all_from_scripts_menu: Update All dir: {update_all_dir}')
+    update_all_pyz_path = _update_all_pyz_path(update_all_dir, linker.system)
+    python_executable = sys.executable or '/usr/bin/python3'
+    linker.debug(f'_write_update_all_relaunch_script: writing {script_path}')
+    shell_log_path = shlex.quote(linker.log_path)
+    forwarded_environment = _shell_export_forwarded_environment(linker.system.environment)
+    restore_command = shlex.join([
+        python_executable, update_all_pyz_path, '--chip-id-linker', *restore_arguments, '--log', linker.log_path,
+    ])
     launcher = f'''#!/bin/bash
 {forwarded_environment}
 export LC_ALL="${{LC_ALL:-en_US.UTF-8}}"
@@ -1291,7 +1498,7 @@ export HOME="${{HOME:-/root}}"
 export LESSKEY="${{LESSKEY:-/media/fat/linux/lesskey}}"
 UPDATE_ALL_DIR={shlex.quote(update_all_dir)}
 UPDATE_ALL_PYZ={shlex.quote(update_all_pyz_path)}
-UPDATE_ALL_RUN_PYZ={shlex.quote(CHIP_ID_RELAUNCH_RUN_PYZ_PATH)}
+UPDATE_ALL_RUN_PYZ={shlex.quote(run_pyz_path)}
 UPDATE_ALL_PYTHON={shlex.quote(python_executable)}
 CHIP_ID_DISPLAY_BLANK_SCHEDULED=0
 RESTORE_UPDATE_ALL_DISPLAY_DONE=0
@@ -1349,7 +1556,7 @@ run_update_all_pyz() {{
   return "$pyz_status"
 }}
 trap restore_update_all_display EXIT INT TERM HUP
-log_update_all_relaunch "started tty=$(tty 2>/dev/null || echo unknown) args=$*"
+{after_trap_command}log_update_all_relaunch "started tty=$(tty 2>/dev/null || echo unknown) args=$*"
 prepare_update_all_tty
 cd "$UPDATE_ALL_DIR"
 run_update_all_pyz
@@ -1358,25 +1565,25 @@ log_update_all_relaunch "Update All exited with $EXITSTATUS"
 restore_update_all_display
 exit $EXITSTATUS
 '''
-    with open(script_path, 'w') as launcher_file:
+    with linker.system.open_file(script_path, 'w') as launcher_file:
         launcher_file.write(launcher)
         launcher_file.flush()
         os.fsync(launcher_file.fileno())
-    os.chmod(script_path, 0o750)
+    linker.system.chmod(script_path, 0o750)
     linker.debug(f'_write_update_all_relaunch_script: wrote {script_path}')
 
 
-def _update_all_pyz_path(update_all_dir: str) -> str:
-    running_archive_path = current_update_all_archive_path()
+def _update_all_pyz_path(update_all_dir: str, system: ChipIdSystem) -> str:
+    running_archive_path = system.current_archive_path()
     if running_archive_path is not None:
         return running_archive_path
 
     return os.path.join(update_all_dir, CHIP_ID_UPDATE_ALL_PYZ_RELATIVE_PATH)
 
 
-def _shell_export_forwarded_environment() -> str:
+def _shell_export_forwarded_environment(environment) -> str:
     lines = []
-    for name, value in sorted(os.environ.items()):
+    for name, value in sorted(environment.items()):
         if not _should_forward_relaunch_environment_name(name):
             continue
         lines.append(f'export {name}={shlex.quote(value)}')
@@ -1407,15 +1614,13 @@ def _is_valid_shell_environment_name(name: str) -> bool:
 
 
 def _write_chip_id_result_handoff(handoff_path: str, chip_id_result: str, linker: ChipIdLinker) -> Optional[str]:
-    """Hands the result to the Update All run that shows it: the relaunched one, or the next one the user
-    starts from the Scripts menu if the relaunch fails. A FAILURE code is returned only when /tmp is
-    unusable, in which case the relaunch (which lives in /tmp too) could not have worked either."""
+    """Keep the result available for the next manual run if relaunch fails."""
     if not chip_id_result:
         linker.debug('_write_chip_id_result_handoff: no result to hand off')
         return None
 
     try:
-        with open(handoff_path, 'w') as handoff_file:
+        with linker.system.open_file(handoff_path, 'w') as handoff_file:
             handoff_file.write(f'{chip_id_result}\n')
         linker.debug(f'_write_chip_id_result_handoff: wrote {chip_id_result} to {handoff_path}')
         return None
@@ -1424,12 +1629,12 @@ def _write_chip_id_result_handoff(handoff_path: str, chip_id_result: str, linker
         return 'FAILURE_RELAUNCH_HANDOFF_WRITE'
 
 
-def _reset_chip_id_log(log_path: str) -> None:
+def _reset_chip_id_log(log_path: str, system: ChipIdSystem) -> None:
     log_dir = os.path.dirname(log_path)
     if log_dir:
-        os.makedirs(log_dir, exist_ok=True)
+        system.makedirs(log_dir, exist_ok=True)
     try:
-        os.remove(log_path)
+        system.remove(log_path)
     except FileNotFoundError:
         pass
 
@@ -1438,22 +1643,22 @@ def _write_worker_startup_marker(marker_path: Optional[str], linker: ChipIdLinke
     if marker_path is None:
         return
 
-    temporary_marker_path = f'{marker_path}.{os.getpid()}.tmp'
+    temporary_marker_path = f'{marker_path}.{linker.system.getpid()}.tmp'
     try:
         marker_dir = os.path.dirname(marker_path)
         if marker_dir:
-            os.makedirs(marker_dir, exist_ok=True)
-        with open(temporary_marker_path, 'w') as marker_file:
-            marker_file.write(f'{os.getpid()}\n')
+            linker.system.makedirs(marker_dir, exist_ok=True)
+        with linker.system.open_file(temporary_marker_path, 'w') as marker_file:
+            marker_file.write(f'{linker.system.getpid()}\n')
             marker_file.flush()
             os.fsync(marker_file.fileno())
-        os.replace(temporary_marker_path, marker_path)
+        linker.system.replace(temporary_marker_path, marker_path)
         linker.debug(f'_write_worker_startup_marker: wrote {marker_path}')
     except Exception as e:
         linker.debug('Could not write chip-ID worker startup marker')
         linker.debug(e)
         try:
-            os.remove(temporary_marker_path)
+            linker.system.remove(temporary_marker_path)
         except FileNotFoundError:
             pass
         raise

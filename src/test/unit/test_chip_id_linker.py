@@ -1,913 +1,645 @@
 import os
 import signal
 import struct
-import subprocess
-import sys
-import tempfile
 import unittest
-import zipfile
-from unittest.mock import ANY, call, patch
+from pathlib import Path
 
-from update_all import chip_id_linker
-from test.logger_tester import LoggerSpy, NoLogger
-from update_all.logger import FileLoggerDecorator
+from test.chip_id_linker_tester import ChipIdLinkerTester
+from test.chip_id_system_tester import ChipIdProcessTester
+from update_all.chip_id_linker import chip_id_linker
+from update_all.constants import KENV_LAUNCH_ORIGIN_ID
 
 
 class TestChipIdLinker(unittest.TestCase):
-    def test_main___blank_display_command___does_not_require_rbf_or_update_all_launcher(self):
-        log_path = _temp_file(b'stale\n')
+    def setUp(self):
+        self.linker = ChipIdLinkerTester()
+        self.addCleanup(self.linker.close)
+        self.system = self.linker.system
+        self.rbf_path = '/media/fat/Scripts/.config/update_all/Linker.rbf'
+        self.system.path(self.rbf_path).parent.mkdir(parents=True)
+        self.system.path(self.rbf_path).write_bytes(b'rbf')
+        self.update_all_dir = '/media/fat/Scripts'
 
-        with patch('update_all.chip_id_linker._blank_chip_id_core_display') as blank_display:
-            result = chip_id_linker.run_chip_id_linker_command(_logger(), ['--blank-display', '--log', log_path])
+    def test_main___blank_display_command___does_not_require_rbf_or_update_all_launcher(self):
+        Path(self.linker.log_path).write_text('stale\n')
+
+        result = self.linker.run_command(['--blank-display'])
 
         self.assertEqual(0, result)
-        blank_display.assert_called_once()
-        self.assertEqual(log_path, blank_display.call_args.args[0].log_path)
-        with open(log_path, 'rb') as log_file:
-            self.assertEqual(b'stale\n', log_file.read())
-        _remove(log_path)
+        memory = self.system.path('/dev/mem').read_bytes()
+        self.assertEqual(1, struct.unpack_from('<I', memory, chip_id_linker.CHIP_ID_REG_DISPLAY_CONTROL)[0])
+        self.assertTrue(Path(self.linker.log_path).read_text().startswith('stale\n'))
+        self.assertEqual([], self.system.core_commands)
 
     def test_main___restore_after_relaunch_command___does_not_clear_existing_log(self):
-        log_path = _temp_file(b'stale\n')
+        Path(self.linker.log_path).write_text('stale\n')
 
-        with patch('update_all.chip_id_linker._restore_display_after_update_all_relaunch') as restore_display:
-            result = chip_id_linker.run_chip_id_linker_command(_logger(), ['--restore-after-relaunch', '--log', log_path])
+        result = self.linker.run_command(['--restore-after-relaunch'])
 
         self.assertEqual(0, result)
-        restore_display.assert_called_once()
-        self.assertEqual(log_path, restore_display.call_args.args[0].log_path)
-        self.assertEqual(False, restore_display.call_args.args[1])
-        with open(log_path, 'rb') as log_file:
-            self.assertEqual(b'stale\n', log_file.read())
-        _remove(log_path)
+        self.assertTrue(Path(self.linker.log_path).read_text().startswith('stale\n'))
+        self.assertIn(('key', chip_id_linker.CHIP_ID_KEY_F12, 1), self.system.events)
+        self.assertEqual([], self.system.core_commands)
 
     def test_main___extract_only_command___does_not_require_update_all_launcher_and_prints_result(self):
-        log_path = _temp_file(b'stale\n')
+        Path(self.linker.log_path).write_text('stale\n')
 
-        with patch('update_all.chip_id_linker._extract_chip_id_without_relaunch', return_value='0123456789abcdef') as extract, \
-                patch('builtins.print') as print_result:
-            result = chip_id_linker.run_chip_id_linker_command(_logger(), [
-                '--extract-only',
-                '--rbf',
-                '/media/fat/Scripts/.config/update_all/Linker.rbf',
-                '--log',
-                log_path,
-            ])
+        result = self.linker.run_command(['--extract-only', '--rbf', self.rbf_path])
 
         self.assertEqual(0, result)
-        extract.assert_called_once()
-        self.assertEqual('/media/fat/Scripts/.config/update_all/Linker.rbf', extract.call_args.args[0])
-        self.assertEqual(log_path, extract.call_args.args[1].log_path)
-        print_result.assert_called_once_with('0123456789abcdef')
-        self.assertFalse(os.path.exists(log_path))
-        _remove(log_path)
+        self.assertEqual(['0123456789abcdef'], self.system.printed_results)
+        self.assertNotIn('stale', Path(self.linker.log_path).read_text().splitlines())
+        self.assertEqual([f'load_core {self.rbf_path}', 'load_core menu.rbf'], self.system.core_commands)
+        self.assertEqual([], self.system.popen_calls)
 
     def test_main___detached_extraction_command___starts_with_clean_log(self):
-        log_path = _temp_file(b'stale\n')
+        Path(self.linker.log_path).write_text('stale\n')
 
-        with patch('update_all.chip_id_linker._run_detached_chip_id_extraction') as run_extraction:
-            result = chip_id_linker.run_chip_id_linker_command(_logger(), [
-                '--rbf',
-                '/media/fat/Scripts/.config/update_all/Linker.rbf',
-                '--update-all-dir',
-                '/media/fat/Scripts',
-                '--log',
-                log_path,
-            ])
+        result = self.linker.run_command(['--rbf', self.rbf_path, '--update-all-dir', self.update_all_dir])
 
         self.assertEqual(0, result)
-        run_extraction.assert_called_once()
-        self.assertEqual(log_path, run_extraction.call_args.args[0].log_path)
-        self.assertEqual('/media/fat/Scripts/.config/update_all/Linker.rbf', run_extraction.call_args.args[1])
-        self.assertEqual('/media/fat/Scripts', run_extraction.call_args.args[2])
-        self.assertFalse(os.path.exists(log_path))
-        _remove(log_path)
+        self.assertNotIn('stale', Path(self.linker.log_path).read_text().splitlines())
+        self.assertEqual([f'load_core {self.rbf_path}'], self.system.core_commands)
+        self.assertEqual('0123456789abcdef\n', self.system.read_text(chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH))
+        self.assertEqual(1, len(self.system.popen_calls))
 
     def test_main___detached_extraction_command___publishes_marker_and_log_before_extraction(self):
-        with tempfile.TemporaryDirectory() as base_path:
-            log_path = os.path.join(base_path, 'chip-id-linker.log')
-            marker_path = os.path.join(base_path, 'worker.started')
-            logger = FileLoggerDecorator(NoLogger(), log_path)
+        marker = str(self.linker.root / 'worker.started')
 
-            def run_extraction(linker, _rbf_path, _update_all_dir):
-                self.assertTrue(os.path.isfile(marker_path))
-                with open(log_path) as log_file:
-                    self.assertIn('_write_worker_startup_marker: wrote', log_file.read())
-                linker.debug('worker extraction entered')
-                with open(log_path) as log_file:
-                    self.assertIn('worker extraction entered', log_file.read())
+        result = self.linker.run_command([
+            '--rbf', self.rbf_path, '--update-all-dir', self.update_all_dir, '--startup-marker', marker,
+        ])
 
-            with patch('update_all.chip_id_linker._run_detached_chip_id_extraction', side_effect=run_extraction):
-                result = chip_id_linker.run_chip_id_linker_command(logger, [
-                    '--rbf',
-                    '/media/fat/Scripts/.config/update_all/Linker.rbf',
-                    '--update-all-dir',
-                    '/media/fat/Scripts',
-                    '--startup-marker',
-                    marker_path,
-                    '--log',
-                    log_path,
-                ])
-            logger.finalize()
-
-            self.assertEqual(0, result)
-            with open(marker_path) as marker_file:
-                self.assertTrue(marker_file.read().strip().isdigit())
-            with open(log_path) as log_file:
-                self.assertEqual(1, log_file.read().count('worker extraction entered'))
+        self.assertEqual(0, result)
+        observation = self.system.observations_at_load[0]
+        self.assertTrue(observation['marker'])
+        self.assertIn('_write_worker_startup_marker: wrote', observation['log'])
+        self.assertIn('_load_core: writing command:', observation['log'])
+        self.assertEqual(str(os.getpid()), Path(marker).read_text().strip())
+        self.assertEqual(1, Path(self.linker.log_path).read_text().count('_run_detached_chip_id_extraction: started'))
 
     def test_main___detached_extraction_command___preserves_eager_log_after_hard_exit(self):
-        worker_code = (
-            'import os\n'
-            'import sys\n'
-            'import tempfile\n'
-            'from update_all import chip_id_linker\n'
-            'from update_all.logger import FileLoggerDecorator, PrintLogger\n'
-            'tempfile.tempdir = sys.argv[3]\n'
-            'def crash_after_log(linker, _rbf_path, _update_all_dir):\n'
-            '    linker.debug("worker log before hard exit")\n'
-            '    os._exit(23)\n'
-            'chip_id_linker._run_detached_chip_id_extraction = crash_after_log\n'
-            'logger = FileLoggerDecorator(PrintLogger(), sys.argv[1])\n'
-            'chip_id_linker.run_chip_id_linker_command(logger, [\n'
-            '    "--rbf", "/tmp/Linker.rbf",\n'
-            '    "--update-all-dir", "/tmp",\n'
-            '    "--startup-marker", sys.argv[2],\n'
-            '    "--log", sys.argv[1],\n'
-            '])\n'
-        )
-        with tempfile.TemporaryDirectory() as base_path:
-            log_path = os.path.join(base_path, 'chip-id-linker.log')
-            marker_path = os.path.join(base_path, 'worker.started')
+        process, markers = self.linker.run_hard_exit_worker()
 
-            process = subprocess.run(
-                [sys.executable, '-c', worker_code, log_path, marker_path, base_path],
-                cwd=os.path.dirname(os.path.dirname(chip_id_linker.__file__)),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-
-            self.assertEqual(23, process.returncode, process.stderr)
-            self.assertTrue(os.path.isfile(marker_path))
-            with open(log_path) as log_file:
-                log = log_file.read()
-            self.assertIn('_write_worker_startup_marker: wrote', log)
-            self.assertIn('worker log before hard exit', log)
+        self.assertEqual(23, process.returncode, process.stderr)
+        self.assertEqual([self.linker.root / 'worker.started'], markers)
+        log = Path(self.linker.log_path).read_text()
+        self.assertIn('_write_worker_startup_marker: wrote', log)
+        self.assertIn('worker log before hard exit', log)
 
     def test_main___blank_display_command___appends_log_when_finalized(self):
-        log_path = _temp_file(b'primary\n')
-        logger = FileLoggerDecorator(NoLogger(), log_path)
+        Path(self.linker.log_path).write_text('primary\n')
 
-        with patch('update_all.chip_id_linker._blank_chip_id_core_display', side_effect=lambda linker: linker.debug('blank display')):
-            result = chip_id_linker.run_chip_id_linker_command(logger, ['--blank-display', '--log', log_path])
-        logger.finalize()
+        result = self.linker.run_command(['--blank-display'])
+        self.linker.file_logger.finalize()
 
         self.assertEqual(0, result)
-        with open(log_path, 'rb') as log_file:
-            self.assertEqual(b'primary\nblank display\n', log_file.read())
-        _remove(log_path)
+        log = Path(self.linker.log_path).read_text()
+        self.assertTrue(log.startswith('primary\n'))
+        self.assertEqual(1, log.count('_blank_chip_id_core_display: requesting black display'))
+        self.assertEqual(1, log.count('_write_chip_id_display_control: writer process completed'))
 
     def test_main___detached_extraction_command___preserves_direct_relaunch_script_log_when_finalized(self):
-        log_path = _temp_file(b'stale\n')
-        logger = FileLoggerDecorator(NoLogger(), log_path)
+        Path(self.linker.log_path).write_text('stale\n')
+        self.system.append_external_log_on_load = True
 
-        def run_extraction(linker, _rbf_path, _update_all_dir):
-            linker.debug('primary helper')
-            with open(log_path, 'a') as log_file:
-                log_file.write('relaunch_script: started\n')
-
-        with patch('update_all.chip_id_linker._run_detached_chip_id_extraction', side_effect=run_extraction):
-            result = chip_id_linker.run_chip_id_linker_command(logger, [
-                '--rbf',
-                '/media/fat/Scripts/.config/update_all/Linker.rbf',
-                '--update-all-dir',
-                '/media/fat/Scripts',
-                '--log',
-                log_path,
-            ])
-        logger.finalize()
+        result = self.linker.run_command(['--rbf', self.rbf_path, '--update-all-dir', self.update_all_dir])
+        self.linker.file_logger.finalize()
 
         self.assertEqual(0, result)
-        with open(log_path) as log_file:
-            log = log_file.read()
-        self.assertNotIn('stale', log)
+        log = Path(self.linker.log_path).read_text()
+        self.assertNotIn('stale', log.splitlines())
         self.assertIn('relaunch_script: started\n', log)
-        self.assertIn('primary helper\n', log)
-        _remove(log_path)
+        self.assertIn('_run_detached_chip_id_extraction: started', log)
+        self.assertEqual(1, log.count('relaunch_script: started\n'))
 
     def test_extract_chip_id_without_relaunch___loads_core_reads_id_and_restores_menu(self):
-        rbf_path = _temp_file(b'rbf')
-        log_path = '/tmp/update_all_test_chipid.log'
-
-        with patch('update_all.chip_id_linker._read_chip_id_from_memory', return_value='0123456789abcdef'), \
-                patch('update_all.chip_id_linker._prepare_display_before_chip_id_core_load'), \
-                patch('update_all.chip_id_linker._wait_for_firmware_core_restart_after_load', return_value=None), \
-                patch('update_all.chip_id_linker._wait_for_hps_fpga_lw_bridge_ready_after_core_load', return_value=None), \
-                patch('update_all.chip_id_linker._restore_menu_after_chip_id', return_value=None) as restore_menu, \
-                patch('update_all.chip_id_linker.os.open', return_value=123) as os_open, \
-                patch('update_all.chip_id_linker.os.write') as os_write, \
-                patch('update_all.chip_id_linker.os.close') as os_close:
-            result = chip_id_linker._extract_chip_id_without_relaunch(rbf_path, _linker(log_path))
+        result = chip_id_linker._extract_chip_id_without_relaunch(self.rbf_path, self.linker)
 
         self.assertEqual('0123456789abcdef', result)
-        os_open.assert_called_once_with('/dev/MiSTer_cmd', os.O_WRONLY | os.O_NONBLOCK)
-        os_write.assert_called_once_with(123, f'load_core {rbf_path}'.encode())
-        os_close.assert_called_once_with(123)
-        restore_menu.assert_called_once_with(ANY)
-        _remove(rbf_path, log_path)
+        self.assertEqual([f'load_core {self.rbf_path}', 'load_core menu.rbf'], self.system.core_commands)
+        self.assertEqual([('/dev/MiSTer_cmd', os.O_WRONLY | os.O_NONBLOCK)] * 2,
+                         [call for call in self.system.opened_devices if call[0] == '/dev/MiSTer_cmd'])
+        self.assertEqual(2, self.system.closed_devices.count('/dev/MiSTer_cmd'))
+        self.assertEqual('MENU\n', self.system.read_text(chip_id_linker.CHIP_ID_MENU_CORE_NAME_PATH))
+        self.assertEqual([], self.system.popen_calls)
 
     def test_run_detached_chip_id_extraction___writes_load_core_to_fifo_and_relaunches_with_chip_id_result(self):
-        rbf_path = _temp_file(b'rbf')
-        log_path = '/tmp/update_all_test_chipid.log'
+        chip_id_linker._run_detached_chip_id_extraction(self.linker, self.rbf_path, self.update_all_dir)
 
-        with patch('update_all.chip_id_linker._read_chip_id_from_memory', return_value='0123456789abcdef'), \
-                patch('update_all.chip_id_linker._relaunch_update_all_from_scripts_menu', return_value=None) as relaunch, \
-                patch('update_all.chip_id_linker._prepare_display_before_chip_id_core_load'), \
-                patch('update_all.chip_id_linker._wait_for_firmware_core_restart_after_load', return_value=None), \
-                patch('update_all.chip_id_linker._wait_for_hps_fpga_lw_bridge_ready_after_core_load', return_value=None), \
-                patch('update_all.chip_id_linker._restore_menu_after_chip_id') as restore_menu, \
-                patch('update_all.chip_id_linker.os.open', return_value=123) as os_open, \
-                patch('update_all.chip_id_linker.os.write') as os_write, \
-                patch('update_all.chip_id_linker.os.close') as os_close:
-            chip_id_linker._run_detached_chip_id_extraction(_linker(log_path), rbf_path, '/media/fat/Scripts')
-
-        os_open.assert_has_calls([
-            call('/dev/MiSTer_cmd', os.O_WRONLY | os.O_NONBLOCK),
-        ])
-        os_write.assert_has_calls([
-            call(123, f'load_core {rbf_path}'.encode()),
-        ])
-        self.assertEqual(1, os_close.call_count)
-        restore_menu.assert_not_called()
-        relaunch.assert_called_once_with(
-            ANY,
-            '/media/fat/Scripts',
-            restore_menu_after_relaunch=True,
-            require_script_start_confirmation=True,
-            chip_id_result='0123456789abcdef',
-        )
-        _remove(rbf_path, log_path)
+        self.assertEqual([f'load_core {self.rbf_path}'], self.system.core_commands)
+        self.assertEqual(1, self.system.closed_devices.count('/dev/MiSTer_cmd'))
+        self.assertEqual('0123456789abcdef\n', self.system.read_text(chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH))
+        script = self.system.read_text(chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH)
+        self.assertIn('--restore-menu-after-relaunch', script)
+        self.assertIn('mark_update_all_relaunch_started()', script)
+        self.assertEqual(1, len(self.system.popen_calls))
 
     def test_run_detached_chip_id_extraction___when_fifo_write_fails___relaunches_with_failure_result(self):
-        rbf_path = _temp_file(b'rbf')
-        log_path = '/tmp/update_all_test_chipid.log'
+        self.system.failed_core_loads.add(self.rbf_path)
 
-        with patch('update_all.chip_id_linker._read_chip_id_from_memory', return_value='0123456789abcdef') as read_mem, \
-                patch('update_all.chip_id_linker._relaunch_update_all_from_scripts_menu') as relaunch, \
-                patch('update_all.chip_id_linker._prepare_display_before_chip_id_core_load'), \
-                patch('update_all.chip_id_linker.os.open', return_value=123), \
-                patch('update_all.chip_id_linker.os.write', side_effect=OSError('boom')), \
-                patch('update_all.chip_id_linker.os.close'):
-            chip_id_linker._run_detached_chip_id_extraction(_linker(log_path), rbf_path, '/media/fat/Scripts')
+        chip_id_linker._run_detached_chip_id_extraction(self.linker, self.rbf_path, self.update_all_dir)
 
-        read_mem.assert_not_called()
-        relaunch.assert_called_once_with(
-            ANY,
-            '/media/fat/Scripts',
-            require_script_start_confirmation=True,
-            chip_id_result='FAILURE_LOAD_CORE_FIFO',
-        )
-        _remove(rbf_path, log_path)
+        self.assertEqual([], self.system.memory_maps)
+        self.assertEqual([], self.system.isolated_processes)
+        self.assertEqual('FAILURE_LOAD_CORE_FIFO\n', self.system.read_text(chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH))
+        script = self.system.read_text(chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH)
+        self.assertNotIn('--restore-menu-after-relaunch', script)
+        self.assertIn('mark_update_all_relaunch_started()', script)
+        self.assertEqual(1, self.system.closed_devices.count('/dev/MiSTer_cmd'))
+        self.assertEqual(1, len(self.system.popen_calls))
 
     def test_run_detached_chip_id_extraction___when_firmware_restart_is_not_observed___relaunches_with_failure_result_without_reading_memory(self):
-        rbf_path = _temp_file(b'rbf')
-        log_path = '/tmp/update_all_test_chipid.log'
+        self.system.firmware_restarts = False
 
-        with patch('update_all.chip_id_linker._read_chip_id_from_memory', return_value='0123456789abcdef') as read_mem, \
-                patch('update_all.chip_id_linker._relaunch_update_all_from_scripts_menu', return_value=None) as relaunch, \
-                patch('update_all.chip_id_linker._prepare_display_before_chip_id_core_load'), \
-                patch('update_all.chip_id_linker._wait_for_firmware_core_restart_after_load', return_value='FAILURE_FIRMWARE_CORE_RESTART_TIMEOUT'), \
-                patch('update_all.chip_id_linker._wait_for_hps_fpga_lw_bridge_ready_after_core_load') as wait_bridge_ready, \
-                patch('update_all.chip_id_linker._restore_menu_after_chip_id') as restore_menu, \
-                patch('update_all.chip_id_linker.os.open', return_value=123), \
-                patch('update_all.chip_id_linker.os.write') as os_write, \
-                patch('update_all.chip_id_linker.os.close') as os_close:
-            chip_id_linker._run_detached_chip_id_extraction(_linker(log_path), rbf_path, '/media/fat/Scripts')
+        chip_id_linker._run_detached_chip_id_extraction(self.linker, self.rbf_path, self.update_all_dir)
 
-        read_mem.assert_not_called()
-        wait_bridge_ready.assert_not_called()
-        os_write.assert_has_calls([
-            call(123, f'load_core {rbf_path}'.encode()),
-        ])
-        self.assertEqual(1, os_close.call_count)
-        restore_menu.assert_not_called()
-        relaunch.assert_called_once_with(
-            ANY,
-            '/media/fat/Scripts',
-            restore_menu_after_relaunch=True,
-            require_script_start_confirmation=True,
-            chip_id_result='FAILURE_FIRMWARE_CORE_RESTART_TIMEOUT',
-        )
-        _remove(rbf_path, log_path)
+        self.assertEqual([], self.system.memory_maps)
+        self.assertEqual([], self.system.isolated_processes)
+        self.assertEqual([f'load_core {self.rbf_path}'], self.system.core_commands)
+        self.assertEqual(1, self.system.closed_devices.count('/dev/MiSTer_cmd'))
+        self.assertEqual('FAILURE_FIRMWARE_CORE_RESTART_TIMEOUT\n',
+                         self.system.read_text(chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH))
+        script = self.system.read_text(chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH)
+        self.assertIn('--restore-menu-after-relaunch', script)
+        self.assertEqual(1, len(self.system.popen_calls))
 
     def test_run_detached_chip_id_extraction___when_menu_restore_fails___logs_restore_failure(self):
-        rbf_path = _temp_file(b'rbf')
-        log_path = '/tmp/update_all_test_chipid.log'
+        self.system.f9_console_after = None
+        self.system.failed_core_loads.add('menu.rbf')
 
-        with patch('update_all.chip_id_linker._read_chip_id_from_memory', return_value='0123456789abcdef'), \
-                patch('update_all.chip_id_linker._relaunch_update_all_from_scripts_menu', return_value='FAILURE_RELAUNCH_TIMEOUT') as relaunch, \
-                patch('update_all.chip_id_linker._prepare_display_before_chip_id_core_load'), \
-                patch('update_all.chip_id_linker._wait_for_firmware_core_restart_after_load', return_value=None), \
-                patch('update_all.chip_id_linker._wait_for_hps_fpga_lw_bridge_ready_after_core_load', return_value=None), \
-                patch('update_all.chip_id_linker.os.open', return_value=123), \
-                patch('update_all.chip_id_linker.os.write', side_effect=[None, OSError('boom')]), \
-                patch('update_all.chip_id_linker.os.close'):
-            chip_id_linker._run_detached_chip_id_extraction(_linker(log_path), rbf_path, '/media/fat/Scripts')
+        chip_id_linker._run_detached_chip_id_extraction(self.linker, self.rbf_path, self.update_all_dir)
 
-        relaunch.assert_called_once_with(
-            ANY,
-            '/media/fat/Scripts',
-            restore_menu_after_relaunch=True,
-            require_script_start_confirmation=True,
-            chip_id_result='0123456789abcdef',
-        )
-        _remove(rbf_path, log_path)
+        self.assertEqual([f'load_core {self.rbf_path}', 'load_core menu.rbf'], self.system.core_commands)
+        self.assertEqual([], self.system.popen_calls)
+        self.assertTrue(any('final result after fallback: FAILURE_RESTORE_MENU_FIFO' in line
+                            for line in self.linker.logger.debug_lines))
+        self.assertEqual('0123456789abcdef\n', self.system.read_text(chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH))
 
     def test_relaunch_update_all_from_scripts_menu___writes_tmp_script_and_starts_agetty(self):
-        process = _ProcessTester(pid=456)
-        script_path = '/tmp/update_all_test_relaunch_script'
-        handoff_path = '/tmp/update_all_test_chip_id_result'
-        log_path = '/tmp/update_all_test_chipid.log'
-
-        with patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH', script_path), \
-                patch('update_all.chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH', handoff_path), \
-                patch('update_all.chip_id_linker._clear_visible_script_processes', return_value=None) as clear_scripts, \
-                patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_AFTER_SCRIPT_CLEAR_SETTLE_SECONDS', 0), \
-                patch('update_all.chip_id_linker._reset_script_tty') as reset_tty, \
-                patch('update_all.chip_id_linker._open_script_console') as open_script_console, \
-                patch('update_all.chip_id_linker._switch_to_relaunch_tty') as switch_to_relaunch_tty, \
-                patch('update_all.chip_id_linker.subprocess.Popen', return_value=process) as popen:
-            result = chip_id_linker._relaunch_update_all_from_scripts_menu(
-                _linker(log_path),
-                '/media/fat/Scripts',
-                chip_id_result='0123456789abcdef',
-            )
-
-        self.assertIsNone(result)
-        clear_scripts.assert_called_once_with(ANY)
-        reset_tty.assert_called_once_with(ANY)
-        open_script_console.assert_called_once_with(ANY)
-        switch_to_relaunch_tty.assert_called_once_with(ANY)
-        with open(handoff_path) as handoff_file:
-            self.assertEqual('0123456789abcdef\n', handoff_file.read())
-        popen.assert_called_once_with([
-            'setsid',
-            '/sbin/agetty',
-            '-a',
-            'root',
-            '-l',
-            script_path,
-            '--nohostname',
-            '-L',
-            'tty7',
-            'linux',
-        ])
-        with open(script_path) as result_file:
-            script = result_file.read()
-        self.assertIn('reset_update_all_tty()', script)
-        self.assertIn('stty sane', script)
-        self.assertNotIn('restore_update_all_display_and_exit()', script)
-        self.assertIn('trap restore_update_all_display EXIT INT TERM HUP', script)
-        self.assertIn('log_update_all_relaunch "started tty=', script)
-        self.assertIn('UPDATE_ALL_DIR=/media/fat/Scripts', script)
-        self.assertIn('UPDATE_ALL_PYZ=/media/fat/Scripts/.config/update_all/update_all.pyz', script)
-        self.assertIn('UPDATE_ALL_RUN_PYZ=/tmp/update_all_chipid.pyz', script)
-        self.assertIn('UPDATE_ALL_PYTHON=', script)
-        self.assertIn('copy_update_all_pyz()', script)
-        self.assertIn('schedule_chip_id_display_blank()', script)
-        self.assertIn('sleep 0.25', script)
-        self.assertIn('"$UPDATE_ALL_PYTHON" "$UPDATE_ALL_PYZ" --chip-id-linker --blank-display --log /tmp/update_all_test_chipid.log', script)
-        self.assertIn('run_update_all_pyz()', script)
-        self.assertIn('cp "$UPDATE_ALL_PYZ" "$UPDATE_ALL_RUN_PYZ"', script)
-        self.assertIn('schedule_chip_id_display_blank\n  "$UPDATE_ALL_PYTHON" "$UPDATE_ALL_RUN_PYZ"', script)
-        self.assertIn('"$UPDATE_ALL_PYTHON" "$UPDATE_ALL_RUN_PYZ"', script)
-        self.assertIn('schedule_chip_id_display_blank\n    "$UPDATE_ALL_PYTHON" "$UPDATE_ALL_RUN_PYZ" --continue', script)
-        self.assertIn('"$UPDATE_ALL_PYTHON" "$UPDATE_ALL_RUN_PYZ" --continue', script)
-        self.assertIn('log_update_all_relaunch "running pyz $UPDATE_ALL_RUN_PYZ"', script)
-        self.assertNotIn('run_update_all_launcher()', script)
-        self.assertNotIn('falling back to launcher', script)
-        self.assertNotIn('UPDATE_ALL_LAUNCHER', script)
-        self.assertIn('log_update_all_relaunch "Update All exited with $EXITSTATUS"', script)
-        self.assertIn('restore_update_all_display()', script)
-        self.assertIn('--restore-after-relaunch --log /tmp/update_all_test_chipid.log', script)
-        self.assertNotIn('--restore-menu-after-relaunch', script)
-        self.assertNotIn('COMMAND=', script)
-        self.assertNotIn('UPDATE_ALL_CHIP_ID_RESULT', script)
-        self.assertIn('cd "$UPDATE_ALL_DIR"', script)
-        self.assertNotIn('Press any key to continue', script)
-        _remove(script_path, handoff_path, log_path)
-
-    def test_relaunch_update_all_from_scripts_menu___when_start_confirmation_required___writes_marker_and_waits(self):
-        process = _ProcessTester(pid=456)
-        script_path = '/tmp/update_all_test_relaunch_script'
-        marker_path = '/tmp/update_all_test_chipid_relaunch_started'
-        handoff_path = '/tmp/update_all_test_chip_id_result'
-        log_path = '/tmp/update_all_test_chipid.log'
-
-        with patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH', script_path), \
-                patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_STARTED_PATH', marker_path), \
-                patch('update_all.chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH', handoff_path), \
-                patch('update_all.chip_id_linker._clear_visible_script_processes', return_value=None), \
-                patch('update_all.chip_id_linker._clear_relaunch_script_start_marker', return_value=None) as clear_marker, \
-                patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_AFTER_SCRIPT_CLEAR_SETTLE_SECONDS', 0), \
-                patch('update_all.chip_id_linker._reset_script_tty'), \
-                patch('update_all.chip_id_linker._open_script_console'), \
-                patch('update_all.chip_id_linker._switch_to_relaunch_tty'), \
-                patch('update_all.chip_id_linker._wait_for_relaunch_script_start', return_value=None) as wait_for_start, \
-                patch('update_all.chip_id_linker.subprocess.Popen', return_value=process):
-            result = chip_id_linker._relaunch_update_all_from_scripts_menu(
-                _linker(log_path),
-                '/media/fat/Scripts',
-                restore_menu_after_relaunch=True,
-                require_script_start_confirmation=True,
-                chip_id_result='0123456789abcdef',
-            )
-
-        self.assertIsNone(result)
-        clear_marker.assert_called_once_with(marker_path, ANY)
-        wait_for_start.assert_called_once_with(process, marker_path, ANY)
-        with open(script_path) as result_file:
-            script = result_file.read()
-        self.assertIn('mark_update_all_relaunch_started()', script)
-        self.assertIn(f'> {marker_path}', script)
-        self.assertIn('started marker written', script)
-        _remove(script_path, marker_path, handoff_path, log_path)
-
-    def test_relaunch_update_all_from_scripts_menu___when_script_does_not_start___terminates_agetty_and_returns_failure(self):
-        process = _ProcessTester(pid=456, poll_result=None)
-        script_path = '/tmp/update_all_test_relaunch_script'
-        marker_path = '/tmp/update_all_test_chipid_relaunch_started'
-        handoff_path = '/tmp/update_all_test_chip_id_result'
-        log_path = '/tmp/update_all_test_chipid.log'
-
-        with patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH', script_path), \
-                patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_STARTED_PATH', marker_path), \
-                patch('update_all.chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH', handoff_path), \
-                patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_START_TIMEOUT_SECONDS', 0), \
-                patch('update_all.chip_id_linker._clear_visible_script_processes', return_value=None), \
-                patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_AFTER_SCRIPT_CLEAR_SETTLE_SECONDS', 0), \
-                patch('update_all.chip_id_linker._reset_script_tty'), \
-                patch('update_all.chip_id_linker._open_script_console'), \
-                patch('update_all.chip_id_linker._switch_to_relaunch_tty'), \
-                patch('update_all.chip_id_linker.os.path.exists', return_value=False), \
-                patch('update_all.chip_id_linker._terminate_relaunch_process') as terminate_relaunch_process, \
-                patch('update_all.chip_id_linker.subprocess.Popen', return_value=process):
-            result = chip_id_linker._relaunch_update_all_from_scripts_menu(
-                _linker(log_path),
-                '/media/fat/Scripts',
-                require_script_start_confirmation=True,
-                chip_id_result='0123456789abcdef',
-            )
-
-        self.assertEqual('FAILURE_RELAUNCH_SCRIPT_START_TIMEOUT', result)
-        terminate_relaunch_process.assert_called_once_with(process, ANY)
-        _remove(script_path, marker_path, handoff_path, log_path)
-
-    def test_wait_for_relaunch_script_start___returns_none_when_marker_appears(self):
-        process = _ProcessTester(poll_result=None)
-
-        with patch('update_all.chip_id_linker.os.path.exists', side_effect=[False, True]), \
-                patch('update_all.chip_id_linker.time.sleep') as sleep:
-            result = chip_id_linker._wait_for_relaunch_script_start(
-                process,
-                '/tmp/update_all_test_chipid_relaunch_started',
-                _linker(),
-            )
-
-        self.assertIsNone(result)
-        sleep.assert_called_once_with(0.05)
-
-    def test_wait_for_relaunch_script_start___returns_failure_when_agetty_exits_before_marker(self):
-        process = _ProcessTester(poll_result=1)
-
-        with patch('update_all.chip_id_linker.os.path.exists', return_value=False), \
-                patch('update_all.chip_id_linker.time.sleep') as sleep:
-            result = chip_id_linker._wait_for_relaunch_script_start(
-                process,
-                '/tmp/update_all_test_chipid_relaunch_started',
-                _linker(),
-            )
-
-        self.assertEqual('FAILURE_RELAUNCH_PROCESS_EXIT_1', result)
-        sleep.assert_not_called()
-
-    def test_restore_display_after_update_all_relaunch___presses_f12_and_restores_ttys_without_reloading_menu(self):
-        log_path = '/tmp/update_all_test_chipid.log'
-
-        with patch('update_all.chip_id_linker._create_uinput_keyboard', return_value=123) as create_keyboard, \
-                patch('update_all.chip_id_linker._press_f12_for_menu') as press_f12, \
-                patch('update_all.chip_id_linker._destroy_uinput_keyboard') as destroy_keyboard, \
-                patch('update_all.chip_id_linker._reset_tty') as reset_tty, \
-                patch('update_all.chip_id_linker._restore_cursor_blink') as restore_cursor, \
-                patch('update_all.chip_id_linker._restore_menu_after_chip_id', return_value=None) as restore_menu, \
-                patch('update_all.chip_id_linker.time.sleep') as sleep:
-            result = chip_id_linker._restore_display_after_update_all_relaunch(_linker(log_path))
-
-        self.assertIsNone(result)
-        create_keyboard.assert_called_once_with(ANY)
-        press_f12.assert_called_once_with(123, ANY)
-        destroy_keyboard.assert_called_once_with(123, ANY)
-        reset_tty.assert_has_calls([
-            call('1', '_restore_display_after_update_all_relaunch', ANY),
-            call('7', '_restore_display_after_update_all_relaunch', ANY),
-        ])
-        restore_cursor.assert_called_once_with(ANY)
-        restore_menu.assert_not_called()
-        sleep.assert_has_calls([
-            call(chip_id_linker.CHIP_ID_RELAUNCH_CONSOLE_CLOSE_SETTLE_SECONDS),
-            call(chip_id_linker.CHIP_ID_RELAUNCH_MENU_SETTLE_SECONDS),
-        ])
-
-    def test_restore_display_after_update_all_relaunch___when_requested___closes_console_then_reloads_menu(self):
-        log_path = '/tmp/update_all_test_chipid.log'
-
-        with patch('update_all.chip_id_linker._create_uinput_keyboard', return_value=123), \
-                patch('update_all.chip_id_linker._press_f12_for_menu') as press_f12, \
-                patch('update_all.chip_id_linker._destroy_uinput_keyboard'), \
-                patch('update_all.chip_id_linker._reset_tty'), \
-                patch('update_all.chip_id_linker._restore_cursor_blink'), \
-                patch('update_all.chip_id_linker._restore_menu_after_chip_id', return_value=None) as restore_menu_call, \
-                patch('update_all.chip_id_linker.time.sleep'):
-            result = chip_id_linker._restore_display_after_update_all_relaunch(_linker(log_path), restore_menu_after_relaunch=True)
-
-        self.assertIsNone(result)
-        press_f12.assert_called_once_with(123, ANY)
-        restore_menu_call.assert_called_once_with(ANY)
-
-    def test_restore_display_after_update_all_relaunch___when_menu_restore_fails___still_closes_console(self):
-        log_path = '/tmp/update_all_test_chipid.log'
-
-        with patch('update_all.chip_id_linker._create_uinput_keyboard', return_value=123), \
-                patch('update_all.chip_id_linker._press_f12_for_menu') as press_f12, \
-                patch('update_all.chip_id_linker._destroy_uinput_keyboard'), \
-                patch('update_all.chip_id_linker._reset_tty') as reset_tty, \
-                patch('update_all.chip_id_linker._restore_cursor_blink'), \
-                patch('update_all.chip_id_linker._restore_menu_after_chip_id', return_value='FAILURE_RESTORE_MENU_CORE_TIMEOUT_LINKER'), \
-                patch('update_all.chip_id_linker.time.sleep') as sleep:
-            result = chip_id_linker._restore_display_after_update_all_relaunch(_linker(log_path), restore_menu_after_relaunch=True)
-
-        self.assertEqual('FAILURE_RESTORE_MENU_CORE_TIMEOUT_LINKER', result)
-        press_f12.assert_called_once_with(123, ANY)
-        reset_tty.assert_has_calls([
-            call('1', '_restore_display_after_update_all_relaunch', ANY),
-            call('7', '_restore_display_after_update_all_relaunch', ANY),
-        ])
-        sleep.assert_called_once_with(chip_id_linker.CHIP_ID_RELAUNCH_CONSOLE_CLOSE_SETTLE_SECONDS)
-
-    def test_write_update_all_relaunch_script___when_direct_chipid_relaunch___restores_menu_after_exit(self):
-        script_path = '/tmp/update_all_test_relaunch_script'
-        log_path = '/tmp/update_all_test_chipid.log'
-
-        chip_id_linker._write_update_all_relaunch_script(
-            _linker(log_path),
-            script_path,
-            '/media/fat/Scripts',
-            restore_menu_after_relaunch=True,
+        result = chip_id_linker._relaunch_update_all_from_scripts_menu(
+            self.linker, self.update_all_dir, chip_id_result='0123456789abcdef',
         )
 
-        with open(script_path) as result_file:
-            script = result_file.read()
-        self.assertIn('--restore-after-relaunch --restore-menu-after-relaunch --log /tmp/update_all_test_chipid.log', script)
-        _remove(script_path, log_path)
+        self.assertIsNone(result)
+        self.assertEqual('0123456789abcdef\n', self.system.read_text(chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH))
+        self.assertLess(self.system.events.index(('ps',)), self.system.events.index(('reset', '/dev/tty7')))
+        self.assertLess(self.system.events.index(('reset', '/dev/tty7')), self.system.events.index(('key', 67, 1)))
+        self.assertLess(self.system.events.index(('key', 67, 1)), self.system.events.index(('chvt', '7')))
+        self.assertEqual([[
+            'setsid', '/sbin/agetty', '-a', 'root', '-l', '/tmp/script', '--nohostname', '-L', 'tty7', 'linux',
+        ]], self.system.popen_calls)
+        script = self.system.read_text(chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH)
+        for text in (
+            'reset_update_all_tty()', 'stty sane', 'trap restore_update_all_display EXIT INT TERM HUP',
+            'log_update_all_relaunch "started tty=', 'UPDATE_ALL_DIR=/media/fat/Scripts',
+            'UPDATE_ALL_PYZ=/media/fat/Scripts/.config/update_all/update_all.pyz',
+            'UPDATE_ALL_RUN_PYZ=/tmp/update_all_chipid.pyz', 'UPDATE_ALL_PYTHON=', 'copy_update_all_pyz()',
+            'schedule_chip_id_display_blank()', 'sleep 0.25',
+            f'"$UPDATE_ALL_PYTHON" "$UPDATE_ALL_PYZ" --chip-id-linker --blank-display --log {self.linker.log_path}',
+            'run_update_all_pyz()', 'cp "$UPDATE_ALL_PYZ" "$UPDATE_ALL_RUN_PYZ"',
+            'schedule_chip_id_display_blank\n  "$UPDATE_ALL_PYTHON" "$UPDATE_ALL_RUN_PYZ"',
+            'schedule_chip_id_display_blank\n    "$UPDATE_ALL_PYTHON" "$UPDATE_ALL_RUN_PYZ" --continue',
+            'log_update_all_relaunch "running pyz $UPDATE_ALL_RUN_PYZ"',
+            'log_update_all_relaunch "Update All exited with $EXITSTATUS"', 'restore_update_all_display()',
+            f'--restore-after-relaunch --log {self.linker.log_path}', 'cd "$UPDATE_ALL_DIR"',
+        ):
+            self.assertIn(text, script)
+        for text in ('restore_update_all_display_and_exit()', 'run_update_all_launcher()', 'falling back to launcher',
+                     'UPDATE_ALL_LAUNCHER', '--restore-menu-after-relaunch', 'COMMAND=',
+                     'UPDATE_ALL_CHIP_ID_RESULT', 'Press any key to continue'):
+            self.assertNotIn(text, script)
+        self.assertEqual(0o750, self.system.path(chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH).stat().st_mode & 0o777)
 
-    def test_write_update_all_relaunch_script___uses_current_update_all_archive_when_available(self):
-        script_path = '/tmp/update_all_test_relaunch_script'
-        log_path = '/tmp/update_all_test_chipid.log'
-        current_archive_path = _temp_zipapp()
+    def test_relaunch_update_all_from_scripts_menu___when_start_confirmation_required___writes_marker_and_waits(self):
+        marker = chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_STARTED_PATH
+        self.system.path(marker).write_text('stale')
 
-        with patch('update_all.chip_id_linker.sys.argv', [current_archive_path, '--chip-id-linker']):
-            chip_id_linker._write_update_all_relaunch_script(
-                _linker(log_path),
-                script_path,
-                '/media/fat/Scripts',
-            )
-
-        with open(script_path) as result_file:
-            script = result_file.read()
-        self.assertIn(f'UPDATE_ALL_PYZ={current_archive_path}', script)
-        self.assertNotIn('UPDATE_ALL_PYZ=/media/fat/Scripts/.config/update_all/update_all.pyz', script)
-        _remove(script_path, current_archive_path, log_path)
-
-    def test_write_update_all_relaunch_script___forwards_inherited_environment_without_command_or_stale_result(self):
-        script_path = '/tmp/update_all_test_relaunch_script'
-        log_path = '/tmp/update_all_test_chipid.log'
-
-        inherited_environment = {
-            'LOCATION_STR': '/media/fat',
-            'CURL_SSL': '--insecure',
-            'SSL_CERT_FILE': '/media/fat/Scripts/.config/downloader/cacert.pem',
-            'MIRROR_ID': 'example',
-            'HTTP_PROXY': 'http://proxy.example:8080',
-            'VALUE_WITH_SPACE': 'hello world',
-            'COMMAND': 'STANDARD',
-            'UPDATE_ALL_CHIP_ID_RESULT': 'stale',
-            'PWD': '/tmp',
-            'BAD-NAME': 'bad',
-            'BASH_FUNC_bad%%': '() { bad; }',
-        }
-
-        with patch.dict(chip_id_linker.os.environ, inherited_environment, clear=True):
-            chip_id_linker._write_update_all_relaunch_script(
-                _linker(log_path),
-                script_path,
-                '/media/fat/Scripts',
-            )
-
-        with open(script_path) as result_file:
-            script = result_file.read()
-        self.assertIn('export LOCATION_STR=/media/fat', script)
-        self.assertIn('export CURL_SSL=--insecure', script)
-        self.assertIn('export SSL_CERT_FILE=/media/fat/Scripts/.config/downloader/cacert.pem', script)
-        self.assertIn('export MIRROR_ID=example', script)
-        self.assertIn('export HTTP_PROXY=http://proxy.example:8080', script)
-        self.assertIn("export VALUE_WITH_SPACE='hello world'", script)
-        self.assertNotIn('COMMAND=', script)
-        self.assertNotIn('UPDATE_ALL_CHIP_ID_RESULT', script)
-        self.assertNotIn('export PWD=', script)
-        self.assertNotIn('BAD-NAME', script)
-        self.assertNotIn('BASH_FUNC_bad', script)
-        _remove(script_path, log_path)
-
-    def test_clear_visible_script_processes___terminates_stale_script_process_before_relaunch(self):
-        active_process = [(123, '123 root S /bin/bash /tmp/script')]
-
-        with patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_DRAIN_SECONDS', 0), \
-                patch('update_all.chip_id_linker._visible_script_processes', side_effect=[active_process, active_process, []]), \
-                patch('update_all.chip_id_linker.os.kill') as os_kill:
-            result = chip_id_linker._clear_visible_script_processes(_linker())
+        result = chip_id_linker._relaunch_update_all_from_scripts_menu(
+            self.linker, self.update_all_dir, restore_menu_after_relaunch=True,
+            require_script_start_confirmation=True, chip_id_result='0123456789abcdef',
+        )
 
         self.assertIsNone(result)
-        os_kill.assert_called_once_with(123, signal.SIGTERM)
+        self.assertIn(('remove', marker), self.system.events)
+        self.assertEqual('456', self.system.read_text(marker))
+        script = self.system.read_text(chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH)
+        self.assertIn('mark_update_all_relaunch_started()', script)
+        self.assertIn(f'> {marker}', script)
+        self.assertIn('started marker written', script)
+        self.assertTrue(any('marker found at' in line for line in self.linker.logger.debug_lines))
 
-    def test_open_script_console___from_menu_core___uses_zaparoo_f9_handoff_before_target_tty(self):
-        with patch('update_all.chip_id_linker._create_uinput_keyboard', return_value=123) as create_keyboard, \
-                patch('update_all.chip_id_linker._destroy_uinput_keyboard') as destroy_keyboard, \
-                patch('update_all.chip_id_linker._switch_to_open_console_tty') as switch_open_tty, \
-                patch('update_all.chip_id_linker._active_core_name', return_value='MENU'), \
-                patch('update_all.chip_id_linker._active_tty', return_value='tty1'), \
-                patch('update_all.chip_id_linker._wait_for_framebuffer_ready') as wait_fb, \
-                patch('update_all.chip_id_linker._is_tty_console_ready', return_value=True) as is_tty_ready, \
-                patch('update_all.chip_id_linker._press_f9_for_console') as press_f9, \
-                patch('update_all.chip_id_linker.time.sleep') as sleep:
-            chip_id_linker._open_script_console(_linker())
+    def test_relaunch_update_all_from_scripts_menu___when_script_does_not_start___terminates_agetty_and_returns_failure(self):
+        self.system.relaunch_start_delay = None
 
-        create_keyboard.assert_called_once_with(ANY)
-        press_f9.assert_called_once_with(123, ANY)
-        wait_fb.assert_called_once()
-        self.assertEqual(2, switch_open_tty.call_count)
-        is_tty_ready.assert_called_once_with('3', ANY)
-        destroy_keyboard.assert_called_once_with(123, ANY)
-        sleep.assert_called_once_with(0.05)
+        result = chip_id_linker._relaunch_update_all_from_scripts_menu(
+            self.linker, self.update_all_dir, require_script_start_confirmation=True, chip_id_result='0123456789abcdef',
+        )
 
-    def test_open_script_console___presses_f9_until_console_is_ready(self):
-        with patch('update_all.chip_id_linker._create_uinput_keyboard', return_value=123), \
-                patch('update_all.chip_id_linker._destroy_uinput_keyboard'), \
-                patch('update_all.chip_id_linker._switch_to_open_console_tty'), \
-                patch('update_all.chip_id_linker._active_core_name', return_value='MENU'), \
-                patch('update_all.chip_id_linker._active_tty', side_effect=['tty2', 'tty1']), \
-                patch('update_all.chip_id_linker._wait_for_framebuffer_ready'), \
-                patch('update_all.chip_id_linker._is_tty_console_ready', return_value=True), \
-                patch('update_all.chip_id_linker._press_f9_for_console') as press_f9, \
-                patch('update_all.chip_id_linker.time.sleep'):
-            chip_id_linker._open_script_console(_linker())
+        self.assertEqual('FAILURE_RELAUNCH_SCRIPT_START_TIMEOUT', result)
+        self.assertTrue(self.system.relaunch_processes[0].terminated)
+        self.assertFalse(self.system.relaunch_processes[0].killed)
 
-        self.assertEqual(2, press_f9.call_count)
-        press_f9.assert_has_calls([
-            call(123, ANY),
-            call(123, ANY),
-        ])
+    def test_wait_for_relaunch_script_start___returns_none_when_marker_appears(self):
+        marker = str(self.linker.root / 'new-marker')
+        process = ChipIdProcessTester()
+        self.system.schedule(0.05, lambda: Path(marker).write_text('started'))
 
-    def test_relaunch_update_all_from_scripts_menu___hands_off_the_result_before_opening_the_console(self):
-        script_path = '/tmp/update_all_test_relaunch_script'
-        handoff_path = '/tmp/update_all_test_chip_id_result'
-        log_path = '/tmp/update_all_test_chipid.log'
-        handoff_seen_by_console = []
+        result = chip_id_linker._wait_for_relaunch_script_start(process, marker, self.linker)
 
-        def open_script_console(_linker_arg):
-            with open(handoff_path) as handoff_file:
-                handoff_seen_by_console.append(handoff_file.read())
-            raise TimeoutError('timeout waiting for script console on tty3; current tty is tty3')
+        self.assertIsNone(result)
+        self.assertEqual([0.05], self.system.sleeps)
 
-        with patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH', script_path), \
-                patch('update_all.chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH', handoff_path), \
-                patch('update_all.chip_id_linker._clear_visible_script_processes', return_value=None), \
-                patch('update_all.chip_id_linker.CHIP_ID_RELAUNCH_AFTER_SCRIPT_CLEAR_SETTLE_SECONDS', 0), \
-                patch('update_all.chip_id_linker._reset_script_tty'), \
-                patch('update_all.chip_id_linker._open_script_console', side_effect=open_script_console), \
-                patch('update_all.chip_id_linker.subprocess.Popen') as popen:
-            result = chip_id_linker._relaunch_update_all_from_scripts_menu(
-                _linker(log_path),
-                '/media/fat/Scripts',
-                restore_menu_after_relaunch=True,
-                require_script_start_confirmation=True,
-                chip_id_result='FAILURE_MEM_SIGBUS',
-            )
+    def test_relaunch_update_all_from_scripts_menu___when_preparation_fails___releases_partial_lease_once(self):
+        linker = ChipIdLinkerTester(env={KENV_LAUNCH_ORIGIN_ID: 'zaparoo_frontend'})
+        self.addCleanup(linker.close)
+        zaparoo = linker.zaparoo
+        zaparoo.enable()
+        zaparoo.acknowledge_acquire = False
+
+        result = chip_id_linker._relaunch_update_all_from_scripts_menu(linker, self.update_all_dir)
 
         self.assertEqual('FAILURE_RELAUNCH_TIMEOUTERROR', result)
-        self.assertEqual(['FAILURE_MEM_SIGBUS\n'], handoff_seen_by_console)
-        popen.assert_not_called()
-        with open(handoff_path) as handoff_file:
-            self.assertEqual('FAILURE_MEM_SIGBUS\n', handoff_file.read())
-        _remove(script_path, handoff_path, log_path)
+        self.assertIsNone(zaparoo.lease_nonce)
+        self.assertEqual([
+            ('/dev/MiSTer_cmd', 'zaparoo_console acquire nonce-1 7\n'),
+            ('/dev/MiSTer_cmd', 'zaparoo_console release nonce-1\n'),
+        ], linker.console.commands)
+        self.assertEqual([], linker.system.popen_calls)
+
+    def test_relaunch_update_all_from_scripts_menu___when_marker_clear_fails___releases_lease_once(self):
+        linker = ChipIdLinkerTester(env={KENV_LAUNCH_ORIGIN_ID: 'zaparoo_frontend'})
+        self.addCleanup(linker.close)
+        zaparoo = linker.zaparoo
+        zaparoo.enable()
+        linker.system.path(chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_STARTED_PATH).mkdir()
+
+        result = chip_id_linker._relaunch_update_all_from_scripts_menu(linker, self.update_all_dir)
+
+        self.assertEqual('FAILURE_RELAUNCH_MARKER_CLEAR', result)
+        self.assertIsNone(zaparoo.lease_nonce)
+        self.assertEqual([
+            ('/dev/MiSTer_cmd', 'zaparoo_console acquire nonce-1 7\n'),
+            ('/dev/MiSTer_cmd', 'zaparoo_console release nonce-1\n'),
+        ], linker.console.commands)
+        self.assertEqual([], linker.system.popen_calls)
+
+    def test_relaunch_update_all_from_scripts_menu___after_confirmed_start___leaves_lease_with_script(self):
+        linker = ChipIdLinkerTester(env={KENV_LAUNCH_ORIGIN_ID: 'zaparoo_frontend'})
+        self.addCleanup(linker.close)
+        zaparoo = linker.zaparoo
+        zaparoo.enable()
+
+        result = chip_id_linker._relaunch_update_all_from_scripts_menu(linker, self.update_all_dir)
+
+        self.assertIsNone(result)
+        self.assertEqual('nonce-1', zaparoo.lease_nonce)
+        self.assertEqual([('/dev/MiSTer_cmd', 'zaparoo_console acquire nonce-1 7\n')], linker.console.commands)
+        self.assertEqual(1, len(linker.system.popen_calls))
+        self.assertTrue(linker.system.exists(chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_STARTED_PATH))
+        self.assertIn('--zaparoo-console-lease 123:1000:nonce-1',
+                      linker.system.read_text(chip_id_linker.CHIP_ID_RELAUNCH_SCRIPT_PATH))
+
+    def test_wait_for_relaunch_script_start___returns_failure_when_agetty_exits_before_marker(self):
+        process = ChipIdProcessTester(returncode=1)
+
+        result = chip_id_linker._wait_for_relaunch_script_start(process, str(self.linker.root / 'missing'), self.linker)
+
+        self.assertEqual('FAILURE_RELAUNCH_PROCESS_EXIT_1', result)
+        self.assertEqual([], self.system.sleeps)
+
+    def test_wait_for_menu_core_after_restore___unrequested_menu_alias___times_out(self):
+        self.system.rewrite_core_name('Zaparoo Launcher')
+
+        result = chip_id_linker._wait_for_menu_core_after_restore(self.linker, ('MENU',))
+
+        self.assertEqual('FAILURE_RESTORE_MENU_CORE_TIMEOUT_Zaparoo Launcher', result)
+        self.assertGreaterEqual(self.system.monotonic(), chip_id_linker.CHIP_ID_MENU_CORE_READY_TIMEOUT_SECONDS)
+        self.assertEqual([], self.linker.console.discovery_calls)
+
+    def test_wait_for_menu_core_after_restore___waits_for_the_caller_selected_name(self):
+        self.system.rewrite_core_name('MENU')
+        self.system.schedule(0.2, lambda: self.system.rewrite_core_name('Custom Menu'))
+
+        result = chip_id_linker._wait_for_menu_core_after_restore(self.linker, ('Custom Menu',))
+
+        self.assertIsNone(result)
+        self.assertEqual(0.2, self.system.monotonic())
+        self.assertEqual([], self.linker.console.discovery_calls)
+
+    def test_restore_menu_after_chip_id___accepts_supported_firmware_menu_names(self):
+        self.system.menu_restores = False
+        for menu_name in ('MENU', 'Zaparoo Launcher'):
+            with self.subTest(menu_name=menu_name):
+                self.system.rewrite_core_name('LINKER')
+                self.system.schedule(0.2, lambda: self.system.rewrite_core_name(menu_name))
+
+                result = chip_id_linker._restore_menu_after_chip_id(self.linker)
+
+                self.assertIsNone(result)
+                self.assertEqual('load_core menu.rbf', self.system.core_commands[-1])
+                self.assertEqual(menu_name + '\n', self.system.read_text(chip_id_linker.CHIP_ID_MENU_CORE_NAME_PATH))
+                self.assertEqual([], self.linker.console.discovery_calls)
+
+    def test_restore_display_after_update_all_relaunch___presses_f12_and_restores_ttys_without_reloading_menu(self):
+        result = chip_id_linker._restore_display_after_update_all_relaunch(self.linker)
+
+        self.assertIsNone(result)
+        self.assertEqual([
+            ('keyboard_created', '/dev/uinput'), ('key', 88, 1), ('key', 88, 0),
+            ('keyboard_destroyed', '/dev/uinput'), ('reset', '/dev/tty1'), ('reset', '/dev/tty7'),
+        ], self.system.events)
+        self.assertEqual('1\n', self.system.read_text(chip_id_linker.CHIP_ID_CURSOR_BLINK_PATH))
+        self.assertEqual([], self.system.core_commands)
+        self.assertEqual(chip_id_linker.CHIP_ID_RELAUNCH_MENU_SETTLE_SECONDS, self.system.sleeps[-1])
+
+    def test_restore_display_after_update_all_relaunch___when_requested___closes_console_then_reloads_menu(self):
+        result = chip_id_linker._restore_display_after_update_all_relaunch(self.linker, restore_menu_after_relaunch=True)
+
+        self.assertIsNone(result)
+        self.assertEqual(['load_core menu.rbf'], self.system.core_commands)
+        self.assertLess(self.system.events.index(('key', 88, 1)), self.system.events.index(('core_command', 'load_core menu.rbf')))
+
+    def test_restore_display_after_update_all_relaunch___when_menu_restore_fails___still_closes_console(self):
+        self.system.rewrite_core_name('LINKER')
+        self.system.menu_restores = False
+
+        result = chip_id_linker._restore_display_after_update_all_relaunch(self.linker, restore_menu_after_relaunch=True)
+
+        self.assertEqual('FAILURE_RESTORE_MENU_CORE_TIMEOUT_LINKER', result)
+        self.assertIn(('key', 88, 1), self.system.events)
+        self.assertIn(('reset', '/dev/tty1'), self.system.events)
+        self.assertIn(('reset', '/dev/tty7'), self.system.events)
+        self.assertEqual(chip_id_linker.CHIP_ID_MENU_CORE_READY_POLL_INTERVAL_SECONDS, self.system.sleeps[-1])
+
+    def test_restore_display_after_update_all_relaunch___with_lease___resets_terminal_before_release(self):
+        for restore_menu in (False, True):
+            with self.subTest(restore_menu=restore_menu):
+                linker = ChipIdLinkerTester()
+                self.addCleanup(linker.close)
+                linker.zaparoo.enable()
+                lease = linker.zaparoo.detect()
+                lease.acquire('7')
+                linker.system.path(chip_id_linker.CHIP_ID_CURSOR_BLINK_PATH).write_text('0\n')
+
+                result = chip_id_linker._restore_display_after_update_all_relaunch(
+                    linker, restore_menu_after_relaunch=restore_menu, zaparoo_console_lease=lease.restore_token(),
+                )
+
+                self.assertIsNone(result)
+                self.assertIsNone(linker.zaparoo.lease_nonce)
+                self.assertEqual([
+                    ('/dev/MiSTer_cmd', 'zaparoo_console acquire nonce-1 7\n'),
+                    ('/dev/MiSTer_cmd', 'zaparoo_console release nonce-1\n'),
+                ], linker.console.commands)
+                expected_events = [('reset', '/dev/tty7')]
+                if restore_menu:
+                    expected_events.append(('core_command', 'load_core menu.rbf'))
+                self.assertEqual(expected_events, linker.system.events)
+                self.assertEqual('1\n', linker.system.read_text(chip_id_linker.CHIP_ID_CURSOR_BLINK_PATH))
+                logs = linker.logger.debug_lines
+                release_index = logs.index('Zaparoo console request: release nonce-1')
+                self.assertLess(logs.index('_reset_script_tty: terminal reset sequence written to /dev/tty7'), release_index)
+                self.assertLess(logs.index(f'_restore_cursor_blink: wrote {chip_id_linker.CHIP_ID_CURSOR_BLINK_PATH}'), release_index)
+                if restore_menu:
+                    self.assertLess(release_index, logs.index('_load_core: writing command: load_core menu.rbf'))
+                self.assertEqual(chip_id_linker.CHIP_ID_RELAUNCH_MENU_SETTLE_SECONDS, linker.system.sleeps[-1])
+
+    def test_restore_display_after_update_all_relaunch___with_lease___preserves_failure_precedence(self):
+        for release_acknowledged, restore_menu, menu_restores, expected in (
+            (False, False, True, 'FAILURE_RESTORE_ZAPAROO_CONSOLE'),
+            (False, True, True, 'FAILURE_RESTORE_ZAPAROO_CONSOLE'),
+            (False, True, False, 'FAILURE_RESTORE_MENU_CORE_TIMEOUT_LINKER'),
+            (True, True, False, 'FAILURE_RESTORE_MENU_CORE_TIMEOUT_LINKER'),
+        ):
+            with self.subTest(release_acknowledged=release_acknowledged, restore_menu=restore_menu, menu_restores=menu_restores):
+                linker = ChipIdLinkerTester()
+                self.addCleanup(linker.close)
+                linker.zaparoo.enable()
+                lease = linker.zaparoo.detect()
+                lease.acquire('7')
+                linker.zaparoo.acknowledge_release = release_acknowledged
+                linker.system.rewrite_core_name('LINKER')
+                linker.system.menu_restores = menu_restores
+
+                result = chip_id_linker._restore_display_after_update_all_relaunch(
+                    linker, restore_menu_after_relaunch=restore_menu, zaparoo_console_lease=lease.restore_token(),
+                )
+
+                self.assertEqual(expected, result)
+                self.assertIsNone(linker.zaparoo.lease_nonce)
+                self.assertEqual(['load_core menu.rbf'] if restore_menu else [], linker.system.core_commands)
+                if not release_acknowledged:
+                    self.assertIn('Could not restore Zaparoo console after Update All', linker.logger.debug_lines)
+
+    def test_write_update_all_relaunch_script___when_direct_chipid_relaunch___restores_menu_after_exit(self):
+        self.linker.write_relaunch_script('', restore_menu=True)
+
+        script = self.linker.script_path.read_text()
+
+        self.assertIn(f'--restore-after-relaunch --restore-menu-after-relaunch --log {self.linker.log_path}', script)
+
+    def test_write_update_all_relaunch_script___uses_current_update_all_archive_when_available(self):
+        self.system.archive_path = '/tmp/running_update_all.pyz'
+
+        self.linker.write_relaunch_script('')
+
+        self.assertIn('UPDATE_ALL_PYZ=/tmp/running_update_all.pyz', self.linker.script_path.read_text())
+        self.assertNotIn('UPDATE_ALL_PYZ=/media/fat/Scripts/.config/update_all/update_all.pyz', self.linker.script_path.read_text())
+
+    def test_write_update_all_relaunch_script___forwards_inherited_environment_without_command_or_stale_result(self):
+        self.system.environment = {
+            'LOCATION_STR': '/media/fat', 'CURL_SSL': '--insecure',
+            'SSL_CERT_FILE': '/media/fat/Scripts/.config/downloader/cacert.pem', 'MIRROR_ID': 'example',
+            'HTTP_PROXY': 'http://proxy.example:8080', 'VALUE_WITH_SPACE': 'hello world',
+            'COMMAND': 'STANDARD', 'UPDATE_ALL_CHIP_ID_RESULT': 'stale', 'PWD': '/tmp',
+            'BAD-NAME': 'bad', 'BASH_FUNC_bad%%': '() { bad; }',
+        }
+
+        self.linker.write_relaunch_script('')
+
+        script = self.linker.script_path.read_text()
+        for text in ('export LOCATION_STR=/media/fat', 'export CURL_SSL=--insecure',
+                     'export SSL_CERT_FILE=/media/fat/Scripts/.config/downloader/cacert.pem', 'export MIRROR_ID=example',
+                     'export HTTP_PROXY=http://proxy.example:8080', "export VALUE_WITH_SPACE='hello world'"):
+            self.assertIn(text, script)
+        for text in ('COMMAND=', 'UPDATE_ALL_CHIP_ID_RESULT', 'export PWD=', 'BAD-NAME', 'BASH_FUNC_bad'):
+            self.assertNotIn(text, script)
+
+    def test_clear_visible_script_processes___terminates_stale_script_process_before_relaunch(self):
+        self.system.visible_processes[123] = '123 root S /bin/bash /tmp/script'
+
+        result = chip_id_linker._clear_visible_script_processes(self.linker)
+
+        self.assertIsNone(result)
+        self.assertEqual([(123, signal.SIGTERM)], self.system.signals)
+        self.assertEqual({}, self.system.visible_processes)
+
+    def test_open_script_console___from_menu_core___uses_zaparoo_f9_handoff_before_target_tty(self):
+        chip_id_linker._open_script_console(self.linker)
+
+        self.assertEqual([
+            ('keyboard_created', '/dev/uinput'), ('chvt', '3'), ('key', 67, 1), ('key', 67, 0),
+            ('chvt', '3'), ('keyboard_destroyed', '/dev/uinput'),
+        ], self.system.events)
+        self.assertEqual('tty3\n', self.system.read_text('/sys/devices/virtual/tty/tty0/active'))
+        self.assertEqual(1, self.system.closed_devices.count('/dev/uinput'))
+
+    def test_open_script_console___presses_f9_until_console_is_ready(self):
+        self.system.f9_console_after = 2
+
+        chip_id_linker._open_script_console(self.linker)
+
+        self.assertEqual(2, self.system.f9_count)
+        self.assertEqual(2, self.system.events.count(('key', 67, 1)))
+        self.assertEqual(2, self.system.events.count(('key', 67, 0)))
+        self.assertEqual('tty3\n', self.system.read_text('/sys/devices/virtual/tty/tty0/active'))
+
+    def test_relaunch_update_all_from_scripts_menu___hands_off_the_result_before_opening_the_console(self):
+        self.system.f9_console_after = None
+
+        result = chip_id_linker._relaunch_update_all_from_scripts_menu(
+            self.linker, self.update_all_dir, restore_menu_after_relaunch=True,
+            require_script_start_confirmation=True, chip_id_result='FAILURE_MEM_SIGBUS',
+        )
+
+        self.assertEqual('FAILURE_RELAUNCH_TIMEOUTERROR', result)
+        self.assertEqual(['FAILURE_MEM_SIGBUS\n'], self.system.handoffs_at_keyboard_open)
+        self.assertEqual([], self.system.popen_calls)
+        self.assertEqual('FAILURE_MEM_SIGBUS\n', self.system.read_text(chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH))
 
     def test_relaunch_update_all_from_scripts_menu___when_the_handoff_cannot_be_written___fails_before_touching_the_console(self):
-        with patch('update_all.chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH', '/nonexistent_update_all_dir/chip_id_result'), \
-                patch('update_all.chip_id_linker._clear_visible_script_processes') as clear_scripts, \
-                patch('update_all.chip_id_linker._open_script_console') as open_script_console, \
-                patch('update_all.chip_id_linker.subprocess.Popen') as popen:
-            result = chip_id_linker._relaunch_update_all_from_scripts_menu(
-                _linker(), '/media/fat/Scripts', chip_id_result='0123456789abcdef'
-            )
+        self.system.open_errors[chip_id_linker.CHIP_ID_RESULT_HANDOFF_PATH] = OSError('unusable directory')
+
+        result = chip_id_linker._relaunch_update_all_from_scripts_menu(
+            self.linker, self.update_all_dir, chip_id_result='0123456789abcdef',
+        )
 
         self.assertEqual('FAILURE_RELAUNCH_HANDOFF_WRITE', result)
-        clear_scripts.assert_not_called()
-        open_script_console.assert_not_called()
-        popen.assert_not_called()
+        self.assertEqual([], self.system.events)
+        self.assertEqual([], self.system.opened_devices)
+        self.assertEqual([], self.system.popen_calls)
 
     def test_write_chip_id_result_handoff___replaces_a_previous_result(self):
-        with tempfile.TemporaryDirectory() as directory:
-            handoff_path = os.path.join(directory, 'update_all_chip_id_result')
+        handoff = str(self.linker.root / 'result')
 
-            self.assertIsNone(chip_id_linker._write_chip_id_result_handoff(handoff_path, 'FAILURE_MEM_SIGBUS', _linker()))
-            self.assertIsNone(chip_id_linker._write_chip_id_result_handoff(handoff_path, '0123456789abcdef', _linker()))
+        first = chip_id_linker._write_chip_id_result_handoff(handoff, 'FAILURE_MEM_SIGBUS', self.linker)
+        second = chip_id_linker._write_chip_id_result_handoff(handoff, '0123456789abcdef', self.linker)
 
-            self.assertEqual(['update_all_chip_id_result'], os.listdir(directory))
-            with open(handoff_path) as handoff_file:
-                self.assertEqual('0123456789abcdef\n', handoff_file.read())
+        self.assertIsNone(first)
+        self.assertIsNone(second)
+        self.assertEqual('0123456789abcdef\n', Path(handoff).read_text())
+        self.assertEqual([Path(handoff)], list(self.linker.root.glob('result*')))
 
     def test_write_chip_id_result_handoff___without_a_result___writes_nothing(self):
-        with tempfile.TemporaryDirectory() as directory:
-            handoff_path = os.path.join(directory, 'update_all_chip_id_result')
+        handoff = str(self.linker.root / 'result')
 
-            self.assertIsNone(chip_id_linker._write_chip_id_result_handoff(handoff_path, '', _linker()))
+        result = chip_id_linker._write_chip_id_result_handoff(handoff, '', self.linker)
 
-            self.assertEqual([], os.listdir(directory))
+        self.assertIsNone(result)
+        self.assertFalse(Path(handoff).exists())
+        self.assertEqual([], list(self.linker.root.glob('result*')))
 
     def test_write_chip_id_result_handoff___when_the_directory_is_unusable___returns_a_failure_code(self):
-        logger = LoggerSpy()
-        handoff_path = '/nonexistent_update_all_dir/update_all_chip_id_result'
+        handoff = str(self.linker.root / 'missing-directory' / 'result')
 
-        result = chip_id_linker._write_chip_id_result_handoff(handoff_path, '0123456789abcdef', _linker(logger=logger))
+        result = chip_id_linker._write_chip_id_result_handoff(handoff, '0123456789abcdef', self.linker)
 
         self.assertEqual('FAILURE_RELAUNCH_HANDOFF_WRITE', result)
-        self.assertTrue(any(line.startswith('_write_chip_id_result_handoff: failed: ') for line in logger.debug_lines))
+        self.assertTrue(any('_write_chip_id_result_handoff: failed:' in line for line in self.linker.logger.debug_lines))
 
     def test_read_chip_id_from_memory_after_core_load___retries_transient_sigbus_until_chip_id_is_ready(self):
-        with patch('update_all.chip_id_linker._read_chip_id_from_memory', side_effect=['FAILURE_MEM_SIGBUS', '0123456789abcdef']) as read_mem, \
-                patch('update_all.chip_id_linker._wait_for_hps_fpga_lw_bridge_ready_after_core_load', return_value=None), \
-                patch('update_all.chip_id_linker._is_firmware_fifo_available', return_value=True), \
-                patch('update_all.chip_id_linker.time.sleep') as sleep:
-            result = chip_id_linker._read_chip_id_from_memory_after_core_load(_linker())
+        self.system.process_exitcodes.append(-signal.SIGBUS)
+
+        result = chip_id_linker._read_chip_id_from_memory_after_core_load(self.linker)
 
         self.assertEqual('0123456789abcdef', result)
-        self.assertEqual(2, read_mem.call_count)
-        sleep.assert_called_once_with(0.1)
+        self.assertEqual(2, len(self.system.isolated_processes))
+        self.assertIn(chip_id_linker.CHIP_ID_HPS_FPGAMGR_BASE, self.system.memory_maps)
+        self.assertIn(('/dev/MiSTer_cmd', os.O_WRONLY | os.O_NONBLOCK), self.system.opened_devices)
+        self.assertIn(0.1, self.system.sleeps)
 
     def test_read_chip_id_from_memory_after_core_load___does_not_retry_bad_magic_after_bridge_safe_gate(self):
-        with patch('update_all.chip_id_linker._read_chip_id_from_memory', return_value='FAILURE_BAD_MAGIC_00000000') as read_mem:
-            result = chip_id_linker._read_chip_id_from_memory_after_core_load(_linker())
+        self.system.set_chip_id_memory(magic=0)
+
+        result = chip_id_linker._read_chip_id_from_memory_after_core_load(self.linker)
 
         self.assertEqual('FAILURE_BAD_MAGIC_00000000', result)
-        read_mem.assert_called_once()
+        self.assertEqual(1, len(self.system.isolated_processes))
+        self.assertNotIn(chip_id_linker.CHIP_ID_HPS_FPGAMGR_BASE, self.system.memory_maps)
 
     def test_wait_for_firmware_core_restart_after_load___returns_none_when_core_name_marker_is_rewritten(self):
-        with patch('update_all.chip_id_linker._file_mtime_ns', side_effect=[100, 200]), \
-                patch('update_all.chip_id_linker.time.sleep') as sleep:
-            result = chip_id_linker._wait_for_firmware_core_restart_after_load(100, _linker())
+        previous = self.system.stat(chip_id_linker.CHIP_ID_MENU_CORE_NAME_PATH).st_mtime_ns
+        self.system.schedule(0.05, lambda: self.system.rewrite_core_name('LINKER'))
+
+        result = chip_id_linker._wait_for_firmware_core_restart_after_load(previous, self.linker)
 
         self.assertIsNone(result)
-        sleep.assert_called_once_with(0.05)
+        self.assertEqual([0.05], self.system.sleeps)
 
     def test_wait_for_firmware_core_restart_after_load___returns_failure_when_marker_does_not_change(self):
-        with patch('update_all.chip_id_linker.CHIP_ID_FIRMWARE_CORE_RESTART_TIMEOUT_SECONDS', 0), \
-                patch('update_all.chip_id_linker._file_mtime_ns', return_value=100), \
-                patch('update_all.chip_id_linker.time.sleep') as sleep:
-            result = chip_id_linker._wait_for_firmware_core_restart_after_load(100, _linker())
+        previous = self.system.stat(chip_id_linker.CHIP_ID_MENU_CORE_NAME_PATH).st_mtime_ns
+
+        result = chip_id_linker._wait_for_firmware_core_restart_after_load(previous, self.linker)
 
         self.assertEqual('FAILURE_FIRMWARE_CORE_RESTART_TIMEOUT', result)
-        sleep.assert_not_called()
+        self.assertEqual(chip_id_linker.CHIP_ID_FIRMWARE_CORE_RESTART_TIMEOUT_SECONDS, self.system.monotonic())
+        self.assertEqual(previous, self.system.stat(chip_id_linker.CHIP_ID_MENU_CORE_NAME_PATH).st_mtime_ns)
 
     def test_wait_for_hps_fpga_lw_bridge_ready_after_core_load___waits_for_stable_safe_status(self):
-        ready_status = chip_id_linker.HpsFpgaStatus(fpga_mode=4, init_done=True, bridge_reset=0)
-
-        with patch('update_all.chip_id_linker.CHIP_ID_HPS_FPGA_READY_STABLE_SECONDS', 0), \
-                patch('update_all.chip_id_linker._read_hps_fpga_status', side_effect=[ready_status, ready_status]), \
-                patch('update_all.chip_id_linker.time.sleep') as sleep:
-            result = chip_id_linker._wait_for_hps_fpga_lw_bridge_ready_after_core_load(_linker())
+        result = chip_id_linker._wait_for_hps_fpga_lw_bridge_ready_after_core_load(self.linker)
 
         self.assertIsNone(result)
-        sleep.assert_called_once_with(0.05)
+        self.assertGreaterEqual(self.system.monotonic(), chip_id_linker.CHIP_ID_HPS_FPGA_READY_STABLE_SECONDS)
+        self.assertGreaterEqual(self.system.memory_maps.count(chip_id_linker.CHIP_ID_HPS_FPGAMGR_BASE), 2)
+        self.assertNotIn(chip_id_linker.CHIP_ID_BASE, self.system.memory_maps)
 
     def test_wait_for_hps_fpga_lw_bridge_ready_after_core_load___returns_failure_without_touching_lw_bridge_when_status_read_fails(self):
-        with patch('update_all.chip_id_linker._read_hps_fpga_status', side_effect=OSError('boom')):
-            result = chip_id_linker._wait_for_hps_fpga_lw_bridge_ready_after_core_load(_linker())
+        self.system.map_errors[chip_id_linker.CHIP_ID_HPS_FPGAMGR_BASE] = OSError('unreadable FPGA status')
+
+        result = chip_id_linker._wait_for_hps_fpga_lw_bridge_ready_after_core_load(self.linker)
 
         self.assertEqual('FAILURE_HPS_FPGA_STATUS_READ', result)
+        self.assertNotIn(chip_id_linker.CHIP_ID_BASE, self.system.memory_maps)
+        self.assertEqual(['/dev/mem'], self.system.closed_devices)
 
     def test_read_chip_id_from_registers___with_valid_registers___returns_chip_id(self):
-        result = chip_id_linker._read_chip_id_from_registers(_chip_id_memory(id_hi=0x01234567, id_lo=0x89abcdef), 0, _linker())
+        memory = self.system.set_chip_id_memory(id_hi=0x01234567, id_lo=0x89abcdef)
+
+        result = chip_id_linker._read_chip_id_from_registers(memory, 0, self.linker)
 
         self.assertEqual('0123456789abcdef', result)
 
     def test_read_chip_id_from_registers___with_unsupported_version___returns_error_code(self):
-        result = chip_id_linker._read_chip_id_from_registers(_chip_id_memory(version=0x00020000), 0, _linker())
+        memory = self.system.set_chip_id_memory(version=0x00020000)
+
+        result = chip_id_linker._read_chip_id_from_registers(memory, 0, self.linker)
 
         self.assertEqual('FAILURE_UNSUPPORTED_VERSION_00020000', result)
 
     def test_read_chip_id_from_registers___with_xor_mismatch___returns_error_code(self):
-        result = chip_id_linker._read_chip_id_from_registers(_chip_id_memory(id_xor=0), 0, _linker())
+        memory = self.system.set_chip_id_memory(id_xor=0)
+
+        result = chip_id_linker._read_chip_id_from_registers(memory, 0, self.linker)
 
         self.assertEqual('FAILURE_ID_XOR_MISMATCH_00000000_cbc0c1cc', result)
 
     def test_write_chip_id_display_control_to_registers___writes_blank_control(self):
-        memory = bytearray(_chip_id_memory())
+        memory = self.system.set_chip_id_memory()
 
         result = chip_id_linker._write_chip_id_display_control_to_registers(
-            memory,
-            0,
-            chip_id_linker.CHIP_ID_DISPLAY_CONTROL_BLANK,
-            _linker(),
+            memory, 0, chip_id_linker.CHIP_ID_DISPLAY_CONTROL_BLANK, self.linker,
         )
 
         self.assertIsNone(result)
-        self.assertEqual(
-            chip_id_linker.CHIP_ID_DISPLAY_CONTROL_BLANK,
-            struct.unpack_from('<I', memory, chip_id_linker.CHIP_ID_REG_DISPLAY_CONTROL)[0],
-        )
+        self.assertEqual(1, struct.unpack_from('<I', memory, chip_id_linker.CHIP_ID_REG_DISPLAY_CONTROL)[0])
 
     def test_write_chip_id_display_control_to_registers___rejects_bad_magic(self):
-        memory = bytearray(_chip_id_memory())
-        struct.pack_into('<I', memory, chip_id_linker.CHIP_ID_REG_MAGIC, 0)
+        memory = self.system.set_chip_id_memory(magic=0)
 
         result = chip_id_linker._write_chip_id_display_control_to_registers(
-            memory,
-            0,
-            chip_id_linker.CHIP_ID_DISPLAY_CONTROL_BLANK,
-            _linker(),
+            memory, 0, chip_id_linker.CHIP_ID_DISPLAY_CONTROL_BLANK, self.linker,
         )
 
         self.assertEqual('FAILURE_DISPLAY_CONTROL_BAD_MAGIC_00000000', result)
         self.assertEqual(0, struct.unpack_from('<I', memory, chip_id_linker.CHIP_ID_REG_DISPLAY_CONTROL)[0])
-
-
-
-def _logger():
-    return _ChipIdLinkerCommandLoggerTester()
-
-
-class _ChipIdLinkerCommandLoggerTester(NoLogger):
-    def __init__(self):
-        self.logfile_calls = []
-
-    def set_logfile(self, logfile_path, append=False, eager=False):
-        self.logfile_calls.append((logfile_path, append, eager))
-
-
-class _ProcessTester:
-    def __init__(self, pid=0, poll_result=None):
-        self.pid = pid
-        self._poll_result = poll_result
-
-    def poll(self):
-        return self._poll_result
-
-
-def _chip_id_memory(id_hi=0x01234567, id_lo=0x89abcdef, version=0x00010000, status=1, id_xor=None) -> bytes:
-    if id_xor is None:
-        id_xor = id_lo ^ id_hi ^ 0x43484944
-
-    memory = bytearray(0x20)
-    struct.pack_into('<I', memory, 0x00, 0x43484944)
-    struct.pack_into('<I', memory, 0x04, version)
-    struct.pack_into('<I', memory, 0x08, status)
-    struct.pack_into('<I', memory, 0x0c, id_lo)
-    struct.pack_into('<I', memory, 0x10, id_hi)
-    struct.pack_into('<I', memory, 0x14, id_xor)
-    return bytes(memory)
-
-
-def _temp_file(content: bytes) -> str:
-    with tempfile.NamedTemporaryFile(delete=False) as file:
-        file.write(content)
-        return file.name
-
-
-def _temp_zipapp() -> str:
-    with tempfile.NamedTemporaryFile(delete=False) as file:
-        path = file.name
-    with zipfile.ZipFile(path, 'w') as archive:
-        archive.writestr('__main__.py', '')
-    return path
-
-
-def _linker(log_path='/tmp/update_all_test_chipid.log', logger=None):
-    return chip_id_linker.ChipIdLinker(logger or NoLogger(), log_path)
-
-
-def _remove(*paths: str) -> None:
-    for path in paths:
-        try:
-            os.remove(path)
-        except FileNotFoundError:
-            pass
