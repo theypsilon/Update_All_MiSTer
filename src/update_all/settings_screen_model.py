@@ -325,6 +325,7 @@ _ZAPAROO_FRONTEND = {
     "db": "ZaparooProject/Zaparoo_MiSTer",
     "variable": "zaparoo_frontend_active",
     "main": "zaparoo/MiSTer_Zaparoo",
+    "fork_owner": "Zaparoo",
     # The Zaparoo DB also carries Zaparoo Core (the NFC launcher), so it is managed
     # from Tools & Scripts: the frontend needs it on but never switches it off.
     "db_follows_frontend": False,
@@ -336,6 +337,7 @@ _DEGAUSS_FRONTEND = {
     "db": "degauss",
     "variable": "degauss_frontend_active",
     "main": "degauss/MiSTer_Degauss",
+    "fork_owner": "Degauss",
     # Degauss is only a frontend, so its DB goes on and off with it.
     "db_follows_frontend": True,
     "clear_lastcore_on_disable": False,
@@ -352,8 +354,8 @@ def _try_toggle_zaparoo_frontend(): return [
             {
                 "type": "condition",
                 "variable": _ZAPAROO_FRONTEND["db"],
-                "true": _activate_frontend_effects(_ZAPAROO_FRONTEND, then=_offer_artwork_dbs(_ZAPAROO_FRONTEND["name"], [])),
-                "false": [_zaparoo_frontend_requires_zaparoo_core_message()],
+                "true": [_confirm_frontend_activation(_ZAPAROO_FRONTEND, then=_activate_frontend_from_dialog(_ZAPAROO_FRONTEND))],
+                "false": [_confirm_frontend_activation(_ZAPAROO_FRONTEND, then=[_confirm_zaparoo_core_installation()])],
             },
         ],
     },
@@ -365,9 +367,51 @@ def _try_toggle_degauss_frontend(): return [
         "type": "condition",
         "variable": _DEGAUSS_FRONTEND["variable"],
         "true": _deactivate_frontend_effects(_DEGAUSS_FRONTEND, then=_calculate_stock_mister_ui_active_effects()),
-        "false": _activate_frontend_effects(_DEGAUSS_FRONTEND, then=_offer_artwork_dbs(_DEGAUSS_FRONTEND["name"], [])),
+        "false": [_confirm_frontend_activation(_DEGAUSS_FRONTEND, then=_activate_frontend_from_dialog(_DEGAUSS_FRONTEND))],
     },
 ]
+
+
+def _confirm_frontend_activation(frontend, then): return {
+    # Only turning a frontend On asks: it swaps the Main that MiSTer runs, while Off restores the official one.
+    "ui": "confirm",
+    "header": "WARNING",
+    "alert_level": "red",
+    "preselected_action": "No",
+    "text": [
+        f"Your MiSTer firmware will be replaced by a fork managed by {frontend['fork_owner']}.",
+        "Switching back to Stock MiSTer UI restores the official firmware.",
+        " ",
+        f"Saving sets main={frontend['main']} in MiSTer.ini.",
+    ],
+    "actions": [
+        {"title": "Yes", "type": "fixed", "fixed": then},
+        {"title": "No", "type": "fixed", "fixed": _navigate_back_effects()},
+    ],
+}
+
+
+def _confirm_zaparoo_core_installation(): return {
+    "ui": "confirm",
+    "header": "Install Zaparoo Core?",
+    "preselected_action": "Yes",
+    "text": [
+        "Zaparoo Frontend requires Zaparoo Core, it will be installed too.",
+        " ",
+        "Maintainer: wizzo",
+    ],
+    "actions": [
+        {"title": "Yes", "type": "fixed", "fixed": [
+            {"type": "set_variable", "target": _ZAPAROO_FRONTEND["db"], "value": "true"},
+            *_activate_frontend_from_dialog(_ZAPAROO_FRONTEND),
+        ]},
+        {"title": "No", "type": "fixed", "fixed": _navigate_back_effects()},
+    ],
+}
+
+
+def _activate_frontend_from_dialog(frontend):
+    return _activate_frontend_effects(frontend, then=_offer_artwork_dbs(frontend["name"], _navigate_back_effects()))
 
 
 def _try_toggle_zaparoo_database(): return [
@@ -389,23 +433,6 @@ def _try_toggle_zaparoo_database(): return [
         "false": [{"type": "set_variable", "target": _ZAPAROO_FRONTEND["db"], "value": "true"}],
     },
 ]
-
-
-def _zaparoo_frontend_requires_zaparoo_core_message(): return {
-    "ui": "message",
-    "header": "Zaparoo Frontend",
-    "text": [
-        "Zaparoo Frontend requires Zaparoo Core,",
-        "it will be installed too.",
-    ],
-    "effects": [
-        {"type": "set_variable", "target": _ZAPAROO_FRONTEND["db"], "value": "true"},
-        *_activate_frontend_effects(
-            _ZAPAROO_FRONTEND,
-            then=_offer_artwork_dbs(_ZAPAROO_FRONTEND["name"], _navigate_back_effects()),
-        ),
-    ],
-}
 
 
 def _frontend_add_effect(frontend): return {

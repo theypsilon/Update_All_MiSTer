@@ -1996,30 +1996,31 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('true', app.ui.get_value('stock_mister_ui_active'))
         self.assertEqual([], app.mister_ini_effects)
 
-    def test_zaparoo_frontend_entry___when_off_with_zaparoo_installed_and_all_artwork_selected___turns_on_without_prompting(self):
-        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='false')
+    def test_zaparoo_frontend_entry___when_off_with_zaparoo_installed_and_all_artwork_selected___turns_on_after_the_firmware_warning(self):
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='false', confirm_action_title='Yes')
 
-        self.assertIsNone(app.last_confirm)
+        self.assertEqual(1, len(app.confirms))
+        self._assert_firmware_warning(app.confirms[0], 'Zaparoo', 'zaparoo/MiSTer_Zaparoo')
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
         self.assertEqual('false', app.ui.get_value('stock_mister_ui_active'))
         self.assertEqual([zaparoo_frontend_add_effect()], app.mister_ini_effects)
 
     def test_zaparoo_frontend_entry___when_turned_on_without_all_artwork_selected___offers_artwork_selection(self):
-        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='false', artwork_all='false')
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='false', artwork_all='false', confirm_action_title='Yes')
 
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
         self.assertEqual([zaparoo_frontend_add_effect()], app.mister_ini_effects)
-        self.assertEqual(1, len(app.confirms))
-        self._assert_artwork_offer(app.confirms[0], 'Zaparoo Frontend')
+        self.assertEqual(2, len(app.confirms))
+        self._assert_artwork_offer(app.confirms[1], 'Zaparoo Frontend')
 
-    def test_zaparoo_frontend_entry___when_zaparoo_core_gets_installed_without_all_artwork_selected___offers_artwork_selection_after_the_message(self):
-        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='false', zaparoo='false', artwork_all='false')
+    def test_zaparoo_frontend_entry___when_zaparoo_core_gets_installed_without_all_artwork_selected___offers_artwork_selection_after_both_confirmations(self):
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='false', zaparoo='false', artwork_all='false', confirm_action_title=['Yes', 'Yes'])
 
-        self.assertEqual(1, len(app.messages))
+        self.assertEqual([], app.messages)
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
-        self.assertEqual(1, len(app.confirms))
-        self._assert_artwork_offer(app.confirms[0], 'Zaparoo Frontend')
+        self.assertEqual(3, len(app.confirms))
+        self._assert_artwork_offer(app.confirms[2], 'Zaparoo Frontend')
 
     def test_zaparoo_frontend_entry___when_turned_off___does_not_offer_artwork_selection(self):
         app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='true', artwork_all='false')
@@ -2027,16 +2028,13 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('false', app.ui.get_value('zaparoo_frontend_active'))
         self.assertEqual([], app.confirms)
 
-    def test_zaparoo_frontend_entry___when_off_without_zaparoo___tells_zaparoo_core_gets_installed_and_turns_on(self):
-        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='false', zaparoo='false')
+    def test_zaparoo_frontend_entry___when_off_without_zaparoo___confirms_installing_zaparoo_core_after_the_firmware_warning_and_turns_on(self):
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='false', zaparoo='false', confirm_action_title=['Yes', 'Yes'])
 
-        self.assertEqual([], app.confirms)
-        self.assertEqual(1, len(app.messages))
-        self.assertEqual('Zaparoo Frontend', app.messages[0]['header'])
-        self.assertEqual([
-            'Zaparoo Frontend requires Zaparoo Core,',
-            'it will be installed too.',
-        ], app.messages[0]['text'])
+        self.assertEqual([], app.messages)
+        self.assertEqual(2, len(app.confirms))
+        self._assert_firmware_warning(app.confirms[0], 'Zaparoo', 'zaparoo/MiSTer_Zaparoo')
+        self._assert_zaparoo_core_confirmation(app.confirms[1])
         self.assertEqual('true', app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
         self.assertEqual('false', app.ui.get_value('stock_mister_ui_active'))
@@ -2051,29 +2049,30 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([zaparoo_frontend_del_effect()], app.mister_ini_effects)
 
     def test_zaparoo_frontend_entry___when_degauss_is_on___switches_degauss_off(self):
-        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='false', degauss='true', degauss_db='true')
+        app = self._execute_frontend_action('# Zaparoo Frontend', zaparoo_db='true', zaparoo='false', degauss='true', degauss_db='true', confirm_action_title='Yes')
 
         self.assertEqual('true', app.ui.get_value('zaparoo_frontend_active'))
         self.assertEqual('false', app.ui.get_value('degauss_frontend_active'))
         self.assertEqual('false', app.ui.get_value('degauss'))
         self.assertEqual([degauss_frontend_del_effect(), zaparoo_frontend_add_effect()], app.mister_ini_effects)
 
-    def test_degauss_entry___when_off_with_all_artwork_selected___turns_on_and_enables_its_database_without_prompting(self):
-        app = self._execute_frontend_action('# Degauss', degauss='false', degauss_db='false')
+    def test_degauss_entry___when_off_with_all_artwork_selected___turns_on_and_enables_its_database_after_the_firmware_warning(self):
+        app = self._execute_frontend_action('# Degauss', degauss='false', degauss_db='false', confirm_action_title='Yes')
 
-        self.assertIsNone(app.last_confirm)
+        self.assertEqual(1, len(app.confirms))
+        self._assert_firmware_warning(app.confirms[0], 'Degauss', 'degauss/MiSTer_Degauss')
         self.assertEqual('true', app.ui.get_value('degauss_frontend_active'))
         self.assertEqual('true', app.ui.get_value('degauss'))
         self.assertEqual('false', app.ui.get_value('stock_mister_ui_active'))
         self.assertEqual([degauss_frontend_add_effect()], app.mister_ini_effects)
 
     def test_degauss_entry___when_turned_on_without_all_artwork_selected___offers_artwork_selection(self):
-        app = self._execute_frontend_action('# Degauss', degauss='false', degauss_db='false', artwork_all='false')
+        app = self._execute_frontend_action('# Degauss', degauss='false', degauss_db='false', artwork_all='false', confirm_action_title='Yes')
 
         self.assertEqual('true', app.ui.get_value('degauss_frontend_active'))
         self.assertEqual([degauss_frontend_add_effect()], app.mister_ini_effects)
-        self.assertEqual(1, len(app.confirms))
-        self._assert_artwork_offer(app.confirms[0], 'Degauss')
+        self.assertEqual(2, len(app.confirms))
+        self._assert_artwork_offer(app.confirms[1], 'Degauss')
 
     def test_degauss_entry___when_turned_off___does_not_offer_artwork_selection(self):
         app = self._execute_frontend_action('# Degauss', degauss='true', degauss_db='true', artwork_all='false')
@@ -2090,7 +2089,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual([degauss_frontend_del_effect()], app.mister_ini_effects)
 
     def test_degauss_entry___when_zaparoo_frontend_is_on___switches_it_off_but_keeps_zaparoo_installed(self):
-        app = self._execute_frontend_action('# Degauss', degauss='false', degauss_db='false', zaparoo_db='true', zaparoo='true')
+        app = self._execute_frontend_action('# Degauss', degauss='false', degauss_db='false', zaparoo_db='true', zaparoo='true', confirm_action_title='Yes')
 
         self.assertEqual('true', app.ui.get_value('degauss_frontend_active'))
         self.assertEqual('true', app.ui.get_value('degauss'))
@@ -2109,14 +2108,37 @@ class TestSettingsScreenModel(unittest.TestCase):
             with self.subTest(frontend=title):
                 app = self._execute_frontend_action(
                     title, zaparoo_db='true', zaparoo=zaparoo, degauss_db='true', degauss=degauss,
-                    artwork_all='false', confirm_action_title='No',
+                    artwork_all='false', confirm_action_title=['Yes', 'No'],
                 )
 
                 self.assertEqual('true' if title == '# Zaparoo Frontend' else 'false', app.ui.get_value('zaparoo_frontend_active'))
                 self.assertEqual('true' if title == '# Degauss' else 'false', app.ui.get_value('degauss_frontend_active'))
                 self.assertEqual('false', app.ui.get_value('stock_mister_ui_active'))
-                self.assertEqual(1, len(app.confirms))
-                self._assert_artwork_offer(app.confirms[0], title.removeprefix('# '))
+                self.assertEqual(2, len(app.confirms))
+                self._assert_artwork_offer(app.confirms[1], title.removeprefix('# '))
+
+    def test_frontend_entries___when_a_confirmation_is_declined___leave_every_frontend_as_it_was(self):
+        core, warning = 'Install Zaparoo Core?', 'WARNING'
+        for title, values, answers, headers in (
+                ('# Zaparoo Frontend', {'zaparoo_db': 'true'}, ['No'], [warning]),
+                ('# Zaparoo Frontend', {'zaparoo_db': 'false'}, ['No'], [warning]),
+                ('# Zaparoo Frontend', {'zaparoo_db': 'false'}, ['Yes', 'No'], [warning, core]),
+                ('# Zaparoo Frontend', {'zaparoo_db': 'true', 'degauss_db': 'true', 'degauss': 'true'}, ['No'], [warning]),
+                ('# Zaparoo Frontend', {'zaparoo_db': 'false', 'degauss_db': 'true', 'degauss': 'true'}, ['Yes', 'No'], [warning, core]),
+                ('# Degauss', {}, ['No'], [warning]),
+                ('# Degauss', {'zaparoo_db': 'true', 'zaparoo': 'true'}, ['No'], [warning]),
+        ):
+            with self.subTest(frontend=title, answers=answers, **values):
+                app = self._execute_frontend_action(title, artwork_all='false', confirm_action_title=answers, **values)
+
+                self.assertEqual(headers, [confirm['header'] for confirm in app.confirms])
+                self.assertEqual([], app.mister_ini_effects)
+                self.assertEqual(values.get('zaparoo', 'false'), app.ui.get_value('zaparoo_frontend_active'))
+                self.assertEqual(values.get('degauss', 'false'), app.ui.get_value('degauss_frontend_active'))
+                self.assertEqual(values.get('zaparoo_db', 'false'), app.ui.get_value('ZaparooProject/Zaparoo_MiSTer'))
+                self.assertEqual(values.get('degauss_db', 'false'), app.ui.get_value('degauss'))
+                self.assertEqual('true' if 'true' not in (values.get('zaparoo'), values.get('degauss')) else 'false',
+                                 app.ui.get_value('stock_mister_ui_active'))
 
     def _assert_frontend_uninstall(self, menu, title, db_id, del_effect):
         action = self._entry(menu, title)['actions']['uninstall']
@@ -2177,6 +2199,29 @@ class TestSettingsScreenModel(unittest.TestCase):
             'stock_mister_ui_active': 'false' if 'true' in (zaparoo, degauss) else 'true',
             'chipster6502_artwork_dbs_general_selector': artwork_all,
         }, confirm_action_title, entrypoint='frontends_menu', initial_history=['main_menu_login'])
+
+    def _assert_firmware_warning(self, prompt, fork_owner, main):
+        self.assertEqual('WARNING', prompt['header'])
+        self.assertEqual('red', prompt['alert_level'])
+        self.assertEqual('No', prompt['preselected_action'])
+        self.assertEqual([
+            f'Your MiSTer firmware will be replaced by a fork managed by {fork_owner}.',
+            'Switching back to Stock MiSTer UI restores the official firmware.',
+            ' ',
+            f'Saving sets main={main} in MiSTer.ini.',
+        ], prompt['text'])
+        self.assertEqual(['Yes', 'No'], [action['title'] for action in prompt['actions']])
+
+    def _assert_zaparoo_core_confirmation(self, prompt):
+        self.assertEqual('Install Zaparoo Core?', prompt['header'])
+        self.assertNotIn('alert_level', prompt)
+        self.assertEqual('Yes', prompt['preselected_action'])
+        self.assertEqual([
+            'Zaparoo Frontend requires Zaparoo Core, it will be installed too.',
+            ' ',
+            'Maintainer: wizzo',
+        ], prompt['text'])
+        self.assertEqual(['Yes', 'No'], [action['title'] for action in prompt['actions']])
 
     def _assert_artwork_offer(self, prompt, tool_name):
         self.assertEqual('Enable Game Artwork DBs?', prompt['header'])
@@ -2407,8 +2452,10 @@ def _entry_confirms(entry):
 
     def walk(node):
         if isinstance(node, dict):
-            # The Game Artwork DBs offer credits the artwork maintainer, not the entry's.
-            if node.get('ui') == 'confirm' and node.get('header') != 'Enable Game Artwork DBs?':
+            # The Game Artwork DBs offer credits the artwork maintainer, not the entry's,
+            # and the frontends' firmware warning credits no one.
+            if node.get('ui') == 'confirm' and node.get('header') != 'Enable Game Artwork DBs?' \
+                    and not node.get('text', [''])[0].startswith('Your MiSTer firmware will be replaced by a fork managed by '):
                 confirms.append(node)
             for value in node.values():
                 walk(value)
