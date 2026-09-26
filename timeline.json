@@ -1,0 +1,181 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Psikyo Core",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "NeXT",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-09-26",
+      "timestamps": [
+        1790387963,
+        1790440405
+      ],
+      "title": "Updated TODAY (2026-09-26)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Badlands Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Boogie Wings Core",
+              "type": "standalone"
+            },
+            {
+              "name": "DECOCassette Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Fuuki Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Guardians Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Gulf War II Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Kangaroo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Laserdisc Games Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Pole Position Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Taito Asuka Core",
+              "type": "standalone"
+            },
+            {
+              "name": "atarisys 2 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Badlands MRA: Badlands",
+              "type": "standalone"
+            },
+            {
+              "name": "Fuuki MRAs: Asura Blade - Sword of Dynasty, Asura Buster - Eternal Warriors, Gyakuten!! Puzzle Bancho, Susume! Mile Smile - Go Go! Mile Smile",
+              "type": "standalone"
+            },
+            {
+              "name": "Guardians MRA: Guardians",
+              "type": "standalone"
+            },
+            {
+              "name": "Gulf War II MRA: Gulf War II",
+              "type": "standalone"
+            },
+            {
+              "name": "Pole Position MRA: Pole Position",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega G80V MRAs: Eliminator, Space Fury, Star Trek, Tac-Scan, Zektor",
+              "type": "standalone"
+            },
+            {
+              "name": "Taito Asuka MRAs: Asuka & Asuka, Bonze Adventure, Cadash, Galmedes, Kokontouzai Eto Monogatari, Maze of Flott, U.N. Defense Force - Earth Joker",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "ColecoAdam",
+              "type": "standalone"
+            },
+            {
+              "name": "FM-7",
+              "type": "standalone"
+            },
+            {
+              "name": "MacLC",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Loopy",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1789794175,
+        1789809934,
+        1789868241,
+        1789887630,
+        1789906206,
+        1790029727,
+        1790106551,
+        1790143558,
+        1790179813,
+        1790203386,
+        1790251072,
+        1790267660,
+        1790300381,
+        1790318194,
+        1790368502,
+        1790379175
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1917,
+    "total_file_updates": 1997,
+    "unique_files": 1034
+  }
+}
