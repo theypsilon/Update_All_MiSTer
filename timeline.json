@@ -1,0 +1,204 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Leland Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega VCO Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega XBoard Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Leland MRAs: Ataxx, Brute Force, Danny Sullivan's Indy Heat",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega VCO MRAs: Buck Rogers Planet of Zoom, Turbo",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega XBoard MRAs: After Burner, Racing Hero",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Loopy",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-10-03",
+      "timestamps": [
+        1791015706,
+        1791034406,
+        1791058383
+      ],
+      "title": "Updated TODAY (2026-10-03)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Guardians Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Hyprduel Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Laserdisc Games Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Primal Rage Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Psikyo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Xybots Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Blue Print MRAs: Blue Print, Grasspin, Saturn",
+              "type": "standalone"
+            },
+            {
+              "name": "DECOCassette MRA: Ocean To Ocean",
+              "type": "standalone"
+            },
+            {
+              "name": "Guardians MRA: Guardians",
+              "type": "standalone"
+            },
+            {
+              "name": "Hyprduel MRAs: Hyper Duel, Magical Error wo Sagase",
+              "type": "standalone"
+            },
+            {
+              "name": "Leland MRAs: Ironman Ivan Stewart's Super Off-Road, Ironman Ivan Stewart's Super Off-Road Track-Pak, Pig Out Dine Like a Swine!",
+              "type": "standalone"
+            },
+            {
+              "name": "Pole Position MRA: Pole Position II",
+              "type": "standalone"
+            },
+            {
+              "name": "Primal Rage MRAs: Primal Rage, T-MEK",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix MRA: Qix",
+              "type": "standalone"
+            },
+            {
+              "name": "Xybots MRA: Xybots",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "CoCo3",
+              "type": "standalone"
+            },
+            {
+              "name": "FM-7",
+              "type": "standalone"
+            },
+            {
+              "name": "NeXT",
+              "type": "standalone"
+            },
+            {
+              "name": "SGIIndy",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Intellivision",
+              "type": "standalone"
+            },
+            {
+              "name": "Studio-II",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1790387963,
+        1790440405,
+        1790460829,
+        1790489758,
+        1790528700,
+        1790550582,
+        1790559992,
+        1790614272,
+        1790648346,
+        1790671390,
+        1790712890,
+        1790725696,
+        1790741018,
+        1790785989,
+        1790802115,
+        1790814665,
+        1790836361,
+        1790862890,
+        1790896646,
+        1790930540,
+        1790971258,
+        1790984578
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1935,
+    "total_file_updates": 2033,
+    "unique_files": 1052
+  }
+}
