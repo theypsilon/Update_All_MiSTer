@@ -1863,12 +1863,42 @@ class TestSettingsScreenModel(unittest.TestCase):
         for menu, title in (('jtcores_menu', '# JTCORES Enabled'), ('coin_op_collection_menu', '# Coin-Op')):
             self.assertNotIn('info', self._entry(menu, title)['actions'], f'{menu}: {title}')
 
-    def test_linux_updates_entry___toggles_the_update_linux_variable_and_shows_it_as_on_or_off(self):
+    def test_linux_updates_entry___shows_the_update_linux_variable_as_on_or_off(self):
         entry = self._entry('system_options_menu', '# Linux Updates')
 
         self.assertEqual('{update_linux:onoff}', entry['description'])
-        self.assertEqual([{'type': 'rotate_variable', 'target': 'update_linux'}], entry['actions']['ok'])
         self.assertEqual({'group': 'mister_section', 'default': 'true', 'values': ['true', 'false']}, self.model['items']['system_options_menu']['variables']['update_linux'])
+
+    def _execute_linux_updates_action(self, update_linux, main_updater):
+        return self._execute_tools_action(
+            self._entry('system_options_menu', '# Linux Updates')['actions']['ok'],
+            {'update_linux': update_linux, 'main_updater': main_updater},
+            entrypoint='system_options_menu',
+        )
+
+    def test_linux_updates_entry___when_enabling_with_main_distribution_disabled___explains_that_linux_comes_from_it(self):
+        app = self._execute_linux_updates_action('false', 'false')
+
+        self.assertEqual('true', app.ui.get_value('update_linux'))
+        self.assertEqual('false', app.ui.get_value('main_updater'))
+        self.assertEqual(1, len(app.messages))
+        self.assertEqual('Linux Updates', app.messages[0]['header'])
+        self.assertEqual([
+            'Linux updates come from the Main Distribution, which is disabled.',
+            'Enable the Main Distribution too to get Linux updates.',
+        ], app.messages[0]['text'])
+
+    def test_linux_updates_entry___when_enabling_with_main_distribution_enabled___shows_no_message(self):
+        app = self._execute_linux_updates_action('false', 'true')
+
+        self.assertEqual('true', app.ui.get_value('update_linux'))
+        self.assertEqual([], app.messages)
+
+    def test_linux_updates_entry___when_disabling_with_main_distribution_disabled___shows_no_message(self):
+        app = self._execute_linux_updates_action('true', 'false')
+
+        self.assertEqual('false', app.ui.get_value('update_linux'))
+        self.assertEqual([], app.messages)
 
     def test_database_manager_entry___opens_the_database_manager_section(self):
         entry = self._entry('system_options_menu', '# Database Manager')

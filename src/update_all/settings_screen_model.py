@@ -318,6 +318,33 @@ def _try_toggle_mrext_with_zaparoo_prompt(): return [
 ]
 
 
+def _try_toggle_update_linux_with_main_distribution_notice(): return [
+    {
+        "type": "condition",
+        "variable": "update_linux",
+        "true": [{"type": "rotate_variable", "target": "update_linux"}],
+        "false": [
+            {
+                "type": "condition",
+                "variable": "main_updater",
+                "true": [{"type": "rotate_variable", "target": "update_linux"}],
+                "false": [
+                    {"type": "rotate_variable", "target": "update_linux"},
+                    {
+                        "ui": "message",
+                        "header": "Linux Updates",
+                        "text": [
+                            "Linux updates come from the Main Distribution, which is disabled.",
+                            "Enable the Main Distribution too to get Linux updates.",
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
+]
+
+
 # Frontends replace the stock menu through `main=` in MiSTer.ini, so only one of them
 # can be active at a time: activating one switches the other off.
 _ZAPAROO_FRONTEND = {
@@ -3488,7 +3515,7 @@ def settings_screen_model():
                 {
                     "title": "# Linux Updates",
                     "description": "{update_linux:onoff}",
-                    "actions": {"ok": [{"type": "rotate_variable", "target": "update_linux"}]}
+                    "actions": {"ok": _try_toggle_update_linux_with_main_distribution_notice()}
                 },
                 {
                     "title": "# Countdown Timer",
