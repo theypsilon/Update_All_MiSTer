@@ -22,7 +22,8 @@ from update_all.constants import FILE_MiSTer_ini, FILE_update_all_ini, FILE_upda
     FILE_update_names_txt_ini, ARCADE_ORGANIZER_INI, FILE_update_names_txt_sh, FILE_cifs_mount_sh
 from update_all.databases import db_ids_by_model_variables, DB_ID_DISTRIBUTION_MISTER, DEFAULT_ENCC_FORKS, DB_ID_NAMES_TXT, \
     DB_ID_ARCADE_NAMES_TXT, changed_db_ids, removed_db_ids, all_dbs, ajgowans_manualsdbs, ALL_DB_IDS, DB_ID_MREXT_ALL, \
-    DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER, chipster6502_artworkdbs, chipster6502_artwork_db_with_style
+    DB_ID_MREXT_TAPTO, DB_ID_ZAPAROO_MISTER, chipster6502_artwork_box_dbs, chipster6502_artwork_pack_dbs, \
+    chipster6502_artwork_db_with_style, is_chipster6502_artwork_box_db_id
 from update_all.ini_parser import IniParser
 from update_all.ini_repository import IniRepository, SEPARATE_DB_INI_FILES_BY_FILENAME
 from update_all.file_system import FileSystem
@@ -355,7 +356,7 @@ class TransitionService:
         db_counts = Counter(db.db_id for db in db_defs.all_dbs_list())
         unique_dbs = [db for db in db_defs.all_dbs_list() if db_counts[db.db_id] == 1]
         for db in unique_dbs:
-            if db.db_id.lower().startswith('chipster6502/artworkdb-'):
+            if is_chipster6502_artwork_box_db_id(db.db_id):
                 db = chipster6502_artwork_db_with_style(db, config.artwork_style_for(db.db_id))
             db_id = db.db_id.lower()
             if db_id in downloader_ini:
@@ -500,10 +501,15 @@ class TransitionService:
         if config.skip_downloader:
             return
 
-        if not store.get_chipster6502_artwork_dbs_general_selector():
-            return
+        selected_dbs = []
+        if store.get_chipster6502_artwork_dbs_general_selector():
+            selected_dbs.extend(chipster6502_artwork_box_dbs())
+        if store.get_chipster6502_artwork_screenshots_dbs_general_selector():
+            selected_dbs.extend(chipster6502_artwork_pack_dbs('screenshots'))
+        if store.get_chipster6502_artwork_titles_dbs_general_selector():
+            selected_dbs.extend(chipster6502_artwork_pack_dbs('titles'))
 
-        activated = [db.db_id for db in chipster6502_artworkdbs() if not config.is_database_enabled(db.db_id)]
+        activated = [db.db_id for db in selected_dbs if not config.is_database_enabled(db.db_id)]
         if len(activated) == 0:
             return
 

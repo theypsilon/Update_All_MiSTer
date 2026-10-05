@@ -537,6 +537,79 @@ class TestSettingsScreenSaving(unittest.TestCase):
         self.assertIn(DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI, ui.get_value('needs_save_file_list'))
         self.assertEqual('true', ui.get_value('needs_save'))
 
+    def test_save___with_screenshots_and_titles_toggled_on___writes_their_pack_urls_next_to_the_styled_box_art(self) -> None:
+        sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+        ui.set_value('chipster6502/artworkdb-nes', 'true')
+        ui.set_value('chipster6502/artworkdb-nes_style', 'box3d')
+        ui.set_value('chipster6502/artworkdb-nes-screenshots', 'true')
+        ui.set_value('chipster6502/artworkdb-snes-titles', 'true')
+
+        sut.calculate_needs_save(ui)
+        self.assertIn(f'  - {DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI}', ui.get_value('needs_save_file_list'))
+        sut.save(ui)
+
+        matching = [p for p in fs.files if p.endswith(DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI.lower())]
+        self.assertEqual(1, len(matching), f'Expected one artworkdb ini, got: {matching}')
+        parsed = read_ini_contents(fs.files[matching[0]]['content'])
+        self.assertEqual(
+            {
+                'chipster6502/artworkdb-nes': 'https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/nes_box3d.json.zip',
+                'chipster6502/artworkdb-nes-screenshots': 'https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/nes_snap.json.zip',
+                'chipster6502/artworkdb-snes-titles': 'https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/snes_title.json.zip',
+            },
+            {section: parsed[section]['db_url'] for section in parsed.sections()},
+        )
+        saved_store = json.loads(fs.files[store_json.lower()]['content'])
+        self.assertNotIn('chipster6502/artworkdb-nes-screenshots', saved_store['chipster6502_artwork_db_styles'])
+
+    def test_save___after_select_all_screenshots___stores_the_screenshots_selector_only(self) -> None:
+        sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        sut.select_all_chipster6502_artwork_pack_dbs(ui, {'pack': 'screenshots', 'action': 'toggle'})
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        saved_store = json.loads(fs.files[store_json.lower()]['content'])
+        self.assertEqual(True, saved_store['chipster6502_artwork_screenshots_dbs_general_selector'])
+        self.assertEqual(False, saved_store['chipster6502_artwork_titles_dbs_general_selector'])
+        self.assertEqual(False, saved_store['chipster6502_artwork_dbs_general_selector'])
+        matching = [p for p in fs.files if p.endswith(DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI.lower())]
+        parsed = read_ini_contents(fs.files[matching[0]]['content'])
+        self.assertEqual(39, len(parsed.sections()))
+        self.assertTrue(all(section.endswith('-screenshots') for section in parsed.sections()))
+
+    def test_save___after_select_all_for_every_kind___writes_every_artwork_db_and_stores_each_selector(self) -> None:
+        sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
+
+        sut.select_all_chipster6502_artwork_kinds(ui, {'action': 'toggle'})
+        sut.calculate_needs_save(ui)
+        sut.save(ui)
+
+        saved_store = json.loads(fs.files[store_json.lower()]['content'])
+        self.assertEqual(True, saved_store['chipster6502_artwork_dbs_general_selector'])
+        self.assertEqual(True, saved_store['chipster6502_artwork_screenshots_dbs_general_selector'])
+        self.assertEqual(True, saved_store['chipster6502_artwork_titles_dbs_general_selector'])
+        self.assertNotIn('chipster6502_artwork_kinds_general_selector', saved_store)
+        matching = [p for p in fs.files if p.endswith(DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI.lower())]
+        self.assertEqual(117, len(read_ini_contents(fs.files[matching[0]]['content']).sections()))
+
+    def test_calculate_needs_save___with_active_screenshots_and_a_changed_default_style___only_lists_box_art_changes(self) -> None:
+        artwork_contents = (
+            '[chipster6502/artworkdb-nes-screenshots]\n'
+            'db_url = https://raw.githubusercontent.com/chipster6502/'
+            'artworkdb-nintendo-consoles/db/nes_snap.json.zip\n'
+        )
+        sut, ui, _ = tester(files={
+            downloader_ini: {'content': default_downloader_ini_content()},
+            f'{MEDIA_FAT}/{DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI}': {'content': artwork_contents},
+        })
+        self.assertEqual('true', ui.get_value('chipster6502/artworkdb-nes-screenshots'))
+        ui.set_value('chipster6502_artwork_default_style', 'box3d')
+
+        sut.calculate_needs_save(ui)
+
+        self.assertNotIn(DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI, ui.get_value('needs_save_file_list'))
+
     def test_save___remembers_an_individual_style_for_a_disabled_artwork_database(self) -> None:
         sut, ui, fs = tester(files={downloader_ini: {'content': default_downloader_ini_content()}})
         sut.set_chipster6502_artwork_db_style(ui, {

@@ -20,7 +20,7 @@ from update_all.store_migrator import Migration
 
 
 def migrations() -> list[Migration]:
-    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6, migration_v7, migration_v8, migration_v9, migration_v10, migration_v11, migration_v12, migration_v13, migration_v14, migration_v15]
+    return [migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6, migration_v7, migration_v8, migration_v9, migration_v10, migration_v11, migration_v12, migration_v13, migration_v14, migration_v15, migration_v16]
 
 def migration_v1(local_store) -> None:
     """create arcade_names_txt field"""
@@ -100,3 +100,8 @@ def migration_v14(local_store) -> None:
 def migration_v15(local_store) -> None:
     """create CIFS Scripts transition flag"""
     local_store['introduced_cifs_scripts'] = False
+
+def migration_v16(local_store) -> None:
+    """create artwork screenshots and titles selector state"""
+    local_store['chipster6502_artwork_screenshots_dbs_general_selector'] = False
+    local_store['chipster6502_artwork_titles_dbs_general_selector'] = False

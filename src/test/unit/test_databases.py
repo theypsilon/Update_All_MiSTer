@@ -19,7 +19,8 @@ import unittest
 
 from update_all.config import Config
 from update_all.databases import all_dbs, all_mirrors, ids_sequence, ALL_DB_IDS, AllDBs, AllDBsAndiBr, Database, \
-    MIRROR_ANDI_BR, MIRROR_MYSTICAL_REALM_ORG, chipster6502_artworkdbs, \
+    MIRROR_ANDI_BR, MIRROR_MYSTICAL_REALM_ORG, chipster6502_artworkdbs, chipster6502_artwork_box_dbs, \
+    chipster6502_artwork_pack_dbs, is_chipster6502_artwork_box_db_id, \
     chipster6502_artwork_style_from_db_url, DEFAULT_ENCC_FORKS, DB_ID_DISTRIBUTION_MISTER, \
     COIN_OP_COLLECTION_RELEASES, DEFAULT_COIN_OP_COLLECTION_RELEASES, coin_op_collection_filter_by_releases, \
     coin_op_collection_releases_by_filter
@@ -175,62 +176,59 @@ class TestDatabases(unittest.TestCase):
                     mirrored_db.db_url,
                 )
 
-    def test_chipster6502_artworkdbs___contains_every_published_box2d_database_with_derived_url(self):
-        groups_by_system = {
-            '3do': 'misc',
-            'atari5200': 'atari',
-            'atari7800': 'atari',
-            'amigacd32': 'misc',
-            'arcade': 'arcade',
-            'atari2600': 'atari',
-            'atarilynx': 'atari',
-            'cd-i': 'misc',
-            'coleco': 'misc',
-            'fds': 'nintendo-consoles',
-            'gameboy': 'nintendo-handhelds',
-            'gba': 'nintendo-handhelds',
-            'gbc': 'nintendo-handhelds',
-            'gamegear': 'sega',
-            'genesis': 'sega',
-            'intellivision': 'misc',
-            'jaguar': 'atari',
-            'megacd': 'sega',
-            'n64': 'nintendo-consoles',
-            'neogeo': 'snk',
-            'nes': 'nintendo-consoles',
-            'neogeo-cd': 'snk',
-            'neogeopocket': 'snk',
-            'neogeopocket-color': 'snk',
-            'odyssey2': 'misc',
-            'psx': 'sony',
-            's32x': 'sega',
-            'sg-1000': 'sega',
-            'sms': 'sega',
-            'snes': 'nintendo-consoles',
-            'satellaview': 'nintendo-consoles',
-            'saturn': 'sega',
-            'supergrafx': 'nec',
-            'tgfx16': 'nec',
-            'tgfx16-cd': 'nec',
-            'vectrex': 'misc',
-            'virtualboy': 'nintendo-consoles',
-            'wonderswan': 'misc',
-            'wonderswancolor': 'misc',
-        }
-        artwork_dbs = {db.db_id: db for db in chipster6502_artworkdbs()}
+    def test_chipster6502_artwork_box_dbs___contains_every_published_box2d_database_with_derived_url(self):
+        artwork_dbs = {db.db_id: db for db in chipster6502_artwork_box_dbs()}
 
         self.assertEqual(39, len(artwork_dbs))
         self.assertEqual(
-            {f'chipster6502/artworkdb-{system}' for system in groups_by_system},
+            {f'chipster6502/artworkdb-{system}' for system in _ARTWORK_GROUPS_BY_SYSTEM},
             set(artwork_dbs),
         )
-        for system, group in groups_by_system.items():
+        for system, group in _ARTWORK_GROUPS_BY_SYSTEM.items():
             db = artwork_dbs[f'chipster6502/artworkdb-{system}']
             self.assertEqual(
                 f'https://raw.githubusercontent.com/chipster6502/artworkdb-{group}/db/{system}_box2d.json.zip',
                 db.db_url,
             )
             self.assertTrue(db.title.endswith(' Artwork'))
+
+    def test_chipster6502_artwork_pack_dbs___contain_every_published_screenshots_and_titles_database_with_derived_url(self):
+        for pack, style, title_suffix in (('screenshots', 'snap', ' Screenshots'), ('titles', 'title', ' Title Screens')):
+            with self.subTest(pack=pack):
+                pack_dbs = {db.db_id: db for db in chipster6502_artwork_pack_dbs(pack)}
+
+                self.assertEqual(
+                    {f'chipster6502/artworkdb-{system}-{pack}' for system in _ARTWORK_GROUPS_BY_SYSTEM},
+                    set(pack_dbs),
+                )
+                for system, group in _ARTWORK_GROUPS_BY_SYSTEM.items():
+                    db = pack_dbs[f'chipster6502/artworkdb-{system}-{pack}']
+                    self.assertEqual(
+                        f'https://raw.githubusercontent.com/chipster6502/artworkdb-{group}/db/{system}_{style}.json.zip',
+                        db.db_url,
+                    )
+                    self.assertTrue(db.title.endswith(title_suffix))
+
+    def test_chipster6502_artworkdbs___contains_box_art_screenshots_and_titles(self):
+        self.assertEqual(
+            [
+                *[db.db_id for db in chipster6502_artwork_box_dbs()],
+                *[db.db_id for db in chipster6502_artwork_pack_dbs('screenshots')],
+                *[db.db_id for db in chipster6502_artwork_pack_dbs('titles')],
+            ],
+            [db.db_id for db in chipster6502_artworkdbs()],
+        )
+
+    def test_is_chipster6502_artwork_box_db_id___is_false_for_screenshots_titles_and_other_dbs(self):
+        self.assertTrue(is_chipster6502_artwork_box_db_id('chipster6502/artworkdb-nes'))
+        self.assertTrue(is_chipster6502_artwork_box_db_id('Chipster6502/ArtworkDB-NES'))
+        self.assertFalse(is_chipster6502_artwork_box_db_id('chipster6502/artworkdb-nes-screenshots'))
+        self.assertFalse(is_chipster6502_artwork_box_db_id('chipster6502/artworkdb-nes-titles'))
+        self.assertFalse(is_chipster6502_artwork_box_db_id('chipster6502/MiSTer_monitor_DB'))
+
+    def test_chipster6502_artwork_pack_dbs___with_unknown_pack___raises(self):
+        with self.assertRaises(ValueError):
+            chipster6502_artwork_pack_dbs('box2d')
 
     def test_candidate_databases___uses_each_configured_artwork_style_identifier_in_the_url(self):
         config = Config(artwork_default_style='mixrbv2')
@@ -244,6 +242,20 @@ class TestDatabases(unittest.TestCase):
         self.assertEqual(
             'https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/snes_mixrbv2.json.zip',
             candidates['chipster6502/artworkdb-snes'].db_url,
+        )
+
+    def test_candidate_databases___keeps_screenshots_and_titles_urls_regardless_of_artwork_style(self):
+        config = Config(artwork_default_style='mixrbv2')
+        config.set_artwork_db_style('chipster6502/artworkdb-nes', 'box3d')
+        candidates = {db.db_id: db for _variable, db in candidate_databases(config)}
+
+        self.assertEqual(
+            'https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/nes_snap.json.zip',
+            candidates['chipster6502/artworkdb-nes-screenshots'].db_url,
+        )
+        self.assertEqual(
+            'https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/nes_title.json.zip',
+            candidates['chipster6502/artworkdb-nes-titles'].db_url,
         )
 
     def test_candidate_databases___applies_artwork_style_after_andi_mirror_wrapping(self):
@@ -267,3 +279,46 @@ class TestDatabases(unittest.TestCase):
 
 def candidate_dbs(): return candidate_databases(Config())
 def names_locale_by_db_url(db_url: str) -> tuple[str, str, str]: return all_dbs('').names_locale_by_db_url(db_url)
+
+
+_ARTWORK_GROUPS_BY_SYSTEM = {
+    '3do': 'misc',
+    'atari5200': 'atari',
+    'atari7800': 'atari',
+    'amigacd32': 'misc',
+    'arcade': 'arcade',
+    'atari2600': 'atari',
+    'atarilynx': 'atari',
+    'cd-i': 'misc',
+    'coleco': 'misc',
+    'fds': 'nintendo-consoles',
+    'gameboy': 'nintendo-handhelds',
+    'gba': 'nintendo-handhelds',
+    'gbc': 'nintendo-handhelds',
+    'gamegear': 'sega',
+    'genesis': 'sega',
+    'intellivision': 'misc',
+    'jaguar': 'atari',
+    'megacd': 'sega',
+    'n64': 'nintendo-consoles',
+    'neogeo': 'snk',
+    'nes': 'nintendo-consoles',
+    'neogeo-cd': 'snk',
+    'neogeopocket': 'snk',
+    'neogeopocket-color': 'snk',
+    'odyssey2': 'misc',
+    'psx': 'sony',
+    's32x': 'sega',
+    'sg-1000': 'sega',
+    'sms': 'sega',
+    'snes': 'nintendo-consoles',
+    'satellaview': 'nintendo-consoles',
+    'saturn': 'sega',
+    'supergrafx': 'nec',
+    'tgfx16': 'nec',
+    'tgfx16-cd': 'nec',
+    'vectrex': 'misc',
+    'virtualboy': 'nintendo-consoles',
+    'wonderswan': 'misc',
+    'wonderswancolor': 'misc',
+}

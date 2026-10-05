@@ -25,8 +25,8 @@ class UiContext(abc.ABC):
     def get_value(self, key: str) -> str:
         """Gets value for variable on the given key"""
 
-    def set_value(self, key: str, value: Any) -> None:
-        """Sets value as string for variable on the given key"""
+    def set_value(self, key: str, value: Any) -> bool:
+        """Sets value as string for variable on the given key, returning whether it changed"""
 
     def add_custom_effects(self, effects: Dict[str, Callable[[], None]]):
         """Add effects during initialization"""
@@ -111,8 +111,12 @@ class _UiSystem(UiContext):
     def get_value(self, key: str) -> str:
         return self._values[key]
 
-    def set_value(self, key: str, value: Any) -> None:
+    def set_value(self, key: str, value: Any) -> bool:
+        if key in self._values and self._values[key] == value:
+            return False
+
         self._values[key] = value
+        return True
 
     def execute(self):
         self._values.update({k: v['default'] for k, v in gather_variable_declarations(self._model).items()})
@@ -393,8 +397,7 @@ class _EffectResolver:
                 if cur_index >= len(possible_values):
                     cur_index = 0
 
-                if possible_values[cur_index] != self._ui.get_value(target_variable):
-                    self._ui.set_value(target_variable, possible_values[cur_index])
+                if self._ui.set_value(target_variable, possible_values[cur_index]):
                     result = 'clear_window'
 
             elif effect['type'] == 'compare_bigger':
@@ -406,9 +409,7 @@ class _EffectResolver:
                     outcome = 'left'
                 else:
                     outcome = 'right'
-                target_variable = effect['target']
-                if self._ui.get_value(target_variable) != outcome:
-                    self._ui.set_value(target_variable, outcome)
+                if self._ui.set_value(effect['target'], outcome):
                     result = 'clear_window'
 
             elif effect['type'] == 'set_variable':
@@ -427,8 +428,7 @@ class _EffectResolver:
                         cur_index = index
                         break
 
-                if possible_values[cur_index] != self._ui.get_value(target_variable):
-                    self._ui.set_value(target_variable, possible_values[cur_index])
+                if self._ui.set_value(target_variable, possible_values[cur_index]):
                     result = 'clear_window'
 
             elif effect['type'] in self._additional_effects:

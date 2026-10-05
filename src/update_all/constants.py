@@ -217,6 +217,7 @@ DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI: Final[str] = "downloader_chipster6502_art
 DOWNLOADER_AJGOWANS_MANUALSDB_INI: Final[str] = "downloader_ajgowans_manualsdb.ini"
 CHIPSTER6502_ARTWORK_STYLES: Final[tuple[str, ...]] = ('box2d', 'box3d', 'mixrbv2')
 CHIPSTER6502_ARTWORK_DEFAULT_STYLE: Final[str] = 'box2d'
+CHIPSTER6502_ARTWORK_PACKS: Final[tuple[str, ...]] = ('screenshots', 'titles')
 DOWNLOADER_STORE_STANDARD_PATH: Final[str] = "Scripts/.config/downloader/downloader.json"
 DOWNLOADER_LATEST_ZIP_PATH: Final[str] = "Scripts/.config/downloader/downloader_latest.zip"
 DOWNLOADER_LATEST_BIN_PATH: Final[str] = "Scripts/.config/downloader/downloader_bin"

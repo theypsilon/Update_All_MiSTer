@@ -15,13 +15,51 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import copy
 import unittest
 
+from test.ui_model_test_utils import frozen_model
+from update_all.settings_screen_model import settings_screen_model
 from update_all.ui_model_utilities import gather_variable_declarations, \
-    dynamic_convert_string
+    dynamic_convert_string, gather_effects_by_type
+
+_SETTINGS_SCREEN_GROUPS = (None, 'ao_ini', 'db', 'separate_db', 'ua_ini', 'store', 'manuals', 'artwork', 'artwork_style',
+                           'artwork_screenshots', 'artwork_titles')
 
 
 class TestUiModelsUtilities(unittest.TestCase):
+    def test_frozen_model___fails_fast_on_any_write(self):
+        model = frozen_model({'items': {'menu': {'entries': [{'title': 'a'}]}}})
+
+        with self.assertRaises(TypeError):
+            model['items']['menu']['title'] = 'b'
+        with self.assertRaises(AttributeError):
+            model['items']['menu']['entries'].append({})
+
+    def test_lookups___on_a_frozen_settings_screen_model___match_the_bare_model(self):
+        bare, frozen = settings_screen_model(), frozen_model(settings_screen_model())
+
+        for group in _SETTINGS_SCREEN_GROUPS:
+            self.assertEqual(
+                gather_variable_declarations(bare, group),
+                _thawed(gather_variable_declarations(frozen, group)),
+                group,
+            )
+        self.assertEqual(
+            gather_effects_by_type(bare, 'mister_ini_add'),
+            [_thawed(effect) for effect in gather_effects_by_type(frozen, 'mister_ini_add')],
+        )
+
+    def test_lookups___leave_the_bare_settings_screen_model_untouched(self):
+        model = settings_screen_model()
+        before = copy.deepcopy(model)
+
+        for group in _SETTINGS_SCREEN_GROUPS:
+            gather_variable_declarations(model, group)
+        gather_effects_by_type(model, 'mister_ini_add')
+
+        self.assertEqual(before, model)
+
     def test_gather_default_values(self):
         default_values = {k: dynamic_convert_string(v['default']) for k, v in gather_variable_declarations(test_model()).items()}
         expected = {
@@ -57,3 +95,11 @@ def test_model(): return {
         }
     }
 }
+
+
+def _thawed(node):
+    if isinstance(node, tuple):
+        return [_thawed(value) for value in node]
+    if hasattr(node, 'items'):
+        return {key: _thawed(value) for key, value in node.items()}
+    return node

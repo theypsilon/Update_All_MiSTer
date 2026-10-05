@@ -20,7 +20,7 @@ import unittest
 from test.logger_tester import NoLogger
 from update_all.local_store import LocalStore
 from update_all.migrations import migration_v7, migration_v8, migration_v9, migration_v10, migration_v11, migration_v12, \
-    migration_v13, migration_v14, migration_v15
+    migration_v13, migration_v14, migration_v15, migration_v16
 from update_all.store_migrator import StoreMigrator
 
 
@@ -126,6 +126,14 @@ class TestMigrations(unittest.TestCase):
         migration_v15(local_store)
 
         self.assertEqual(False, local_store['introduced_cifs_scripts'])
+
+    def test_migration_v16___adds_artwork_screenshots_and_titles_selectors(self):
+        local_store = {}
+
+        migration_v16(local_store)
+
+        self.assertEqual(False, local_store['chipster6502_artwork_screenshots_dbs_general_selector'])
+        self.assertEqual(False, local_store['chipster6502_artwork_titles_dbs_general_selector'])
 
     def test_store_migrator___after_running_migrations___marks_store_for_persistence(self):
         props = {'migration_version': 0}

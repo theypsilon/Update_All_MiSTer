@@ -54,6 +54,22 @@ class TestLocalStore(unittest.TestCase):
         self.assertEqual(True, store.get_introduced_cifs_scripts())
         self.assertEqual(['introduced_cifs_scripts'], store.changed_fields())
 
+    def test_set_chipster6502_artwork_screenshots_dbs_general_selector___adds_field_and_marks_store_dirty(self):
+        store = LocalStore({})
+
+        store.set_chipster6502_artwork_screenshots_dbs_general_selector(True)
+
+        self.assertEqual(True, store.get_chipster6502_artwork_screenshots_dbs_general_selector())
+        self.assertEqual(['chipster6502_artwork_screenshots_dbs_general_selector'], store.changed_fields())
+
+    def test_set_chipster6502_artwork_titles_dbs_general_selector___adds_field_and_marks_store_dirty(self):
+        store = LocalStore({})
+
+        store.set_chipster6502_artwork_titles_dbs_general_selector(True)
+
+        self.assertEqual(True, store.get_chipster6502_artwork_titles_dbs_general_selector())
+        self.assertEqual(['chipster6502_artwork_titles_dbs_general_selector'], store.changed_fields())
+
     def test_set_introduced_pinned_linux_distribution_mister___adds_field_and_marks_store_dirty(self):
         store = LocalStore({})
 

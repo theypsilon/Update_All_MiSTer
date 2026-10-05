@@ -86,6 +86,8 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('true', ui.get_value('ajgowans_manuals_dbs_installed'))
         self.assertEqual('true', ui.get_value('chipster6502/artworkdb-nes_installed'))
         self.assertEqual('true', ui.get_value('chipster6502_artwork_dbs_installed'))
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_screenshots_dbs_installed'))
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_titles_dbs_installed'))
         self.assertEqual('false', ui.get_value('MultiDatabases/dreamster_installed'))
         self.assertEqual('false', ui.get_value('Coin-OpCollection/Distribution-MiSTerFPGA_installed'))
         self.assertNotIn('not/a_model_db_installed', ui.variables)
@@ -96,6 +98,20 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         self.assertEqual('false', ui.get_value('distribution_mister_installed'))
         self.assertEqual('false', ui.get_value('MultiDatabases/duke3d_installed'))
         self.assertEqual('false', ui.get_value('ajgowans_manuals_dbs_installed'))
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_dbs_installed'))
+
+    def test_initialize_ui___with_only_artwork_pack_fingerprints___sets_only_those_pack_aggregates(self):
+        file_system = FileSystemFactory.from_state(files={
+            FILE_downloader_fingerprints_json: {'content': json.dumps({
+                'chipster6502/artworkdb-nes-titles': {'hash': 'abc'},
+            })},
+        }).create_for_system_scope()
+
+        _, ui = tester(file_system=file_system)
+
+        self.assertEqual('true', ui.get_value('chipster6502/artworkdb-nes-titles_installed'))
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_titles_dbs_installed'))
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_screenshots_dbs_installed'))
         self.assertEqual('false', ui.get_value('chipster6502_artwork_dbs_installed'))
 
     def test_initialize_ui___without_manual_fingerprints___sets_manuals_installed_to_false(self):
@@ -240,6 +256,40 @@ class TestSettingsScreenRoutines(unittest.TestCase):
         sut.reconcile_failed_bulk_uninstall(ui, (second,))
 
         self.assertEqual('false', ui.get_value('chipster6502_artwork_dbs_installed'))
+
+    def test_reconcile_failed_bulk_uninstall___updates_only_the_artwork_pack_that_lost_a_database(self):
+        removed = 'chipster6502/artworkdb-3do-screenshots'
+        kept = 'chipster6502/artworkdb-nes-screenshots'
+        file_system = FileSystemFactory.from_state(files={
+            FILE_downloader_fingerprints_json: {'content': json.dumps({
+                kept: {'hash': 'abc'},
+            })},
+        }).create_for_system_scope()
+        config = Config(databases={removed, kept})
+        sut, ui = tester(config=config, file_system=file_system)
+        for db_id in (removed, kept):
+            ui.set_value(f'{db_id}_installed', 'true')
+        for variable in ('chipster6502_artwork_dbs_general_selector',
+                         'chipster6502_artwork_screenshots_dbs_general_selector',
+                         'chipster6502_artwork_titles_dbs_general_selector'):
+            ui.set_value(variable, 'true')
+        ui.set_value('chipster6502_artwork_screenshots_dbs_installed', 'true')
+
+        sut.reconcile_failed_bulk_uninstall(ui, (removed, kept))
+
+        self.assertEqual('false', ui.get_value(removed))
+        self.assertEqual('true', ui.get_value(kept))
+        self.assertEqual('1', ui.get_value('chipster6502_artwork_screenshots_selected_count'))
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_screenshots_dbs_installed'))
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_screenshots_dbs_general_selector'))
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_titles_dbs_general_selector'))
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_dbs_general_selector'))
+
+        file_system.write_file_contents(FILE_downloader_fingerprints_json, '{}')
+        sut.reconcile_failed_bulk_uninstall(ui, (kept,))
+
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_screenshots_dbs_installed'))
+        self.assertEqual('0', ui.get_value('chipster6502_artwork_screenshots_selected_count'))
 
     def test_initialize_ui___with_missing_zaparoo_frontend_store_field___defaults_it_to_false(self):
         store = local_store()
@@ -691,6 +741,153 @@ class TestSettingsScreenRoutines(unittest.TestCase):
 
         self.assertEqual('box3d', ui.get_value('chipster6502/artworkdb-nes_style'))
         self.assertEqual('none', ui.get_value('chipster6502_artwork_selected_style'))
+        self.assertEqual('0', ui.get_value('chipster6502_artwork_selected_count'))
+
+    def test_select_all_chipster6502_artwork_pack_dbs___toggle_enables_every_pack_db_and_selector_but_not_box_art(self):
+        sut, ui = tester()
+
+        result = sut.select_all_chipster6502_artwork_pack_dbs(ui, {'pack': 'screenshots', 'action': 'toggle'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_screenshots_dbs_general_selector'))
+        self.assertEqual('39', ui.get_value('chipster6502_artwork_screenshots_selected_count'))
+        for variable in gather_variable_declarations(settings_screen_model(), 'artwork_screenshots'):
+            self.assertEqual('true', ui.get_value(variable))
+        for variable in [*gather_variable_declarations(settings_screen_model(), 'artwork_titles'),
+                         *gather_variable_declarations(settings_screen_model(), 'artwork')]:
+            self.assertEqual('false', ui.get_value(variable))
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_titles_dbs_general_selector'))
+
+    def test_select_all_chipster6502_artwork_pack_dbs___toggle_with_selector_true_and_all_active_disables_all(self):
+        title_db_ids = set(gather_variable_declarations(settings_screen_model(), 'artwork_titles'))
+        store = local_store()
+        store.set_chipster6502_artwork_titles_dbs_general_selector(True)
+        sut, ui = tester(config=Config(databases={*default_databases(), *title_db_ids}), store=store)
+        self.assertEqual('39', ui.get_value('chipster6502_artwork_titles_selected_count'))
+
+        result = sut.select_all_chipster6502_artwork_pack_dbs(ui, {'pack': 'titles', 'action': 'toggle'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_titles_dbs_general_selector'))
+        self.assertEqual('0', ui.get_value('chipster6502_artwork_titles_selected_count'))
+        for variable in title_db_ids:
+            self.assertEqual('false', ui.get_value(variable))
+
+    def test_select_all_chipster6502_artwork_pack_dbs___toggle_with_any_inactive_only_unapplies_selector(self):
+        store = local_store()
+        store.set_chipster6502_artwork_screenshots_dbs_general_selector(True)
+        sut, ui = tester(store=store)
+        ui.set_value('chipster6502/artworkdb-nes-screenshots', 'true')
+
+        result = sut.select_all_chipster6502_artwork_pack_dbs(ui, {'pack': 'screenshots', 'action': 'toggle'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_screenshots_dbs_general_selector'))
+        self.assertEqual('true', ui.get_value('chipster6502/artworkdb-nes-screenshots'))
+
+    def test_select_all_chipster6502_artwork_pack_dbs___unapply_refreshes_the_selected_count(self):
+        store = local_store()
+        store.set_chipster6502_artwork_screenshots_dbs_general_selector(True)
+        sut, ui = tester(store=store)
+        ui.set_value('chipster6502/artworkdb-nes-screenshots', 'true')
+        ui.set_value('chipster6502/artworkdb-snes-screenshots', 'true')
+
+        result = sut.select_all_chipster6502_artwork_pack_dbs(ui, {'pack': 'screenshots', 'action': 'unapply'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_screenshots_dbs_general_selector'))
+        self.assertEqual('2', ui.get_value('chipster6502_artwork_screenshots_selected_count'))
+
+    def test_select_all_chipster6502_artwork_pack_dbs___with_unknown_pack___raises(self):
+        sut, ui = tester()
+
+        with self.assertRaises(KeyError):
+            sut.select_all_chipster6502_artwork_pack_dbs(ui, {'pack': 'box2d', 'action': 'toggle'})
+
+    def test_select_all_chipster6502_artwork_kinds___toggle_selects_every_box_art_screenshots_and_titles_db(self):
+        sut, ui = tester()
+        ui.set_value('chipster6502/artworkdb-nes-titles', 'true')
+
+        result = sut.select_all_chipster6502_artwork_kinds(ui, {'action': 'toggle'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_kinds_general_selector'))
+        for selector in ('chipster6502_artwork_dbs_general_selector',
+                         'chipster6502_artwork_screenshots_dbs_general_selector',
+                         'chipster6502_artwork_titles_dbs_general_selector'):
+            self.assertEqual('true', ui.get_value(selector))
+        for group in ('artwork', 'artwork_screenshots', 'artwork_titles'):
+            for variable in gather_variable_declarations(settings_screen_model(), group):
+                self.assertEqual('true', ui.get_value(variable))
+        self.assertEqual('39', ui.get_value('chipster6502_artwork_selected_count'))
+        self.assertEqual('39', ui.get_value('chipster6502_artwork_titles_selected_count'))
+
+    def test_select_all_chipster6502_artwork_kinds___toggle_twice_deselects_every_kind(self):
+        sut, ui = tester()
+
+        sut.select_all_chipster6502_artwork_kinds(ui, {'action': 'toggle'})
+        result = sut.select_all_chipster6502_artwork_kinds(ui, {'action': 'toggle'})
+
+        self.assertEqual('clear_window', result)
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_kinds_general_selector'))
+        for group in ('artwork', 'artwork_screenshots', 'artwork_titles'):
+            for variable in gather_variable_declarations(settings_screen_model(), group):
+                self.assertEqual('false', ui.get_value(variable))
+
+    def test_select_all_chipster6502_artwork_kinds___with_one_kind_already_selected___keeps_it_and_selects_the_rest(self):
+        sut, ui = tester()
+        sut.select_all_chipster6502_artwork_pack_dbs(ui, {'pack': 'screenshots', 'action': 'toggle'})
+
+        sut.select_all_chipster6502_artwork_kinds(ui, {'action': 'toggle'})
+
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_screenshots_dbs_general_selector'))
+        self.assertEqual('39', ui.get_value('chipster6502_artwork_screenshots_selected_count'))
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_kinds_general_selector'))
+
+    def test_select_all_chipster6502_artwork_kinds___turns_off_when_any_kind_unapplies_its_select_all(self):
+        sut, ui = tester()
+        sut.select_all_chipster6502_artwork_kinds(ui, {'action': 'toggle'})
+        ui.set_value('chipster6502/artworkdb-nes-titles', 'false')
+
+        sut.select_all_chipster6502_artwork_pack_dbs(ui, {'pack': 'titles', 'action': 'unapply'})
+
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_kinds_general_selector'))
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_dbs_general_selector'))
+
+    def test_initialize_ui___with_every_kind_select_all_in_store___turns_on_the_all_kinds_selector(self):
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+        store.set_chipster6502_artwork_screenshots_dbs_general_selector(True)
+        store.set_chipster6502_artwork_titles_dbs_general_selector(True)
+
+        _, ui = tester(store=store)
+
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_kinds_general_selector'))
+
+    def test_initialize_ui___with_only_some_kinds_select_all_in_store___keeps_the_all_kinds_selector_off(self):
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+        store.set_chipster6502_artwork_titles_dbs_general_selector(True)
+
+        _, ui = tester(store=store)
+
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_kinds_general_selector'))
+
+    def test_initialize_ui___restores_artwork_pack_selectors_from_store_and_counts_enabled_pack_dbs(self):
+        config = Config(databases={
+            *default_databases(),
+            'chipster6502/artworkdb-nes-screenshots',
+            'chipster6502/artworkdb-nes-titles', 'chipster6502/artworkdb-snes-titles', 'chipster6502/artworkdb-psx-titles',
+        })
+        store = local_store()
+        store.set_chipster6502_artwork_titles_dbs_general_selector(True)
+
+        _, ui = tester(config=config, store=store)
+
+        self.assertEqual('false', ui.get_value('chipster6502_artwork_screenshots_dbs_general_selector'))
+        self.assertEqual('true', ui.get_value('chipster6502_artwork_titles_dbs_general_selector'))
+        self.assertEqual('1', ui.get_value('chipster6502_artwork_screenshots_selected_count'))
+        self.assertEqual('3', ui.get_value('chipster6502_artwork_titles_selected_count'))
         self.assertEqual('0', ui.get_value('chipster6502_artwork_selected_count'))
 
     def test_extract_chip_id___when_not_mister___stores_failure_and_does_not_start_extraction(self):

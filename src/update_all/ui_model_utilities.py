@@ -15,6 +15,7 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+from collections.abc import Mapping
 from enum import Enum
 from typing import Callable, Any, TypeVar, Dict
 
@@ -45,10 +46,10 @@ def expand_type(data, base_types):
         for key, content in base_type.items():
             if type(content) in (str, int, float, bool):
                 data[key] = base_type[key]
-            elif isinstance(content, list):
+            elif isinstance(content, (list, tuple)):
                 addition, has_replace = filter_key_in_collection(data.get(key, []), 'replace')
                 data[key] = addition if has_replace else [*addition, *base_type.get(key, [])]
-            elif isinstance(content, dict):
+            elif isinstance(content, Mapping):
                 addition, has_replace = filter_key_in_collection(data.get(key, {}), 'replace')
                 data[key] = addition if has_replace else {**addition, **base_type.get(key, {})}
             else:
@@ -56,9 +57,9 @@ def expand_type(data, base_types):
 
 
 def filter_key_in_collection(collection, key):
-    if isinstance(collection, list):
+    if isinstance(collection, (list, tuple)):
         return ([v for v in collection if v != key], True) if key in collection else (collection, False)
-    elif isinstance(collection, dict):
+    elif isinstance(collection, Mapping):
         return ({k: v for k, v in collection.items() if k != key}, True) if key in collection else (collection, False)
     else:
         raise ValueError(f'Can not filter collection of type: {str(type(collection))}')
@@ -81,7 +82,7 @@ def gather_effects_by_type(model, effect_type):
     result = []
 
     def collect(collected, item):
-        if isinstance(item, dict) and item.get('type') == effect_type:
+        if isinstance(item, Mapping) and item.get('type') == effect_type:
             collected.append(item)
 
     search_in_model(result, model.get('base_types', {}), model, collect)
@@ -97,11 +98,11 @@ def _add_variables_descriptions(result, item, group):
             if 'group' not in description:
                 continue
 
-            description_group = description['group'] if isinstance(description['group'], list) else [description['group']]
+            description_group = description['group'] if isinstance(description['group'], (list, tuple)) else [description['group']]
             if group.isdisjoint(description_group):
                 continue
 
-            description['name'] = description['rename'] if 'rename' in description else variable
+            description = {**description, 'name': description['rename'] if 'rename' in description else variable}
 
         result[variable] = description
 
@@ -110,19 +111,19 @@ TResult = TypeVar('TResult')
 
 
 def search_in_model(result: TResult, base_types: Dict[str, Any], item, cb: Callable[[TResult, Any], None]) -> None:
-    expand_type(item, base_types)
+    item = _expanded_type(item, base_types)
     cb(result, item)
 
     if 'actions' in item:
-        if isinstance(item['actions'], dict):
+        if isinstance(item['actions'], Mapping):
             for action_chain in item['actions'].values():
                 # A chain is a list of effects, or a conditional action dict
                 # {"if": variable, "target": chain}.
-                chain = action_chain if isinstance(action_chain, list) else action_chain.get('chain', [])
+                chain = action_chain if isinstance(action_chain, (list, tuple)) else action_chain.get('chain', [])
                 for action in chain:
                     search_in_model(result, base_types, action, cb)
 
-        elif isinstance(item['actions'], list):
+        elif isinstance(item['actions'], (list, tuple)):
             for action in item['actions']:
                 search_in_model(result, base_types, action, cb)
 
@@ -152,10 +153,20 @@ def search_in_model(result: TResult, base_types: Dict[str, Any], item, cb: Calla
 
     elif node_type == 'condition':
         for key, branch in item.items():
-            if key in ('type', 'variable') or not isinstance(branch, list):
+            if key in ('type', 'variable') or not isinstance(branch, (list, tuple)):
                 continue
             for effect in branch:
                 search_in_model(result, base_types, effect, cb)
+
+
+def _expanded_type(data, base_types):
+    # Searching never writes into the model, so it expands a copy.
+    if data.get('type') not in base_types:
+        return data
+
+    expanded = dict(data)
+    expand_type(expanded, base_types)
+    return expanded
 
 
 def dynamic_convert_string(value):

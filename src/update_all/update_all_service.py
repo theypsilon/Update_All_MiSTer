@@ -50,6 +50,7 @@ from update_all.other import GenericProvider, is_chip_id_value, terminal_size
 from update_all.logger import Logger, close_print_tmp_log_file
 from update_all.os_utils import OsUtils, LinuxOsUtils
 from update_all.settings_screen import SettingsScreen
+from update_all.settings_screen_model import settings_screen_model
 from update_all.settings_screen_standard_curses_printer import SettingsScreenStandardCursesPrinter
 from update_all.store_migrator import StoreMigrator
 from update_all.migrations import migrations
@@ -164,6 +165,7 @@ class UpdateAllServiceFactory:
             mister_ini_repository=mister_ini_repository,
             frontends_service=frontends_service,
             database_manager_service=database_manager_service,
+            settings_screen_model_factory=settings_screen_model,
         )
         environment_setup = EnvironmentSetupImpl(
             logger=self._logger,

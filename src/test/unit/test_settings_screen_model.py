@@ -15,6 +15,8 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+import json
+import re
 import unittest
 from copy import deepcopy
 from unittest.mock import Mock
@@ -26,7 +28,7 @@ from test.ui_model_test_utils import special_navigate_targets, gather_target_var
 from test.update_all_service_tester import default_databases, UiContextStub
 from update_all.config_reader import Config
 from update_all.databases import model_variables_by_db_id, db_ids_by_model_variables, AllDBs, all_dbs, \
-    MIRROR_ANDI_BR, MIRROR_MYSTICAL_REALM_ORG
+    MIRROR_ANDI_BR, MIRROR_MYSTICAL_REALM_ORG, chipster6502_artwork_box_dbs, chipster6502_artwork_pack_dbs
 from update_all.settings_screen_model import settings_screen_model, uninstall_db_action, uninstall_db_action_for_id, \
     uninstall_db_action_manuals, uninstall_db_action_artwork, _ARTWORK_DATABASES
 from update_all.ui_engine import EffectChain, Interpolator, UiApplication, UiContext, UiRuntime, UiSection, \
@@ -704,6 +706,17 @@ class TestSettingsScreenModel(unittest.TestCase):
             ui['on_success'][-2],
         )
 
+    def test_settings_screen_model___is_plain_data_that_serializes_to_json(self):
+        json.dumps(settings_screen_model())
+
+    def test_arcade_organizer_topdir_formatter___labels_every_declared_value(self):
+        menu = self.model['items']['arcade_organizer_menu']
+
+        self.assertEqual(
+            menu['variables']['arcade_organizer_topdir']['values'],
+            list(menu['formatters']['capitalize']),
+        )
+
     def test_game_artwork_entry___is_immediately_above_game_manuals(self):
         titles = [entry.get('title') for entry in self.model['items']['extra_content_menu']['entries']]
 
@@ -728,7 +741,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('message', info['ui'])
         self.assertEqual('About Game Artwork DBs', info['header'])
         text = ' '.join(info['text'])
-        self.assertIn('box art and screenshots', text)
+        self.assertIn('box art, screenshots and title screens', text)
         self.assertIn('MiSTer Monitor and compatible frontends', text)
         self.assertIn('avoid the need to scrape artwork', text)
         self.assertIn('The collection is curated and optimized for MiSTer.', text)
@@ -774,7 +787,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         manuals = self._entry('extra_content_menu', '# Game Manuals (EN) DBs')
 
         self.assertEqual(
-            '{chipster6502_artwork_dbs_general_selector:multi_db_status}Box Art & Screenshots',
+            '{chipster6502_artwork_kinds_general_selector:multi_db_status}Box Art, Screenshots & Title Screens',
             artwork['description'],
         )
         self.assertEqual(
@@ -786,12 +799,220 @@ class TestSettingsScreenModel(unittest.TestCase):
             self.model['items']['extra_content_menu']['formatters']['multi_db_status'],
         )
 
-    def test_artwork_catalog___contains_documented_image_count(self):
+    def test_artwork_catalog___contains_documented_image_counts(self):
         self.assertEqual(39, len(_ARTWORK_DATABASES))
-        self.assertEqual(23658, sum(images for _db_id, _title, images in _ARTWORK_DATABASES))
+        self.assertEqual(23658, sum(boxes for _db_id, _title, boxes, _screenshots, _titles in _ARTWORK_DATABASES))
+        self.assertEqual(22657, sum(screenshots for _db_id, _title, _boxes, screenshots, _titles in _ARTWORK_DATABASES))
+        self.assertEqual(23204, sum(titles for _db_id, _title, _boxes, _screenshots, titles in _ARTWORK_DATABASES))
+
+    def test_artwork_catalog___lists_every_box_art_database(self):
+        self.assertEqual(
+            [db.db_id for db in chipster6502_artwork_box_dbs()],
+            [db_id for db_id, *_rest in _ARTWORK_DATABASES],
+        )
+
+    def test_artwork_variables___declare_box_art_and_each_pack_in_their_own_group(self):
+        self.assertEqual(
+            {db.db_id for db in chipster6502_artwork_box_dbs()},
+            set(gather_variable_declarations(self.model, 'artwork')),
+        )
+        separate_db_variables = set(gather_variable_declarations(self.model, 'separate_db'))
+        for pack in ('screenshots', 'titles'):
+            pack_variables = set(gather_variable_declarations(self.model, f'artwork_{pack}'))
+            self.assertEqual({db.db_id for db in chipster6502_artwork_pack_dbs(pack)}, pack_variables)
+            self.assertLessEqual(pack_variables, separate_db_variables)
+
+    def test_game_artwork_db_menu___leads_to_box_art_screenshots_and_title_screens_with_their_selection(self):
+        menu = self.model['items']['game_artwork_db_menu']
+
+        self.assertEqual('Game Artwork DBs', menu['header'])
+        self.assertEqual(
+            [
+                ('# Box Art', '{chipster6502_artwork_selected_style:artwork_box_art_summary}{chipster6502_artwork_selected_count} selected', 'game_artwork_box_art_db_menu'),
+                ('# Screenshots', '{chipster6502_artwork_screenshots_selected_count} selected', 'game_artwork_screenshots_db_menu'),
+                ('# Title Screens', '{chipster6502_artwork_titles_selected_count} selected', 'game_artwork_titles_db_menu'),
+            ],
+            [
+                (entry['title'], entry['description'], entry['actions']['ok'][0]['target'])
+                for entry in menu['entries'][2:]
+            ],
+        )
+        self.assertEqual('2D Boxes | ', menu['formatters']['artwork_box_art_summary']['box2d'])
+        self.assertEqual('', menu['formatters']['artwork_box_art_summary']['none'])
+
+    def test_game_artwork_db_menu___starts_with_select_all_for_every_kind(self):
+        select_all, separator, *_kinds = self.model['items']['game_artwork_db_menu']['entries']
+
+        self.assertEqual(' {chipster6502_artwork_kinds_general_selector:artwork_kinds_selector_title}', select_all['title'])
+        self.assertEqual(
+            '{chipster6502_artwork_kinds_general_selector:select_all_artwork_kinds_toggle}69519 images | 9.73GB total',
+            select_all['description'],
+        )
+        self.assertEqual({}, separator)
+
+    def test_game_artwork_select_all___checks_free_space_against_every_kind_installed_with_128kb_clusters(self):
+        condition = self.model['items']['game_artwork_db_menu']['entries'][0]['actions']['ok'][0]
+        compare, space_condition = condition['false']
+        toggle = {'type': 'select_all_chipster6502_artwork_kinds', 'action': 'toggle'}
+
+        self.assertEqual('chipster6502_artwork_kinds_general_selector', condition['variable'])
+        self.assertEqual([toggle], condition['true'])
+        self.assertEqual(3_238_002_688 + 3_565_682_688 + 3_639_738_368, compare['left'])
+        self.assertEqual('media_fat_available_space', compare['right'])
+        confirm = space_condition['right'][0]
+        self.assertEqual('Enable All Game Artwork DBs?', confirm['header'])
+        self.assertIn('69,519 images taking up to 9.73 GB', ' '.join(confirm['text']))
+        self.assertEqual(toggle, confirm['actions'][0]['fixed'][0])
+        self.assertEqual('Not Enough Free Space!', space_condition['left'][0]['header'])
+        self.assertEqual('Not Enough Free Space!', space_condition['equal'][0]['header'])
+
+    def test_artwork_and_manuals_sizes___say_up_to_only_in_confirmation_screens(self):
+        size = re.compile(r'\d[\d.]*\s?[MG]B\b')
+        menus = ('game_artwork_db_menu', 'game_artwork_box_art_db_menu', 'game_artwork_screenshots_db_menu',
+                 'game_artwork_titles_db_menu', 'game_manuals_en_db_menu')
+        confirm_lines, descriptions = [], []
+
+        def collect(node):
+            if isinstance(node, dict):
+                if node.get('ui') == 'confirm':
+                    confirm_lines.extend(node.get('text', []))
+                if isinstance(node.get('description'), str):
+                    descriptions.append(node['description'])
+                for value in node.values():
+                    collect(value)
+            elif isinstance(node, list):
+                for value in node:
+                    collect(value)
+
+        for menu in menus:
+            collect(self.model['items'][menu])
+        sized_confirm_lines = [line for line in confirm_lines if size.search(line)]
+        sized_descriptions = [line for line in descriptions if size.search(line)]
+
+        self.assertGreater(len(sized_confirm_lines), 10)
+        self.assertGreater(len(sized_descriptions), 10)
+        for line in sized_confirm_lines:
+            self.assertRegex(line, r'up to \d[\d.]*\s?[MG]B', line)
+        for line in sized_descriptions:
+            self.assertNotIn('up to', line)
+
+    def test_artwork_sizes___are_shown_rounded_up_in_gb_of_1024_cubed_bytes(self):
+        self.assertEqual(
+            [
+                '{chipster6502_artwork_kinds_general_selector:select_all_artwork_kinds_toggle}69519 images | 9.73GB total',
+                '{chipster6502_artwork_dbs_general_selector:select_all_artwork_toggle}23658 images | 3.02GB total',
+                '{chipster6502_artwork_screenshots_dbs_general_selector:select_all_artwork_pack_toggle}22657 images | 3.33GB total',
+                '{chipster6502_artwork_titles_dbs_general_selector:select_all_artwork_pack_toggle}23204 images | 3.39GB total',
+            ],
+            [
+                self.model['items'][menu]['entries'][0]['description']
+                for menu in ('game_artwork_db_menu', 'game_artwork_box_art_db_menu',
+                             'game_artwork_screenshots_db_menu', 'game_artwork_titles_db_menu')
+            ],
+        )
+
+    def test_artwork_pack_menus___offer_select_all_then_every_system(self):
+        for pack, header in (('screenshots', 'Screenshots'), ('titles', 'Title Screens')):
+            with self.subTest(pack=pack):
+                menu = self.model['items'][f'game_artwork_{pack}_db_menu']
+                selector = f'chipster6502_artwork_{pack}_dbs_general_selector'
+                select_all, separator, *systems = menu['entries']
+
+                self.assertEqual(header, menu['header'])
+                self.assertEqual(f' {{{selector}:artwork_pack_selector_title}}', select_all['title'])
+                self.assertEqual({'false': 'Select All', 'true': 'Select None'}, menu['formatters']['artwork_pack_selector_title'])
+                self.assertEqual(selector, select_all['actions']['ok'][0]['variable'])
+                self.assertEqual({}, separator)
+                self.assertEqual(
+                    [f'# {title}' for _db_id, title, *_images in _ARTWORK_DATABASES],
+                    [entry['title'] for entry in systems],
+                )
+
+    def test_artwork_submenus___say_what_they_install_then_where(self):
+        self.assertEqual(
+            {
+                'game_artwork_box_art_db_menu': [
+                    'Box images of each game, in the style you choose for each system.',
+                    'Installed in docs/<SYSTEM>/Artwork/.',
+                ],
+                'game_artwork_screenshots_db_menu': [
+                    'In-game screenshots of each game.',
+                    'Installed in docs/<SYSTEM>/Screenshots/.',
+                ],
+                'game_artwork_titles_db_menu': [
+                    'Title screen images of each game.',
+                    'Installed in docs/<SYSTEM>/Titles/.',
+                ],
+            },
+            {
+                menu: self.model['items'][menu]['text']
+                for menu in ('game_artwork_box_art_db_menu', 'game_artwork_screenshots_db_menu', 'game_artwork_titles_db_menu')
+            },
+        )
+
+    def test_game_manuals_menu___says_what_it_installs_then_where(self):
+        self.assertEqual(
+            ['English-language game manuals, as PDF files.', 'Installed in docs/<SYSTEM>/.'],
+            self.model['items']['game_manuals_en_db_menu']['text'],
+        )
+
+    def test_artwork_pack_database_entries___toggle_the_pack_database_and_unapply_its_select_all(self):
+        entry = self._entry('game_artwork_screenshots_db_menu', '# NES')
+        expected = [
+            {'type': 'rotate_variable', 'target': 'chipster6502/artworkdb-nes-screenshots'},
+            {'type': 'select_all_chipster6502_artwork_pack_dbs', 'pack': 'screenshots', 'action': 'unapply'},
+        ]
+
+        self.assertEqual('{chipster6502/artworkdb-nes-screenshots:enabled} 1421 images', entry['description'])
+        self.assertEqual(expected, entry['actions']['ok'])
+        self.assertEqual(expected, entry['actions']['toggle'])
+
+    def test_artwork_pack_select_all___checks_free_space_against_the_installed_size_with_128kb_clusters(self):
+        for pack, installed_bytes, images in (('screenshots', 3_565_682_688, '22,657'), ('titles', 3_639_738_368, '23,204')):
+            with self.subTest(pack=pack):
+                select_all = self.model['items'][f'game_artwork_{pack}_db_menu']['entries'][0]
+                condition = select_all['actions']['ok'][0]
+                compare, space_condition = condition['false']
+
+                self.assertEqual(
+                    [{'type': 'select_all_chipster6502_artwork_pack_dbs', 'pack': pack, 'action': 'toggle'}],
+                    condition['true'],
+                )
+                self.assertEqual(installed_bytes, compare['left'])
+                self.assertEqual('media_fat_available_space', compare['right'])
+                confirm = space_condition['right'][0]
+                self.assertIn(f'{images} images', ' '.join(confirm['text']))
+                self.assertEqual(
+                    {'type': 'select_all_chipster6502_artwork_pack_dbs', 'pack': pack, 'action': 'toggle'},
+                    confirm['actions'][0]['fixed'][0],
+                )
+                self.assertEqual('Not Enough Free Space!', space_condition['left'][0]['header'])
+                self.assertEqual('Not Enough Free Space!', space_condition['equal'][0]['header'])
+
+    def test_artwork_pack_select_all_entries___have_uninstall_all_for_every_pack_database(self):
+        for pack, title in (('screenshots', 'Screenshots'), ('titles', 'Title Screens')):
+            with self.subTest(pack=pack):
+                action = self.model['items'][f'game_artwork_{pack}_db_menu']['entries'][0]['actions']['uninstall_all']
+
+                self.assertEqual(f'chipster6502_artwork_{pack}_dbs_installed', action['if'])
+                ui = action['chain'][0]['actions'][0]['fixed'][0]
+                self.assertEqual([db.db_id for db in chipster6502_artwork_pack_dbs(pack)], ui['db_ids'])
+                self.assertEqual(f'All {title} Databases', ui['title'])
+                self.assertEqual(
+                    {'type': 'select_all_chipster6502_artwork_pack_dbs', 'pack': pack, 'action': 'unapply'},
+                    ui['on_success'][-2],
+                )
+
+    def test_each_artwork_pack_database_entry___has_its_own_uninstall_action(self):
+        for pack, title in (('screenshots', 'Screenshots'), ('titles', 'Title Screens')):
+            with self.subTest(pack=pack):
+                menu = f'game_artwork_{pack}_db_menu'
+                for db_id, system, *_images in _ARTWORK_DATABASES:
+                    variable = f'{db_id}-{pack}'
+                    self._assert_uninstall_action(menu, f'# {system}', variable, variable, f'{system} {title}')
 
     def test_artwork_styles___offer_only_published_identifiers_and_keep_friendly_formatter_labels(self):
-        menu = self.model['items']['game_artwork_db_menu']
+        menu = self.model['items']['game_artwork_box_art_db_menu']
         style_variables = gather_variable_declarations(self.model, 'artwork_style')
 
         self.assertEqual(39, len(style_variables))
@@ -804,7 +1025,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         )
 
     def test_artwork_database_entries___toggle_enablement_and_select_opens_individual_style_picker(self):
-        entry = self._entry('game_artwork_db_menu', '# NES')
+        entry = self._entry('game_artwork_box_art_db_menu', '# NES')
 
         self.assertEqual(
             [
@@ -837,7 +1058,7 @@ class TestSettingsScreenModel(unittest.TestCase):
         self.assertEqual('mixrbv2', choices[2]['actions']['ok'][0]['style'])
 
     def test_artwork_bulk_style_entry___offers_all_identifiers_for_enabled_databases(self):
-        entry = self._entry('game_artwork_db_menu', '# Style for Selected DBs')
+        entry = self._entry('game_artwork_box_art_db_menu', '# Style for Selected DBs')
         picker = entry['actions']['ok'][0]
 
         self.assertEqual(
@@ -853,7 +1074,7 @@ class TestSettingsScreenModel(unittest.TestCase):
 
     def test_artwork_select_all_entry___has_uninstall_all_for_every_artwork_database(self):
         artwork_db_ids = list(gather_variable_declarations(self.model, 'artwork'))
-        entry = self.model['items']['game_artwork_db_menu']['entries'][0]
+        entry = self.model['items']['game_artwork_box_art_db_menu']['entries'][0]
         action = entry['actions']['uninstall_all']
 
         self.assertEqual('chipster6502_artwork_dbs_installed', action['if'])
@@ -867,7 +1088,7 @@ class TestSettingsScreenModel(unittest.TestCase):
 
     def test_each_artwork_database_entry___has_its_own_uninstall_action(self):
         artwork_variables = gather_variable_declarations(self.model, 'artwork')
-        entries = self.model['items']['game_artwork_db_menu']['entries']
+        entries = self.model['items']['game_artwork_box_art_db_menu']['entries']
         matched_variables = set()
 
         for entry in entries:
@@ -885,7 +1106,7 @@ class TestSettingsScreenModel(unittest.TestCase):
             variable = variables[0]
             matched_variables.add(variable)
             self._assert_uninstall_action(
-                'game_artwork_db_menu',
+                'game_artwork_box_art_db_menu',
                 entry['title'],
                 variable,
                 variable,

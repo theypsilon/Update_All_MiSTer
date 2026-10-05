@@ -60,16 +60,22 @@ def _crt_direct_video_warning(target): return {
 }
 
 
-_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22347907072  # ~20.8 GB at 128KB cluster, see estimate_manuals_db_space.json
-_ALL_CHIPSTER6502_ARTWORK_ESTIMATED_BYTES = 2_386_300_000  # Largest published full set: box2d, 2386.3 MB
+_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22_426_288_128  # 20.9 GB with 128 KB clusters, summed from the published databases on 2026-10-05
+_ALL_CHIPSTER6502_ARTWORK_ESTIMATED_BYTES = 3_238_002_688  # Box Art's largest style, box2d, see _ARTWORK_PACKS
+
+
+def _rounded_up_gb(size_bytes):
+    # GB of 1024^3 bytes, like the free space shown next to it.
+    hundredths = -(-size_bytes * 100 // 1024 ** 3)
+    return f"{hundredths // 100}.{hundredths % 100:02d}"
 
 
 def _enable_all_artwork_confirm(): return {
     "ui": "confirm",
-    "header": "Enable All Artwork DBs?",
+    "header": "Enable All Box Art DBs?",
     "text": [
-        "This will activate all artwork databases.",
-        "That is a large download, 23,658 images and 2.04-2.39 GB, depending on style.",
+        "This will activate all Box Art databases.",
+        f"That is a large download, 23,658 images taking up to {_rounded_up_gb(_ALL_CHIPSTER6502_ARTWORK_ESTIMATED_BYTES)} GB.",
         "It will take a while!",
         "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
         "Are you sure you want to continue?",
@@ -89,10 +95,10 @@ def _not_enough_space_for_artwork_warning(): return {
     "header": "Not Enough Free Space!",
     "alert_level": "black",
     "text": [
-        "Enabling all artwork DBs requires 23,658 images and 2.04-2.39 GB, depending on style.",
+        f"Enabling all Box Art DBs requires 23,658 images taking up to {_rounded_up_gb(_ALL_CHIPSTER6502_ARTWORK_ESTIMATED_BYTES)} GB.",
         "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
-        "Installing all artwork will likely fill up your storage and cause problems.",
-        "Free up space or enable only individual artwork databases instead.",
+        "Installing all Box Art will likely fill up your storage and cause problems.",
+        "Free up space or enable only individual Box Art databases instead.",
     ],
     "preselected_action": "Back",
     "actions": [
@@ -133,7 +139,7 @@ def _enable_all_manuals_confirm(): return {
     "header": "Enable All Manuals DBs?",
     "text": [
         "This will activate all manuals databases.",
-        "That is a large download, 8169 files and around 20.8 GB.",
+        "That is a large download, 8190 files taking up to 20.9 GB.",
         "It will take hours!",
         "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
         "Are you sure you want to continue?",
@@ -153,7 +159,7 @@ def _not_enough_space_for_manuals_warning(): return {
     "header": "Not Enough Free Space!",
     "alert_level": "black",
     "text": [
-        "Enabling all manuals DBs requires 8169 files and around 20.8 GB.",
+        "Enabling all manuals DBs requires 8190 files taking up to 20.9 GB.",
         "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
         "Installing all manuals will likely fill up your storage and cause problems.",
         "Free up space or enable only individual manuals instead.",
@@ -206,7 +212,7 @@ def _try_toggle_big_manual_db(target, title, count, size): return [
             "header": f"Enable {title}?",
             "text": [
                 f"This will activate {title}.",
-                f"Around {count} files | {size}.",
+                f"{count} files taking up to {size}.",
                 "It could take more than one hour!",
                 "Are you sure you want to continue?",
             ],
@@ -809,48 +815,49 @@ def _manual_db_variables(): return {
 }
 
 
-# Published image counts from MiSTer_artwork_pack/PACK_FORMAT.md on 2026-09-04.
+# Published image counts from MiSTer_artwork_pack/PACK_FORMAT.md on 2026-10-05.
 # The IDs and URL derivation are stable; these display-only counts are a snapshot.
 _ARTWORK_DATABASES = (
-    ("chipster6502/artworkdb-3do", "3DO", 316),
-    ("chipster6502/artworkdb-atari5200", "Atari 5200", 95),
-    ("chipster6502/artworkdb-atari7800", "Atari 7800", 66),
-    ("chipster6502/artworkdb-amigacd32", "Amiga CD32", 149),
-    ("chipster6502/artworkdb-arcade", "Arcade", 4619),
-    ("chipster6502/artworkdb-atari2600", "Atari 2600", 595),
-    ("chipster6502/artworkdb-atarilynx", "Atari Lynx", 88),
-    ("chipster6502/artworkdb-cd-i", "CD-i", 160),
-    ("chipster6502/artworkdb-coleco", "Coleco", 165),
-    ("chipster6502/artworkdb-fds", "FDS", 202),
-    ("chipster6502/artworkdb-gameboy", "Game Boy", 1035),
-    ("chipster6502/artworkdb-gba", "GBA", 1634),
-    ("chipster6502/artworkdb-gbc", "Game Boy Color", 958),
-    ("chipster6502/artworkdb-gamegear", "Game Gear", 382),
-    ("chipster6502/artworkdb-genesis", "Genesis", 1012),
-    ("chipster6502/artworkdb-intellivision", "Intellivision", 153),
-    ("chipster6502/artworkdb-jaguar", "Jaguar", 56),
-    ("chipster6502/artworkdb-megacd", "Mega CD", 246),
-    ("chipster6502/artworkdb-n64", "N64", 409),
-    ("chipster6502/artworkdb-neogeo", "Neo Geo", 171),
-    ("chipster6502/artworkdb-nes", "NES", 1424),
-    ("chipster6502/artworkdb-neogeo-cd", "Neo Geo CD", 97),
-    ("chipster6502/artworkdb-neogeopocket", "Neo Geo Pocket", 10),
-    ("chipster6502/artworkdb-neogeopocket-color", "Neo Geo Pocket Color", 75),
-    ("chipster6502/artworkdb-odyssey2", "Odyssey 2", 83),
-    ("chipster6502/artworkdb-psx", "PSX", 4867),
-    ("chipster6502/artworkdb-s32x", "Sega 32X", 40),
-    ("chipster6502/artworkdb-sg-1000", "SG-1000", 73),
-    ("chipster6502/artworkdb-sms", "SMS", 343),
-    ("chipster6502/artworkdb-snes", "SNES", 1802),
-    ("chipster6502/artworkdb-satellaview", "Satellaview", 149),
-    ("chipster6502/artworkdb-saturn", "Saturn", 1219),
-    ("chipster6502/artworkdb-supergrafx", "SuperGrafx", 5),
-    ("chipster6502/artworkdb-tgfx16", "TurboGrafx-16", 301),
-    ("chipster6502/artworkdb-tgfx16-cd", "TurboGrafx-CD", 396),
-    ("chipster6502/artworkdb-vectrex", "Vectrex", 34),
-    ("chipster6502/artworkdb-virtualboy", "Virtual Boy", 27),
-    ("chipster6502/artworkdb-wonderswan", "WonderSwan", 111),
-    ("chipster6502/artworkdb-wonderswancolor", "WonderSwan Color", 91),
+    # (Box Art db_id, system, Box Art images, Screenshots images, Title Screens images)
+    ("chipster6502/artworkdb-3do", "3DO", 316, 290, 297),
+    ("chipster6502/artworkdb-atari5200", "Atari 5200", 95, 95, 95),
+    ("chipster6502/artworkdb-atari7800", "Atari 7800", 66, 66, 66),
+    ("chipster6502/artworkdb-amigacd32", "Amiga CD32", 149, 149, 149),
+    ("chipster6502/artworkdb-arcade", "Arcade", 4619, 4585, 4541),
+    ("chipster6502/artworkdb-atari2600", "Atari 2600", 595, 574, 597),
+    ("chipster6502/artworkdb-atarilynx", "Atari Lynx", 88, 88, 87),
+    ("chipster6502/artworkdb-cd-i", "CD-i", 160, 148, 139),
+    ("chipster6502/artworkdb-coleco", "Coleco", 165, 165, 165),
+    ("chipster6502/artworkdb-fds", "FDS", 202, 200, 200),
+    ("chipster6502/artworkdb-gameboy", "Game Boy", 1035, 1031, 1050),
+    ("chipster6502/artworkdb-gba", "GBA", 1634, 1633, 1627),
+    ("chipster6502/artworkdb-gbc", "Game Boy Color", 958, 952, 958),
+    ("chipster6502/artworkdb-gamegear", "Game Gear", 382, 382, 382),
+    ("chipster6502/artworkdb-genesis", "Genesis", 1012, 1005, 1008),
+    ("chipster6502/artworkdb-intellivision", "Intellivision", 153, 153, 153),
+    ("chipster6502/artworkdb-jaguar", "Jaguar", 56, 56, 56),
+    ("chipster6502/artworkdb-megacd", "Mega CD", 246, 211, 217),
+    ("chipster6502/artworkdb-n64", "N64", 409, 409, 408),
+    ("chipster6502/artworkdb-neogeo", "Neo Geo", 171, 171, 171),
+    ("chipster6502/artworkdb-nes", "NES", 1424, 1421, 1422),
+    ("chipster6502/artworkdb-neogeo-cd", "Neo Geo CD", 97, 96, 96),
+    ("chipster6502/artworkdb-neogeopocket", "Neo Geo Pocket", 10, 10, 10),
+    ("chipster6502/artworkdb-neogeopocket-color", "Neo Geo Pocket Color", 75, 75, 75),
+    ("chipster6502/artworkdb-odyssey2", "Odyssey 2", 83, 83, 25),
+    ("chipster6502/artworkdb-psx", "PSX", 4867, 4135, 4730),
+    ("chipster6502/artworkdb-s32x", "Sega 32X", 40, 40, 40),
+    ("chipster6502/artworkdb-sg-1000", "SG-1000", 73, 73, 73),
+    ("chipster6502/artworkdb-sms", "SMS", 343, 342, 343),
+    ("chipster6502/artworkdb-snes", "SNES", 1802, 1798, 1800),
+    ("chipster6502/artworkdb-satellaview", "Satellaview", 149, 149, 144),
+    ("chipster6502/artworkdb-saturn", "Saturn", 1219, 1128, 1129),
+    ("chipster6502/artworkdb-supergrafx", "SuperGrafx", 5, 5, 5),
+    ("chipster6502/artworkdb-tgfx16", "TurboGrafx-16", 301, 297, 298),
+    ("chipster6502/artworkdb-tgfx16-cd", "TurboGrafx-CD", 396, 379, 385),
+    ("chipster6502/artworkdb-vectrex", "Vectrex", 34, 34, 34),
+    ("chipster6502/artworkdb-virtualboy", "Virtual Boy", 27, 27, 27),
+    ("chipster6502/artworkdb-wonderswan", "WonderSwan", 111, 111, 111),
+    ("chipster6502/artworkdb-wonderswancolor", "WonderSwan Color", 91, 91, 91),
 )
 
 _ARTWORK_STYLES = (
@@ -866,7 +873,7 @@ def _artwork_style_variable(db_id):
 
 def _artwork_db_variables(): return {
     db_id: {"group": ["separate_db", "artwork"], "default": "false", "values": ["false", "true"]}
-    for db_id, _title, _images in _ARTWORK_DATABASES
+    for db_id, _title, *_images in _ARTWORK_DATABASES
 }
 
 
@@ -876,7 +883,7 @@ def _artwork_style_variables(): return {
         "default": "box2d",
         "values": [style for style, _label in _ARTWORK_STYLES],
     }
-    for db_id, _title, _images in _ARTWORK_DATABASES
+    for db_id, _title, *_images in _ARTWORK_DATABASES
 }
 
 
@@ -992,8 +999,250 @@ def _artwork_db_entries(): return [
         "description": f"{{{db_id}:enabled}} {{{_artwork_style_variable(db_id)}:artwork_style}} | {images} images",
         "actions": _artwork_db_actions(db_id, title),
     }
-    for db_id, title, images in _ARTWORK_DATABASES
+    for db_id, title, images, _screenshots, _titles in _ARTWORK_DATABASES
 ]
+
+
+# installed_bytes is what each full pack takes with 128 KB clusters, summed from its published databases on 2026-10-05.
+_ARTWORK_PACKS = {
+    "screenshots": {
+        "title": "Screenshots", "description": "In-game screenshots of each game.", "folder": "Screenshots",
+        "installed_bytes": 3_565_682_688,
+    },
+    "titles": {
+        "title": "Title Screens", "description": "Title screen images of each game.", "folder": "Titles",
+        "installed_bytes": 3_639_738_368,
+    },
+}
+
+
+def _artwork_pack_rows(pack):
+    for db_id, title, _boxes, screenshots, titles in _ARTWORK_DATABASES:
+        yield f"{db_id}-{pack}", title, {"screenshots": screenshots, "titles": titles}[pack]
+
+
+def _artwork_pack_images(pack):
+    return sum(images for _db_id, _title, images in _artwork_pack_rows(pack))
+
+
+def _artwork_pack_selector(pack):
+    return f"chipster6502_artwork_{pack}_dbs_general_selector"
+
+
+def _artwork_pack_unapply(pack):
+    return {"type": "select_all_chipster6502_artwork_pack_dbs", "pack": pack, "action": "unapply"}
+
+
+def _artwork_pack_db_variables(pack): return {
+    db_id: {"group": ["separate_db", f"artwork_{pack}"], "default": "false", "values": ["false", "true"]}
+    for db_id, _title, _images in _artwork_pack_rows(pack)
+}
+
+
+def _enable_all_artwork_pack_confirm(pack):
+    title = _ARTWORK_PACKS[pack]["title"]
+    return {
+        "ui": "confirm",
+        "header": f"Enable All {title} DBs?",
+        "text": [
+            f"This will activate all {title} databases.",
+            f"That is a large download, {_artwork_pack_images(pack):,} images taking up to {_rounded_up_gb(_ARTWORK_PACKS[pack]['installed_bytes'])} GB.",
+            "It will take a while!",
+            "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
+            "Are you sure you want to continue?",
+        ],
+        "actions": [
+            {"title": "Continue", "type": "fixed", "fixed": [
+                {"type": "select_all_chipster6502_artwork_pack_dbs", "pack": pack, "action": "toggle"},
+                {"type": "navigate", "target": "back"},
+            ]},
+            {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+        ],
+    }
+
+
+def _not_enough_space_for_artwork_pack_warning(pack):
+    title = _ARTWORK_PACKS[pack]["title"]
+    return {
+        "ui": "confirm",
+        "header": "Not Enough Free Space!",
+        "alert_level": "black",
+        "text": [
+            f"Enabling all {title} DBs requires {_artwork_pack_images(pack):,} images taking up to {_rounded_up_gb(_ARTWORK_PACKS[pack]['installed_bytes'])} GB.",
+            "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
+            f"Installing all {title} will likely fill up your storage and cause problems.",
+            f"Free up space or enable only individual {title} databases instead.",
+        ],
+        "preselected_action": "Back",
+        "actions": [
+            {"title": "Continue", "type": "fixed", "fixed": [
+                {"type": "select_all_chipster6502_artwork_pack_dbs", "pack": pack, "action": "toggle"},
+                {"type": "navigate", "target": "back"},
+            ]},
+            {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+        ],
+    }
+
+
+def _try_select_all_chipster6502_artwork_pack_dbs(pack): return [
+    {
+        "type": "condition",
+        "variable": _artwork_pack_selector(pack),
+        "true": [{"type": "select_all_chipster6502_artwork_pack_dbs", "pack": pack, "action": "toggle"}],
+        "false": [
+            {
+                "type": "compare_bigger",
+                "left": _ARTWORK_PACKS[pack]["installed_bytes"],
+                "right": "media_fat_available_space",
+                "target": "artwork_space_fits"
+            },
+            {
+                "type": "condition",
+                "variable": "artwork_space_fits",
+                "left": [_not_enough_space_for_artwork_pack_warning(pack)],
+                "right": [_enable_all_artwork_pack_confirm(pack)],
+                "equal": [_not_enough_space_for_artwork_pack_warning(pack)],
+            }
+        ]
+    }
+]
+
+
+def _artwork_kinds_images():
+    box_art_images = sum(boxes for _db_id, _title, boxes, _screenshots, _titles in _ARTWORK_DATABASES)
+    return box_art_images + sum(_artwork_pack_images(pack) for pack in _ARTWORK_PACKS)
+
+
+def _artwork_kinds_installed_bytes():
+    return _ALL_CHIPSTER6502_ARTWORK_ESTIMATED_BYTES + sum(pack["installed_bytes"] for pack in _ARTWORK_PACKS.values())
+
+
+def _enable_all_artwork_kinds_confirm(): return {
+    "ui": "confirm",
+    "header": "Enable All Game Artwork DBs?",
+    "text": [
+        "This will activate all Box Art, Screenshots and Title Screens databases.",
+        f"That is a large download, {_artwork_kinds_images():,} images taking up to {_rounded_up_gb(_artwork_kinds_installed_bytes())} GB.",
+        "It will take a while!",
+        "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
+        "Are you sure you want to continue?",
+    ],
+    "actions": [
+        {"title": "Continue", "type": "fixed", "fixed": [
+            {"type": "select_all_chipster6502_artwork_kinds", "action": "toggle"},
+            {"type": "navigate", "target": "back"},
+        ]},
+        {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+    ],
+}
+
+
+def _not_enough_space_for_artwork_kinds_warning(): return {
+    "ui": "confirm",
+    "header": "Not Enough Free Space!",
+    "alert_level": "black",
+    "text": [
+        f"Enabling all Game Artwork DBs requires {_artwork_kinds_images():,} images taking up to {_rounded_up_gb(_artwork_kinds_installed_bytes())} GB.",
+        "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
+        "Installing all Game Artwork will likely fill up your storage and cause problems.",
+        "Free up space or enable only some of them instead.",
+    ],
+    "preselected_action": "Back",
+    "actions": [
+        {"title": "Continue", "type": "fixed", "fixed": [
+            {"type": "select_all_chipster6502_artwork_kinds", "action": "toggle"},
+            {"type": "navigate", "target": "back"},
+        ]},
+        {"title": "Back", "type": "fixed", "fixed": [{"type": "navigate", "target": "back"}]},
+    ],
+}
+
+
+def _try_select_all_chipster6502_artwork_kinds(): return [
+    {
+        "type": "condition",
+        "variable": "chipster6502_artwork_kinds_general_selector",
+        "true": [{"type": "select_all_chipster6502_artwork_kinds", "action": "toggle"}],
+        "false": [
+            {
+                "type": "compare_bigger",
+                "left": _artwork_kinds_installed_bytes(),
+                "right": "media_fat_available_space",
+                "target": "artwork_space_fits"
+            },
+            {
+                "type": "condition",
+                "variable": "artwork_space_fits",
+                "left": [_not_enough_space_for_artwork_kinds_warning()],
+                "right": [_enable_all_artwork_kinds_confirm()],
+                "equal": [_not_enough_space_for_artwork_kinds_warning()],
+            }
+        ]
+    }
+]
+
+
+def _artwork_pack_db_entries(pack): return [
+    {
+        "title": f"# {title}",
+        "description": f"{{{db_id}:enabled}} {images} images",
+        "actions": {
+            "uninstall": uninstall_db_action_for_id(
+                db_id,
+                f"{title} {_ARTWORK_PACKS[pack]['title']}",
+                on_success=lambda then: [_artwork_pack_unapply(pack), *then],
+            ),
+            "ok": [{"type": "rotate_variable", "target": db_id}, _artwork_pack_unapply(pack)],
+            "toggle": [{"type": "rotate_variable", "target": db_id}, _artwork_pack_unapply(pack)],
+        },
+    }
+    for db_id, title, images in _artwork_pack_rows(pack)
+]
+
+
+def _artwork_pack_menu(pack):
+    title = _ARTWORK_PACKS[pack]["title"]
+    selector = _artwork_pack_selector(pack)
+    db_variables = _artwork_pack_db_variables(pack)
+    return {
+        "type": "dialog_sub_menu_toggle",
+        "header": title,
+        "text": [
+            _ARTWORK_PACKS[pack]["description"],
+            f"Installed in docs/<SYSTEM>/{_ARTWORK_PACKS[pack]['folder']}/.",
+        ],
+        "formatters": {
+            "artwork_pack_selector_title": {
+                "false": "Select All",
+                "true": "Select None",
+            },
+            "select_all_artwork_pack_toggle": {
+                "false": "",
+                "true": "All Selected. ",
+            },
+        },
+        "variables": {
+            selector: {"group": "store", "default": "false", "values": ["false", "true"]},
+            **db_variables,
+        },
+        "entries": [
+            {
+                "title": f" {{{selector}:artwork_pack_selector_title}}",
+                "description": f"{{{selector}:select_all_artwork_pack_toggle}}{_artwork_pack_images(pack)} images | {_rounded_up_gb(_ARTWORK_PACKS[pack]['installed_bytes'])}GB total",
+                "actions": {
+                    "uninstall_all": uninstall_db_action_artwork(
+                        f"chipster6502_artwork_{pack}_dbs_installed",
+                        list(db_variables),
+                        f"All {title} Databases",
+                        on_success=lambda then: [_artwork_pack_unapply(pack), *then],
+                    ),
+                    "ok": _try_select_all_chipster6502_artwork_pack_dbs(pack),
+                }
+            },
+            {},
+            *_artwork_pack_db_entries(pack),
+        ]
+    }
 
 
 def _retroachievements_cfg_installed_message(): return {
@@ -2919,14 +3168,14 @@ def settings_screen_model():
                 },
                 {
                     "title": "# Game Artwork DBs",
-                    "description": "{chipster6502_artwork_dbs_general_selector:multi_db_status}Box Art & Screenshots",
+                    "description": "{chipster6502_artwork_kinds_general_selector:multi_db_status}Box Art, Screenshots & Title Screens",
                     "actions": {
                         "ok": [{"type": "navigate", "target": "game_artwork_db_menu"}],
                         "info": [{
                             "ui": "message",
                             "header": "About Game Artwork DBs",
                             "text": [
-                                "These databases install box art and screenshots for use by MiSTer Monitor and compatible frontends.",
+                                "These databases install box art, screenshots and title screens for use by MiSTer Monitor and compatible frontends.",
                                 " ",
                                 "They avoid the need to scrape artwork by installing ready-to-use images directly on your MiSTer.",
                                 " ",
@@ -3015,9 +3264,64 @@ def settings_screen_model():
             ]
         },
         "game_artwork_db_menu": {
-            "type": "dialog_sub_menu_toggle",
+            "type": "dialog_sub_menu",
             "header": "Game Artwork DBs",
-            "text": ["Game Artwork DBs"],
+            "text": ["These DBs install game images that frontends and other tools can use."],
+            "formatters": {
+                "artwork_kinds_selector_title": {
+                    "false": "Select All",
+                    "true": "Select None",
+                },
+                "select_all_artwork_kinds_toggle": {
+                    "false": "",
+                    "true": "All Selected. ",
+                },
+                "artwork_box_art_summary": {
+                    "none": "",
+                    "mixed": "Mixed Styles | ",
+                    "box2d": "2D Boxes | ",
+                    "box3d": "3D Boxes | ",
+                    "mixrbv2": "Box + Screenshot | ",
+                },
+            },
+            "variables": {
+                "chipster6502_artwork_kinds_general_selector": {"default": "false", "values": ["false", "true"]},
+                "chipster6502_artwork_screenshots_selected_count": {"default": "0"},
+                "chipster6502_artwork_titles_selected_count": {"default": "0"},
+            },
+            "entries": [
+                {
+                    "title": " {chipster6502_artwork_kinds_general_selector:artwork_kinds_selector_title}",
+                    "description": f"{{chipster6502_artwork_kinds_general_selector:select_all_artwork_kinds_toggle}}{_artwork_kinds_images()} images | {_rounded_up_gb(_artwork_kinds_installed_bytes())}GB total",
+                    "actions": {"ok": _try_select_all_chipster6502_artwork_kinds()},
+                },
+                {},
+                {
+                    "title": "# Box Art",
+                    "description": "{chipster6502_artwork_selected_style:artwork_box_art_summary}{chipster6502_artwork_selected_count} selected",
+                    "actions": {"ok": [{"type": "navigate", "target": "game_artwork_box_art_db_menu"}]},
+                },
+                {
+                    "title": "# Screenshots",
+                    "description": "{chipster6502_artwork_screenshots_selected_count} selected",
+                    "actions": {"ok": [{"type": "navigate", "target": "game_artwork_screenshots_db_menu"}]},
+                },
+                {
+                    "title": "# Title Screens",
+                    "description": "{chipster6502_artwork_titles_selected_count} selected",
+                    "actions": {"ok": [{"type": "navigate", "target": "game_artwork_titles_db_menu"}]},
+                },
+            ]
+        },
+        "game_artwork_screenshots_db_menu": _artwork_pack_menu("screenshots"),
+        "game_artwork_titles_db_menu": _artwork_pack_menu("titles"),
+        "game_artwork_box_art_db_menu": {
+            "type": "dialog_sub_menu_toggle",
+            "header": "Box Art",
+            "text": [
+                "Box images of each game, in the style you choose for each system.",
+                "Installed in docs/<SYSTEM>/Artwork/.",
+            ],
             "formatters": {
                 "chipster6502_artwork_dbs_general_selector_title": {
                     "false": "Select All",
@@ -3052,7 +3356,7 @@ def settings_screen_model():
             "entries": [
                 {
                     "title": " {chipster6502_artwork_dbs_general_selector:chipster6502_artwork_dbs_general_selector_title}",
-                    "description": "{chipster6502_artwork_dbs_general_selector:select_all_artwork_toggle}23658 images | 2.04-2.39GB total",
+                    "description": f"{{chipster6502_artwork_dbs_general_selector:select_all_artwork_toggle}}23658 images | {_rounded_up_gb(_ALL_CHIPSTER6502_ARTWORK_ESTIMATED_BYTES)}GB total",
                     "actions": {
                         "uninstall_all": uninstall_db_action_artwork(
                             "chipster6502_artwork_dbs_installed",
@@ -3079,7 +3383,10 @@ def settings_screen_model():
         "game_manuals_en_db_menu": {
             "type": "dialog_sub_menu_toggle",
             "header": "Game Manuals (EN) DBs",
-            "text": ["Game Manuals (EN) DBs"],
+            "text": [
+                "English-language game manuals, as PDF files.",
+                "Installed in docs/<SYSTEM>/.",
+            ],
             "formatters": {
                 "ajgowans_manuals_dbs_general_selector_title": {
                     "false": "Select All",
@@ -3097,7 +3404,7 @@ def settings_screen_model():
             "entries": [
                 {
                     "title": " {ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_title}",
-                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8169 files | 20.8GB total",
+                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8190 files | 20.9GB total",
                     "actions": {
                         "uninstall_all": uninstall_db_action_manuals(
                             "ajgowans_manuals_dbs_installed",
@@ -3114,7 +3421,7 @@ def settings_screen_model():
                 {},
                 {
                     "title": "# 3DO",
-                    "description": "{ajgowans/manualsdb-3do:enabled} 133 | 310MB",
+                    "description": "{ajgowans/manualsdb-3do:enabled} 133 | 311MB",
                     "actions": _manual_db_actions("ajgowans/manualsdb-3do", "3DO Manuals"),
                 },
                 {
@@ -3194,17 +3501,17 @@ def settings_screen_model():
                 },
                 {
                     "title": "# Game Boy",
-                    "description": "{ajgowans/manualsdb-gameboy:enabled} 441 | 1.2GB",
+                    "description": "{ajgowans/manualsdb-gameboy:enabled} 441 | 1.3GB",
                     "actions": _manual_db_actions(
                         "ajgowans/manualsdb-gameboy",
                         "Game Boy Manuals",
                         _try_toggle_big_manual_db(
-                            "ajgowans/manualsdb-gameboy", "Game Boy Manuals", "441", "1.2 GB"),
+                            "ajgowans/manualsdb-gameboy", "Game Boy Manuals", "441", "1.3 GB"),
                     ),
                 },
                 {
                     "title": "# Game Gear",
-                    "description": "{ajgowans/manualsdb-gamegear:enabled} 202 | 600MB",
+                    "description": "{ajgowans/manualsdb-gamegear:enabled} 202 | 601MB",
                     "actions": _manual_db_actions("ajgowans/manualsdb-gamegear", "Game Gear Manuals"),
                 },
                 {
@@ -3214,22 +3521,22 @@ def settings_screen_model():
                 },
                 {
                     "title": "# GBA",
-                    "description": "{ajgowans/manualsdb-gba:enabled} 742 | 3.0GB",
+                    "description": "{ajgowans/manualsdb-gba:enabled} 742 | 3.1GB",
                     "actions": _manual_db_actions(
                         "ajgowans/manualsdb-gba",
                         "GBA Manuals",
                         _try_toggle_big_manual_db(
-                            "ajgowans/manualsdb-gba", "GBA Manuals", "742", "3.0 GB"),
+                            "ajgowans/manualsdb-gba", "GBA Manuals", "742", "3.1 GB"),
                     ),
                 },
                 {
                     "title": "# Game Boy Color",
-                    "description": "{ajgowans/manualsdb-gbc:enabled} 308 | 1.1GB",
+                    "description": "{ajgowans/manualsdb-gbc:enabled} 308 | 1.2GB",
                     "actions": _manual_db_actions(
                         "ajgowans/manualsdb-gbc",
                         "Game Boy Color Manuals",
                         _try_toggle_big_manual_db(
-                            "ajgowans/manualsdb-gbc", "Game Boy Color Manuals", "308", "1.1 GB"),
+                            "ajgowans/manualsdb-gbc", "Game Boy Color Manuals", "308", "1.2 GB"),
                     ),
                 },
                 {
@@ -3269,7 +3576,7 @@ def settings_screen_model():
                 },
                 {
                     "title": "# N64",
-                    "description": "{ajgowans/manualsdb-n64:enabled} 304 | 746MB",
+                    "description": "{ajgowans/manualsdb-n64:enabled} 304 | 747MB",
                     "actions": _manual_db_actions("ajgowans/manualsdb-n64", "N64 Manuals"),
                 },
                 {
@@ -3284,7 +3591,7 @@ def settings_screen_model():
                 },
                 {
                     "title": "# NES",
-                    "description": "{ajgowans/manualsdb-nes:enabled} 759 | 960MB",
+                    "description": "{ajgowans/manualsdb-nes:enabled} 759 | 961MB",
                     "actions": _manual_db_actions("ajgowans/manualsdb-nes", "NES Manuals"),
                 },
                 {
@@ -3344,12 +3651,12 @@ def settings_screen_model():
                 },
                 {
                     "title": "# Sega Saturn",
-                    "description": "{ajgowans/manualsdb-segasaturn:enabled} 265 | 602MB",
+                    "description": "{ajgowans/manualsdb-segasaturn:enabled} 265 | 603MB",
                     "actions": _manual_db_actions(
                         "ajgowans/manualsdb-segasaturn",
                         "Sega Saturn Manuals",
                         _try_toggle_big_manual_db(
-                            "ajgowans/manualsdb-segasaturn", "Sega Saturn Manuals", "265", "602 MB"),
+                            "ajgowans/manualsdb-segasaturn", "Sega Saturn Manuals", "265", "603 MB"),
                     ),
                 },
                 {
@@ -3364,27 +3671,27 @@ def settings_screen_model():
                 },
                 {
                     "title": "# SNES",
-                    "description": "{ajgowans/manualsdb-snes:enabled} 797 | 1.5GB",
+                    "description": "{ajgowans/manualsdb-snes:enabled} 797 | 1.6GB",
                     "actions": _manual_db_actions(
                         "ajgowans/manualsdb-snes",
                         "SNES Manuals",
                         _try_toggle_big_manual_db(
-                            "ajgowans/manualsdb-snes", "SNES Manuals", "797", "1.5 GB"),
+                            "ajgowans/manualsdb-snes", "SNES Manuals", "797", "1.6 GB"),
                     ),
                 },
                 {
                     "title": "# Supervision",
-                    "description": "{ajgowans/manualsdb-supervision:enabled} 53",
+                    "description": "{ajgowans/manualsdb-supervision:enabled} 64",
                     "actions": _manual_db_actions("ajgowans/manualsdb-supervision", "Supervision Manuals"),
                 },
                 {
                     "title": "# TurboGrafx-16",
-                    "description": "{ajgowans/manualsdb-turbografx16:enabled} 77",
+                    "description": "{ajgowans/manualsdb-turbografx16:enabled} 85",
                     "actions": _manual_db_actions("ajgowans/manualsdb-turbografx16", "TurboGrafx-16 Manuals"),
                 },
                 {
                     "title": "# TurboGrafx CD",
-                    "description": "{ajgowans/manualsdb-turbografxcd:enabled} 44",
+                    "description": "{ajgowans/manualsdb-turbografxcd:enabled} 46",
                     "actions": _manual_db_actions("ajgowans/manualsdb-turbografxcd", "TurboGrafx CD Manuals"),
                 },
                 {
@@ -3907,7 +4214,7 @@ def settings_screen_model():
                     "/media/fat/_Arcade": "Directly on 'Arcade' folder",
                     "/media/fat/_Arcade Organized": "On new folder 'Arcade Organized'",
                 },
-                'capitalize': lambda string_value: string_value.capitalize(),
+                'capitalize': {"": "", "platform": "Platform", "core": "Core", "year": "Year"},
             },
             "entries": [
                 {

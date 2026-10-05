@@ -21,7 +21,7 @@ from update_all.constants import MEDIA_FAT, DOWNLOADER_INI_STANDARD_PATH, FILE_u
     FILE_update_names_txt_ini, FILE_update_jtcores_ini, ARCADE_ORGANIZER_INI, FILE_update_all_zipped_storage, \
     DOWNLOADER_STORE_STANDARD_PATH, FILE_update_all_storage, FILE_pocket_firmware_details_json, \
     DOWNLOADER_AJGOWANS_MANUALSDB_INI, DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI
-from update_all.databases import all_dbs, ajgowans_manualsdbs, chipster6502_artworkdbs
+from update_all.databases import all_dbs, ajgowans_manualsdbs, chipster6502_artwork_box_dbs, chipster6502_artwork_pack_dbs
 
 downloader_ini = f'{MEDIA_FAT}/{DOWNLOADER_INI_STANDARD_PATH}'
 manuals_ini = f'{MEDIA_FAT}/{DOWNLOADER_AJGOWANS_MANUALSDB_INI}'
@@ -52,7 +52,11 @@ def all_manuals_db_ids() -> list[str]:
 
 
 def all_artwork_db_ids() -> list[str]:
-    return [db.db_id for db in chipster6502_artworkdbs()]
+    return [db.db_id for db in chipster6502_artwork_box_dbs()]
+
+
+def all_artwork_pack_db_ids(pack: str) -> list[str]:
+    return [db.db_id for db in chipster6502_artwork_pack_dbs(pack)]
 
 
 def default_downloader_ini_content():

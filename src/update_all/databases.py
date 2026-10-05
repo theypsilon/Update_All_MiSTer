@@ -19,7 +19,8 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 from urllib.parse import urlparse
 
-from update_all.constants import CHIPSTER6502_ARTWORK_DEFAULT_STYLE, CHIPSTER6502_ARTWORK_STYLES
+from update_all.constants import CHIPSTER6502_ARTWORK_DEFAULT_STYLE, CHIPSTER6502_ARTWORK_STYLES, \
+    CHIPSTER6502_ARTWORK_PACKS
 
 
 @dataclass
@@ -199,6 +200,88 @@ class AllDBs:
         self.ARTWORKDB_VIRTUALBOY = Database(db_id='chipster6502/artworkdb-virtualboy', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/virtualboy_box2d.json.zip', title='Virtual Boy Artwork')
         self.ARTWORKDB_WONDERSWAN = Database(db_id='chipster6502/artworkdb-wonderswan', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/wonderswan_box2d.json.zip', title='WonderSwan Artwork')
         self.ARTWORKDB_WONDERSWANCOLOR = Database(db_id='chipster6502/artworkdb-wonderswancolor', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/wonderswancolor_box2d.json.zip', title='WonderSwan Color Artwork')
+
+        # ARTWORK SCREENSHOTS (snap databases from MiSTer_artwork_pack/PACK_FORMAT.md)
+        self.ARTWORKDB_3DO_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-3do-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/3do_snap.json.zip', title='3DO Screenshots')
+        self.ARTWORKDB_ATARI5200_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-atari5200-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atari5200_snap.json.zip', title='Atari 5200 Screenshots')
+        self.ARTWORKDB_ATARI7800_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-atari7800-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atari7800_snap.json.zip', title='Atari 7800 Screenshots')
+        self.ARTWORKDB_AMIGACD32_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-amigacd32-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/amigacd32_snap.json.zip', title='Amiga CD32 Screenshots')
+        self.ARTWORKDB_ARCADE_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-arcade-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-arcade/db/arcade_snap.json.zip', title='Arcade Screenshots')
+        self.ARTWORKDB_ATARI2600_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-atari2600-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atari2600_snap.json.zip', title='Atari 2600 Screenshots')
+        self.ARTWORKDB_ATARILYNX_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-atarilynx-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atarilynx_snap.json.zip', title='Atari Lynx Screenshots')
+        self.ARTWORKDB_CD_I_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-cd-i-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/cd-i_snap.json.zip', title='CD-i Screenshots')
+        self.ARTWORKDB_COLECO_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-coleco-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/coleco_snap.json.zip', title='Coleco Screenshots')
+        self.ARTWORKDB_FDS_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-fds-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/fds_snap.json.zip', title='FDS Screenshots')
+        self.ARTWORKDB_GAMEBOY_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-gameboy-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-handhelds/db/gameboy_snap.json.zip', title='Game Boy Screenshots')
+        self.ARTWORKDB_GBA_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-gba-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-handhelds/db/gba_snap.json.zip', title='GBA Screenshots')
+        self.ARTWORKDB_GBC_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-gbc-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-handhelds/db/gbc_snap.json.zip', title='Game Boy Color Screenshots')
+        self.ARTWORKDB_GAMEGEAR_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-gamegear-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/gamegear_snap.json.zip', title='Game Gear Screenshots')
+        self.ARTWORKDB_GENESIS_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-genesis-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/genesis_snap.json.zip', title='Genesis Screenshots')
+        self.ARTWORKDB_INTELLIVISION_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-intellivision-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/intellivision_snap.json.zip', title='Intellivision Screenshots')
+        self.ARTWORKDB_JAGUAR_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-jaguar-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/jaguar_snap.json.zip', title='Jaguar Screenshots')
+        self.ARTWORKDB_MEGACD_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-megacd-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/megacd_snap.json.zip', title='Mega CD Screenshots')
+        self.ARTWORKDB_N64_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-n64-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/n64_snap.json.zip', title='N64 Screenshots')
+        self.ARTWORKDB_NEOGEO_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-neogeo-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeo_snap.json.zip', title='Neo Geo Screenshots')
+        self.ARTWORKDB_NES_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-nes-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/nes_snap.json.zip', title='NES Screenshots')
+        self.ARTWORKDB_NEOGEO_CD_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-neogeo-cd-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeo-cd_snap.json.zip', title='Neo Geo CD Screenshots')
+        self.ARTWORKDB_NEOGEOPOCKET_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-neogeopocket-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeopocket_snap.json.zip', title='Neo Geo Pocket Screenshots')
+        self.ARTWORKDB_NEOGEOPOCKET_COLOR_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-neogeopocket-color-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeopocket-color_snap.json.zip', title='Neo Geo Pocket Color Screenshots')
+        self.ARTWORKDB_ODYSSEY2_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-odyssey2-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/odyssey2_snap.json.zip', title='Odyssey 2 Screenshots')
+        self.ARTWORKDB_PSX_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-psx-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sony/db/psx_snap.json.zip', title='PSX Screenshots')
+        self.ARTWORKDB_S32X_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-s32x-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/s32x_snap.json.zip', title='Sega 32X Screenshots')
+        self.ARTWORKDB_SG_1000_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-sg-1000-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/sg-1000_snap.json.zip', title='SG-1000 Screenshots')
+        self.ARTWORKDB_SMS_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-sms-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/sms_snap.json.zip', title='SMS Screenshots')
+        self.ARTWORKDB_SNES_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-snes-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/snes_snap.json.zip', title='SNES Screenshots')
+        self.ARTWORKDB_SATELLAVIEW_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-satellaview-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/satellaview_snap.json.zip', title='Satellaview Screenshots')
+        self.ARTWORKDB_SATURN_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-saturn-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/saturn_snap.json.zip', title='Saturn Screenshots')
+        self.ARTWORKDB_SUPERGRAFX_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-supergrafx-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nec/db/supergrafx_snap.json.zip', title='SuperGrafx Screenshots')
+        self.ARTWORKDB_TGFX16_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-tgfx16-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nec/db/tgfx16_snap.json.zip', title='TurboGrafx-16 Screenshots')
+        self.ARTWORKDB_TGFX16_CD_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-tgfx16-cd-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nec/db/tgfx16-cd_snap.json.zip', title='TurboGrafx-CD Screenshots')
+        self.ARTWORKDB_VECTREX_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-vectrex-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/vectrex_snap.json.zip', title='Vectrex Screenshots')
+        self.ARTWORKDB_VIRTUALBOY_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-virtualboy-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/virtualboy_snap.json.zip', title='Virtual Boy Screenshots')
+        self.ARTWORKDB_WONDERSWAN_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-wonderswan-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/wonderswan_snap.json.zip', title='WonderSwan Screenshots')
+        self.ARTWORKDB_WONDERSWANCOLOR_SCREENSHOTS = Database(db_id='chipster6502/artworkdb-wonderswancolor-screenshots', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/wonderswancolor_snap.json.zip', title='WonderSwan Color Screenshots')
+
+        # ARTWORK TITLE SCREENS (title databases from MiSTer_artwork_pack/PACK_FORMAT.md)
+        self.ARTWORKDB_3DO_TITLES = Database(db_id='chipster6502/artworkdb-3do-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/3do_title.json.zip', title='3DO Title Screens')
+        self.ARTWORKDB_ATARI5200_TITLES = Database(db_id='chipster6502/artworkdb-atari5200-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atari5200_title.json.zip', title='Atari 5200 Title Screens')
+        self.ARTWORKDB_ATARI7800_TITLES = Database(db_id='chipster6502/artworkdb-atari7800-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atari7800_title.json.zip', title='Atari 7800 Title Screens')
+        self.ARTWORKDB_AMIGACD32_TITLES = Database(db_id='chipster6502/artworkdb-amigacd32-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/amigacd32_title.json.zip', title='Amiga CD32 Title Screens')
+        self.ARTWORKDB_ARCADE_TITLES = Database(db_id='chipster6502/artworkdb-arcade-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-arcade/db/arcade_title.json.zip', title='Arcade Title Screens')
+        self.ARTWORKDB_ATARI2600_TITLES = Database(db_id='chipster6502/artworkdb-atari2600-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atari2600_title.json.zip', title='Atari 2600 Title Screens')
+        self.ARTWORKDB_ATARILYNX_TITLES = Database(db_id='chipster6502/artworkdb-atarilynx-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/atarilynx_title.json.zip', title='Atari Lynx Title Screens')
+        self.ARTWORKDB_CD_I_TITLES = Database(db_id='chipster6502/artworkdb-cd-i-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/cd-i_title.json.zip', title='CD-i Title Screens')
+        self.ARTWORKDB_COLECO_TITLES = Database(db_id='chipster6502/artworkdb-coleco-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/coleco_title.json.zip', title='Coleco Title Screens')
+        self.ARTWORKDB_FDS_TITLES = Database(db_id='chipster6502/artworkdb-fds-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/fds_title.json.zip', title='FDS Title Screens')
+        self.ARTWORKDB_GAMEBOY_TITLES = Database(db_id='chipster6502/artworkdb-gameboy-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-handhelds/db/gameboy_title.json.zip', title='Game Boy Title Screens')
+        self.ARTWORKDB_GBA_TITLES = Database(db_id='chipster6502/artworkdb-gba-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-handhelds/db/gba_title.json.zip', title='GBA Title Screens')
+        self.ARTWORKDB_GBC_TITLES = Database(db_id='chipster6502/artworkdb-gbc-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-handhelds/db/gbc_title.json.zip', title='Game Boy Color Title Screens')
+        self.ARTWORKDB_GAMEGEAR_TITLES = Database(db_id='chipster6502/artworkdb-gamegear-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/gamegear_title.json.zip', title='Game Gear Title Screens')
+        self.ARTWORKDB_GENESIS_TITLES = Database(db_id='chipster6502/artworkdb-genesis-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/genesis_title.json.zip', title='Genesis Title Screens')
+        self.ARTWORKDB_INTELLIVISION_TITLES = Database(db_id='chipster6502/artworkdb-intellivision-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/intellivision_title.json.zip', title='Intellivision Title Screens')
+        self.ARTWORKDB_JAGUAR_TITLES = Database(db_id='chipster6502/artworkdb-jaguar-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-atari/db/jaguar_title.json.zip', title='Jaguar Title Screens')
+        self.ARTWORKDB_MEGACD_TITLES = Database(db_id='chipster6502/artworkdb-megacd-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/megacd_title.json.zip', title='Mega CD Title Screens')
+        self.ARTWORKDB_N64_TITLES = Database(db_id='chipster6502/artworkdb-n64-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/n64_title.json.zip', title='N64 Title Screens')
+        self.ARTWORKDB_NEOGEO_TITLES = Database(db_id='chipster6502/artworkdb-neogeo-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeo_title.json.zip', title='Neo Geo Title Screens')
+        self.ARTWORKDB_NES_TITLES = Database(db_id='chipster6502/artworkdb-nes-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/nes_title.json.zip', title='NES Title Screens')
+        self.ARTWORKDB_NEOGEO_CD_TITLES = Database(db_id='chipster6502/artworkdb-neogeo-cd-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeo-cd_title.json.zip', title='Neo Geo CD Title Screens')
+        self.ARTWORKDB_NEOGEOPOCKET_TITLES = Database(db_id='chipster6502/artworkdb-neogeopocket-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeopocket_title.json.zip', title='Neo Geo Pocket Title Screens')
+        self.ARTWORKDB_NEOGEOPOCKET_COLOR_TITLES = Database(db_id='chipster6502/artworkdb-neogeopocket-color-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-snk/db/neogeopocket-color_title.json.zip', title='Neo Geo Pocket Color Title Screens')
+        self.ARTWORKDB_ODYSSEY2_TITLES = Database(db_id='chipster6502/artworkdb-odyssey2-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/odyssey2_title.json.zip', title='Odyssey 2 Title Screens')
+        self.ARTWORKDB_PSX_TITLES = Database(db_id='chipster6502/artworkdb-psx-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sony/db/psx_title.json.zip', title='PSX Title Screens')
+        self.ARTWORKDB_S32X_TITLES = Database(db_id='chipster6502/artworkdb-s32x-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/s32x_title.json.zip', title='Sega 32X Title Screens')
+        self.ARTWORKDB_SG_1000_TITLES = Database(db_id='chipster6502/artworkdb-sg-1000-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/sg-1000_title.json.zip', title='SG-1000 Title Screens')
+        self.ARTWORKDB_SMS_TITLES = Database(db_id='chipster6502/artworkdb-sms-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/sms_title.json.zip', title='SMS Title Screens')
+        self.ARTWORKDB_SNES_TITLES = Database(db_id='chipster6502/artworkdb-snes-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/snes_title.json.zip', title='SNES Title Screens')
+        self.ARTWORKDB_SATELLAVIEW_TITLES = Database(db_id='chipster6502/artworkdb-satellaview-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/satellaview_title.json.zip', title='Satellaview Title Screens')
+        self.ARTWORKDB_SATURN_TITLES = Database(db_id='chipster6502/artworkdb-saturn-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-sega/db/saturn_title.json.zip', title='Saturn Title Screens')
+        self.ARTWORKDB_SUPERGRAFX_TITLES = Database(db_id='chipster6502/artworkdb-supergrafx-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nec/db/supergrafx_title.json.zip', title='SuperGrafx Title Screens')
+        self.ARTWORKDB_TGFX16_TITLES = Database(db_id='chipster6502/artworkdb-tgfx16-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nec/db/tgfx16_title.json.zip', title='TurboGrafx-16 Title Screens')
+        self.ARTWORKDB_TGFX16_CD_TITLES = Database(db_id='chipster6502/artworkdb-tgfx16-cd-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nec/db/tgfx16-cd_title.json.zip', title='TurboGrafx-CD Title Screens')
+        self.ARTWORKDB_VECTREX_TITLES = Database(db_id='chipster6502/artworkdb-vectrex-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/vectrex_title.json.zip', title='Vectrex Title Screens')
+        self.ARTWORKDB_VIRTUALBOY_TITLES = Database(db_id='chipster6502/artworkdb-virtualboy-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-nintendo-consoles/db/virtualboy_title.json.zip', title='Virtual Boy Title Screens')
+        self.ARTWORKDB_WONDERSWAN_TITLES = Database(db_id='chipster6502/artworkdb-wonderswan-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/wonderswan_title.json.zip', title='WonderSwan Title Screens')
+        self.ARTWORKDB_WONDERSWANCOLOR_TITLES = Database(db_id='chipster6502/artworkdb-wonderswancolor-titles', db_url='https://raw.githubusercontent.com/chipster6502/artworkdb-misc/db/wonderswancolor_title.json.zip', title='WonderSwan Color Title Screens')
 
         # MANUALS
         self.MANUALSDB_3DO = Database(db_id='ajgowans/manualsdb-3do', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-3do/db/db.json.zip', title='3DO Manuals')
@@ -433,6 +516,23 @@ def ajgowans_manualsdbs() -> List[Database]:
 def chipster6502_artworkdbs() -> List[Database]:
     dbs = AllDBs()
     return [getattr(dbs, name) for name, db_id in ALL_DB_IDS.items() if db_id.startswith(ARTWORK_DB_ID_PREFIX)]
+
+# Screenshot and title packs use the box art db_id plus '-<pack>', and have no styles.
+def is_chipster6502_artwork_box_db_id(db_id: str) -> bool:
+    lower_id = db_id.lower()
+    if not lower_id.startswith(ARTWORK_DB_ID_PREFIX):
+        return False
+
+    return not any(lower_id.endswith(f'-{pack}') for pack in CHIPSTER6502_ARTWORK_PACKS)
+
+def chipster6502_artwork_box_dbs() -> List[Database]:
+    return [db for db in chipster6502_artworkdbs() if is_chipster6502_artwork_box_db_id(db.db_id)]
+
+def chipster6502_artwork_pack_dbs(pack: str) -> List[Database]:
+    if pack not in CHIPSTER6502_ARTWORK_PACKS:
+        raise ValueError(f'Unknown artwork pack: {pack}')
+
+    return [db for db in chipster6502_artworkdbs() if db.db_id.endswith(f'-{pack}')]
 
 def chipster6502_artwork_db_with_style(db: Database, style: str) -> Database:
     if style not in CHIPSTER6502_ARTWORK_STYLES:

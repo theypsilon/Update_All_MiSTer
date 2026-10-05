@@ -15,6 +15,7 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
+from types import MappingProxyType
 from typing import Dict, Any, List, Tuple, Set
 
 from update_all.ui_model_utilities import search_in_model, expand_type
@@ -300,3 +301,12 @@ def expand_model_base_types(model):
 
 def _add_expanded_node(_result, _item):
     pass
+
+
+def frozen_model(node):
+    """Deep read-only copy of a model, so any write into it fails fast: dicts become MappingProxyType, lists tuples."""
+    if isinstance(node, dict):
+        return MappingProxyType({key: frozen_model(value) for key, value in node.items()})
+    if isinstance(node, list):
+        return tuple(frozen_model(value) for value in node)
+    return node

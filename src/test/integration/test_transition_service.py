@@ -25,7 +25,7 @@ from test.file_system_tester_state import FileSystemState
 from test.ini_assertions import assertEqualIni, testableIni
 from test.testing_objects import downloader_ini, update_all_ini, update_arcade_organizer_ini, update_names_txt_ini, \
     update_jtcores_ini, downloader_store, manuals_ini, artwork_ini, ini_with_db_ids as downloader_ini_with_db_ids, \
-    all_manuals_db_ids, all_artwork_db_ids
+    all_manuals_db_ids, all_artwork_db_ids, all_artwork_pack_db_ids
 from test.update_all_service_tester import TransitionServiceTester, local_store, IniRepositoryTester, \
     ConfigReaderTester, default_env
 from test.update_output_tester import UpdateOutputTester
@@ -647,6 +647,52 @@ class TestTransitionService(unittest.TestCase):
             {'db_ids': missing},
         )], output.transition_calls)
         self.assertEqual([], os_utils.calls_to_sleep)
+
+    def test_artwork_select_all_active_with_every_box_art_db___does_not_activate_screenshots_or_titles(self):
+        store = local_store()
+        store.set_chipster6502_artwork_dbs_general_selector(True)
+
+        fs = run_artwork_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+            artwork_ini: downloader_ini_with_db_ids(*all_artwork_db_ids()),
+        }, store=store)
+
+        self.assertEqual(sorted(all_artwork_db_ids()), sorted(artwork_db_ids_in(fs)))
+
+    def test_artwork_pack_select_all_active_and_one_pack_db_missing___activates_only_the_missing_one(self):
+        for pack in ('screenshots', 'titles'):
+            with self.subTest(pack=pack):
+                already_active = all_artwork_pack_db_ids(pack)
+                missing = already_active.pop()
+                store = local_store()
+                if pack == 'screenshots':
+                    store.set_chipster6502_artwork_screenshots_dbs_general_selector(True)
+                else:
+                    store.set_chipster6502_artwork_titles_dbs_general_selector(True)
+                output = UpdateOutputTester(SpyOsUtils())
+
+                fs = run_artwork_transition({
+                    downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+                    artwork_ini: downloader_ini_with_db_ids(*already_active),
+                }, store=store, update_output=output)
+
+                self.assertEqual(sorted(all_artwork_pack_db_ids(pack)), sorted(artwork_db_ids_in(fs)))
+                self.assertEqual([(
+                    'from_select_all_artwork_to_adding_new_artwork_dbs',
+                    {'db_ids': missing},
+                )], output.transition_calls)
+
+    def test_artwork_pack_select_all_inactive_and_one_pack_db_missing___does_not_activate_it(self):
+        already_active = all_artwork_pack_db_ids('screenshots')
+        missing = already_active.pop()
+
+        fs = run_artwork_transition({
+            downloader_ini: downloader_ini_with_db_ids(ALL_DB_IDS['JTCORES']),
+            artwork_ini: downloader_ini_with_db_ids(*already_active),
+        }, store=local_store())
+
+        self.assertEqual(sorted(already_active), sorted(artwork_db_ids_in(fs)))
+        self.assertNotIn(missing, artwork_db_ids_in(fs))
 
     def test_physical_disc_old_cd_section___is_moved_to_the_a0cd_section(self):
         result = run_physical_disc_transition('[mister]\nfoo=bar\n\n[CD-*]\nmain=MiSTer_Physical-CD\n')

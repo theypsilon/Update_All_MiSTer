@@ -15,7 +15,7 @@
 
 # You can download the latest version of this tool from:
 # https://github.com/theypsilon/Update_All_MiSTer
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Mapping, Optional
 from test.countdown_stub import CountdownStub
 from test.fake_filesystem import FileSystemFactory
 from test.fetcher_stub import FetcherStub
@@ -67,6 +67,7 @@ from update_all.transition_service import TransitionService
 from update_all.retroaccount import RetroAccountService
 from update_all.retroaccount_gateway import RetroAccountGateway
 from update_all.settings_screen_model import settings_screen_model
+from test.ui_model_test_utils import frozen_model
 from update_all.ui_engine import UiContext, UiRuntime
 from update_all.ui_model_utilities import gather_variable_declarations
 from update_all.ui_engine_dialog_application import UiDialogDrawerFactory
@@ -190,7 +191,8 @@ class SettingsScreenTester(SettingsScreen):
                  mister_ini_repository: MisterIniRepository = None,
                  retroachievements_service: RetroAchievementsService = None,
                  frontends_service: FrontendsService = None,
-                 database_manager_service: DatabaseManagerService = None):
+                 database_manager_service: DatabaseManagerService = None,
+                 settings_screen_model_factory: Callable[[], Mapping[str, Any]] = None):
 
         config_provider = config_provider or GenericProvider[Config]()
         store_provider = store_provider or GenericProvider[LocalStore]()
@@ -251,6 +253,7 @@ class SettingsScreenTester(SettingsScreen):
                     NoLogger(),
                 )
             ),
+            settings_screen_model_factory=settings_screen_model_factory or (lambda: frozen_model(settings_screen_model())),
         )
 
 
@@ -284,8 +287,12 @@ class UiContextStub(UiContext):
     def get_value(self, key: str) -> str:
         return self.variables[key]
 
-    def set_value(self, key: str, value: Any) -> None:
+    def set_value(self, key: str, value: Any) -> bool:
+        if key in self.variables and self.variables[key] == value:
+            return False
+
         self.variables[key] = value
+        return True
 
     def add_custom_effects(self, effects: dict[str, Callable[[], None]]):
         self.effects = effects

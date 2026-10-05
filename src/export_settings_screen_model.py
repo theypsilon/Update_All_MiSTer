@@ -10,12 +10,6 @@ from typing import Any
 from update_all.settings_screen_model import settings_screen_model
 
 
-def json_default(value: Any) -> str:
-    if not callable(value):
-        raise TypeError(f'Object of type {value.__class__.__name__} is not JSON serializable')
-    return getattr(value, '__name__', repr(value))
-
-
 def count_nodes(value: Any) -> int:
     children = value.values() if isinstance(value, dict) else value if isinstance(value, list) else []
     return 1 + sum(count_nodes(child) for child in children)
@@ -42,7 +36,7 @@ def main() -> int:
         print(f'{len(model["items"])} item entries: ' + ', '.join(model['items'].keys()))
 
     json_kwargs = {'indent': 2} if args.pretty else {'separators': (',', ':')}
-    output = json.dumps(model, default=json_default, sort_keys=True, **json_kwargs)
+    output = json.dumps(model, sort_keys=True, **json_kwargs)
     if args.pretty:
         output += '\n'
 

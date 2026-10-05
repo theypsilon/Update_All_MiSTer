@@ -23,7 +23,8 @@ from update_all.constants import DOWNLOADER_INI_STANDARD_PATH, ARCADE_ORGANIZER_
     DOWNLOADER_BIOS_DB_INI, DOWNLOADER_ARCADE_ROMS_DB_INI, DOWNLOADER_AJGOWANS_MANUALSDB_INI, \
     DOWNLOADER_CHIPSTER6502_ARTWORKDB_INI
 from update_all.databases import Database, DB_ID_DISTRIBUTION_MISTER, all_dbs, ALL_DB_IDS, ajgowans_manualsdbs, \
-    chipster6502_artworkdbs, chipster6502_artwork_db_with_style, coin_op_collection_filter_by_releases
+    chipster6502_artworkdbs, chipster6502_artwork_db_with_style, coin_op_collection_filter_by_releases, \
+    is_chipster6502_artwork_box_db_id
 from update_all.downloader_ini_document import DownloaderIniDocument, IniSection, RepeatedSection
 from update_all.downloader_ini_reader import DownloaderIniReader, IniSections, first_definitions, read_ini_contents, \
     sort_drop_in_ini_paths
@@ -687,7 +688,7 @@ def candidate_databases(config: Config) -> List[Tuple[str, Database]]:
             raise ValueError(f"Needs to be length 1, but is '{len(dbs)}', or must be contained in configurable_dbs.")
 
         db = dbs[0]
-        if db.db_id.lower().startswith('chipster6502/artworkdb-'):
+        if is_chipster6502_artwork_box_db_id(db.db_id):
             db = chipster6502_artwork_db_with_style(db, config.artwork_style_for(db.db_id))
         result.append((variable, db))
     return result

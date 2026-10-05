@@ -80,6 +80,18 @@ class LocalStore:
 
     def get_chipster6502_artwork_db_styles(self) -> Dict[str, str]:
         return self._props['chipster6502_artwork_db_styles']
+
+    def set_chipster6502_artwork_screenshots_dbs_general_selector(self, value: bool) -> None:
+        self.generic_set('chipster6502_artwork_screenshots_dbs_general_selector', value)
+
+    def get_chipster6502_artwork_screenshots_dbs_general_selector(self) -> bool:
+        return self._props['chipster6502_artwork_screenshots_dbs_general_selector']
+
+    def set_chipster6502_artwork_titles_dbs_general_selector(self, value: bool) -> None:
+        self.generic_set('chipster6502_artwork_titles_dbs_general_selector', value)
+
+    def get_chipster6502_artwork_titles_dbs_general_selector(self) -> bool:
+        return self._props['chipster6502_artwork_titles_dbs_general_selector']
     def set_introduced_arcade_names_txt(self, introduced_arcade_names_txt: bool) -> None: self.generic_set('introduced_arcade_names_txt', introduced_arcade_names_txt)
 
     def get_introduced_arcade_names_txt(self) -> bool:
