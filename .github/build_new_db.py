@@ -151,42 +151,42 @@ new_db['files'] = {
     'Scripts/.config/update_all/update_all.pyz': {
         'size': os.path.getsize('update_all.pyz'),
         'hash': hash_file('update_all.pyz'),
-        'tags': [2],
+        'tags': [2, 3],
     },
     'Scripts/.config/update_all/settings_screen_model.json.zip': {
         'size': os.path.getsize('settings_screen_model.json.zip'),
         'hash': hash_file('settings_screen_model.json.zip'),
-        'tags': [2],
+        'tags': [2, 3],
     },
     'Scripts/.config/update_all/mad_db.json.zip': {
         'size': os.path.getsize('mad_db.json.zip'),
         'hash': hash_file('mad_db.json.zip'),
-        'tags': [2],
+        'tags': [2, 3],
     },
     'Scripts/.config/update_all/pocket_firmware_details.json': {
         'size': os.path.getsize('pocket_firmware_details.json'),
         'hash': hash_file('pocket_firmware_details.json'),
-        'tags': [2],
+        'tags': [2, 3],
     },
     'Scripts/.config/update_all/timeline_plus.enc': {
         'size': os.path.getsize('timeline_plus.enc'),
         'hash': hash_file('timeline_plus.enc'),
-        'tags': [2, 1]
+        'tags': [2, 1, 3]
     },
     'Scripts/.config/update_all/timeline.json': {
         'size': os.path.getsize('timeline.json'),
         'hash': hash_file('timeline.json'),
-        'tags': [2, 1]
+        'tags': [2, 1, 3]
     },
     'Scripts/.config/update_all/Linker.rbf': {
         'size': os.path.getsize('Linker.rbf'),
         'hash': hash_file('Linker.rbf'),
-        'tags': [2],
+        'tags': [2, 3],
     },
     'Scripts/update_all.sh': {
         'size': os.path.getsize('update_all.sh'),
         'hash': hash_file('update_all.sh'),
-        'tags': [2],
+        'tags': [2, 3],
     },
     'Scripts/update_all_latest_log.sh': {
         'size': os.path.getsize('update_all_latest_log.sh'),
@@ -202,7 +202,8 @@ new_db['files'] = {
 new_db['tag_dictionary'] = {
     'updatealllatestlog': 0,
     'updatealltimeline': 1,
-    'scripts': 2
+    'scripts': 2,
+    'essential': 3
 }
 if 'tags_dictionary' in new_db:
     new_db.pop('tags_dictionary')
