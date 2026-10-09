@@ -557,6 +557,10 @@ class Infrastructure:
             f.write(ini_date + "\n")
             f.write(mra_date + "\n")
 
+    def remove_last_run_file(self):
+        if self._last_run_path.is_file():
+            self._last_run_path.unlink()
+
     def cache_names_file(self):
         if self._config['ARCADE_ORGANIZER_NAMES_TXT'].is_file():
             shutil.copy(str(self._config['ARCADE_ORGANIZER_NAMES_TXT']), str(self._cached_names_path))
@@ -586,26 +590,31 @@ class Infrastructure:
                 f.write(str(org_cores) + "\n")
 
     def write_orgdir_folders_file(self):
-        orgdir_folders_file = self._config['ORGDIR_FOLDERS_FILE']
+        candidates = list(self._config['ORGDIR_DIRECTORIES']) + self.read_topdir_folders()
+        for directory in candidates:
+            if Path(directory).is_dir() and not os.listdir(directory):
+                self._remove_dir(directory)
 
-        with orgdir_folders_file.open("a") as f:
-            orgdir_lines = self.read_orgdir_file_folders()
-            for directory in (list(self._config['ORGDIR_DIRECTORIES']) + self.read_topdir_folders()):
-                if Path(directory).is_dir():
-                    if not os.listdir(directory):
-                        self._remove_dir(directory)
-                    elif directory not in orgdir_lines:
-                        f.write(directory + "\n")
+        directories = self.read_orgdir_file_folders()
+        for directory in candidates:
+            if Path(directory).is_dir() and directory not in directories:
+                directories.append(directory)
+
+        with self._config['ORGDIR_FOLDERS_FILE'].open("w") as f:
+            for directory in directories:
+                f.write(directory + "\n")
 
     def read_orgdir_file_folders(self):
+        return [directory for directory in self._read_orgdir_file_lines() if Path(directory).is_dir()]
+
+    def _read_orgdir_file_lines(self):
         result = list()
         orgdir_folders_file = self._config['ORGDIR_FOLDERS_FILE']
         if orgdir_folders_file.is_file():
             with orgdir_folders_file.open() as f:
                 for line in f:
                     directory = line.strip()
-                    path = Path(directory)
-                    if path.is_dir():
+                    if directory != '':
                         result.append(directory)
         return result
 
@@ -662,14 +671,7 @@ class Infrastructure:
         file_path.unlink()
 
     def check_if_orgdir_directories_are_missing(self):
-        if not self._config['AZ_DIR']:
-            return False
-        return not Path(self._config['ORGDIR_09']).is_dir() or \
-            not Path(self._config['ORGDIR_AE']).is_dir() or \
-            not Path(self._config['ORGDIR_FK']).is_dir() or \
-            not Path(self._config['ORGDIR_LQ']).is_dir() or \
-            not Path(self._config['ORGDIR_RT']).is_dir() or \
-            not Path(self._config['ORGDIR_UZ']).is_dir()
+        return any(not Path(directory).is_dir() for directory in self._read_orgdir_file_lines())
 
     def check_if_names_txt_is_new(self):
         return self._config['ARCADE_ORGANIZER_NAMES_TXT'].is_file() \
@@ -1337,6 +1339,7 @@ class ArcadeOrganizer:
         mra_date = self._infra.get_now_date()
         if from_scatch:
             self._printer.print("Performing a full build.")
+            self._infra.remove_last_run_file()
             self._infra.remove_orgdir_directories(orgdir_folders_file)
         else:
             self._printer.print("Performing an incremental build.")

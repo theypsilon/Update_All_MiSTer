@@ -27,7 +27,17 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from update_all.arcade_organizer.arcade_organizer import ArcadeOrganizerService, BoolFlagPresence, Infrastructure
+from test.fetcher_stub import FetcherStub
 from test.logger_tester import LoggerSpy, NoLogger
+
+
+class InterruptingLogger(NoLogger):
+    def __init__(self, text):
+        self._text = text
+
+    def print(self, *args, sep='', end='\n', flush=False):
+        if self._text in sep.join(str(arg) for arg in args):
+            raise KeyboardInterrupt()
 
 
 class TestArcadeOrganizerIntegration(unittest.TestCase):
@@ -907,6 +917,87 @@ class TestArcadeOrganizerIntegration(unittest.TestCase):
             success2 = self.ao_service.run_arcade_organizer_organize_all_mras(config)
             self.assertTrue(success2)
             mock_remove.assert_not_called()
+
+    def test_organize___second_run_with_an_alphabetic_range_without_mras___performs_an_incremental_build(self):
+        config = self._make_config(SKIPALTS=False, AZ_DIR=True)
+        self._run_organizer(config)
+        self.assertFalse(os.path.isdir(config['ORGDIR_UZ']))
+
+        logger = self._run_organizer(config)
+
+        self.assertNotIn('Some ORGDIR directories are missing.', logger.print_lines)
+        self.assertIn('Performing an incremental build.', logger.print_lines)
+
+    def test_organize___second_run_after_a_range_emptied_on_an_incremental_build___performs_an_incremental_build(self):
+        config = self._make_config(SKIPALTS=False, AZ_DIR=True)
+        self._run_organizer(config)
+        os.remove(os.path.join(self.mradir, '1942.mra'))
+        self._write_mra_fixture('zaxxon.mra', 'zaxxon', 'Zaxxon')
+
+        self.assertIn('Performing an incremental build.', self._run_organizer(config).print_lines)
+        self.assertFalse(os.path.isdir(config['ORGDIR_09']))
+
+        logger = self._run_organizer(config)
+
+        self.assertNotIn('Some ORGDIR directories are missing.', logger.print_lines)
+        self.assertIn('Performing an incremental build.', logger.print_lines)
+
+    def test_organize___second_run_after_deleting_an_alphabetic_folder___performs_a_full_build(self):
+        config = self._make_config(SKIPALTS=False, AZ_DIR=True)
+        self._run_organizer(config)
+        shutil.rmtree(config['ORGDIR_AE'])
+
+        logger = self._run_organizer(config)
+
+        self.assertIn('Some ORGDIR directories are missing.', logger.print_lines)
+        self.assertIn('Performing a full build.', logger.print_lines)
+        self.assertTrue(os.path.isdir(config['ORGDIR_AE']))
+
+    def test_organize___second_run_after_deleting_the_region_folder___performs_a_full_build(self):
+        config = self._make_config(SKIPALTS=False, AZ_DIR=True)
+        self._run_organizer(config)
+        shutil.rmtree(config['ORGDIR_Region'])
+
+        logger = self._run_organizer(config)
+
+        self.assertIn('Some ORGDIR directories are missing.', logger.print_lines)
+        self.assertIn('Performing a full build.', logger.print_lines)
+        self.assertTrue(os.path.isdir(config['ORGDIR_Region']))
+
+    def test_organize___second_run_after_deleting_the_organized_folder_with_az_dir_disabled___performs_a_full_build(self):
+        config = self._make_config(SKIPALTS=False, AZ_DIR=False)
+        self._run_organizer(config)
+        paths_after_first_run = self._get_organized_mra_paths()
+        shutil.rmtree(self.orgdir)
+
+        logger = self._run_organizer(config)
+
+        self.assertIn('Some ORGDIR directories are missing.', logger.print_lines)
+        self.assertIn('Performing a full build.', logger.print_lines)
+        self.assertEqual(paths_after_first_run, self._get_organized_mra_paths())
+
+    def test_organize___next_run_after_an_interrupted_full_build___performs_a_full_build(self):
+        config = self._make_config(SKIPALTS=False, AZ_DIR=True)
+        self._run_organizer(config)
+        paths_after_first_run = self._get_organized_mra_paths()
+        shutil.rmtree(config['ORGDIR_AE'])
+        with self.assertRaises(KeyboardInterrupt):
+            ArcadeOrganizerService(InterruptingLogger('frogger.mra'), FetcherStub()).run_arcade_organizer_organize_all_mras(config)
+
+        logger = self._run_organizer(config)
+
+        self.assertIn('Last run file not found.', logger.print_lines)
+        self.assertIn('Performing a full build.', logger.print_lines)
+        self.assertEqual(paths_after_first_run, self._get_organized_mra_paths())
+
+    def _make_config(self, **options):
+        self._create_ini_file(**options)
+        return self.ao_service.make_arcade_organizer_config(self.ini_path, self.base_path, '')
+
+    def _run_organizer(self, config):
+        logger = LoggerSpy()
+        self.assertTrue(ArcadeOrganizerService(logger, FetcherStub()).run_arcade_organizer_organize_all_mras(config))
+        return logger
 
     def _get_organized_mra_paths(self):
         """Get set of all MRA file paths relative to orgdir."""
