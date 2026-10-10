@@ -1,0 +1,254 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Tank Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Tank MRAs: Tank II, Tank",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "Apple-III",
+              "type": "standalone"
+            },
+            {
+              "name": "MacQuadra800",
+              "type": "standalone"
+            },
+            {
+              "name": "NeXT-Color",
+              "type": "standalone"
+            },
+            {
+              "name": "Sun-2",
+              "type": "standalone"
+            },
+            {
+              "name": "Sun-3",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Marty",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "MiSTer Firmware",
+              "type": "standalone"
+            },
+            {
+              "name": "Menu Core",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-10-10",
+      "timestamps": [
+        1791618347,
+        1791641762,
+        1791657843
+      ],
+      "title": "Updated TODAY (2026-10-10)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Batman Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Guardians Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Hyprduel Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Leland Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Marble Madness 2 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Off The Wall Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Rampart Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Relief Pitcher Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Robotron Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega VCO Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega XBoard Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Shuuz Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Skull XBones Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Tank Battalion Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Victory Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Batman MRA: Batman",
+              "type": "standalone"
+            },
+            {
+              "name": "Leland MRAs: Ataxx, Brute Force, Danny Sullivan's Indy Heat",
+              "type": "standalone"
+            },
+            {
+              "name": "Marble Madness 2 MRA: Marble Madness II",
+              "type": "standalone"
+            },
+            {
+              "name": "Off The Wall MRA: Off the Wall",
+              "type": "standalone"
+            },
+            {
+              "name": "Rampart MRA: Rampart",
+              "type": "standalone"
+            },
+            {
+              "name": "Relief Pitcher MRA: Relief Pitcher",
+              "type": "standalone"
+            },
+            {
+              "name": "Robotron MRA: Blaster",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega VCO MRAs: Buck Rogers Planet of Zoom, Turbo",
+              "type": "standalone"
+            },
+            {
+              "name": "Sega XBoard MRAs: After Burner, Racing Hero",
+              "type": "standalone"
+            },
+            {
+              "name": "Shuuz MRA: Shuuz",
+              "type": "standalone"
+            },
+            {
+              "name": "Skull XBones MRA: SkullXBones",
+              "type": "standalone"
+            },
+            {
+              "name": "Tank Battalion MRA: Tank Battalion",
+              "type": "standalone"
+            },
+            {
+              "name": "Victory MRA: Victory",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "MacSE30",
+              "type": "standalone"
+            },
+            {
+              "name": "PCXT",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Loopy",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1791015706,
+        1791058383,
+        1791069029,
+        1791081955,
+        1791126016,
+        1791151006,
+        1791212115,
+        1791277628,
+        1791320252,
+        1791438809,
+        1791486651,
+        1791520757,
+        1791545552,
+        1791567294
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1946,
+    "total_file_updates": 2066,
+    "unique_files": 1078
+  }
+}
