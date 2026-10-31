@@ -1,0 +1,230 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Arabian Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Blue Print Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Champion Baseball Core",
+              "type": "standalone"
+            },
+            {
+              "name": "DECOCassette Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Escape Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Juno First Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Kangaroo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Kyugo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Laserdisc Games Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Pole Position Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix Core",
+              "type": "standalone"
+            },
+            {
+              "name": "SNK6502 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Scramble Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Tutankham Core",
+              "type": "standalone"
+            },
+            {
+              "name": "UPLFramebuffer Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Vastar Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Blue Print MRAs: Blue Print, Grasspin, Saturn",
+              "type": "standalone"
+            },
+            {
+              "name": "DECOCassette MRAs: Angler Dangler, Astro Fantasia, Boulder Dash, Burger Time, Burnin Rubber, Cluster Buster, DECO Darksoft Multigame, DECO Test Tape, DECO Widel Multigame, DS Telejan, Explorer, Fighting Ice Hockey, Flash Boy, Flying Ball, Highway Chase, Lock'n'Chase, Lucky Poker, Manhattan (Japan), Mission-X, Nebula, Night Star, Ocean To Ocean, Oozumou - Grand Sumo, Peter Pepper's Ice Cream Factory, Pro Bowling, Pro Soccer, Pro Tennis, Rootin' Tootin', Scrum Try, Skater, Super Astro Fighter, Super Doubles Tennis, Sweet Heart, Terranean, The Tower, Tornado, Tournament Pro Golf, Treasure Island, Zeroize",
+              "type": "standalone"
+            },
+            {
+              "name": "Escape MRAs: Escape from the Planet of the Robot Monsters, Guts n' Glory",
+              "type": "standalone"
+            },
+            {
+              "name": "Juno First MRA: Juno First",
+              "type": "standalone"
+            },
+            {
+              "name": "Kangaroo MRA: Funky Fish",
+              "type": "standalone"
+            },
+            {
+              "name": "Kyugo MRAs: Airwolf, Flashgal, Gyrodine, Legend, Repulse, SRD Mission",
+              "type": "standalone"
+            },
+            {
+              "name": "MCR3Scroll MRAs: Spy Hunter, Turbo Tag",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix MRAs: Qix, Zoo Keeper",
+              "type": "standalone"
+            },
+            {
+              "name": "SNK6502 MRA: Vanguard",
+              "type": "standalone"
+            },
+            {
+              "name": "Scramble MRA: Agent Super Bond",
+              "type": "standalone"
+            },
+            {
+              "name": "Vastar MRAs: Planet Probe, Vastar",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "Amstrad-PCW",
+              "type": "standalone"
+            },
+            {
+              "name": "Apple-III",
+              "type": "standalone"
+            },
+            {
+              "name": "Cray-XMP",
+              "type": "standalone"
+            },
+            {
+              "name": "IQ151",
+              "type": "standalone"
+            },
+            {
+              "name": "MacIIcx",
+              "type": "standalone"
+            },
+            {
+              "name": "MacSE30",
+              "type": "standalone"
+            },
+            {
+              "name": "Neon",
+              "type": "standalone"
+            },
+            {
+              "name": "PC88",
+              "type": "standalone"
+            },
+            {
+              "name": "SGIIndy",
+              "type": "standalone"
+            },
+            {
+              "name": "SharpMZ",
+              "type": "standalone"
+            },
+            {
+              "name": "Sun-2",
+              "type": "standalone"
+            },
+            {
+              "name": "Sun-3",
+              "type": "standalone"
+            },
+            {
+              "name": "UKNC",
+              "type": "standalone"
+            },
+            {
+              "name": "VideoBrain",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "BasicMasterJr",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1792821675,
+        1792838869,
+        1792851462,
+        1792863127,
+        1792871250,
+        1792922168,
+        1792937303,
+        1792959987,
+        1792968573,
+        1792976474,
+        1792994279,
+        1793110864,
+        1793154289,
+        1793178039,
+        1793202717,
+        1793220560,
+        1793234297,
+        1793302026
+      ],
+      "title": "Files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1969,
+    "total_file_updates": 2175,
+    "unique_files": 1107
+  }
+}
