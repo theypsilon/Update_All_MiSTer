@@ -1,0 +1,183 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Badlands Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Batman Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Blasteroids Core",
+              "type": "standalone"
+            },
+            {
+              "name": "S32 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Klax MRA: Klax",
+              "type": "standalone"
+            },
+            {
+              "name": "S32 MRAs: Air Rescue, Alien3 - The Gun, Arabian Fight, Burning Rival, Dark Edge, Dragon Ball Z - V.R. V.S., F1 Exhaust Note, F1 Super Lap, Golden Axe - The Revenge of Death Adder, Holosseum, Jurassic Park, Rad Mobile, Rad Rally, SegaSonic The Hedgehog, Slip Stream, Spider-Man - The Videogame, Super Visual Football - European Sega Cup, The J.League 1994",
+              "type": "standalone"
+            },
+            {
+              "name": "Toobin MRA: Toobin",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "date": "2026-11-07",
+      "timestamps": [
+        1794020114,
+        1794044396
+      ],
+      "title": "Updated TODAY (2026-11-07)",
+      "type": "today"
+    },
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Gyruss Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Klax Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Primal Rage Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix Core",
+              "type": "standalone"
+            },
+            {
+              "name": "SNK6502 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Toobin Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Vindicators Core",
+              "type": "standalone"
+            },
+            {
+              "name": "atarisys 2 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix MRAs: Complex X, Kram, Qix II, Qix, Slither, Space Dungeon, The Electric Yo-Yo, Zoo Keeper",
+              "type": "standalone"
+            },
+            {
+              "name": "SNK6502 MRAs: Fantasy, Nibbler, Pioneer Balloon, Sasuke Vs. Commander, Satan Of Saturn, Vanguard",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "Apple-IIgs",
+              "type": "standalone"
+            },
+            {
+              "name": "BasicMasterJr",
+              "type": "standalone"
+            },
+            {
+              "name": "BasicMasterL3",
+              "type": "standalone"
+            },
+            {
+              "name": "FM-7",
+              "type": "standalone"
+            },
+            {
+              "name": "MacIIcx",
+              "type": "standalone"
+            },
+            {
+              "name": "MacSE30",
+              "type": "standalone"
+            },
+            {
+              "name": "PCXT",
+              "type": "standalone"
+            },
+            {
+              "name": "SharpMZ",
+              "type": "standalone"
+            },
+            {
+              "name": "SharpMZ2500",
+              "type": "standalone"
+            },
+            {
+              "name": "SharpX1",
+              "type": "standalone"
+            },
+            {
+              "name": "SonySMC777",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Vectrex",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1793842780,
+        1793843324,
+        1793876087,
+        1793898940,
+        1793934762,
+        1793963169,
+        1794007055
+      ],
+      "title": "Other files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1987,
+    "total_file_updates": 2220,
+    "unique_files": 1130
+  }
+}
