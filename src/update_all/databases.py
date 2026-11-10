@@ -329,6 +329,7 @@ class AllDBs:
         self.MANUALSDB_SEGASG1000 = Database(db_id='ajgowans/manualsdb-segasg1000', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-segasg1000/db/db.json.zip', title='Sega SG-1000 Manuals')
         self.MANUALSDB_SMS = Database(db_id='ajgowans/manualsdb-sms', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-sms/db/db.json.zip', title='SMS Manuals')
         self.MANUALSDB_SNES = Database(db_id='ajgowans/manualsdb-snes', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-snes/db/db.json.zip', title='SNES Manuals')
+        self.MANUALSDB_SUPERACAN = Database(db_id='ajgowans/manualsdb-superacan', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-superacan/db/db.json.zip', title="Super A'can Manuals")
         self.MANUALSDB_SUPERVISION = Database(db_id='ajgowans/manualsdb-supervision', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-supervision/db/db.json.zip', title='Supervision Manuals')
         self.MANUALSDB_TURBOGRAFX16 = Database(db_id='ajgowans/manualsdb-turbografx16', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-turbografx16/db/db.json.zip', title='TurboGrafx-16 Manuals')
         self.MANUALSDB_TURBOGRAFXCD = Database(db_id='ajgowans/manualsdb-turbografxcd', db_url='https://raw.githubusercontent.com/ajgowans/manualsdb-turbografxcd/db/db.json.zip', title='TurboGrafx CD Manuals')

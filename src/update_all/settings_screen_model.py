@@ -60,7 +60,7 @@ def _crt_direct_video_warning(target): return {
 }
 
 
-_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22_426_288_128  # 20.9 GB with 128 KB clusters, summed from the published databases on 2026-10-05
+_ALL_AJGOWANS_MANUALS_ESTIMATED_BYTES = 22_443_327_488  # 20.9 GB with 128 KB clusters, summed from the published databases on 2026-11-10
 _ALL_CHIPSTER6502_ARTWORK_ESTIMATED_BYTES = 3_238_002_688  # Box Art's largest style, box2d, see _ARTWORK_PACKS
 
 
@@ -139,7 +139,7 @@ def _enable_all_manuals_confirm(): return {
     "header": "Enable All Manuals DBs?",
     "text": [
         "This will activate all manuals databases.",
-        "That is a large download, 8190 files taking up to 20.9 GB.",
+        "That is a large download, 8192 files taking up to 20.9 GB.",
         "It will take hours!",
         "Free space on /media/fat: {media_fat_available_space:bytes_to_gb}.",
         "Are you sure you want to continue?",
@@ -159,7 +159,7 @@ def _not_enough_space_for_manuals_warning(): return {
     "header": "Not Enough Free Space!",
     "alert_level": "black",
     "text": [
-        "Enabling all manuals DBs requires 8190 files taking up to 20.9 GB.",
+        "Enabling all manuals DBs requires 8192 files taking up to 20.9 GB.",
         "Only {media_fat_available_space:bytes_to_gb} is available on /media/fat.",
         "Installing all manuals will likely fill up your storage and cause problems.",
         "Free up space or enable only individual manuals instead.",
@@ -805,6 +805,7 @@ def _manual_db_variables(): return {
     "ajgowans/manualsdb-segasg1000": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-sms": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-snes": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
+    "ajgowans/manualsdb-superacan": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-supervision": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-turbografx16": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
     "ajgowans/manualsdb-turbografxcd": {"group": ["separate_db", "manuals"], "default": "false", "values": ["false", "true"]},
@@ -3404,7 +3405,7 @@ def settings_screen_model():
             "entries": [
                 {
                     "title": " {ajgowans_manuals_dbs_general_selector:ajgowans_manuals_dbs_general_selector_title}",
-                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8190 files | 20.9GB total",
+                    "description": "{ajgowans_manuals_dbs_general_selector:select_all_toggle}8192 files | 20.9GB total",
                     "actions": {
                         "uninstall_all": uninstall_db_action_manuals(
                             "ajgowans_manuals_dbs_installed",
@@ -3678,6 +3679,11 @@ def settings_screen_model():
                         _try_toggle_big_manual_db(
                             "ajgowans/manualsdb-snes", "SNES Manuals", "797", "1.6 GB"),
                     ),
+                },
+                {
+                    "title": "# Super A'can",
+                    "description": "{ajgowans/manualsdb-superacan:enabled} 2",
+                    "actions": _manual_db_actions("ajgowans/manualsdb-superacan", "Super A'can Manuals"),
                 },
                 {
                     "title": "# Supervision",
