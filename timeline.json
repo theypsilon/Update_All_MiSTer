@@ -1,0 +1,162 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Aztarac Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Badlands Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Batman Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Blasteroids Core",
+              "type": "standalone"
+            },
+            {
+              "name": "DECOCassette Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Darius Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Pole Position Core",
+              "type": "standalone"
+            },
+            {
+              "name": "S32 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Tattoo Assassins Core",
+              "type": "standalone"
+            },
+            {
+              "name": "atarisys 2 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Aztarac MRA: Aztarac",
+              "type": "standalone"
+            },
+            {
+              "name": "DECOCassette MRAs: Angler Dangler, Astro Fantasia, Boulder Dash, Burger Time, Burnin Rubber, Cluster Buster, DECO Darksoft Multigame, DECO Test Tape, DECO Widel Multigame, DS Telejan, Explorer, Fighting Ice Hockey, Flash Boy, Flying Ball, Highway Chase, Lock'n'Chase, Lucky Poker, Manhattan (Japan), Mission-X, Nebula, Night Star, Ocean To Ocean, Oozumou - Grand Sumo, Peter Pepper's Ice Cream Factory, Pro Bowling, Pro Soccer, Pro Tennis, Rootin' Tootin', Scrum Try, Skater, Super Astro Fighter, Super Doubles Tennis, Sweet Heart, Terranean, The Tower, Tornado, Tournament Pro Golf, Treasure Island, Zeroize",
+              "type": "standalone"
+            },
+            {
+              "name": "Klax MRA: Klax",
+              "type": "standalone"
+            },
+            {
+              "name": "Pole Position MRAs: Pole Position II, Pole Position",
+              "type": "standalone"
+            },
+            {
+              "name": "S32 MRAs: Air Rescue, Alien3 - The Gun, Arabian Fight, Burning Rival, Dark Edge, Dragon Ball Z - V.R. V.S., F1 Exhaust Note, F1 Super Lap, Golden Axe - The Revenge of Death Adder, Holosseum, Jurassic Park, Rad Mobile, Rad Rally, SegaSonic The Hedgehog, Slip Stream, Spider-Man - The Videogame, Super Visual Football - European Sega Cup, The J.League 1994",
+              "type": "standalone"
+            },
+            {
+              "name": "Tattoo Assassins MRA: Tattoo Assassins",
+              "type": "standalone"
+            },
+            {
+              "name": "Toobin MRA: Toobin",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "3B1",
+              "type": "standalone"
+            },
+            {
+              "name": "AcornAtom",
+              "type": "standalone"
+            },
+            {
+              "name": "AcornElectron",
+              "type": "standalone"
+            },
+            {
+              "name": "Apple-IIgs",
+              "type": "standalone"
+            },
+            {
+              "name": "MTX512",
+              "type": "standalone"
+            },
+            {
+              "name": "MacIIcx",
+              "type": "standalone"
+            },
+            {
+              "name": "MacSE30",
+              "type": "standalone"
+            },
+            {
+              "name": "PC6001",
+              "type": "standalone"
+            },
+            {
+              "name": "TK2000",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1794020114,
+        1794044396,
+        1794081313,
+        1794094054,
+        1794105793,
+        1794155595,
+        1794170819,
+        1794208215,
+        1794245967,
+        1794297722,
+        1794361533,
+        1794439168,
+        1794455822,
+        1794485604,
+        1794513968,
+        1794532392,
+        1794557319,
+        1794587647,
+        1794607894
+      ],
+      "title": "Files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 1989,
+    "total_file_updates": 2250,
+    "unique_files": 1137
+  }
+}
