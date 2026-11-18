@@ -49,9 +49,14 @@ jobs:
             python-cmd: python
 
     steps:
-    - uses: actions/setup-python@v5
+    - uses: astral-sh/setup-uv@v7
+      env:
+        UV_VENV_SEED: 'true'
       with:
         python-version: '3.9'
+        activate-environment: true
+        venv-path: ${{ runner.temp }}/venv
+        enable-cache: false
 
     - uses: actions/checkout@v6
 
@@ -85,9 +90,14 @@ jobs:
       new_build: ${{ steps.release_build.outputs.new_build }}
 
     steps:
-    - uses: actions/setup-python@v5
+    - uses: astral-sh/setup-uv@v7
+      env:
+        UV_VENV_SEED: 'true'
       with:
         python-version: '3.9'
+        activate-environment: true
+        venv-path: ${{ runner.temp }}/venv
+        enable-cache: false
 
     - uses: actions/checkout@v6
 
