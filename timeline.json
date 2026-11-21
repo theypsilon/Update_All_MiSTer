@@ -1,0 +1,253 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "10Yard Fight Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Alpha 68kMD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Arabian Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Armed FMD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Blue Print Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Champion Baseball Core",
+              "type": "standalone"
+            },
+            {
+              "name": "DECOCassette Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Kangaroo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Kyugo Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Mega Sys 1_AMD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Next Space MD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Qix Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Raizing MD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "S32 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "SNK6502 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Terra Cresta MD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "UPLFramebuffer Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Vastar Core",
+              "type": "standalone"
+            },
+            {
+              "name": "atarisys 2 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "10Yard Fight MRA: 10-Yard Fight",
+              "type": "standalone"
+            },
+            {
+              "name": "Alpha 68kMD MRAs: Gang Wars [MD], Gold Medalist (set 1 Alpha68k II PCB) [MD], Sky Adventure (World) [MD], Sky Soldiers (US) [MD], Super Champion Baseball (US) [MD], Time Soldiers (US Rev 3) [MD]",
+              "type": "standalone"
+            },
+            {
+              "name": "Arabian MRA: Arabian",
+              "type": "standalone"
+            },
+            {
+              "name": "Armed FMD MRAs: Armed F (Japan) [MD], Crazy Climber 2 (Japan) [MD], Kozure Ookami (Japan) [MD], Legion - Spinner-87 (World ver 2.03) [MD], Sky Robo [MD], Terra Force [MD]",
+              "type": "standalone"
+            },
+            {
+              "name": "Blue Print MRAs: Blue Print, Grasspin, Saturn",
+              "type": "standalone"
+            },
+            {
+              "name": "Champion Baseball MRAs: Champion Base Ball Part-2, Champion Base Ball, Exciting Soccer II, Exciting Soccer, Talbot",
+              "type": "standalone"
+            },
+            {
+              "name": "Kangaroo MRAs: Funky Fish, Kangaroo",
+              "type": "standalone"
+            },
+            {
+              "name": "Kyugo MRAs: Airwolf, Flashgal, Gyrodine, Legend, Repulse, SRD Mission",
+              "type": "standalone"
+            },
+            {
+              "name": "Mega Sys 1_AMD MRAs: Hachoo! (World set 1) [MD], In Your Face (North America prototype) [MD], Jitsuryoku!! Pro Yakyuu (Japan) [MD], Kick Off - Jaleco Cup (Japan) [MD], Ninja Kazan (World) [MD], P-47 - The Phantom Fighter (World) [MD], Plus Alpha [MD], Rod-Land (World set 1) [MD], Saint Dragon (set 1) [MD], Shingen Samurai-Fighter (Japan English) [MD], Soldam [MD], The Astyanax (EPROM version) [MD]",
+              "type": "standalone"
+            },
+            {
+              "name": "Next Space MD MRAs: Paddle Mania [MD], The Next Space [MD]",
+              "type": "standalone"
+            },
+            {
+              "name": "Raizing MD MRAs: Armed Police Batrider (Europe) (Fri Feb 13 1998) [MD], Battle Bakraid - Unlimited Version (USA) (Tue Jun 8 1999) [MD], Battle Garegga (Europe - USA - Japan - Asia) (Sat Feb 3 1996) [MD], Kingdom Grandprix [MD], Sorcer Striker [MD]",
+              "type": "standalone"
+            },
+            {
+              "name": "Terra Cresta MD MRAs: Kid no Hore Hore Daisakusen [MD], Soldier Girl Amazon [MD], Terra Cresta (YM3526 set 1) [MD]",
+              "type": "standalone"
+            },
+            {
+              "name": "UPLFramebuffer MRAs: Penguin-Kun Wars, Ark Area, Atomic Robo-Kid, Mutant Night, Ninja-Kid II, Ninjakun Majou No Bouken, Nova 2001, Omega Fighter, Raiders5, XX Mission",
+              "type": "standalone"
+            },
+            {
+              "name": "Vastar MRAs: Dog Fight, Mogu Chan, Planet Probe, The Bounty, The Percussor, Vastar, Zodiack",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "AcornElectron",
+              "type": "standalone"
+            },
+            {
+              "name": "Laser310",
+              "type": "standalone"
+            },
+            {
+              "name": "Lynx48",
+              "type": "standalone"
+            },
+            {
+              "name": "MSX",
+              "type": "standalone"
+            },
+            {
+              "name": "MacLC",
+              "type": "standalone"
+            },
+            {
+              "name": "PC6001",
+              "type": "standalone"
+            },
+            {
+              "name": "PC8001",
+              "type": "standalone"
+            },
+            {
+              "name": "PCXT",
+              "type": "standalone"
+            },
+            {
+              "name": "Pasopia7",
+              "type": "standalone"
+            },
+            {
+              "name": "SharpMZ2500",
+              "type": "standalone"
+            },
+            {
+              "name": "SunSparcStation20_55mhz",
+              "type": "standalone"
+            },
+            {
+              "name": "SunSparcStation20_60mhz",
+              "type": "standalone"
+            },
+            {
+              "name": "Svi328",
+              "type": "standalone"
+            },
+            {
+              "name": "VideoBrain",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "console",
+          "files": [
+            {
+              "name": "Studio-II",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1794689326,
+        1794703672,
+        1794728138,
+        1794754787,
+        1794773718,
+        1794809399,
+        1794844939,
+        1794874262,
+        1794902770,
+        1794937321,
+        1794960002,
+        1794984342,
+        1795042815,
+        1795061028,
+        1795094917,
+        1795124960,
+        1795201202
+      ],
+      "title": "Files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 2024,
+    "total_file_updates": 2323,
+    "unique_files": 1181
+  }
+}
