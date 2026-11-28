@@ -1,0 +1,148 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "category": "arcade",
+          "files": [
+            {
+              "name": "Alpha 68kMD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Armed FMD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Mega Sys 1_AMD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Next Space MD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Prehistoric Isle MD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "S32 Core",
+              "type": "standalone"
+            },
+            {
+              "name": "SNK68MD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Terra Cresta MD Core",
+              "type": "standalone"
+            },
+            {
+              "name": "Alpha 68kMD MRA: Super Champion Baseball (US) [MD]",
+              "type": "standalone"
+            },
+            {
+              "name": "Armed FMD MRAs: Armed F (Japan) [MD], Crazy Climber 2 (Japan) [MD], Kozure Ookami (Japan) [MD], Legion - Spinner-87 (World ver 2.03) [MD], Sky Robo [MD], Terra Force [MD]",
+              "type": "standalone"
+            },
+            {
+              "name": "Next Space MD MRAs: Paddle Mania [MD], The Next Space [MD]",
+              "type": "standalone"
+            },
+            {
+              "name": "Prehistoric Isle MD MRA: Prehistoric Isle in 1930 (World) [MD]",
+              "type": "standalone"
+            },
+            {
+              "name": "SNK68MD MRAs: Ikari III - The Rescue (World Version 1 8-Way Joystick) [MD], P.O.W. - Prisoners of War (US Version 1) [MD], SAR - Search And Rescue (World) [MD], Street Smart (US Version 2) [MD]",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "computer",
+          "files": [
+            {
+              "name": "ColecoAdam",
+              "type": "standalone"
+            },
+            {
+              "name": "Cray-XMP",
+              "type": "standalone"
+            },
+            {
+              "name": "FM-7",
+              "type": "standalone"
+            },
+            {
+              "name": "Laser500",
+              "type": "standalone"
+            },
+            {
+              "name": "Lynx48",
+              "type": "standalone"
+            },
+            {
+              "name": "MacIIci",
+              "type": "standalone"
+            },
+            {
+              "name": "MacIIcx",
+              "type": "standalone"
+            },
+            {
+              "name": "MacSE30",
+              "type": "standalone"
+            },
+            {
+              "name": "PC8001",
+              "type": "standalone"
+            },
+            {
+              "name": "SC3000",
+              "type": "standalone"
+            },
+            {
+              "name": "VG5000",
+              "type": "standalone"
+            }
+          ]
+        },
+        {
+          "category": "system",
+          "files": [
+            {
+              "name": "gamecontrollerdb",
+              "type": "standalone"
+            }
+          ]
+        }
+      ],
+      "timestamps": [
+        1795296558,
+        1795385993,
+        1795402635,
+        1795476362,
+        1795504078,
+        1795546775,
+        1795575605,
+        1795609150,
+        1795643597,
+        1795700429,
+        1795732620,
+        1795754009,
+        1795819731
+      ],
+      "title": "Files updated in the LAST 7 DAYS",
+      "type": "latest_7_days"
+    }
+  ],
+  "summary": {
+    "no_sections_msg": [
+      "No cores have been updated in the LAST 7 DAYS!"
+    ],
+    "rbf_reverse_mappings": 2029,
+    "total_file_updates": 2353,
+    "unique_files": 1190
+  }
+}
